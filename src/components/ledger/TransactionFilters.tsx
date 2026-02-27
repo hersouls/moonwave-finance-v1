@@ -123,7 +123,7 @@ export function TransactionFilters({
           {/* Payment method filter */}
           {onPaymentMethodChange && (
             <div>
-              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">결제수단</label>
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">거래수단</label>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => onPaymentMethodChange(null)}

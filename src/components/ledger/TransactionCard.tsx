@@ -22,7 +22,7 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
 
   const category = categories.find(c => c.id === transaction.categoryId)
   const member = transaction.memberId ? members.find(m => m.id === transaction.memberId) : null
-  const pmLabel = getPaymentMethodLabel(transaction.paymentMethod)
+  const pmLabel = transaction.paymentMethodDetail || getPaymentMethodLabel(transaction.paymentMethod)
 
   const isIncome = transaction.type === 'income'
 

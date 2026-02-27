@@ -82,7 +82,7 @@ export const commonLineOptions = {
         font: { size: 11 },
         callback: function(value: number | string) {
           const num = typeof value === 'string' ? parseFloat(value) : value
-          if (Math.abs(num) >= 100_000_000) return (num / 100_000_000).toFixed(1) + '억'
+          if (Math.abs(num) >= 100_000_000) return Math.round(num / 100_000_000) + '억'
           if (Math.abs(num) >= 10_000) return Math.round(num / 10_000) + '만'
           return String(num)
         },

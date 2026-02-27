@@ -68,6 +68,18 @@ export interface TransactionCategory {
   updatedAt: string
 }
 
+export interface PaymentMethodItem {
+  id?: number
+  syncId?: string
+  type: PaymentMethod
+  name: string
+  memo?: string
+  isActive: boolean
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+}
+
 export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly'
 
 export interface RepeatPattern {
@@ -87,6 +99,7 @@ export interface Transaction {
   memo?: string
   paymentMethod?: PaymentMethod
   paymentMethodDetail?: string
+  paymentMethodItemId?: number
   isRecurring: boolean
   recurPattern?: RepeatPattern
   recurSourceId?: number
@@ -223,6 +236,7 @@ export interface BackupFile {
     transactions: Transaction[]
     budgets?: Budget[]
     goals?: FinancialGoal[]
+    paymentMethodItems?: PaymentMethodItem[]
     settings: Partial<Settings>
   }
 }

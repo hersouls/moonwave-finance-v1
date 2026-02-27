@@ -22,6 +22,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
   const addTransaction = useTransactionStore((s) => s.addTransaction)
   const updateTransaction = useTransactionStore((s) => s.updateTransaction)
   const categories = useTransactionStore((s) => s.categories)
+  const paymentMethodItems = useTransactionStore((s) => s.paymentMethodItems)
   const members = useMemberStore((s) => s.members)
   const budgets = useBudgetStore((s) => s.budgets)
   const transactions = useTransactionStore((s) => s.transactions)
@@ -34,11 +35,18 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
   const [memo, setMemo] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('')
   const [paymentMethodDetail, setPaymentMethodDetail] = useState('')
+  const [paymentMethodItemId, setPaymentMethodItemId] = useState<number | ''>('')
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurType, setRecurType] = useState<RepeatType>('monthly')
   const [recurEndDate, setRecurEndDate] = useState('')
 
   const currentCategories = categories.filter(c => c.type === type)
+
+  // Items for selected payment method type
+  const itemsForType = useMemo(() => {
+    if (!paymentMethod || paymentMethod === 'cash') return []
+    return paymentMethodItems.filter(i => i.type === paymentMethod && i.isActive)
+  }, [paymentMethod, paymentMethodItems])
 
   // Recent templates: top 5 frequent transaction patterns from last 3 months
   const templates = useMemo(() => {
@@ -77,13 +85,14 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
     if (!open) return
     if (mode === 'edit' && initialData) {
       setType(initialData.type)
-      setAmount(String(initialData.amount))
+      setAmount(initialData.amount.toLocaleString('ko-KR'))
       setCategoryId(initialData.categoryId ?? '')
       setMemberId(initialData.memberId ?? '')
       setDate(initialData.date)
       setMemo(initialData.memo || '')
       setPaymentMethod(initialData.paymentMethod || '')
       setPaymentMethodDetail(initialData.paymentMethodDetail || '')
+      setPaymentMethodItemId(initialData.paymentMethodItemId ?? '')
       setIsRecurring(initialData.isRecurring)
       setRecurType(initialData.recurPattern?.type || 'monthly')
       setRecurEndDate(initialData.recurPattern?.endDate || '')
@@ -96,6 +105,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
       setMemo('')
       setPaymentMethod('')
       setPaymentMethodDetail('')
+      setPaymentMethodItemId('')
       setIsRecurring(false)
       setRecurType('monthly')
       setRecurEndDate('')
@@ -106,40 +116,52 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
     setCategoryId('')
   }, [type])
 
+  // Reset payment method item when payment method type changes
+  useEffect(() => {
+    setPaymentMethodItemId('')
+    setPaymentMethodDetail('')
+  }, [paymentMethod])
+
   const applyTemplate = (tmpl: typeof templates[0]) => {
     setType(tmpl.type)
-    setAmount(String(tmpl.amount))
+    setAmount(tmpl.amount.toLocaleString('ko-KR'))
     setCategoryId(tmpl.categoryId ?? '')
     setMemo(tmpl.memo || '')
     if (tmpl.paymentMethod) setPaymentMethod(tmpl.paymentMethod)
     if (tmpl.memberId) setMemberId(tmpl.memberId)
   }
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/[^0-9]/g, '')
+    if (raw === '') {
+      setAmount('')
+      return
+    }
+    const num = parseInt(raw, 10)
+    setAmount(num.toLocaleString('ko-KR'))
+  }
+
   const handleSubmit = async () => {
     const numAmount = Number(amount.replace(/,/g, ''))
     if (!numAmount || numAmount <= 0) return
 
+    const txnData = {
+      type,
+      amount: numAmount,
+      categoryId: categoryId ? (categoryId as number) : null,
+      memberId: memberId ? (memberId as number) : null,
+      date,
+      memo: memo.trim() || undefined,
+      paymentMethod: paymentMethod || undefined,
+      paymentMethodDetail: paymentMethodDetail.trim() || undefined,
+      paymentMethodItemId: paymentMethodItemId ? (paymentMethodItemId as number) : undefined,
+    }
+
     if (mode === 'edit' && initialData?.id) {
-      await updateTransaction(initialData.id, {
-        type,
-        amount: numAmount,
-        categoryId: categoryId ? (categoryId as number) : null,
-        memberId: memberId ? (memberId as number) : null,
-        date,
-        memo: memo.trim() || undefined,
-        paymentMethod: paymentMethod || undefined,
-        paymentMethodDetail: paymentMethodDetail.trim() || undefined,
-      })
+      await updateTransaction(initialData.id, txnData)
     } else {
       await addTransaction({
-        memberId: memberId ? (memberId as number) : null,
-        type,
-        amount: numAmount,
-        categoryId: categoryId ? (categoryId as number) : null,
-        date,
-        memo: memo.trim() || undefined,
-        paymentMethod: paymentMethod || undefined,
-        paymentMethodDetail: paymentMethodDetail.trim() || undefined,
+        ...txnData,
         isRecurring,
         recurPattern: isRecurring ? { type: recurType, interval: 1, endDate: recurEndDate || undefined } : undefined,
       })
@@ -147,7 +169,10 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
     onClose()
   }
 
-  const isCard = paymentMethod === 'credit_card' || paymentMethod === 'debit_card'
+  const handleSelectPaymentMethodItem = (itemId: number, itemName: string) => {
+    setPaymentMethodItemId(itemId)
+    setPaymentMethodDetail(itemName)
+  }
 
   return (
     <Dialog open={open} onClose={onClose} size="md">
@@ -172,6 +197,58 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                     </button>
                   )
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Member - NOW AT TOP */}
+          {members.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">구성원</label>
+              <div className="flex gap-2">
+                {members.length <= 4 ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setMemberId('')}
+                      className={clsx(
+                        'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                        memberId === ''
+                          ? 'bg-zinc-200 text-zinc-800 dark:bg-zinc-600 dark:text-zinc-100 ring-1 ring-zinc-300 dark:ring-zinc-500'
+                          : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                      )}
+                    >
+                      미지정
+                    </button>
+                    {members.map(m => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setMemberId(m.id!)}
+                        className={clsx(
+                          'flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors',
+                          memberId === m.id
+                            ? 'text-white ring-1'
+                            : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                        )}
+                        style={memberId === m.id ? { backgroundColor: m.color, boxShadow: `0 0 0 1px ${m.color}` } : undefined}
+                      >
+                        {m.name}
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <select
+                    value={memberId}
+                    onChange={(e) => setMemberId(e.target.value ? Number(e.target.value) : '')}
+                    className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="">미지정</option>
+                    {members.map(m => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
           )}
@@ -213,7 +290,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                 type="text"
                 inputMode="numeric"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={handleAmountChange}
                 placeholder="0"
                 className="w-full px-3 py-2.5 pr-8 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400"
                 autoFocus
@@ -265,9 +342,9 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
             />
           </div>
 
-          {/* Payment Method */}
+          {/* Payment Method (거래수단) */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">결제수단 (선택)</label>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">거래수단 (선택)</label>
             <div className="grid grid-cols-3 gap-2">
               {PAYMENT_METHOD_OPTIONS.map(opt => (
                 <button
@@ -285,30 +362,52 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                 </button>
               ))}
             </div>
-            {isCard && (
-              <input
-                type="text"
-                value={paymentMethodDetail}
-                onChange={(e) => setPaymentMethodDetail(e.target.value)}
-                placeholder="카드명 (예: 신한카드)"
-                className="w-full mt-2 px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400"
-              />
-            )}
-          </div>
 
-          {/* Member */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">구성원 (선택)</label>
-            <select
-              value={memberId}
-              onChange={(e) => setMemberId(e.target.value ? Number(e.target.value) : '')}
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              <option value="">선택 안함</option>
-              {members.map(m => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
+            {/* Managed payment method items or free-text fallback */}
+            {paymentMethod && paymentMethod !== 'cash' && (
+              <div className="mt-2">
+                {itemsForType.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {itemsForType.map(item => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => handleSelectPaymentMethodItem(item.id!, item.name)}
+                        className={clsx(
+                          'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                          paymentMethodItemId === item.id
+                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 ring-1 ring-blue-300 dark:ring-blue-700'
+                            : 'bg-zinc-50 text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                        )}
+                      >
+                        {item.name}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => { setPaymentMethodItemId(''); setPaymentMethodDetail('') }}
+                      className={clsx(
+                        'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                        paymentMethodItemId === ''
+                          ? 'bg-zinc-200 text-zinc-700 dark:bg-zinc-600 dark:text-zinc-200'
+                          : 'bg-zinc-50 text-zinc-500 dark:bg-zinc-800/80 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                      )}
+                    >
+                      직접 입력
+                    </button>
+                  </div>
+                )}
+                {paymentMethodItemId === '' && (
+                  <input
+                    type="text"
+                    value={paymentMethodDetail}
+                    onChange={(e) => setPaymentMethodDetail(e.target.value)}
+                    placeholder="카드/계좌명 입력 (예: 신한카드)"
+                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400"
+                  />
+                )}
+              </div>
+            )}
           </div>
 
           {/* Memo */}

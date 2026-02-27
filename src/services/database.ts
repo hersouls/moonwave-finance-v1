@@ -8,6 +8,7 @@ import type {
   Transaction,
   Budget,
   FinancialGoal,
+  PaymentMethodItem,
 } from '@/lib/types'
 
 class FinanceDatabase extends Dexie {
@@ -19,6 +20,7 @@ class FinanceDatabase extends Dexie {
   transactions!: Table<Transaction>
   budgets!: Table<Budget>
   goals!: Table<FinancialGoal>
+  paymentMethodItems!: Table<PaymentMethodItem>
 
   constructor() {
     super('MoonwaveFinance')
@@ -51,6 +53,48 @@ class FinanceDatabase extends Dexie {
       transactions: '++id, syncId, memberId, type, categoryId, date, isRecurring, recurSourceId, paymentMethod',
       budgets: '++id, syncId, categoryId, month',
       goals: '++id, syncId, targetDate',
+    })
+
+    this.version(4).stores({
+      members: '++id, syncId, name, sortOrder',
+      assetCategories: '++id, syncId, name, type, sortOrder',
+      assetItems: '++id, syncId, memberId, categoryId, type, isActive, sortOrder',
+      dailyValues: '++id, syncId, assetItemId, date, [assetItemId+date]',
+      transactionCategories: '++id, syncId, name, type, sortOrder',
+      transactions: '++id, syncId, memberId, type, categoryId, date, isRecurring, recurSourceId, paymentMethod, paymentMethodItemId',
+      budgets: '++id, syncId, categoryId, month',
+      goals: '++id, syncId, targetDate',
+      paymentMethodItems: '++id, syncId, type, name, sortOrder',
+    }).upgrade(async (tx) => {
+      const transactions = await tx.table('transactions').toArray()
+      const seen = new Map<string, { type: string; name: string }>()
+      const now = new Date().toISOString()
+
+      for (const t of transactions) {
+        if (t.paymentMethod && t.paymentMethodDetail) {
+          const key = `${t.paymentMethod}|${t.paymentMethodDetail}`
+          if (!seen.has(key)) {
+            seen.set(key, { type: t.paymentMethod, name: t.paymentMethodDetail })
+          }
+        }
+      }
+
+      const items = Array.from(seen.values())
+      for (let i = 0; i < items.length; i++) {
+        const id = await tx.table('paymentMethodItems').add({
+          syncId: crypto.randomUUID(),
+          type: items[i].type,
+          name: items[i].name,
+          isActive: true,
+          sortOrder: i,
+          createdAt: now,
+          updatedAt: now,
+        })
+        await tx.table('transactions')
+          .where('paymentMethod').equals(items[i].type)
+          .filter((t: Transaction) => t.paymentMethodDetail === items[i].name)
+          .modify({ paymentMethodItemId: id })
+      }
     })
   }
 }
@@ -257,6 +301,28 @@ export async function deleteTransactionCategory(id: number): Promise<void> {
   await db.transactions.where('categoryId').equals(id).modify({ categoryId: null })
 }
 
+// ─── PaymentMethodItem CRUD ──────────────────────
+export async function getAllPaymentMethodItems(): Promise<PaymentMethodItem[]> {
+  return db.paymentMethodItems.orderBy('sortOrder').toArray()
+}
+
+export async function getPaymentMethodItemsByType(type: string): Promise<PaymentMethodItem[]> {
+  return db.paymentMethodItems.where('type').equals(type).sortBy('sortOrder')
+}
+
+export async function addPaymentMethodItem(item: Omit<PaymentMethodItem, 'id'>): Promise<number> {
+  return db.paymentMethodItems.add(item as PaymentMethodItem) as Promise<number>
+}
+
+export async function updatePaymentMethodItem(id: number, updates: Partial<PaymentMethodItem>): Promise<void> {
+  await db.paymentMethodItems.update(id, { ...updates, updatedAt: new Date().toISOString() })
+}
+
+export async function deletePaymentMethodItem(id: number): Promise<void> {
+  await db.transactions.where('paymentMethodItemId').equals(id).modify({ paymentMethodItemId: undefined })
+  await db.paymentMethodItems.delete(id)
+}
+
 // ─── Transaction CRUD ─────────────────────────────
 export async function getAllTransactions(): Promise<Transaction[]> {
   return db.transactions.toArray()
@@ -375,6 +441,7 @@ export async function clearAllData(): Promise<void> {
   await db.transactions.clear()
   await db.budgets.clear()
   await db.goals.clear()
+  await db.paymentMethodItems.clear()
 
   const now = new Date().toISOString()
   await db.members.bulkAdd([

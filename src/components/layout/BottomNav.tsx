@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { AlignJustify, LayoutDashboard, Wallet, Receipt, BarChart3 } from 'lucide-react'
+import { LayoutDashboard, Wallet, Receipt, BarChart3 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useUIStore, type CurrentView } from '@/stores/uiStore'
 
@@ -7,13 +7,7 @@ export function BottomNav() {
   const navigate = useNavigate()
   const currentView = useUIStore((state) => state.currentView)
   const setCurrentView = useUIStore((state) => state.setCurrentView)
-  const toggleMobileMenu = useUIStore((state) => state.toggleMobileMenu)
-
-  const handleNavigate = (target: CurrentView | 'menu') => {
-    if (target === 'menu') {
-      toggleMobileMenu()
-      return
-    }
+  const handleNavigate = (target: CurrentView) => {
     if (target === 'dashboard') {
       setCurrentView('dashboard')
       navigate('/')
@@ -37,7 +31,6 @@ export function BottomNav() {
   }
 
   const navItems = [
-    { id: 'menu' as const, label: '메뉴', icon: AlignJustify },
     { id: 'dashboard' as const, label: '대시보드', icon: LayoutDashboard },
     { id: 'assets' as const, label: '자산', icon: Wallet },
     { id: 'ledger' as const, label: '가계부', icon: Receipt },
@@ -52,7 +45,7 @@ export function BottomNav() {
       <ul className="flex items-center justify-around h-16 fold:h-14" role="menubar">
         {navItems.map((item) => {
           const Icon = item.icon
-          const isActive = item.id !== 'menu' && currentView === item.id
+          const isActive = currentView === item.id
 
           return (
             <li key={item.id} className="flex-1" role="none">

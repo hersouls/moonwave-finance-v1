@@ -1,13 +1,12 @@
 export function formatKRW(value: number): string {
-  return value.toLocaleString('ko-KR') + '원'
+  return Math.round(value).toLocaleString('ko-KR') + '원'
 }
 
 export function formatKoreanUnit(value: number): string {
   const abs = Math.abs(value)
   const sign = value < 0 ? '-' : ''
   if (abs >= 100_000_000) {
-    const billions = abs / 100_000_000
-    return sign + (billions % 1 === 0 ? billions.toFixed(0) : billions.toFixed(1)) + '억'
+    return sign + Math.round(abs / 100_000_000) + '억'
   }
   if (abs >= 10_000) {
     return sign + Math.round(abs / 10_000).toLocaleString('ko-KR') + '만'
@@ -34,7 +33,7 @@ export function formatPercent(value: number, decimals: number = 1): string {
 }
 
 export function formatNumber(value: number): string {
-  return value.toLocaleString('ko-KR')
+  return Math.round(value).toLocaleString('ko-KR')
 }
 
 export function formatCurrency(value: number): string {

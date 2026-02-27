@@ -3,7 +3,7 @@ import { BACKUP_CONFIG } from '@/utils/constants'
 import type { BackupFile } from '@/lib/types'
 
 export async function exportBackup(): Promise<void> {
-  const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals] = await Promise.all([
+  const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems] = await Promise.all([
     db.members.toArray(),
     db.assetCategories.toArray(),
     db.assetItems.toArray(),
@@ -12,6 +12,7 @@ export async function exportBackup(): Promise<void> {
     db.transactions.toArray(),
     db.budgets.toArray(),
     db.goals.toArray(),
+    db.paymentMethodItems.toArray(),
   ])
 
   const backup: BackupFile = {
@@ -27,6 +28,7 @@ export async function exportBackup(): Promise<void> {
       transactions,
       budgets,
       goals,
+      paymentMethodItems,
       settings: {},
     },
   }
@@ -55,7 +57,7 @@ export async function importBackup(file: File): Promise<void> {
     throw new Error('올바르지 않은 백업 파일입니다.')
   }
 
-  await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals], async () => {
+  await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems], async () => {
     await db.members.clear()
     await db.assetCategories.clear()
     await db.assetItems.clear()
@@ -64,6 +66,7 @@ export async function importBackup(file: File): Promise<void> {
     await db.transactions.clear()
     await db.budgets.clear()
     await db.goals.clear()
+    await db.paymentMethodItems.clear()
 
     if (backup.data.members?.length) await db.members.bulkAdd(backup.data.members)
     if (backup.data.assetCategories?.length) await db.assetCategories.bulkAdd(backup.data.assetCategories)
@@ -73,6 +76,7 @@ export async function importBackup(file: File): Promise<void> {
     if (backup.data.transactions?.length) await db.transactions.bulkAdd(backup.data.transactions)
     if (backup.data.budgets?.length) await db.budgets.bulkAdd(backup.data.budgets)
     if (backup.data.goals?.length) await db.goals.bulkAdd(backup.data.goals)
+    if (backup.data.paymentMethodItems?.length) await db.paymentMethodItems.bulkAdd(backup.data.paymentMethodItems)
   })
 }
 
