@@ -61,6 +61,7 @@ export const useAssetStore = create<AssetState>()(
           set({ categories, items, isLoading: false })
         } catch (err) {
           console.error('Failed to load assets:', err)
+          useToastStore.getState().addToast('자산 데이터를 불러오는데 실패했습니다.', 'error')
           set({ isLoading: false })
         }
       },

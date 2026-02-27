@@ -12,6 +12,8 @@ import { UndoToast } from './components/ui/UndoToast'
 import { UpdateBanner } from './components/ui/UpdateBanner'
 import { OfflineBanner } from './components/ui/OfflineBanner'
 import { AppLoadingScreen } from './components/ui/AppLoadingScreen'
+import { SearchModal } from './components/search/SearchModal'
+import { OnboardingWizard } from './components/onboarding/OnboardingWizard'
 import { useSettingsStore } from './stores/settingsStore'
 import { useUIStore } from './stores/uiStore'
 import { useAuthStore } from './stores/authStore'
@@ -22,6 +24,8 @@ export default function App() {
   const [isInitialized, setIsInitialized] = useState(false)
   const initSettings = useSettingsStore((s) => s.initialize)
   const isSidebarOpen = useUIStore((s) => s.isSidebarOpen)
+  const hasCompletedOnboarding = useSettingsStore((s) => s.settings.hasCompletedOnboarding)
+  const setHasCompletedOnboarding = useSettingsStore((s) => s.setHasCompletedOnboarding)
   const isOnline = useOnlineStatus()
 
   useEffect(() => {
@@ -46,6 +50,10 @@ export default function App() {
       if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
         e.preventDefault()
         useUndoStore.getState().redo()
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        useUIStore.getState().openSearchModal()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -86,6 +94,10 @@ export default function App() {
       <TermsModal />
       <UndoToast />
       <UpdateBanner />
+      <SearchModal />
+      {!hasCompletedOnboarding && (
+        <OnboardingWizard onComplete={() => setHasCompletedOnboarding(true)} />
+      )}
     </div>
   )
 }

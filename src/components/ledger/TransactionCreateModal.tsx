@@ -5,7 +5,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { getTodayString } from '@/lib/dateUtils'
-import type { TransactionType } from '@/lib/types'
+import type { TransactionType, RepeatType } from '@/lib/types'
 
 export function TransactionCreateModal() {
   const isOpen = useUIStore((s) => s.isTransactionCreateModalOpen)
@@ -20,6 +20,9 @@ export function TransactionCreateModal() {
   const [memberId, setMemberId] = useState<number | ''>('')
   const [date, setDate] = useState(getTodayString())
   const [memo, setMemo] = useState('')
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [recurType, setRecurType] = useState<RepeatType>('monthly')
+  const [recurEndDate, setRecurEndDate] = useState('')
 
   const currentCategories = categories.filter(c => c.type === type)
 
@@ -31,6 +34,9 @@ export function TransactionCreateModal() {
       setMemberId(members[0]?.id || '')
       setDate(getTodayString())
       setMemo('')
+      setIsRecurring(false)
+      setRecurType('monthly')
+      setRecurEndDate('')
     }
   }, [isOpen, members])
 
@@ -48,6 +54,8 @@ export function TransactionCreateModal() {
       categoryId: categoryId ? (categoryId as number) : null,
       date,
       memo: memo.trim() || undefined,
+      isRecurring,
+      recurPattern: isRecurring ? { type: recurType, interval: 1, endDate: recurEndDate || undefined } : undefined,
     })
     close()
   }
@@ -155,6 +163,46 @@ export function TransactionCreateModal() {
               className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
             />
           </div>
+
+          {/* Recurring Toggle */}
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isRecurring}
+                onChange={(e) => setIsRecurring(e.target.checked)}
+                className="w-4 h-4 rounded border-zinc-300 dark:border-zinc-600 text-primary-600 focus:ring-primary-500"
+              />
+              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">반복 거래</span>
+            </label>
+          </div>
+
+          {isRecurring && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">반복 주기</label>
+                <select
+                  value={recurType}
+                  onChange={(e) => setRecurType(e.target.value as RepeatType)}
+                  className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="monthly">매월</option>
+                  <option value="weekly">매주</option>
+                  <option value="daily">매일</option>
+                  <option value="yearly">매년</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">종료일 (선택)</label>
+                <input
+                  type="date"
+                  value={recurEndDate}
+                  onChange={(e) => setRecurEndDate(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </DialogBody>
       <DialogFooter>

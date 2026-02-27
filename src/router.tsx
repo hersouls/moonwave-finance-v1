@@ -1,30 +1,37 @@
 import { createBrowserRouter } from 'react-router-dom'
+import { Suspense, lazy } from 'react'
 import App from './App'
 import OAuthCallback from './pages/OAuthCallback'
-import { DashboardPage } from './components/dashboard/DashboardPage'
-import { AssetListPage } from './components/assets/AssetListPage'
-import { AssetDetailPage } from './components/assets/AssetDetailPage'
-import { LiabilityListPage } from './components/liabilities/LiabilityListPage'
-import { LiabilityDetailPage } from './components/liabilities/LiabilityDetailPage'
-import { LedgerPage } from './components/ledger/LedgerPage'
-import { CalendarPage } from './components/calendar/CalendarPage'
-import { ReportsPage } from './components/reports/ReportsPage'
-import { ProfilePage } from './components/profile/ProfilePage'
+import { AppLoadingScreen } from './components/ui/AppLoadingScreen'
+
+const DashboardPage = lazy(() => import('./components/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })))
+const AssetListPage = lazy(() => import('./components/assets/AssetListPage').then(m => ({ default: m.AssetListPage })))
+const AssetDetailPage = lazy(() => import('./components/assets/AssetDetailPage').then(m => ({ default: m.AssetDetailPage })))
+const LiabilityListPage = lazy(() => import('./components/liabilities/LiabilityListPage').then(m => ({ default: m.LiabilityListPage })))
+const LiabilityDetailPage = lazy(() => import('./components/liabilities/LiabilityDetailPage').then(m => ({ default: m.LiabilityDetailPage })))
+const LedgerPage = lazy(() => import('./components/ledger/LedgerPage').then(m => ({ default: m.LedgerPage })))
+const CalendarPage = lazy(() => import('./components/calendar/CalendarPage').then(m => ({ default: m.CalendarPage })))
+const ReportsPage = lazy(() => import('./components/reports/ReportsPage').then(m => ({ default: m.ReportsPage })))
+const ProfilePage = lazy(() => import('./components/profile/ProfilePage').then(m => ({ default: m.ProfilePage })))
+
+function LazyPage({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={<AppLoadingScreen />}>{children}</Suspense>
+}
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <App />,
     children: [
-      { index: true, element: <DashboardPage /> },
-      { path: 'assets', element: <AssetListPage /> },
-      { path: 'assets/:id', element: <AssetDetailPage /> },
-      { path: 'liabilities', element: <LiabilityListPage /> },
-      { path: 'liabilities/:id', element: <LiabilityDetailPage /> },
-      { path: 'ledger', element: <LedgerPage /> },
-      { path: 'calendar', element: <CalendarPage /> },
-      { path: 'reports', element: <ReportsPage /> },
-      { path: 'profile', element: <ProfilePage /> },
+      { index: true, element: <LazyPage><DashboardPage /></LazyPage> },
+      { path: 'assets', element: <LazyPage><AssetListPage /></LazyPage> },
+      { path: 'assets/:id', element: <LazyPage><AssetDetailPage /></LazyPage> },
+      { path: 'liabilities', element: <LazyPage><LiabilityListPage /></LazyPage> },
+      { path: 'liabilities/:id', element: <LazyPage><LiabilityDetailPage /></LazyPage> },
+      { path: 'ledger', element: <LazyPage><LedgerPage /></LazyPage> },
+      { path: 'calendar', element: <LazyPage><CalendarPage /></LazyPage> },
+      { path: 'reports', element: <LazyPage><ReportsPage /></LazyPage> },
+      { path: 'profile', element: <LazyPage><ProfilePage /></LazyPage> },
     ],
   },
   { path: '/oauth/callback', element: <OAuthCallback /> },

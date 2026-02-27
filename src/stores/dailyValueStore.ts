@@ -3,6 +3,7 @@ import { devtools } from 'zustand/middleware'
 import type { DailyValue } from '@/lib/types'
 import * as db from '@/services/database'
 import { getCurrentMonthString } from '@/lib/dateUtils'
+import { useToastStore } from './toastStore'
 
 interface DailyValueState {
   values: DailyValue[]
@@ -32,6 +33,7 @@ export const useDailyValueStore = create<DailyValueState>()(
           set({ values, isLoading: false })
         } catch (err) {
           console.error('Failed to load daily values:', err)
+          useToastStore.getState().addToast('일별 가치 데이터를 불러오는데 실패했습니다.', 'error')
           set({ isLoading: false })
         }
       },

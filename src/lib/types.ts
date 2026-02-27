@@ -86,6 +86,37 @@ export interface Transaction {
   memo?: string
   isRecurring: boolean
   recurPattern?: RepeatPattern
+  recurSourceId?: number
+  createdAt: string
+  updatedAt: string
+}
+
+// ─── Budget Types ─────────────────────────────────
+export interface Budget {
+  id?: number
+  syncId?: string
+  categoryId: number
+  month: string // YYYY-MM
+  amount: number
+  createdAt: string
+  updatedAt: string
+}
+
+// ─── Financial Goal Types ─────────────────────────
+export type GoalType = 'savings' | 'debt' | 'investment' | 'custom'
+
+export interface FinancialGoal {
+  id?: number
+  syncId?: string
+  name: string
+  type: GoalType
+  targetAmount: number
+  currentAmount: number
+  targetDate: string
+  color: string
+  icon?: string
+  memo?: string
+  isCompleted: boolean
   createdAt: string
   updatedAt: string
 }
@@ -179,6 +210,8 @@ export interface BackupFile {
     dailyValues: DailyValue[]
     transactionCategories: TransactionCategory[]
     transactions: Transaction[]
+    budgets?: Budget[]
+    goals?: FinancialGoal[]
     settings: Partial<Settings>
   }
 }

@@ -18,6 +18,8 @@ interface UIState {
   activeMemberFilter: number | null
   activeCategoryFilter: number | null
 
+  isSearchModalOpen: boolean
+
   isSelectionMode: boolean
   selectedItemIds: Set<number>
 
@@ -34,6 +36,9 @@ interface UIState {
   closeFAQModal: () => void
   openTermsModal: () => void
   closeTermsModal: () => void
+
+  openSearchModal: () => void
+  closeSearchModal: () => void
 
   openAssetCreateModal: () => void
   closeAssetCreateModal: () => void
@@ -60,6 +65,7 @@ export const useUIStore = create<UIState>()(
       isSettingsModalOpen: false,
       isFAQModalOpen: false,
       isTermsModalOpen: false,
+      isSearchModalOpen: false,
       isAssetCreateModalOpen: false,
       isLiabilityCreateModalOpen: false,
       isTransactionCreateModalOpen: false,
@@ -83,6 +89,9 @@ export const useUIStore = create<UIState>()(
       closeFAQModal: () => set({ isFAQModalOpen: false }),
       openTermsModal: () => set({ isTermsModalOpen: true }),
       closeTermsModal: () => set({ isTermsModalOpen: false }),
+
+      openSearchModal: () => set({ isSearchModalOpen: true }),
+      closeSearchModal: () => set({ isSearchModalOpen: false }),
 
       openAssetCreateModal: () => set({ isAssetCreateModalOpen: true }),
       closeAssetCreateModal: () => set({ isAssetCreateModalOpen: false }),

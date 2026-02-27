@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Menu, Moon, Sun, Monitor, Wallet, Settings } from 'lucide-react'
+import { Menu, Moon, Sun, Monitor, Wallet, Settings, Search } from 'lucide-react'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -12,6 +12,7 @@ export function Header() {
   const theme = useSettingsStore((state) => state.settings.theme)
   const setTheme = useSettingsStore((state) => state.setTheme)
   const openSettingsModal = useUIStore((state) => state.openSettingsModal)
+  const openSearchModal = useUIStore((state) => state.openSearchModal)
   const openMobileMenu = useUIStore((state) => state.openMobileMenu)
   const user = useAuthStore((state) => state.user)
   const location = useLocation()
@@ -81,6 +82,11 @@ export function Header() {
               </button>
             </Tooltip>
           )}
+          <Tooltip content="검색 (Cmd+K)" placement="bottom">
+            <IconButton plain color="secondary" onClick={openSearchModal} aria-label="검색">
+              <Search className="w-5 h-5" />
+            </IconButton>
+          </Tooltip>
           <Tooltip content="설정" placement="bottom">
             <IconButton plain color="secondary" onClick={openSettingsModal} aria-label="설정 열기">
               <Settings className="w-5 h-5" />

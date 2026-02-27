@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { clsx } from 'clsx'
 import { Trash2 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
@@ -11,7 +12,7 @@ interface TransactionCardProps {
   transaction: Transaction
 }
 
-export function TransactionCard({ transaction }: TransactionCardProps) {
+function TransactionCardInner({ transaction }: TransactionCardProps) {
   const categories = useTransactionStore((s) => s.categories)
   const members = useMemberStore((s) => s.members)
   const deleteTransaction = useTransactionStore((s) => s.deleteTransaction)
@@ -83,3 +84,5 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
     </Card>
   )
 }
+
+export const TransactionCard = memo(TransactionCardInner)

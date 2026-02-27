@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { User, Users, Database, Download, Upload, Trash2, Plus, Edit3 } from 'lucide-react'
+import { User, Users, Database, Download, Upload, Trash2, Plus, Edit3, FileSpreadsheet } from 'lucide-react'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useMemberStore } from '@/stores/memberStore'
@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card'
 import { Button, IconButton } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/Dialog'
-import { exportBackup, importBackup } from '@/services/backup'
+import { exportBackup, importBackup, exportTransactionsCSV, exportAssetValuesCSV } from '@/services/backup'
 import { clearAllData } from '@/services/database'
 import { useToastStore } from '@/stores/toastStore'
 import { formatRelativeTime } from '@/utils/format'
@@ -90,6 +90,24 @@ export function ProfilePage() {
       await addMember(memberName.trim(), memberColor)
     }
     setShowMemberModal(false)
+  }
+
+  const handleExportTransactionsCSV = async () => {
+    try {
+      await exportTransactionsCSV()
+      addToast('거래내역 CSV가 내보내졌습니다.', 'success')
+    } catch {
+      addToast('CSV 내보내기에 실패했습니다.', 'error')
+    }
+  }
+
+  const handleExportAssetValuesCSV = async () => {
+    try {
+      await exportAssetValuesCSV()
+      addToast('자산가치 CSV가 내보내졌습니다.', 'success')
+    } catch {
+      addToast('CSV 내보내기에 실패했습니다.', 'error')
+    }
   }
 
   const MEMBER_COLORS = ['#3B82F6', '#EC4899', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#06B6D4', '#6366F1']
@@ -200,6 +218,22 @@ export function ProfilePage() {
               <Button variant="secondary" size="sm" onClick={handleImportBackup} leftIcon={<Upload className="w-4 h-4" />}>
                 복원
               </Button>
+            </div>
+          </Card>
+          <Card className="!p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">CSV 내보내기</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">거래내역 또는 자산가치를 Excel 호환 CSV로 내보내기</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="secondary" size="sm" onClick={handleExportTransactionsCSV} leftIcon={<FileSpreadsheet className="w-4 h-4" />}>
+                  거래
+                </Button>
+                <Button variant="secondary" size="sm" onClick={handleExportAssetValuesCSV} leftIcon={<FileSpreadsheet className="w-4 h-4" />}>
+                  자산
+                </Button>
+              </div>
             </div>
           </Card>
           <Card className="!p-4">

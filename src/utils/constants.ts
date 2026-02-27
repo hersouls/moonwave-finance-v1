@@ -86,6 +86,6 @@ export const DEFAULT_TRANSACTION_CATEGORIES = {
 export const BACKUP_CONFIG = {
   CURRENT_VERSION: '1.0.0',
   SUPPORTED_VERSIONS: ['1.0.0'],
-  APP_NAME: '자산관리',
+  APP_NAME: 'Moonwave Finance',
   FILE_PREFIX: 'Finance_Backup',
 } as const

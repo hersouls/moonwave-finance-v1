@@ -25,7 +25,7 @@ export function LedgerPage() {
   const setSelectedMonth = useTransactionStore((s) => s.setSelectedMonth)
   const openTransactionCreateModal = useUIStore((s) => s.openTransactionCreateModal)
 
-  const { filtered, summary, filters, setTypeFilter } = useTransactionFilters(transactions)
+  const { filtered, summary, filters, setTypeFilter, setSearchQuery } = useTransactionFilters(transactions)
 
   useEffect(() => {
     const init = async () => {
@@ -76,6 +76,8 @@ export function LedgerPage() {
       <TransactionFilters
         activeType={filters.type}
         onTypeChange={setTypeFilter}
+        searchQuery={filters.searchQuery}
+        onSearchChange={setSearchQuery}
       />
 
       {/* Category Breakdown */}

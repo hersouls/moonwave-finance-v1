@@ -4,6 +4,9 @@ import { Plus, ArrowRight } from 'lucide-react'
 import { useAssetStore } from '@/stores/assetStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useMemberStore } from '@/stores/memberStore'
+import { useBudgetStore } from '@/stores/budgetStore'
+import { useGoalStore } from '@/stores/goalStore'
+import { useTransactionStore } from '@/stores/transactionStore'
 import { useAssetStats, useCategoryBreakdown } from '@/hooks/useAssetStats'
 import { NetWorthCard } from './NetWorthCard'
 import { AssetLiabilityBreakdown } from './AssetLiabilityBreakdown'
@@ -12,6 +15,8 @@ import { AssetAllocationChart } from './AssetAllocationChart'
 import { DailyChangeChart } from './DailyChangeChart'
 import { MemberSummaryCards } from './MemberSummaryCards'
 import { DashboardSkeleton } from './DashboardSkeleton'
+import { BudgetOverviewCard } from '@/components/budget/BudgetOverviewCard'
+import { GoalCard } from '@/components/goals/GoalCard'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Card } from '@/components/ui/Card'
 import { useUIStore } from '@/stores/uiStore'
@@ -24,7 +29,11 @@ export function DashboardPage() {
   const loadAll = useAssetStore((s) => s.loadAll)
   const loadValues = useDailyValueStore((s) => s.loadValues)
   const loadMembers = useMemberStore((s) => s.loadMembers)
+  const loadBudgets = useBudgetStore((s) => s.loadBudgets)
+  const loadGoals = useGoalStore((s) => s.loadGoals)
+  const loadTransactions = useTransactionStore((s) => s.loadAll)
   const items = useAssetStore((s) => s.items)
+  const activeGoals = useGoalStore((s) => s.getActiveGoals)()
 
   const stats = useAssetStats()
   const assetBreakdown = useCategoryBreakdown('asset')
@@ -33,7 +42,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     const init = async () => {
-      await Promise.all([loadAll(), loadValues(), loadMembers()])
+      await Promise.all([loadAll(), loadValues(), loadMembers(), loadBudgets(), loadGoals(), loadTransactions()])
       setIsLoading(false)
     }
     init()
@@ -143,6 +152,29 @@ export function DashboardPage() {
           </Card>
         )}
       </div>
+
+      {/* Budget Overview */}
+      <BudgetOverviewCard />
+
+      {/* Active Goals */}
+      {activeGoals.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">진행 중인 목표</h3>
+            <button
+              onClick={() => navigate('/profile')}
+              className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
+            >
+              전체보기 <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {activeGoals.slice(0, 4).map((goal) => (
+              <GoalCard key={goal.id} goal={goal} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Member Breakdown */}
       <MemberSummaryCards />

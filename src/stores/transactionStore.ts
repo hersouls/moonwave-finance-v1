@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import type { Transaction, TransactionCategory, TransactionType } from '@/lib/types'
+import type { Transaction, TransactionCategory, TransactionType, RepeatPattern } from '@/lib/types'
 import * as db from '@/services/database'
+import { processRecurringTransactions } from '@/services/recurringEngine'
 import { useUndoStore } from './undoStore'
 import { useToastStore } from './toastStore'
 import { getCurrentMonthString } from '@/lib/dateUtils'
@@ -24,7 +25,10 @@ interface TransactionState {
     categoryId: number | null
     date: string
     memo?: string
+    isRecurring?: boolean
+    recurPattern?: RepeatPattern
   }) => Promise<number>
+  processRecurring: () => Promise<void>
   updateTransaction: (id: number, updates: Partial<Transaction>) => Promise<void>
   deleteTransaction: (id: number) => Promise<void>
 
@@ -47,6 +51,7 @@ export const useTransactionStore = create<TransactionState>()(
           set({ transactions, isLoading: false })
         } catch (err) {
           console.error('Failed to load transactions:', err)
+          useToastStore.getState().addToast('거래 데이터를 불러오는데 실패했습니다.', 'error')
           set({ isLoading: false })
         }
       },
@@ -64,8 +69,13 @@ export const useTransactionStore = create<TransactionState>()(
             db.getAllTransactionCategories(),
           ])
           set({ transactions, categories, isLoading: false })
+          // Process recurring transactions silently in the background
+          processRecurringTransactions().then((created) => {
+            if (created > 0) get().loadTransactions()
+          }).catch(() => {})
         } catch (err) {
           console.error('Failed to load ledger data:', err)
+          useToastStore.getState().addToast('거래 데이터를 불러오는데 실패했습니다.', 'error')
           set({ isLoading: false })
         }
       },
@@ -79,7 +89,8 @@ export const useTransactionStore = create<TransactionState>()(
         const now = new Date().toISOString()
         const id = await db.addTransaction({
           ...data,
-          isRecurring: false,
+          isRecurring: data.isRecurring ?? false,
+          recurPattern: data.recurPattern,
           syncId: crypto.randomUUID(),
           createdAt: now,
           updatedAt: now,
@@ -88,6 +99,13 @@ export const useTransactionStore = create<TransactionState>()(
         const typeLabel = data.type === 'income' ? '수입' : '지출'
         useToastStore.getState().addToast(`${typeLabel}이 기록되었습니다.`, 'success')
         return id
+      },
+
+      processRecurring: async () => {
+        const created = await processRecurringTransactions()
+        if (created > 0) {
+          await get().loadTransactions()
+        }
       },
 
       updateTransaction: async (id, updates) => {

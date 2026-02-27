@@ -6,6 +6,8 @@ import type {
   DailyValue,
   TransactionCategory,
   Transaction,
+  Budget,
+  FinancialGoal,
 } from '@/lib/types'
 
 class FinanceDatabase extends Dexie {
@@ -15,6 +17,8 @@ class FinanceDatabase extends Dexie {
   dailyValues!: Table<DailyValue>
   transactionCategories!: Table<TransactionCategory>
   transactions!: Table<Transaction>
+  budgets!: Table<Budget>
+  goals!: Table<FinancialGoal>
 
   constructor() {
     super('MoonwaveFinance')
@@ -25,6 +29,17 @@ class FinanceDatabase extends Dexie {
       dailyValues: '++id, syncId, assetItemId, date, [assetItemId+date]',
       transactionCategories: '++id, syncId, name, type, sortOrder',
       transactions: '++id, syncId, memberId, type, categoryId, date',
+    })
+
+    this.version(2).stores({
+      members: '++id, syncId, name, sortOrder',
+      assetCategories: '++id, syncId, name, type, sortOrder',
+      assetItems: '++id, syncId, memberId, categoryId, type, isActive, sortOrder',
+      dailyValues: '++id, syncId, assetItemId, date, [assetItemId+date]',
+      transactionCategories: '++id, syncId, name, type, sortOrder',
+      transactions: '++id, syncId, memberId, type, categoryId, date, isRecurring, recurSourceId',
+      budgets: '++id, syncId, categoryId, month',
+      goals: '++id, syncId, targetDate',
     })
   }
 }
@@ -287,6 +302,58 @@ export async function getDailyValueBySyncId(syncId: string): Promise<DailyValue 
   return db.dailyValues.where('syncId').equals(syncId).first()
 }
 
+// ─── Budget CRUD ─────────────────────────────────
+export async function getAllBudgets(): Promise<Budget[]> {
+  return db.budgets.toArray()
+}
+
+export async function getBudgetsByMonth(month: string): Promise<Budget[]> {
+  return db.budgets.where('month').equals(month).toArray()
+}
+
+export async function setBudget(categoryId: number, month: string, amount: number): Promise<void> {
+  const now = new Date().toISOString()
+  const existing = await db.budgets.where({ categoryId, month }).first()
+  if (existing) {
+    await db.budgets.update(existing.id!, { amount, updatedAt: now })
+  } else {
+    await db.budgets.add({
+      categoryId,
+      month,
+      amount,
+      syncId: crypto.randomUUID(),
+      createdAt: now,
+      updatedAt: now,
+    } as Budget)
+  }
+}
+
+export async function deleteBudget(id: number): Promise<void> {
+  await db.budgets.delete(id)
+}
+
+// ─── Goal CRUD ───────────────────────────────────
+export async function getAllGoals(): Promise<FinancialGoal[]> {
+  return db.goals.toArray()
+}
+
+export async function addGoal(goal: Omit<FinancialGoal, 'id'>): Promise<number> {
+  return db.goals.add(goal as FinancialGoal) as Promise<number>
+}
+
+export async function updateGoal(id: number, updates: Partial<FinancialGoal>): Promise<void> {
+  await db.goals.update(id, { ...updates, updatedAt: new Date().toISOString() })
+}
+
+export async function deleteGoal(id: number): Promise<void> {
+  await db.goals.delete(id)
+}
+
+// ─── Recurring Transaction Helpers ───────────────
+export async function getRecurringTransactions(): Promise<Transaction[]> {
+  return db.transactions.where('isRecurring').equals(1).toArray()
+}
+
 // ─── Bulk Operations ───────────────────────────────
 export async function clearAllData(): Promise<void> {
   await db.members.clear()
@@ -295,6 +362,8 @@ export async function clearAllData(): Promise<void> {
   await db.dailyValues.clear()
   await db.transactionCategories.clear()
   await db.transactions.clear()
+  await db.budgets.clear()
+  await db.goals.clear()
 
   const now = new Date().toISOString()
   await db.members.bulkAdd([

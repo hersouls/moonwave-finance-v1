@@ -8,6 +8,8 @@ import { NetWorthTrendChart } from '@/components/dashboard/NetWorthTrendChart'
 import { AssetAllocationChart } from '@/components/dashboard/AssetAllocationChart'
 import { DailyChangeChart } from '@/components/dashboard/DailyChangeChart'
 import { MemberSummaryCards } from '@/components/dashboard/MemberSummaryCards'
+import { IncomeExpenseTrendChart } from './IncomeExpenseTrendChart'
+import { SavingsRateChart } from './SavingsRateChart'
 import { ReportsSkeleton } from './ReportsSkeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Card } from '@/components/ui/Card'
@@ -88,6 +90,12 @@ export function ReportsPage() {
       </div>
 
       <DailyChangeChart />
+
+      {/* Income/Expense Trend + Savings Rate */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <IncomeExpenseTrendChart />
+        <SavingsRateChart />
+      </div>
 
       {/* Member Summary */}
       <MemberSummaryCards />

@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
@@ -13,7 +14,7 @@ interface AssetItemCardProps {
   type: 'asset' | 'liability'
 }
 
-export function AssetItemCard({ itemId, name, categoryId, type }: AssetItemCardProps) {
+function AssetItemCardInner({ itemId, name, categoryId, type }: AssetItemCardProps) {
   const navigate = useNavigate()
   const categories = useAssetStore((s) => s.categories)
   const values = useDailyValueStore((s) => s.values)
@@ -69,3 +70,5 @@ export function AssetItemCard({ itemId, name, categoryId, type }: AssetItemCardP
     </Card>
   )
 }
+
+export const AssetItemCard = memo(AssetItemCardInner)
