@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import type { Transaction, TransactionCategory, TransactionType, RepeatPattern } from '@/lib/types'
+import type { Transaction, TransactionCategory, TransactionType, RepeatPattern, PaymentMethod } from '@/lib/types'
 import * as db from '@/services/database'
 import { processRecurringTransactions } from '@/services/recurringEngine'
 import { useUndoStore } from './undoStore'
@@ -25,6 +25,8 @@ interface TransactionState {
     categoryId: number | null
     date: string
     memo?: string
+    paymentMethod?: PaymentMethod
+    paymentMethodDetail?: string
     isRecurring?: boolean
     recurPattern?: RepeatPattern
   }) => Promise<number>
@@ -124,6 +126,8 @@ export const useTransactionStore = create<TransactionState>()(
                 memo: prev.memo,
                 date: prev.date,
                 type: prev.type,
+                paymentMethod: prev.paymentMethod,
+                paymentMethodDetail: prev.paymentMethodDetail,
               })
               await get().loadTransactions()
             },

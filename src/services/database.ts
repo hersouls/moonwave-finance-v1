@@ -41,6 +41,17 @@ class FinanceDatabase extends Dexie {
       budgets: '++id, syncId, categoryId, month',
       goals: '++id, syncId, targetDate',
     })
+
+    this.version(3).stores({
+      members: '++id, syncId, name, sortOrder',
+      assetCategories: '++id, syncId, name, type, sortOrder',
+      assetItems: '++id, syncId, memberId, categoryId, type, isActive, sortOrder',
+      dailyValues: '++id, syncId, assetItemId, date, [assetItemId+date]',
+      transactionCategories: '++id, syncId, name, type, sortOrder',
+      transactions: '++id, syncId, memberId, type, categoryId, date, isRecurring, recurSourceId, paymentMethod',
+      budgets: '++id, syncId, categoryId, month',
+      goals: '++id, syncId, targetDate',
+    })
   }
 }
 

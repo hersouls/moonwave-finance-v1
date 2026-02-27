@@ -10,6 +10,7 @@ import { DailyChangeChart } from '@/components/dashboard/DailyChangeChart'
 import { MemberSummaryCards } from '@/components/dashboard/MemberSummaryCards'
 import { IncomeExpenseTrendChart } from './IncomeExpenseTrendChart'
 import { SavingsRateChart } from './SavingsRateChart'
+import { PeriodComparisonCard } from './PeriodComparisonCard'
 import { ReportsSkeleton } from './ReportsSkeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Card } from '@/components/ui/Card'
@@ -96,6 +97,9 @@ export function ReportsPage() {
         <IncomeExpenseTrendChart />
         <SavingsRateChart />
       </div>
+
+      {/* Period Comparison */}
+      <PeriodComparisonCard />
 
       {/* Member Summary */}
       <MemberSummaryCards />

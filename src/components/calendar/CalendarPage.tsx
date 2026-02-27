@@ -5,10 +5,14 @@ import { computeDailySummaries } from '@/lib/calendarUtils'
 import { CalendarGrid } from './CalendarGrid'
 import { CalendarSkeleton } from './CalendarSkeleton'
 import { TransactionCard } from '@/components/ledger/TransactionCard'
+import { TransactionFormModal } from '@/components/ledger/TransactionFormModal'
 import { IconButton } from '@/components/ui/Button'
+import { FAB } from '@/components/ui/FAB'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
+import { useUIStore } from '@/stores/uiStore'
+import { getTodayString } from '@/lib/dateUtils'
 import * as db from '@/services/database'
 import type { Transaction } from '@/lib/types'
 
@@ -21,6 +25,18 @@ export function CalendarPage() {
   const loadMembers = useMemberStore((s) => s.loadMembers)
   const { days, monthLabel, monthString, goToPreviousMonth, goToNextMonth, goToToday } = useCalendar()
 
+  // Create modal state
+  const isCreateOpen = useUIStore((s) => s.isTransactionCreateModalOpen)
+  const closeCreate = useUIStore((s) => s.closeTransactionCreateModal)
+  const prefillDate = useUIStore((s) => s.transactionPrefillDate)
+  const openCreateWithDate = useUIStore((s) => s.openTransactionCreateModalWithDate)
+
+  // Edit modal state
+  const isEditOpen = useUIStore((s) => s.isTransactionEditModalOpen)
+  const editingId = useUIStore((s) => s.editingTransactionId)
+  const closeEdit = useUIStore((s) => s.closeTransactionEditModal)
+  const editingTransaction = editingId ? monthTransactions.find(t => t.id === editingId) : undefined
+
   useEffect(() => {
     const init = async () => {
       await Promise.all([loadCategories(), loadMembers()])
@@ -29,13 +45,21 @@ export function CalendarPage() {
     init()
   }, [])
 
+  const fetchTransactions = async () => {
+    const txns = await db.getTransactionsByMonth(monthString)
+    setMonthTransactions(txns)
+  }
+
   useEffect(() => {
-    const fetchTransactions = async () => {
-      const txns = await db.getTransactionsByMonth(monthString)
-      setMonthTransactions(txns)
-    }
     fetchTransactions()
   }, [monthString])
+
+  // Reload after modal closes
+  useEffect(() => {
+    if (!isCreateOpen && !isEditOpen) {
+      fetchTransactions()
+    }
+  }, [isCreateOpen, isEditOpen])
 
   const summaries = useMemo(
     () => computeDailySummaries(monthTransactions),
@@ -103,6 +127,24 @@ export function CalendarPage() {
           size="sm"
         />
       )}
+
+      <FAB onClick={() => openCreateWithDate(selectedDate || getTodayString())} label="거래 기록" />
+
+      {/* Create Modal */}
+      <TransactionFormModal
+        mode="create"
+        open={isCreateOpen}
+        onClose={closeCreate}
+        initialDate={prefillDate}
+      />
+
+      {/* Edit Modal */}
+      <TransactionFormModal
+        mode="edit"
+        open={isEditOpen}
+        onClose={closeEdit}
+        initialData={editingTransaction}
+      />
     </div>
   )
 }

@@ -3,13 +3,15 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useUIStore } from '@/stores/uiStore'
+import { useBudgetStore } from '@/stores/budgetStore'
 import { useTransactionFilters } from '@/hooks/useTransactionFilters'
 import { TransactionCard } from './TransactionCard'
-import { TransactionCreateModal } from './TransactionCreateModal'
+import { TransactionFormModal } from './TransactionFormModal'
 import { TransactionFilters } from './TransactionFilters'
 import { MonthlySummary } from './MonthlySummary'
 import { CategoryBreakdown } from './CategoryBreakdown'
 import { LedgerEmptyState } from './LedgerEmptyState'
+import { BudgetOverviewCard } from '@/components/budget/BudgetOverviewCard'
 import { FAB } from '@/components/ui/FAB'
 import { IconButton } from '@/components/ui/Button'
 import { SkeletonCard } from '@/components/ui/Skeleton'
@@ -21,11 +23,35 @@ export function LedgerPage() {
   const loadAll = useTransactionStore((s) => s.loadAll)
   const loadMembers = useMemberStore((s) => s.loadMembers)
   const transactions = useTransactionStore((s) => s.transactions)
+  const categories = useTransactionStore((s) => s.categories)
   const selectedMonth = useTransactionStore((s) => s.selectedMonth)
   const setSelectedMonth = useTransactionStore((s) => s.setSelectedMonth)
+  const members = useMemberStore((s) => s.members)
   const openTransactionCreateModal = useUIStore((s) => s.openTransactionCreateModal)
 
-  const { filtered, summary, filters, setTypeFilter, setSearchQuery } = useTransactionFilters(transactions)
+  // Create modal state
+  const isCreateOpen = useUIStore((s) => s.isTransactionCreateModalOpen)
+  const closeCreate = useUIStore((s) => s.closeTransactionCreateModal)
+  const prefillDate = useUIStore((s) => s.transactionPrefillDate)
+
+  // Edit modal state
+  const isEditOpen = useUIStore((s) => s.isTransactionEditModalOpen)
+  const editingId = useUIStore((s) => s.editingTransactionId)
+  const closeEdit = useUIStore((s) => s.closeTransactionEditModal)
+
+  const editingTransaction = editingId ? transactions.find(t => t.id === editingId) : undefined
+
+  // Budget
+  const loadBudgets = useBudgetStore((s) => s.loadBudgets)
+  const budgets = useBudgetStore((s) => s.budgets)
+
+  const {
+    filtered, summary, filters,
+    setTypeFilter, setSearchQuery,
+    setMemberFilter, setPaymentMethodFilter,
+    setMinAmount, setMaxAmount,
+    resetFilters, activeFilterCount,
+  } = useTransactionFilters(transactions)
 
   useEffect(() => {
     const init = async () => {
@@ -34,6 +60,10 @@ export function LedgerPage() {
     }
     init()
   }, [])
+
+  useEffect(() => {
+    loadBudgets(selectedMonth)
+  }, [selectedMonth])
 
   if (isLoading) {
     return (
@@ -72,18 +102,32 @@ export function LedgerPage() {
         netSavings={summary.netSavings}
       />
 
-      {/* Type Filter */}
+      {/* Budget Overview */}
+      {budgets.length > 0 && <BudgetOverviewCard />}
+
+      {/* Type Filter + Advanced Filters */}
       <TransactionFilters
         activeType={filters.type}
         onTypeChange={setTypeFilter}
         searchQuery={filters.searchQuery}
         onSearchChange={setSearchQuery}
+        members={members}
+        categories={categories}
+        memberFilter={filters.memberId}
+        onMemberChange={setMemberFilter}
+        paymentMethodFilter={filters.paymentMethod}
+        onPaymentMethodChange={setPaymentMethodFilter}
+        minAmount={filters.minAmount}
+        maxAmount={filters.maxAmount}
+        onAmountRangeChange={(min, max) => { setMinAmount(min); setMaxAmount(max) }}
+        activeFilterCount={activeFilterCount}
+        onReset={resetFilters}
       />
 
       {/* Category Breakdown */}
       {transactions.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <CategoryBreakdown transactions={transactions} type="expense" />
+          <CategoryBreakdown transactions={transactions} type="expense" budgets={budgets} />
           <CategoryBreakdown transactions={transactions} type="income" />
         </div>
       )}
@@ -100,7 +144,22 @@ export function LedgerPage() {
       )}
 
       <FAB onClick={openTransactionCreateModal} label="거래 기록" />
-      <TransactionCreateModal />
+
+      {/* Create Modal */}
+      <TransactionFormModal
+        mode="create"
+        open={isCreateOpen}
+        onClose={closeCreate}
+        initialDate={prefillDate}
+      />
+
+      {/* Edit Modal */}
+      <TransactionFormModal
+        mode="edit"
+        open={isEditOpen}
+        onClose={closeEdit}
+        initialData={editingTransaction}
+      />
     </div>
   )
 }

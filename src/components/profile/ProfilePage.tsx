@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { User, Users, Database, Download, Upload, Trash2, Plus, Edit3, FileSpreadsheet } from 'lucide-react'
+import { User, Users, Database, Download, Upload, Trash2, Plus, Edit3, FileSpreadsheet, Cloud, CloudOff, Loader2, CheckCircle2, AlertCircle, FlaskConical } from 'lucide-react'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuthStore, type SyncStatus } from '@/stores/authStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { Card } from '@/components/ui/Card'
 import { Button, IconButton } from '@/components/ui/Button'
@@ -9,12 +9,17 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/Dialog'
 import { exportBackup, importBackup, exportTransactionsCSV, exportAssetValuesCSV } from '@/services/backup'
 import { clearAllData } from '@/services/database'
+import { seedTestDataAndUpload } from '@/services/seedTestData'
 import { useToastStore } from '@/stores/toastStore'
 import { formatRelativeTime } from '@/utils/format'
 
 export function ProfilePage() {
   const settings = useSettingsStore((s) => s.settings)
   const user = useAuthStore((s) => s.user)
+  const syncStatus = useAuthStore((s) => s.syncStatus)
+  const lastSyncTime = useAuthStore((s) => s.lastSyncTime)
+  const manualUpload = useAuthStore((s) => s.manualUpload)
+  const manualDownload = useAuthStore((s) => s.manualDownload)
   const members = useMemberStore((s) => s.members)
   const loadMembers = useMemberStore((s) => s.loadMembers)
   const addMember = useMemberStore((s) => s.addMember)
@@ -24,6 +29,7 @@ export function ProfilePage() {
   const setLastBackupDate = useSettingsStore((s) => s.setLastBackupDate)
 
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [isSeeding, setIsSeeding] = useState(false)
   const [showMemberModal, setShowMemberModal] = useState(false)
   const [editingMember, setEditingMember] = useState<{ id: number; name: string; color: string } | null>(null)
   const [memberName, setMemberName] = useState('')
@@ -141,6 +147,83 @@ export function ProfilePage() {
         </Card>
       </section>
 
+      {/* Cloud Sync Section */}
+      {user && (
+        <section>
+          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+            <Cloud className="w-5 h-5" />
+            클라우드 동기화
+          </h2>
+          <div className="space-y-3">
+            <Card className="!p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <SyncStatusIndicator status={syncStatus} />
+                  <div>
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                      {syncStatus === 'syncing' && '동기화 중...'}
+                      {syncStatus === 'synced' && '동기화 완료'}
+                      {syncStatus === 'error' && '동기화 오류'}
+                      {syncStatus === 'idle' && '동기화 대기'}
+                    </p>
+                    {lastSyncTime && (
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                        마지막 동기화: {formatRelativeTime(lastSyncTime)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Card>
+            <div className="grid grid-cols-2 gap-3">
+              <Card className="!p-4">
+                <div className="flex flex-col items-center gap-2">
+                  <Upload className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center">로컬 → 클라우드</p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        await manualUpload()
+                        addToast('클라우드에 업로드 완료', 'success')
+                      } catch {
+                        addToast('업로드에 실패했습니다.', 'error')
+                      }
+                    }}
+                    disabled={syncStatus === 'syncing'}
+                  >
+                    업로드
+                  </Button>
+                </div>
+              </Card>
+              <Card className="!p-4">
+                <div className="flex flex-col items-center gap-2">
+                  <Download className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center">클라우드 → 로컬</p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        await manualDownload()
+                        addToast('클라우드에서 다운로드 완료', 'success')
+                        loadMembers()
+                      } catch {
+                        addToast('다운로드에 실패했습니다.', 'error')
+                      }
+                    }}
+                    disabled={syncStatus === 'syncing'}
+                  >
+                    다운로드
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Members Section */}
       <section>
         <div className="flex items-center justify-between mb-3">
@@ -236,6 +319,38 @@ export function ProfilePage() {
               </div>
             </div>
           </Card>
+          {user && (
+            <Card className="!p-4 border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-amber-700 dark:text-amber-400">테스트 데이터 생성</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">가상의 자산/거래/예산/목표 데이터를 생성하고 Firebase에 업로드합니다</p>
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={isSeeding}
+                  onClick={async () => {
+                    if (!user) return
+                    setIsSeeding(true)
+                    try {
+                      await seedTestDataAndUpload(user.uid)
+                      addToast('테스트 데이터가 생성되고 Firebase에 업로드되었습니다.', 'success')
+                      loadMembers()
+                    } catch (err) {
+                      console.error('Seed failed:', err)
+                      addToast('테스트 데이터 생성에 실패했습니다.', 'error')
+                    } finally {
+                      setIsSeeding(false)
+                    }
+                  }}
+                  leftIcon={isSeeding ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
+                >
+                  {isSeeding ? '생성 중...' : '생성'}
+                </Button>
+              </div>
+            </Card>
+          )}
           <Card className="!p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -302,4 +417,17 @@ export function ProfilePage() {
       />
     </div>
   )
+}
+
+function SyncStatusIndicator({ status }: { status: SyncStatus }) {
+  if (status === 'syncing') {
+    return <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
+  }
+  if (status === 'synced') {
+    return <CheckCircle2 className="w-5 h-5 text-green-500" />
+  }
+  if (status === 'error') {
+    return <AlertCircle className="w-5 h-5 text-red-500" />
+  }
+  return <CloudOff className="w-5 h-5 text-zinc-400" />
 }

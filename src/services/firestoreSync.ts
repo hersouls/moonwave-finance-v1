@@ -3,6 +3,7 @@ import {
   doc,
   getDocs,
   writeBatch,
+  deleteDoc,
   onSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore'
@@ -22,28 +23,34 @@ import type {
 
 type SyncableTable = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals'
 
-function getUserDocPath(uid: string, tableName: SyncableTable, syncId: string): string {
-  return `users/${uid}/${tableName}/${syncId}`
-}
+const BATCH_LIMIT = 499
 
 function getUserCollectionPath(uid: string, tableName: SyncableTable): string {
   return `users/${uid}/${tableName}`
 }
 
+function getUserDocPath(uid: string, tableName: SyncableTable, syncId: string): string {
+  return `users/${uid}/${tableName}/${syncId}`
+}
+
+// Split records into Firestore batch-safe chunks and upload
 async function uploadTable<T extends { syncId?: string }>(
   uid: string,
   tableName: SyncableTable,
   records: T[]
 ): Promise<void> {
-  const batch = writeBatch(firestore)
-  for (const record of records) {
-    if (!record.syncId) continue
-    const ref = doc(firestore, getUserDocPath(uid, tableName, record.syncId))
-    const data = { ...record }
-    delete (data as Record<string, unknown>).id
-    batch.set(ref, data, { merge: true })
+  const validRecords = records.filter(r => r.syncId)
+  for (let i = 0; i < validRecords.length; i += BATCH_LIMIT) {
+    const chunk = validRecords.slice(i, i + BATCH_LIMIT)
+    const batch = writeBatch(firestore)
+    for (const record of chunk) {
+      const ref = doc(firestore, getUserDocPath(uid, tableName, record.syncId!))
+      const data = { ...record }
+      delete (data as Record<string, unknown>).id
+      batch.set(ref, data, { merge: true })
+    }
+    await batch.commit()
   }
-  await batch.commit()
 }
 
 async function downloadTable<T>(
@@ -77,9 +84,34 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries: number = 3): Promi
   throw lastError
 }
 
+// Ensure syncIds exist locally and persist them back to IndexedDB
+async function ensureAndPersistSyncIds() {
+  const tables = [
+    { table: db.members, name: 'members' },
+    { table: db.assetCategories, name: 'assetCategories' },
+    { table: db.assetItems, name: 'assetItems' },
+    { table: db.dailyValues, name: 'dailyValues' },
+    { table: db.transactionCategories, name: 'transactionCategories' },
+    { table: db.transactions, name: 'transactions' },
+    { table: db.budgets, name: 'budgets' },
+    { table: db.goals, name: 'goals' },
+  ] as const
+
+  for (const { table } of tables) {
+    const records = await table.toArray()
+    for (const record of records) {
+      if (!record.syncId && record.id != null) {
+        await (table as typeof db.members).update(record.id as number, { syncId: crypto.randomUUID() })
+      }
+    }
+  }
+}
+
 export async function fullUpload(uid: string): Promise<void> {
   useAuthStore.getState().setSyncStatus('syncing')
   try {
+    await ensureAndPersistSyncIds()
+
     const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals] = await Promise.all([
       db.members.toArray(),
       db.assetCategories.toArray(),
@@ -91,25 +123,15 @@ export async function fullUpload(uid: string): Promise<void> {
       db.goals.toArray(),
     ])
 
-    // Ensure all records have syncIds
-    const ensuredMembers = members.map(ensureSyncId)
-    const ensuredAssetCategories = assetCategories.map(ensureSyncId)
-    const ensuredAssetItems = assetItems.map(ensureSyncId)
-    const ensuredDailyValues = dailyValues.map(ensureSyncId)
-    const ensuredTransactionCategories = transactionCategories.map(ensureSyncId)
-    const ensuredTransactions = transactions.map(ensureSyncId)
-    const ensuredBudgets = budgets.map(ensureSyncId)
-    const ensuredGoals = goals.map(ensureSyncId)
-
     await withRetry(() => Promise.all([
-      uploadTable(uid, 'members', ensuredMembers),
-      uploadTable(uid, 'assetCategories', ensuredAssetCategories),
-      uploadTable(uid, 'assetItems', ensuredAssetItems),
-      uploadTable(uid, 'dailyValues', ensuredDailyValues),
-      uploadTable(uid, 'transactionCategories', ensuredTransactionCategories),
-      uploadTable(uid, 'transactions', ensuredTransactions),
-      uploadTable(uid, 'budgets', ensuredBudgets),
-      uploadTable(uid, 'goals', ensuredGoals),
+      uploadTable(uid, 'members', members.map(ensureSyncId)),
+      uploadTable(uid, 'assetCategories', assetCategories.map(ensureSyncId)),
+      uploadTable(uid, 'assetItems', assetItems.map(ensureSyncId)),
+      uploadTable(uid, 'dailyValues', dailyValues.map(ensureSyncId)),
+      uploadTable(uid, 'transactionCategories', transactionCategories.map(ensureSyncId)),
+      uploadTable(uid, 'transactions', transactions.map(ensureSyncId)),
+      uploadTable(uid, 'budgets', budgets.map(ensureSyncId)),
+      uploadTable(uid, 'goals', goals.map(ensureSyncId)),
     ]))
 
     useAuthStore.getState().setSyncStatus('synced')
@@ -134,7 +156,6 @@ export async function fullDownload(uid: string): Promise<void> {
       downloadTable<FinancialGoal>(uid, 'goals'),
     ]))
 
-    // Clear and repopulate local DB
     await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals], async () => {
       await db.members.clear()
       await db.assetCategories.clear()
@@ -164,20 +185,69 @@ export async function fullDownload(uid: string): Promise<void> {
 }
 
 export async function syncOnLogin(uid: string): Promise<void> {
-  // Check if cloud has data
   const colRef = collection(firestore, getUserCollectionPath(uid, 'members'))
   const snapshot = await getDocs(colRef)
 
   if (snapshot.empty) {
-    // Cloud is empty, upload local data
     await fullUpload(uid)
   } else {
-    // Cloud has data, download to local (cloud wins strategy for simplicity)
     await fullDownload(uid)
   }
 }
 
+// Delete a single document from Firestore
+export async function deleteFromCloud(uid: string, tableName: SyncableTable, syncId: string): Promise<void> {
+  try {
+    await deleteDoc(doc(firestore, getUserDocPath(uid, tableName, syncId)))
+  } catch (err) {
+    console.error(`[sync] delete ${tableName}/${syncId} failed:`, err)
+  }
+}
+
+// Upload a single record to Firestore
+export async function uploadSingleRecord<T extends { syncId?: string }>(
+  uid: string,
+  tableName: SyncableTable,
+  record: T
+): Promise<void> {
+  if (!record.syncId) return
+  try {
+    const batch = writeBatch(firestore)
+    const ref = doc(firestore, getUserDocPath(uid, tableName, record.syncId))
+    const data = { ...record }
+    delete (data as Record<string, unknown>).id
+    batch.set(ref, data, { merge: true })
+    await batch.commit()
+  } catch (err) {
+    console.error(`[sync] upload ${tableName}/${record.syncId} failed:`, err)
+  }
+}
+
+// ─── Real-time Sync ───────────────────────────────────
+
 let unsubscribers: Unsubscribe[] = []
+let realtimeSyncPaused = false
+
+export function pauseRealtimeSync() { realtimeSyncPaused = true }
+export function resumeRealtimeSync() { realtimeSyncPaused = false }
+
+type DexieTable = typeof db.members | typeof db.assetCategories | typeof db.assetItems |
+  typeof db.dailyValues | typeof db.transactionCategories | typeof db.transactions |
+  typeof db.budgets | typeof db.goals
+
+function getLocalTable(tableName: SyncableTable): DexieTable {
+  const map: Record<SyncableTable, DexieTable> = {
+    members: db.members,
+    assetCategories: db.assetCategories,
+    assetItems: db.assetItems,
+    dailyValues: db.dailyValues,
+    transactionCategories: db.transactionCategories,
+    transactions: db.transactions,
+    budgets: db.budgets,
+    goals: db.goals,
+  }
+  return map[tableName]
+}
 
 export function startRealtimeSync(uid: string): void {
   stopRealtimeSync()
@@ -186,15 +256,42 @@ export function startRealtimeSync(uid: string): void {
 
   for (const tableName of tables) {
     const colRef = collection(firestore, getUserCollectionPath(uid, tableName))
-    const unsub = onSnapshot(colRef, (snapshot) => {
-      // Handle real-time updates from other devices
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === 'modified' || change.type === 'added') {
-          // In a production app, we'd merge changes intelligently
-          // For now, we just log that changes are detected
-          console.debug(`[sync] ${tableName}: ${change.type}`, change.doc.id)
+    const unsub = onSnapshot(colRef, async (snapshot) => {
+      if (realtimeSyncPaused) return
+
+      const localTable = getLocalTable(tableName)
+
+      for (const change of snapshot.docChanges()) {
+        const cloudData = change.doc.data()
+        const syncId = cloudData.syncId as string | undefined
+
+        if (!syncId) continue
+
+        try {
+          if (change.type === 'added' || change.type === 'modified') {
+            // Check if record exists locally by syncId
+            const existing = await (localTable as typeof db.members).where('syncId').equals(syncId).first()
+            if (existing) {
+              // Update only if cloud is newer
+              const cloudUpdatedAt = cloudData.updatedAt as string
+              if (cloudUpdatedAt && cloudUpdatedAt > (existing.updatedAt || '')) {
+                const { ...updates } = cloudData
+                await (localTable as typeof db.members).update(existing.id!, updates)
+              }
+            } else {
+              // Add new record from cloud
+              await (localTable as typeof db.members).add(cloudData as Member)
+            }
+          } else if (change.type === 'removed') {
+            const existing = await (localTable as typeof db.members).where('syncId').equals(syncId).first()
+            if (existing) {
+              await (localTable as typeof db.members).delete(existing.id!)
+            }
+          }
+        } catch (err) {
+          console.error(`[sync] real-time ${tableName} ${change.type} error:`, err)
         }
-      })
+      }
     }, (err) => {
       console.error(`[sync] ${tableName} listener error:`, err)
     })

@@ -5,7 +5,7 @@ import { Header } from './components/layout/Header'
 import { Footer } from './components/layout/Footer'
 import { BottomNav } from './components/layout/BottomNav'
 import { MobileNav } from './components/layout/MobileNav'
-import { SettingsModal } from './components/layout/SettingsModal'
+import { SettingsModal } from './components/settings/SettingsModal'
 import { FAQModal } from './components/layout/FAQModal'
 import { TermsModal } from './components/layout/TermsModal'
 import { UndoToast } from './components/ui/UndoToast'
@@ -19,6 +19,7 @@ import { useUIStore } from './stores/uiStore'
 import { useAuthStore } from './stores/authStore'
 import { useUndoStore } from './stores/undoStore'
 import { useOnlineStatus } from './hooks/useOnlineStatus'
+import { useAutoSync } from './hooks/useAutoSync'
 
 export default function App() {
   const [isInitialized, setIsInitialized] = useState(false)
@@ -27,6 +28,7 @@ export default function App() {
   const hasCompletedOnboarding = useSettingsStore((s) => s.settings.hasCompletedOnboarding)
   const setHasCompletedOnboarding = useSettingsStore((s) => s.setHasCompletedOnboarding)
   const isOnline = useOnlineStatus()
+  useAutoSync()
 
   useEffect(() => {
     const initApp = async () => {

@@ -1,11 +1,13 @@
 import { memo } from 'react'
 import { clsx } from 'clsx'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Pencil } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
+import { useUIStore } from '@/stores/uiStore'
 import { formatKRW } from '@/utils/format'
 import { formatDate } from '@/lib/dateUtils'
+import { getPaymentMethodLabel } from '@/utils/paymentMethod'
 import type { Transaction } from '@/lib/types'
 
 interface TransactionCardProps {
@@ -16,9 +18,11 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
   const categories = useTransactionStore((s) => s.categories)
   const members = useMemberStore((s) => s.members)
   const deleteTransaction = useTransactionStore((s) => s.deleteTransaction)
+  const openTransactionEditModal = useUIStore((s) => s.openTransactionEditModal)
 
   const category = categories.find(c => c.id === transaction.categoryId)
   const member = transaction.memberId ? members.find(m => m.id === transaction.memberId) : null
+  const pmLabel = getPaymentMethodLabel(transaction.paymentMethod)
 
   const isIncome = transaction.type === 'income'
 
@@ -42,13 +46,18 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
 
         {/* Transaction details */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
               {category?.name || '미분류'}
             </span>
             {member && (
               <span className="text-xs px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
                 {member.name}
+              </span>
+            )}
+            {pmLabel && (
+              <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                {pmLabel}
               </span>
             )}
           </div>
@@ -71,6 +80,15 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
             {isIncome ? '+' : '-'}{formatKRW(transaction.amount)}
           </p>
         </div>
+
+        {/* Edit button */}
+        <button
+          onClick={(e) => { e.stopPropagation(); openTransactionEditModal(transaction.id!) }}
+          className="p-1.5 rounded-lg text-zinc-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors flex-shrink-0"
+          aria-label="수정"
+        >
+          <Pencil className="w-4 h-4" />
+        </button>
 
         {/* Delete button */}
         <button

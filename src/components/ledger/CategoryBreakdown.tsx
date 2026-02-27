@@ -1,14 +1,15 @@
 import { useMemo } from 'react'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { formatKoreanUnit, formatPercent } from '@/utils/format'
-import type { Transaction } from '@/lib/types'
+import type { Transaction, Budget } from '@/lib/types'
 
 interface CategoryBreakdownProps {
   transactions: Transaction[]
   type: 'income' | 'expense'
+  budgets?: Budget[]
 }
 
-export function CategoryBreakdown({ transactions, type }: CategoryBreakdownProps) {
+export function CategoryBreakdown({ transactions, type, budgets }: CategoryBreakdownProps) {
   const categories = useTransactionStore((s) => s.categories)
 
   const breakdown = useMemo(() => {
@@ -25,16 +26,18 @@ export function CategoryBreakdown({ transactions, type }: CategoryBreakdownProps
     return Array.from(totals.entries())
       .map(([catId, total]) => {
         const cat = catId ? categories.find(c => c.id === catId) : null
+        const budget = catId && budgets ? budgets.find(b => b.categoryId === catId) : null
         return {
           categoryId: catId,
           name: cat?.name || '미분류',
           color: cat?.color || '#71717a',
           total,
           percentage: grandTotal > 0 ? (total / grandTotal) * 100 : 0,
+          budget: budget?.amount ?? null,
         }
       })
       .sort((a, b) => b.total - a.total)
-  }, [transactions, type, categories])
+  }, [transactions, type, categories, budgets])
 
   if (breakdown.length === 0) return null
 
@@ -66,6 +69,23 @@ export function CategoryBreakdown({ transactions, type }: CategoryBreakdownProps
                 style={{ width: `${b.percentage}%`, backgroundColor: b.color }}
               />
             </div>
+            {b.budget !== null && (
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                  예산 {formatKoreanUnit(b.budget)}
+                </span>
+                <span className={`text-[10px] font-medium tabular-nums ${
+                  b.total > b.budget
+                    ? 'text-red-500 dark:text-red-400'
+                    : 'text-emerald-500 dark:text-emerald-400'
+                }`}>
+                  {b.total > b.budget
+                    ? `${formatKoreanUnit(b.total - b.budget)} 초과`
+                    : `${formatKoreanUnit(b.budget - b.total)} 남음`
+                  }
+                </span>
+              </div>
+            )}
           </div>
         ))}
       </div>

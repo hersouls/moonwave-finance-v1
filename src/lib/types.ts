@@ -53,6 +53,7 @@ export interface DailyValue {
 
 // ─── Transaction Types ─────────────────────────────
 export type TransactionType = 'income' | 'expense'
+export type PaymentMethod = 'cash' | 'credit_card' | 'debit_card' | 'bank_transfer' | 'other'
 
 export interface TransactionCategory {
   id?: number
@@ -84,6 +85,8 @@ export interface Transaction {
   categoryId: number | null
   date: string
   memo?: string
+  paymentMethod?: PaymentMethod
+  paymentMethodDetail?: string
   isRecurring: boolean
   recurPattern?: RepeatPattern
   recurSourceId?: number
@@ -130,6 +133,13 @@ export interface UserProfile {
   avatarUrl?: string
 }
 
+export interface NotificationSettings {
+  budgetAlert: boolean
+  budgetThreshold: number
+  transactionReminder: boolean
+  reminderTime: string
+}
+
 export interface Settings {
   theme: ThemeMode
   colorPalette: ColorPalette
@@ -143,6 +153,7 @@ export interface Settings {
     lastSyncDate?: string
   }
   highContrastMode: boolean
+  notifications: NotificationSettings
 }
 
 // ─── Computed Types ────────────────────────────────

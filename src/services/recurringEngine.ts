@@ -53,6 +53,8 @@ export async function processRecurringTransactions(): Promise<number> {
         categoryId: source.categoryId,
         date,
         memo: source.memo,
+        paymentMethod: source.paymentMethod,
+        paymentMethodDetail: source.paymentMethodDetail,
         isRecurring: false,
         recurSourceId: source.id!,
         createdAt: now,

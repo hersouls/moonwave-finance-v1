@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ThemeMode, ColorPalette, Settings } from '@/lib/types'
+import type { ThemeMode, ColorPalette, Settings, NotificationSettings } from '@/lib/types'
 
 interface SettingsState {
   settings: Settings
@@ -16,6 +16,7 @@ interface SettingsState {
   updateProfile: (profile: Partial<{ name: string; avatarUrl?: string }>) => void
   setCurrencyUnit: (unit: 'won' | 'dollar') => void
   toggleHighContrast: () => void
+  updateNotificationSettings: (updates: Partial<NotificationSettings>) => void
 }
 
 export function applyTheme(theme: ThemeMode) {
@@ -45,6 +46,12 @@ export const useSettingsStore = create<SettingsState>()(
         lastBackupDate: undefined,
         googleDrive: { isConnected: false, autoBackup: false },
         highContrastMode: false,
+        notifications: {
+          budgetAlert: false,
+          budgetThreshold: 80,
+          transactionReminder: false,
+          reminderTime: '21:00',
+        },
       },
 
       initialize: () => {
@@ -67,6 +74,15 @@ export const useSettingsStore = create<SettingsState>()(
         }
         if (newSettings.highContrastMode === undefined) {
           newSettings.highContrastMode = false
+          hasChanges = true
+        }
+        if (newSettings.notifications === undefined) {
+          newSettings.notifications = {
+            budgetAlert: false,
+            budgetThreshold: 80,
+            transactionReminder: false,
+            reminderTime: '21:00',
+          }
           hasChanges = true
         }
         if (hasChanges) set({ settings: newSettings })
@@ -133,6 +149,15 @@ export const useSettingsStore = create<SettingsState>()(
 
       toggleHighContrast: () => {
         set((state) => ({ settings: { ...state.settings, highContrastMode: !state.settings.highContrastMode } }))
+      },
+
+      updateNotificationSettings: (updates) => {
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            notifications: { ...state.settings.notifications, ...updates },
+          },
+        }))
       },
     }),
     {

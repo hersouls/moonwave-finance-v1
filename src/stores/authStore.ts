@@ -9,6 +9,7 @@ import {
   type User,
 } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
+import { syncOnLogin, startRealtimeSync, stopRealtimeSync } from '@/services/firestoreSync'
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
 
@@ -29,6 +30,8 @@ interface AuthState {
   initialize: () => void
   login: () => Promise<void>
   logout: () => Promise<void>
+  manualUpload: () => Promise<void>
+  manualDownload: () => Promise<void>
   setSyncStatus: (status: SyncStatus) => void
   setLastSyncTime: (time: string) => void
 }
@@ -42,7 +45,7 @@ function toAuthUser(u: User): AuthUser {
   }
 }
 
-export const useAuthStore = create<AuthState>()((set) => ({
+export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   isLoading: false,
   isSigningIn: false,
@@ -62,8 +65,19 @@ export const useAuthStore = create<AuthState>()((set) => ({
 
     onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        set({ user: toAuthUser(firebaseUser), isLoading: false, isSigningIn: false, syncStatus: 'synced' })
+        const authUser = toAuthUser(firebaseUser)
+        set({ user: authUser, isLoading: false, isSigningIn: false })
+
+        // Sync on login: upload local if cloud empty, download cloud if exists
+        try {
+          await syncOnLogin(authUser.uid)
+          startRealtimeSync(authUser.uid)
+        } catch (err) {
+          console.error('Sync on login failed:', err)
+          set({ syncStatus: 'error' })
+        }
       } else {
+        stopRealtimeSync()
         set({ user: null, isLoading: false, syncStatus: 'idle', lastSyncTime: null })
       }
     })
@@ -98,12 +112,27 @@ export const useAuthStore = create<AuthState>()((set) => ({
 
   logout: async () => {
     try {
+      stopRealtimeSync()
       await signOut(auth)
       set({ user: null, syncStatus: 'idle', lastSyncTime: null, error: null })
     } catch (err) {
       const message = err instanceof Error ? err.message : '로그아웃에 실패했습니다.'
       set({ error: message })
     }
+  },
+
+  manualUpload: async () => {
+    const { user } = get()
+    if (!user) return
+    const { fullUpload } = await import('@/services/firestoreSync')
+    await fullUpload(user.uid)
+  },
+
+  manualDownload: async () => {
+    const { user } = get()
+    if (!user) return
+    const { fullDownload } = await import('@/services/firestoreSync')
+    await fullDownload(user.uid)
   },
 
   setSyncStatus: (status) => set({ syncStatus: status }),

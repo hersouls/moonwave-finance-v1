@@ -14,6 +14,10 @@ interface UIState {
   isAssetCreateModalOpen: boolean
   isLiabilityCreateModalOpen: boolean
   isTransactionCreateModalOpen: boolean
+  transactionPrefillDate: string | null
+
+  isTransactionEditModalOpen: boolean
+  editingTransactionId: number | null
 
   activeMemberFilter: number | null
   activeCategoryFilter: number | null
@@ -46,6 +50,9 @@ interface UIState {
   closeLiabilityCreateModal: () => void
   openTransactionCreateModal: () => void
   closeTransactionCreateModal: () => void
+  openTransactionCreateModalWithDate: (date: string) => void
+  openTransactionEditModal: (id: number) => void
+  closeTransactionEditModal: () => void
 
   setActiveMemberFilter: (id: number | null) => void
   setActiveCategoryFilter: (id: number | null) => void
@@ -69,6 +76,10 @@ export const useUIStore = create<UIState>()(
       isAssetCreateModalOpen: false,
       isLiabilityCreateModalOpen: false,
       isTransactionCreateModalOpen: false,
+      transactionPrefillDate: null,
+
+      isTransactionEditModalOpen: false,
+      editingTransactionId: null,
 
       activeMemberFilter: null,
       activeCategoryFilter: null,
@@ -98,7 +109,10 @@ export const useUIStore = create<UIState>()(
       openLiabilityCreateModal: () => set({ isLiabilityCreateModalOpen: true }),
       closeLiabilityCreateModal: () => set({ isLiabilityCreateModalOpen: false }),
       openTransactionCreateModal: () => set({ isTransactionCreateModalOpen: true }),
-      closeTransactionCreateModal: () => set({ isTransactionCreateModalOpen: false }),
+      closeTransactionCreateModal: () => set({ isTransactionCreateModalOpen: false, transactionPrefillDate: null }),
+      openTransactionCreateModalWithDate: (date: string) => set({ isTransactionCreateModalOpen: true, transactionPrefillDate: date }),
+      openTransactionEditModal: (id: number) => set({ isTransactionEditModalOpen: true, editingTransactionId: id }),
+      closeTransactionEditModal: () => set({ isTransactionEditModalOpen: false, editingTransactionId: null }),
 
       setActiveMemberFilter: (id) => set({ activeMemberFilter: id }),
       setActiveCategoryFilter: (id) => set({ activeCategoryFilter: id }),
