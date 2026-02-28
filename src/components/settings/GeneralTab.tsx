@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { Sun, Moon, Monitor, Info, HelpCircle, FileText } from 'lucide-react'
 import { clsx } from 'clsx'
-import { COLOR_PALETTES, BACKUP_CONFIG } from '@/utils/constants'
+import { COLOR_PALETTES, BACKUP_CONFIG, UI_DELAYS } from '@/utils/constants'
 import { useUIStore } from '@/stores/uiStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { Button } from '@/components/ui/Button'
 import { ToggleSwitch } from './ToggleSwitch'
+import { formatRelativeTime } from '@/utils/format'
 import type { Settings, ThemeMode, ColorPalette } from '@/lib/types'
 
 interface GeneralTabProps {
@@ -21,15 +24,18 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
   const openFAQModal = useUIStore((s) => s.openFAQModal)
   const openTermsModal = useUIStore((s) => s.openTermsModal)
   const closeSettingsModal = useUIStore((s) => s.closeSettingsModal)
+  const exchangeRate = useSettingsStore((s) => s.settings.exchangeRate)
+  const setExchangeRate = useSettingsStore((s) => s.setExchangeRate)
+  const [rateInput, setRateInput] = useState(String(exchangeRate?.usdToKrw ?? 1350))
 
   const handleOpenFAQ = () => {
     closeSettingsModal()
-    setTimeout(() => openFAQModal(), 150)
+    setTimeout(() => openFAQModal(), UI_DELAYS.MODAL_TRANSITION)
   }
 
   const handleOpenTerms = () => {
     closeSettingsModal()
-    setTimeout(() => openTermsModal(), 150)
+    setTimeout(() => openTermsModal(), UI_DELAYS.MODAL_TRANSITION)
   }
 
   return (
@@ -124,6 +130,36 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
               {label}
             </button>
           ))}
+        </div>
+      </section>
+
+      {/* Exchange Rate */}
+      <section>
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">USD/KRW 환율</h3>
+        <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl space-y-3">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-nowrap">1 USD =</span>
+            <input
+              type="number"
+              value={rateInput}
+              onChange={(e) => setRateInput(e.target.value)}
+              onBlur={() => {
+                const v = Number(rateInput)
+                if (v > 0) setExchangeRate(v)
+                else setRateInput(String(exchangeRate?.usdToKrw ?? 1350))
+              }}
+              className="w-32 px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 tabular-nums"
+            />
+            <span className="text-sm text-zinc-600 dark:text-zinc-400">KRW</span>
+          </div>
+          {exchangeRate?.lastUpdated && (
+            <p className="text-xs text-zinc-400 dark:text-zinc-500">
+              마지막 업데이트: {formatRelativeTime(exchangeRate.lastUpdated)}
+            </p>
+          )}
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+            구독 합산 금액 계산에 사용됩니다
+          </p>
         </div>
       </section>
 

@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type CurrentView = 'dashboard' | 'assets' | 'liabilities' | 'ledger' | 'calendar' | 'reports' | 'profile'
+export type CurrentView = 'dashboard' | 'assets' | 'liabilities' | 'ledger' | 'calendar' | 'reports' | 'profile' | 'subscriptions'
 
 interface UIState {
   isSidebarOpen: boolean
@@ -24,6 +24,10 @@ interface UIState {
 
   isSearchModalOpen: boolean
 
+  isSubscriptionCreateModalOpen: boolean
+  isSubscriptionEditModalOpen: boolean
+  editingSubscriptionId: number | null
+
   isSelectionMode: boolean
   selectedItemIds: Set<number>
 
@@ -43,6 +47,11 @@ interface UIState {
 
   openSearchModal: () => void
   closeSearchModal: () => void
+
+  openSubscriptionCreateModal: () => void
+  closeSubscriptionCreateModal: () => void
+  openSubscriptionEditModal: (id: number) => void
+  closeSubscriptionEditModal: () => void
 
   openAssetCreateModal: () => void
   closeAssetCreateModal: () => void
@@ -73,6 +82,9 @@ export const useUIStore = create<UIState>()(
       isFAQModalOpen: false,
       isTermsModalOpen: false,
       isSearchModalOpen: false,
+      isSubscriptionCreateModalOpen: false,
+      isSubscriptionEditModalOpen: false,
+      editingSubscriptionId: null,
       isAssetCreateModalOpen: false,
       isLiabilityCreateModalOpen: false,
       isTransactionCreateModalOpen: false,
@@ -103,6 +115,11 @@ export const useUIStore = create<UIState>()(
 
       openSearchModal: () => set({ isSearchModalOpen: true }),
       closeSearchModal: () => set({ isSearchModalOpen: false }),
+
+      openSubscriptionCreateModal: () => set({ isSubscriptionCreateModalOpen: true }),
+      closeSubscriptionCreateModal: () => set({ isSubscriptionCreateModalOpen: false }),
+      openSubscriptionEditModal: (id: number) => set({ isSubscriptionEditModalOpen: true, editingSubscriptionId: id }),
+      closeSubscriptionEditModal: () => set({ isSubscriptionEditModalOpen: false, editingSubscriptionId: null }),
 
       openAssetCreateModal: () => set({ isAssetCreateModalOpen: true }),
       closeAssetCreateModal: () => set({ isAssetCreateModalOpen: false }),

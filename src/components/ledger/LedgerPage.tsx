@@ -16,9 +16,11 @@ import { FAB } from '@/components/ui/FAB'
 import { IconButton } from '@/components/ui/Button'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { formatMonthLabel, getPreviousMonth, getNextMonth } from '@/lib/dateUtils'
+import { ErrorEmptyState } from '@/components/ui/EmptyState'
 
 export function LedgerPage() {
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const loadAll = useTransactionStore((s) => s.loadAll)
   const loadMembers = useMemberStore((s) => s.loadMembers)
@@ -53,13 +55,19 @@ export function LedgerPage() {
     resetFilters, activeFilterCount,
   } = useTransactionFilters(transactions)
 
-  useEffect(() => {
-    const init = async () => {
+  const loadData = async () => {
+    setError(null)
+    setIsLoading(true)
+    try {
       await Promise.all([loadAll(), loadMembers()])
+    } catch {
+      setError('데이터를 불러오는데 실패했습니다.')
+    } finally {
       setIsLoading(false)
     }
-    init()
-  }, [])
+  }
+
+  useEffect(() => { loadData() }, [])
 
   useEffect(() => {
     loadBudgets(selectedMonth)
@@ -76,6 +84,14 @@ export function LedgerPage() {
         {Array.from({ length: 5 }).map((_, i) => (
           <SkeletonCard key={i} />
         ))}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 lg:p-6">
+        <ErrorEmptyState description={error} onRetry={loadData} />
       </div>
     )
   }

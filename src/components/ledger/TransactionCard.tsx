@@ -1,7 +1,8 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import { clsx } from 'clsx'
 import { Trash2, Pencil } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -15,6 +16,7 @@ interface TransactionCardProps {
 }
 
 function TransactionCardInner({ transaction }: TransactionCardProps) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const categories = useTransactionStore((s) => s.categories)
   const members = useMemberStore((s) => s.members)
   const deleteTransaction = useTransactionStore((s) => s.deleteTransaction)
@@ -92,13 +94,26 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
 
         {/* Delete button */}
         <button
-          onClick={(e) => { e.stopPropagation(); deleteTransaction(transaction.id!) }}
+          onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true) }}
           className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
           aria-label="삭제"
         >
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={() => {
+          deleteTransaction(transaction.id!)
+          setShowDeleteConfirm(false)
+        }}
+        title="거래 삭제"
+        description={`이 거래(${formatKRW(transaction.amount)})를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`}
+        confirmText="삭제"
+        variant="danger"
+      />
     </Card>
   )
 }

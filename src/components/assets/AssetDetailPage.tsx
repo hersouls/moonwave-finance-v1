@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { formatKRW, formatChange } from '@/utils/format'
 import { getMonthDates, formatMonthLabel, getPreviousMonth, getNextMonth } from '@/lib/dateUtils'
 import { clsx } from 'clsx'
+import { UI_DELAYS } from '@/utils/constants'
 
 export function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -53,7 +54,7 @@ export function AssetDetailPage() {
     const val = values.find(v => v.assetItemId === itemId && v.date === date)
     setEditingCell(key)
     setEditValue(val ? String(val.value) : '')
-    setTimeout(() => inputRef.current?.focus(), 0)
+    setTimeout(() => inputRef.current?.focus(), UI_DELAYS.NAV)
   }, [itemId, values])
 
   const handleCellSave = useCallback(async (date: string) => {
@@ -70,7 +71,7 @@ export function AssetDetailPage() {
       handleCellSave(date)
       // Move to next day
       if (dateIndex < dates.length - 1) {
-        setTimeout(() => handleCellClick(dates[dateIndex + 1]), 50)
+        setTimeout(() => handleCellClick(dates[dateIndex + 1]), UI_DELAYS.NAV)
       }
     } else if (e.key === 'Escape') {
       setEditingCell(null)
@@ -79,16 +80,17 @@ export function AssetDetailPage() {
       e.preventDefault()
       handleCellSave(date)
       if (e.shiftKey && dateIndex > 0) {
-        setTimeout(() => handleCellClick(dates[dateIndex - 1]), 50)
+        setTimeout(() => handleCellClick(dates[dateIndex - 1]), UI_DELAYS.NAV)
       } else if (!e.shiftKey && dateIndex < dates.length - 1) {
-        setTimeout(() => handleCellClick(dates[dateIndex + 1]), 50)
+        setTimeout(() => handleCellClick(dates[dateIndex + 1]), UI_DELAYS.NAV)
       }
     }
   }, [handleCellSave, handleCellClick, dates])
 
   const handleDelete = async () => {
+    const targetPath = item?.type === 'liability' ? '/liabilities' : '/assets'
     await deleteItem(itemId)
-    navigate(item?.type === 'liability' ? '/liabilities' : '/assets')
+    navigate(targetPath)
   }
 
   if (isLoading) {

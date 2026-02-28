@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Menu, Moon, Sun, Monitor, Wallet, Settings, Search } from 'lucide-react'
+import { Menu, Moon, Sun, Monitor, Settings, Search } from 'lucide-react'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -53,17 +53,15 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-30 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-lg border-b border-zinc-200 dark:border-zinc-800">
+    <header className="sticky top-0 z-[var(--z-header)] bg-white/80 dark:bg-zinc-950/80 backdrop-blur-lg border-b border-zinc-200 dark:border-zinc-800">
       <nav className="flex items-center justify-between h-16 px-4 lg:px-6">
         <div className="flex items-center gap-3">
           <button onClick={openMobileMenu} className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" aria-label="메뉴 열기">
             <Menu className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
           </button>
           <Link to="/" className="lg:hidden flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-              <Wallet className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-zinc-900 dark:text-zinc-100">자산관리</span>
+            <img src="/icons/icon-192.png" alt="FIN" className="w-8 h-8 rounded-lg" />
+            <span className="font-bold text-zinc-900 dark:text-zinc-100">FIN</span>
           </Link>
           <h2 className="hidden lg:block text-lg font-semibold text-zinc-900 dark:text-zinc-100">{getPageTitle()}</h2>
         </div>

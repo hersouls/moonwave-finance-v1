@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
+import { KOREAN_UNIT_EUK, KOREAN_UNIT_MAN } from '@/utils/format'
 
 ChartJS.register(
   CategoryScale,
@@ -82,8 +83,8 @@ export const commonLineOptions = {
         font: { size: 11 },
         callback: function(value: number | string) {
           const num = typeof value === 'string' ? parseFloat(value) : value
-          if (Math.abs(num) >= 100_000_000) return Math.round(num / 100_000_000) + '억'
-          if (Math.abs(num) >= 10_000) return Math.round(num / 10_000) + '만'
+          if (Math.abs(num) >= KOREAN_UNIT_EUK) return Math.round(num / KOREAN_UNIT_EUK) + '억'
+          if (Math.abs(num) >= KOREAN_UNIT_MAN) return Math.round(num / KOREAN_UNIT_MAN) + '만'
           return String(num)
         },
       },

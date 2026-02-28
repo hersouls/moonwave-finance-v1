@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
-  Wallet,
+  Landmark,
   CreditCard,
   Receipt,
   Calendar,
+  Repeat,
   BarChart3,
   HelpCircle,
   Settings,
@@ -27,10 +28,11 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'dashboard', label: '대시보드', icon: LayoutDashboard, type: 'link', path: '/' },
-  { id: 'assets', label: '자산', icon: Wallet, type: 'link', path: '/assets' },
+  { id: 'assets', label: '자산', icon: Landmark, type: 'link', path: '/assets' },
   { id: 'liabilities', label: '부채', icon: CreditCard, type: 'link', path: '/liabilities' },
   { id: 'ledger', label: '가계부', icon: Receipt, type: 'link', path: '/ledger' },
   { id: 'calendar', label: '캘린더', icon: Calendar, type: 'link', path: '/calendar' },
+  { id: 'subscriptions', label: '구독', icon: Repeat, type: 'link', path: '/subscriptions' },
   { id: 'reports', label: '분석', icon: BarChart3, type: 'link', path: '/reports' },
   { id: 'faq', label: 'FAQ', icon: HelpCircle, type: 'modal' },
   { id: 'settings', label: '설정', icon: Settings, type: 'modal' },
@@ -69,7 +71,7 @@ export function Sidebar() {
   return (
     <aside
       className={clsx(
-        'hidden lg:flex flex-col fixed h-screen bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 transition-all duration-300 z-40',
+        'hidden lg:flex flex-col fixed h-screen bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 transition-all duration-300 z-[var(--z-sidebar)]',
         isSidebarOpen ? 'w-64' : 'w-16'
       )}
       role="complementary"
@@ -83,13 +85,11 @@ export function Sidebar() {
           className="flex items-center gap-3 overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-lg"
           aria-label="대시보드로 이동"
         >
-          <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Wallet className="w-5 h-5 text-white" aria-hidden="true" />
-          </div>
+          <img src="/icons/icon-192.png" alt="FIN" className="w-8 h-8 rounded-lg flex-shrink-0" />
           {isSidebarOpen && (
             <div className="flex flex-col min-w-0">
               <span className="font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                자산관리
+                FIN
               </span>
             </div>
           )}

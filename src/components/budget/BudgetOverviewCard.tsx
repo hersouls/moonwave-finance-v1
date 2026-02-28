@@ -1,4 +1,4 @@
-import { Wallet } from 'lucide-react'
+import { PiggyBank } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { BudgetProgressBar } from './BudgetProgressBar'
 import { formatKoreanUnit } from '@/utils/format'
@@ -15,7 +15,7 @@ export function BudgetOverviewCard() {
   return (
     <Card className="!p-5">
       <div className="flex items-center gap-2 mb-3">
-        <Wallet className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+        <PiggyBank className="w-4 h-4 text-primary-600 dark:text-primary-400" />
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">이번 달 예산</h3>
       </div>
       <div className="space-y-3">

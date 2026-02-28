@@ -83,9 +83,65 @@ export const DEFAULT_TRANSACTION_CATEGORIES = {
   ],
 } as const
 
+export const SUBSCRIPTION_CATEGORIES = [
+  { value: 'entertainment' as const, label: '엔터테인먼트', icon: 'Tv', color: '#EF4444' },
+  { value: 'productivity' as const, label: '생산성', icon: 'Laptop', color: '#3B82F6' },
+  { value: 'cloud' as const, label: '클라우드', icon: 'Cloud', color: '#06B6D4' },
+  { value: 'music' as const, label: '음악', icon: 'Music', color: '#10B981' },
+  { value: 'news' as const, label: '뉴스/미디어', icon: 'Newspaper', color: '#F59E0B' },
+  { value: 'education' as const, label: '교육', icon: 'GraduationCap', color: '#8B5CF6' },
+  { value: 'health' as const, label: '건강/피트니스', icon: 'Heart', color: '#EC4899' },
+  { value: 'shopping' as const, label: '쇼핑/멤버십', icon: 'ShoppingBag', color: '#F97316' },
+  { value: 'finance' as const, label: '금융', icon: 'Landmark', color: '#6366F1' },
+  { value: 'other' as const, label: '기타', icon: 'MoreHorizontal', color: '#71717A' },
+] as const
+
+export const SUBSCRIPTION_PRESETS = {
+  KRW: [
+    { name: '넷플릭스', amount: 17000, cycle: 'monthly' as const, category: 'entertainment' as const, color: '#E50914', icon: 'Tv' },
+    { name: '유튜브 프리미엄', amount: 14900, cycle: 'monthly' as const, category: 'entertainment' as const, color: '#FF0000', icon: 'Play' },
+    { name: '쿠팡플레이', amount: 4990, cycle: 'monthly' as const, category: 'entertainment' as const, color: '#1E88E5', icon: 'Tv' },
+    { name: '네이버 플러스', amount: 4900, cycle: 'monthly' as const, category: 'shopping' as const, color: '#03C75A', icon: 'ShoppingBag' },
+    { name: '멜론', amount: 10900, cycle: 'monthly' as const, category: 'music' as const, color: '#00CD3C', icon: 'Music' },
+    { name: '티빙', amount: 13900, cycle: 'monthly' as const, category: 'entertainment' as const, color: '#FF0558', icon: 'Tv' },
+    { name: '디즈니+', amount: 9900, cycle: 'monthly' as const, category: 'entertainment' as const, color: '#113CCF', icon: 'Tv' },
+    { name: '밀리의 서재', amount: 9900, cycle: 'monthly' as const, category: 'education' as const, color: '#FF6B00', icon: 'BookOpen' },
+    { name: '카카오톡 이모티콘+', amount: 4900, cycle: 'monthly' as const, category: 'entertainment' as const, color: '#FEE500', icon: 'Smile' },
+    { name: '웨이브', amount: 13900, cycle: 'monthly' as const, category: 'entertainment' as const, color: '#1C1C1C', icon: 'Tv' },
+  ],
+  USD: [
+    { name: 'ChatGPT Plus', amount: 20, cycle: 'monthly' as const, category: 'productivity' as const, color: '#10A37F', icon: 'Bot' },
+    { name: 'Claude Pro', amount: 20, cycle: 'monthly' as const, category: 'productivity' as const, color: '#D4A574', icon: 'Brain' },
+    { name: 'GitHub Copilot', amount: 10, cycle: 'monthly' as const, category: 'productivity' as const, color: '#24292E', icon: 'Code' },
+    { name: 'Cursor Pro', amount: 20, cycle: 'monthly' as const, category: 'productivity' as const, color: '#00D1FF', icon: 'Code2' },
+    { name: 'Notion', amount: 10, cycle: 'monthly' as const, category: 'productivity' as const, color: '#000000', icon: 'FileText' },
+    { name: 'Figma', amount: 12, cycle: 'monthly' as const, category: 'productivity' as const, color: '#F24E1E', icon: 'Palette' },
+    { name: 'Spotify', amount: 10.99, cycle: 'monthly' as const, category: 'music' as const, color: '#1DB954', icon: 'Music' },
+    { name: 'iCloud+', amount: 2.99, cycle: 'monthly' as const, category: 'cloud' as const, color: '#3693F3', icon: 'Cloud' },
+    { name: 'Google One', amount: 2.99, cycle: 'monthly' as const, category: 'cloud' as const, color: '#4285F4', icon: 'HardDrive' },
+    { name: 'Adobe CC', amount: 54.99, cycle: 'monthly' as const, category: 'productivity' as const, color: '#FF0000', icon: 'Layers' },
+  ],
+} as const
+
 export const BACKUP_CONFIG = {
-  CURRENT_VERSION: '1.1.0',
-  SUPPORTED_VERSIONS: ['1.0.0', '1.1.0'],
+  CURRENT_VERSION: '1.2.0',
+  SUPPORTED_VERSIONS: ['1.0.0', '1.1.0', '1.2.0'],
   APP_NAME: 'Moonwave Finance',
   FILE_PREFIX: 'Finance_Backup',
+} as const
+
+/** PWA service worker update check interval (10 minutes) */
+export const PWA_UPDATE_INTERVAL_MS = 10 * 60 * 1000
+
+/** PWA update banner dismiss duration (30 minutes) */
+export const PWA_DISMISS_DURATION_MS = 30 * 60 * 1000
+
+/** UI delay constants (ms) */
+export const UI_DELAYS = {
+  /** Short delay for navigation after state changes */
+  NAV: 50,
+  /** Modal transition delay to prevent animation conflicts */
+  MODAL_TRANSITION: 150,
+  /** Reload delay after data restore */
+  RELOAD: 1000,
 } as const

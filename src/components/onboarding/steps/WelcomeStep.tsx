@@ -1,4 +1,4 @@
-import { Wallet, TrendingUp, PieChart, Shield } from 'lucide-react'
+import { TrendingUp, PieChart, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
 interface WelcomeStepProps {
@@ -14,9 +14,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-full px-6 py-12">
-      <div className="w-16 h-16 bg-primary-500 rounded-2xl flex items-center justify-center mb-6">
-        <Wallet className="w-8 h-8 text-white" />
-      </div>
+      <img src="/icons/icon-192.png" alt="FIN" className="w-16 h-16 rounded-2xl mb-6" />
       <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">Moonwave Finance</h1>
       <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8 text-center">가족 자산을 한눈에 관리하세요</p>
 

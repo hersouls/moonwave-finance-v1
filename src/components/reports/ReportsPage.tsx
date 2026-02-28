@@ -12,13 +12,14 @@ import { IncomeExpenseTrendChart } from './IncomeExpenseTrendChart'
 import { SavingsRateChart } from './SavingsRateChart'
 import { PeriodComparisonCard } from './PeriodComparisonCard'
 import { ReportsSkeleton } from './ReportsSkeleton'
-import { EmptyState } from '@/components/ui/EmptyState'
+import { EmptyState, ErrorEmptyState } from '@/components/ui/EmptyState'
 import { Card } from '@/components/ui/Card'
 import { formatKoreanUnit, formatPercent } from '@/utils/format'
 import { clsx } from 'clsx'
 
 export function ReportsPage() {
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const loadAll = useAssetStore((s) => s.loadAll)
   const loadValues = useDailyValueStore((s) => s.loadValues)
@@ -27,15 +28,29 @@ export function ReportsPage() {
 
   const stats = useAssetStats()
 
-  useEffect(() => {
-    const init = async () => {
+  const loadData = async () => {
+    setError(null)
+    setIsLoading(true)
+    try {
       await Promise.all([loadAll(), loadValues(), loadMembers()])
+    } catch {
+      setError('데이터를 불러오는데 실패했습니다.')
+    } finally {
       setIsLoading(false)
     }
-    init()
-  }, [])
+  }
+
+  useEffect(() => { loadData() }, [])
 
   if (isLoading) return <ReportsSkeleton />
+
+  if (error) {
+    return (
+      <div className="p-4 lg:p-6">
+        <ErrorEmptyState description={error} onRetry={loadData} />
+      </div>
+    )
+  }
 
   if (items.length === 0) {
     return (

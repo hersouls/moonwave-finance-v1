@@ -15,6 +15,7 @@ interface DialogProps {
   children: ReactNode
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl'
   noPadding?: boolean
+  role?: 'dialog' | 'alertdialog'
 }
 
 const sizeStyles = {
@@ -29,9 +30,9 @@ const sizeStyles = {
   '5xl': 'sm:max-w-5xl',
 }
 
-export function Dialog({ open, onClose, children, size = 'lg', noPadding = false }: DialogProps) {
+export function Dialog({ open, onClose, children, size = 'lg', noPadding = false, role }: DialogProps) {
   return (
-    <HeadlessDialog open={open} onClose={onClose} className="relative z-50">
+    <HeadlessDialog open={open} onClose={onClose} className="relative z-[var(--z-overlay)]" role={role}>
       <DialogBackdrop
         transition
         className={clsx(

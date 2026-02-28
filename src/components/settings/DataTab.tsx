@@ -3,6 +3,7 @@ import {
   Cloud, CloudOff, Upload, Download, FileSpreadsheet,
   Loader2, CheckCircle2, AlertCircle, Database,
 } from 'lucide-react'
+import { UI_DELAYS } from '@/utils/constants'
 import { useAuthStore, type SyncStatus } from '@/stores/authStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useToastStore } from '@/stores/toastStore'
@@ -61,7 +62,7 @@ export function DataTab() {
       try {
         await importBackup(file)
         addToast('복원이 완료되었습니다. 페이지를 새로고침합니다.', 'success')
-        setTimeout(() => window.location.reload(), 1000)
+        setTimeout(() => window.location.reload(), UI_DELAYS.RELOAD)
       } catch {
         addToast('복원에 실패했습니다. 올바른 백업 파일인지 확인하세요.', 'error')
       } finally {

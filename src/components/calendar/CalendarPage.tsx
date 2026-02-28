@@ -8,7 +8,7 @@ import { TransactionCard } from '@/components/ledger/TransactionCard'
 import { TransactionFormModal } from '@/components/ledger/TransactionFormModal'
 import { IconButton } from '@/components/ui/Button'
 import { FAB } from '@/components/ui/FAB'
-import { EmptyState } from '@/components/ui/EmptyState'
+import { EmptyState, ErrorEmptyState } from '@/components/ui/EmptyState'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -18,6 +18,7 @@ import type { Transaction } from '@/lib/types'
 
 export function CalendarPage() {
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [monthTransactions, setMonthTransactions] = useState<Transaction[]>([])
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
@@ -37,13 +38,19 @@ export function CalendarPage() {
   const closeEdit = useUIStore((s) => s.closeTransactionEditModal)
   const editingTransaction = editingId ? monthTransactions.find(t => t.id === editingId) : undefined
 
-  useEffect(() => {
-    const init = async () => {
+  const loadData = async () => {
+    setError(null)
+    setIsLoading(true)
+    try {
       await Promise.all([loadCategories(), loadMembers()])
+    } catch {
+      setError('데이터를 불러오는데 실패했습니다.')
+    } finally {
       setIsLoading(false)
     }
-    init()
-  }, [])
+  }
+
+  useEffect(() => { loadData() }, [])
 
   const fetchTransactions = async () => {
     const txns = await db.getTransactionsByMonth(monthString)
@@ -72,6 +79,14 @@ export function CalendarPage() {
   }, [selectedDate, monthTransactions])
 
   if (isLoading) return <CalendarSkeleton />
+
+  if (error) {
+    return (
+      <div className="p-4 lg:p-6">
+        <ErrorEmptyState description={error} onRetry={loadData} />
+      </div>
+    )
+  }
 
   return (
     <div className="p-4 lg:p-6 space-y-4">

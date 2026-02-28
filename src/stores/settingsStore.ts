@@ -17,6 +17,7 @@ interface SettingsState {
   setCurrencyUnit: (unit: 'won' | 'dollar') => void
   toggleHighContrast: () => void
   updateNotificationSettings: (updates: Partial<NotificationSettings>) => void
+  setExchangeRate: (rate: number) => void
 }
 
 export function applyTheme(theme: ThemeMode) {
@@ -52,6 +53,9 @@ export const useSettingsStore = create<SettingsState>()(
           transactionReminder: false,
           reminderTime: '21:00',
         },
+        exchangeRate: {
+          usdToKrw: 1350,
+        },
       },
 
       initialize: () => {
@@ -83,6 +87,10 @@ export const useSettingsStore = create<SettingsState>()(
             transactionReminder: false,
             reminderTime: '21:00',
           }
+          hasChanges = true
+        }
+        if (!newSettings.exchangeRate) {
+          newSettings.exchangeRate = { usdToKrw: 1350 }
           hasChanges = true
         }
         if (hasChanges) set({ settings: newSettings })
@@ -156,6 +164,18 @@ export const useSettingsStore = create<SettingsState>()(
           settings: {
             ...state.settings,
             notifications: { ...state.settings.notifications, ...updates },
+          },
+        }))
+      },
+
+      setExchangeRate: (rate) => {
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            exchangeRate: {
+              usdToKrw: rate,
+              lastUpdated: new Date().toISOString(),
+            },
           },
         }))
       },

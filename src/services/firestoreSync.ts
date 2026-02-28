@@ -20,9 +20,10 @@ import type {
   Budget,
   FinancialGoal,
   PaymentMethodItem,
+  Subscription,
 } from '@/lib/types'
 
-type SyncableTable = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems'
+type SyncableTable = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions'
 
 const BATCH_LIMIT = 499
 
@@ -97,6 +98,7 @@ async function ensureAndPersistSyncIds() {
     { table: db.budgets, name: 'budgets' },
     { table: db.goals, name: 'goals' },
     { table: db.paymentMethodItems, name: 'paymentMethodItems' },
+    { table: db.subscriptions, name: 'subscriptions' },
   ] as const
 
   for (const { table } of tables) {
@@ -114,7 +116,7 @@ export async function fullUpload(uid: string): Promise<void> {
   try {
     await ensureAndPersistSyncIds()
 
-    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems] = await Promise.all([
+    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions] = await Promise.all([
       db.members.toArray(),
       db.assetCategories.toArray(),
       db.assetItems.toArray(),
@@ -124,6 +126,7 @@ export async function fullUpload(uid: string): Promise<void> {
       db.budgets.toArray(),
       db.goals.toArray(),
       db.paymentMethodItems.toArray(),
+      db.subscriptions.toArray(),
     ])
 
     await withRetry(() => Promise.all([
@@ -136,6 +139,7 @@ export async function fullUpload(uid: string): Promise<void> {
       uploadTable(uid, 'budgets', budgets.map(ensureSyncId)),
       uploadTable(uid, 'goals', goals.map(ensureSyncId)),
       uploadTable(uid, 'paymentMethodItems', paymentMethodItems.map(ensureSyncId)),
+      uploadTable(uid, 'subscriptions', subscriptions.map(ensureSyncId)),
     ]))
 
     useAuthStore.getState().setSyncStatus('synced')
@@ -149,7 +153,7 @@ export async function fullUpload(uid: string): Promise<void> {
 export async function fullDownload(uid: string): Promise<void> {
   useAuthStore.getState().setSyncStatus('syncing')
   try {
-    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems] = await withRetry(() => Promise.all([
+    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions] = await withRetry(() => Promise.all([
       downloadTable<Member>(uid, 'members'),
       downloadTable<AssetCategory>(uid, 'assetCategories'),
       downloadTable<AssetItem>(uid, 'assetItems'),
@@ -159,9 +163,10 @@ export async function fullDownload(uid: string): Promise<void> {
       downloadTable<Budget>(uid, 'budgets'),
       downloadTable<FinancialGoal>(uid, 'goals'),
       downloadTable<PaymentMethodItem>(uid, 'paymentMethodItems'),
+      downloadTable<Subscription>(uid, 'subscriptions'),
     ]))
 
-    await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems], async () => {
+    await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions], async () => {
       await db.members.clear()
       await db.assetCategories.clear()
       await db.assetItems.clear()
@@ -171,6 +176,7 @@ export async function fullDownload(uid: string): Promise<void> {
       await db.budgets.clear()
       await db.goals.clear()
       await db.paymentMethodItems.clear()
+      await db.subscriptions.clear()
 
       if (members.length > 0) await db.members.bulkAdd(members)
       if (assetCategories.length > 0) await db.assetCategories.bulkAdd(assetCategories)
@@ -181,6 +187,7 @@ export async function fullDownload(uid: string): Promise<void> {
       if (budgets.length > 0) await db.budgets.bulkAdd(budgets)
       if (goals.length > 0) await db.goals.bulkAdd(goals)
       if (paymentMethodItems.length > 0) await db.paymentMethodItems.bulkAdd(paymentMethodItems)
+      if (subscriptions.length > 0) await db.subscriptions.bulkAdd(subscriptions)
     })
 
     useAuthStore.getState().setSyncStatus('synced')
@@ -240,7 +247,7 @@ export function resumeRealtimeSync() { realtimeSyncPaused = false }
 
 type DexieTable = typeof db.members | typeof db.assetCategories | typeof db.assetItems |
   typeof db.dailyValues | typeof db.transactionCategories | typeof db.transactions |
-  typeof db.budgets | typeof db.goals | typeof db.paymentMethodItems
+  typeof db.budgets | typeof db.goals | typeof db.paymentMethodItems | typeof db.subscriptions
 
 function getLocalTable(tableName: SyncableTable): DexieTable {
   const map: Record<SyncableTable, DexieTable> = {
@@ -253,6 +260,7 @@ function getLocalTable(tableName: SyncableTable): DexieTable {
     budgets: db.budgets,
     goals: db.goals,
     paymentMethodItems: db.paymentMethodItems,
+    subscriptions: db.subscriptions,
   }
   return map[tableName]
 }
@@ -260,7 +268,7 @@ function getLocalTable(tableName: SyncableTable): DexieTable {
 export function startRealtimeSync(uid: string): void {
   stopRealtimeSync()
 
-  const tables: SyncableTable[] = ['members', 'assetCategories', 'assetItems', 'dailyValues', 'transactionCategories', 'transactions', 'budgets', 'goals', 'paymentMethodItems']
+  const tables: SyncableTable[] = ['members', 'assetCategories', 'assetItems', 'dailyValues', 'transactionCategories', 'transactions', 'budgets', 'goals', 'paymentMethodItems', 'subscriptions']
 
   for (const tableName of tables) {
     const colRef = collection(firestore, getUserCollectionPath(uid, tableName))

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { PWA_DISMISS_DURATION_MS } from '@/utils/constants'
 
 interface PwaUpdateState {
   isUpdateAvailable: boolean
@@ -12,8 +13,6 @@ interface PwaUpdateActions {
   acceptUpdate: () => void
 }
 
-const DISMISS_DURATION = 30 * 60 * 1000 // 30 minutes
-
 export const usePwaUpdateStore = create<PwaUpdateState & PwaUpdateActions>((set, get) => ({
   isUpdateAvailable: false,
   waitingWorker: null,
@@ -23,7 +22,7 @@ export const usePwaUpdateStore = create<PwaUpdateState & PwaUpdateActions>((set,
     const { dismissedAt } = get()
 
     // If dismissed recently, don't show again yet
-    if (dismissedAt && Date.now() - dismissedAt < DISMISS_DURATION) {
+    if (dismissedAt && Date.now() - dismissedAt < PWA_DISMISS_DURATION_MS) {
       // Store the worker reference for later re-display
       set({ waitingWorker: worker })
       return

@@ -1,4 +1,4 @@
-import { Wallet, CreditCard } from 'lucide-react'
+import { Landmark, CreditCard } from 'lucide-react'
 import { clsx } from 'clsx'
 import { formatKoreanUnit, formatPercent } from '@/utils/format'
 import type { AssetStats } from '@/lib/types'
@@ -16,7 +16,7 @@ export function AssetLiabilityBreakdown({ stats }: AssetLiabilityBreakdownProps)
       <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-5">
         <div className="flex items-center gap-3 mb-3">
           <div className="p-2.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-            <Wallet className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <Landmark className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">총 자산</span>
         </div>

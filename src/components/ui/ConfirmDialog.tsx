@@ -36,7 +36,7 @@ export function ConfirmDialog({
   const buttonVariant = variant === 'danger' ? 'danger' : 'primary'
 
   return (
-    <Dialog open={open} onClose={onClose} size="sm">
+    <Dialog open={open} onClose={onClose} size="sm" role="alertdialog">
       <DialogHeader title={title} onClose={onClose} />
       <DialogBody>
         <div className="flex gap-4">

@@ -137,6 +137,37 @@ export interface FinancialGoal {
   updatedAt: string
 }
 
+// ─── Subscription Types ──────────────────────────────
+export type SubscriptionCurrency = 'KRW' | 'USD'
+export type SubscriptionStatus = 'active' | 'paused' | 'cancelled'
+export type SubscriptionCycle = 'monthly' | 'yearly'
+export type SubscriptionCategoryType =
+  | 'entertainment' | 'productivity' | 'cloud' | 'music'
+  | 'news' | 'education' | 'health' | 'shopping' | 'finance' | 'other'
+
+export interface Subscription {
+  id?: number
+  syncId?: string
+  name: string
+  description?: string
+  currency: SubscriptionCurrency
+  amount: number
+  cycle: SubscriptionCycle
+  billingDay: number           // 1-28
+  billingMonth?: number        // 1-12 (yearly only)
+  category: SubscriptionCategoryType
+  status: SubscriptionStatus
+  startDate: string
+  endDate?: string
+  icon?: string
+  color: string
+  url?: string
+  memo?: string
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+}
+
 // ─── Settings Types ────────────────────────────────
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type ColorPalette = 'default' | 'ocean' | 'rose' | 'purple' | 'forest'
@@ -167,6 +198,10 @@ export interface Settings {
   }
   highContrastMode: boolean
   notifications: NotificationSettings
+  exchangeRate: {
+    usdToKrw: number
+    lastUpdated?: string
+  }
 }
 
 // ─── Computed Types ────────────────────────────────
@@ -237,6 +272,7 @@ export interface BackupFile {
     budgets?: Budget[]
     goals?: FinancialGoal[]
     paymentMethodItems?: PaymentMethodItem[]
+    subscriptions?: Subscription[]
     settings: Partial<Settings>
   }
 }

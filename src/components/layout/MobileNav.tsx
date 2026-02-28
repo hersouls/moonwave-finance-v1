@@ -2,7 +2,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react'
 import { clsx } from 'clsx'
 import {
-  Wallet,
+  Landmark,
   CreditCard,
   Receipt,
   Calendar,
@@ -63,7 +63,7 @@ export function MobileNav() {
   }, [isMobileMenuOpen])
 
   const navLinks = [
-    { label: '자산', icon: Wallet, path: '/assets', view: 'assets' as const },
+    { label: '자산', icon: Landmark, path: '/assets', view: 'assets' as const },
     { label: '부채', icon: CreditCard, path: '/liabilities', view: 'liabilities' as const },
     { label: '가계부', icon: Receipt, path: '/ledger', view: 'ledger' as const },
     { label: '캘린더', icon: Calendar, path: '/calendar', view: 'calendar' as const },
@@ -103,15 +103,13 @@ export function MobileNav() {
             {/* Header */}
             <div className="flex items-center justify-between h-16 px-4 border-b border-zinc-200 dark:border-zinc-800 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Wallet className="w-5 h-5 text-white" aria-hidden="true" />
-                </div>
+                <img src="/icons/icon-192.png" alt="FIN" className="w-8 h-8 rounded-lg flex-shrink-0" />
                 <div className="flex flex-col">
                   <span
                     id="mobile-nav-title"
                     className="font-bold text-zinc-900 dark:text-zinc-100"
                   >
-                    자산관리
+                    FIN
                   </span>
                 </div>
               </div>

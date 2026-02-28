@@ -1,7 +1,7 @@
 {
-  "name": "자산관리 | Moonwave",
-  "short_name": "자산관리",
-  "description": "Moonwave 자산관리 - 개인 자산/부채 추적 및 가계부",
+  "name": "FIN",
+  "short_name": "FIN",
+  "description": "Moonwave FIN - 개인 자산/부채 추적 및 가계부",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

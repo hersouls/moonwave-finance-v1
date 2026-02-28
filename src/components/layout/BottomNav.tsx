@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Wallet, Receipt, BarChart3 } from 'lucide-react'
+import { LayoutDashboard, Landmark, Receipt, Repeat, BarChart3 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useUIStore, type CurrentView } from '@/stores/uiStore'
 
@@ -23,6 +23,11 @@ export function BottomNav() {
       navigate('/ledger')
       return
     }
+    if (target === 'subscriptions') {
+      setCurrentView('subscriptions')
+      navigate('/subscriptions')
+      return
+    }
     if (target === 'reports') {
       setCurrentView('reports')
       navigate('/reports')
@@ -32,14 +37,15 @@ export function BottomNav() {
 
   const navItems = [
     { id: 'dashboard' as const, label: '대시보드', icon: LayoutDashboard },
-    { id: 'assets' as const, label: '자산', icon: Wallet },
+    { id: 'assets' as const, label: '자산', icon: Landmark },
     { id: 'ledger' as const, label: '가계부', icon: Receipt },
+    { id: 'subscriptions' as const, label: '구독', icon: Repeat },
     { id: 'reports' as const, label: '분석', icon: BarChart3 },
   ]
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-lg border-t border-zinc-200 dark:border-zinc-800 pb-safe"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-[var(--z-nav)] bg-white/80 dark:bg-zinc-950/80 backdrop-blur-lg border-t border-zinc-200 dark:border-zinc-800 pb-safe"
       aria-label="하단 메인 네비게이션"
     >
       <ul className="flex items-center justify-around h-16 fold:h-14" role="menubar">

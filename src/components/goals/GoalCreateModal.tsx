@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { useGoalStore } from '@/stores/goalStore'
+import { useToastStore } from '@/stores/toastStore'
 import { formatNumber } from '@/utils/format'
 import type { GoalType, FinancialGoal } from '@/lib/types'
 
@@ -31,6 +32,7 @@ export function GoalCreateModal({ open, onClose, editGoal }: GoalCreateModalProp
   const [targetDate, setTargetDate] = useState('')
   const [color, setColor] = useState('#3B82F6')
   const [memo, setMemo] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (open) {
@@ -67,28 +69,35 @@ export function GoalCreateModal({ open, onClose, editGoal }: GoalCreateModalProp
     const current = parseAmount(currentAmount)
     if (target <= 0) return
 
-    if (editGoal?.id) {
-      await updateGoal(editGoal.id, {
-        name: name.trim(),
-        type,
-        targetAmount: target,
-        currentAmount: current,
-        targetDate,
-        color,
-        memo: memo.trim() || undefined,
-      })
-    } else {
-      await addGoal({
-        name: name.trim(),
-        type,
-        targetAmount: target,
-        currentAmount: current,
-        targetDate,
-        color,
-        memo: memo.trim() || undefined,
-      })
+    setIsSubmitting(true)
+    try {
+      if (editGoal?.id) {
+        await updateGoal(editGoal.id, {
+          name: name.trim(),
+          type,
+          targetAmount: target,
+          currentAmount: current,
+          targetDate,
+          color,
+          memo: memo.trim() || undefined,
+        })
+      } else {
+        await addGoal({
+          name: name.trim(),
+          type,
+          targetAmount: target,
+          currentAmount: current,
+          targetDate,
+          color,
+          memo: memo.trim() || undefined,
+        })
+      }
+      onClose()
+    } catch {
+      useToastStore.getState().addToast('목표 저장에 실패했습니다.', 'error')
+    } finally {
+      setIsSubmitting(false)
     }
-    onClose()
   }
 
   return (
@@ -196,8 +205,8 @@ export function GoalCreateModal({ open, onClose, editGoal }: GoalCreateModalProp
       </DialogBody>
       <DialogFooter>
         <Button variant="secondary" onClick={onClose}>취소</Button>
-        <Button variant="primary" onClick={handleSubmit} disabled={!name.trim() || !targetDate || parseAmount(targetAmount) <= 0}>
-          {editGoal ? '수정' : '추가'}
+        <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting || !name.trim() || !targetDate || parseAmount(targetAmount) <= 0}>
+          {isSubmitting ? '저장 중...' : (editGoal ? '수정' : '추가')}
         </Button>
       </DialogFooter>
     </Dialog>

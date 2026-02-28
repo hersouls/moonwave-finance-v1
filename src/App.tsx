@@ -9,6 +9,7 @@ import { SettingsModal } from './components/settings/SettingsModal'
 import { FAQModal } from './components/layout/FAQModal'
 import { TermsModal } from './components/layout/TermsModal'
 import { UndoToast } from './components/ui/UndoToast'
+import { ToastContainer } from './components/ui/ToastContainer'
 import { UpdateBanner } from './components/ui/UpdateBanner'
 import { OfflineBanner } from './components/ui/OfflineBanner'
 import { AppLoadingScreen } from './components/ui/AppLoadingScreen'
@@ -73,6 +74,7 @@ export default function App() {
     else if (path === '/ledger') setCurrentView('ledger')
     else if (path === '/calendar') setCurrentView('calendar')
     else if (path === '/reports') setCurrentView('reports')
+    else if (path === '/subscriptions') setCurrentView('subscriptions')
     else if (path === '/profile') setCurrentView('profile')
   }, [location.pathname, setCurrentView])
 
@@ -95,6 +97,7 @@ export default function App() {
       <FAQModal />
       <TermsModal />
       <UndoToast />
+      <ToastContainer />
       <UpdateBanner />
       <SearchModal />
       {!hasCompletedOnboarding && (

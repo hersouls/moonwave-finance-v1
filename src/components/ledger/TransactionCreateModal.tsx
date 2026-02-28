@@ -5,6 +5,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { getTodayString } from '@/lib/dateUtils'
+import { useToastStore } from '@/stores/toastStore'
 import type { TransactionType, RepeatType } from '@/lib/types'
 
 export function TransactionCreateModal() {
@@ -23,6 +24,8 @@ export function TransactionCreateModal() {
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurType, setRecurType] = useState<RepeatType>('monthly')
   const [recurEndDate, setRecurEndDate] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [amountError, setAmountError] = useState('')
 
   const currentCategories = categories.filter(c => c.type === type)
 
@@ -46,18 +49,29 @@ export function TransactionCreateModal() {
 
   const handleSubmit = async () => {
     const numAmount = Number(amount.replace(/,/g, ''))
-    if (!numAmount || numAmount <= 0) return
-    await addTransaction({
-      memberId: memberId ? (memberId as number) : null,
-      type,
-      amount: numAmount,
-      categoryId: categoryId ? (categoryId as number) : null,
-      date,
-      memo: memo.trim() || undefined,
-      isRecurring,
-      recurPattern: isRecurring ? { type: recurType, interval: 1, endDate: recurEndDate || undefined } : undefined,
-    })
-    close()
+    if (!numAmount || numAmount <= 0) {
+      setAmountError('금액을 입력해주세요')
+      return
+    }
+    setAmountError('')
+    setIsSubmitting(true)
+    try {
+      await addTransaction({
+        memberId: memberId ? (memberId as number) : null,
+        type,
+        amount: numAmount,
+        categoryId: categoryId ? (categoryId as number) : null,
+        date,
+        memo: memo.trim() || undefined,
+        isRecurring,
+        recurPattern: isRecurring ? { type: recurType, interval: 1, endDate: recurEndDate || undefined } : undefined,
+      })
+      close()
+    } catch {
+      useToastStore.getState().addToast('거래 저장에 실패했습니다.', 'error')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -102,13 +116,22 @@ export function TransactionCreateModal() {
                 type="text"
                 inputMode="numeric"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^0-9]/g, '')
+                  if (raw === '') { setAmount(''); setAmountError(''); return }
+                  const num = parseInt(raw, 10)
+                  setAmount(num.toLocaleString('ko-KR'))
+                  setAmountError('')
+                }}
                 placeholder="0"
                 className="w-full px-3 py-2.5 pr-8 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400"
                 autoFocus
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400">원</span>
             </div>
+            {amountError && (
+              <p className="text-xs text-red-500 dark:text-red-400 mt-1">{amountError}</p>
+            )}
           </div>
 
           {/* Category */}
@@ -210,9 +233,9 @@ export function TransactionCreateModal() {
         <Button
           variant="primary"
           onClick={handleSubmit}
-          disabled={!amount || Number(amount.replace(/,/g, '')) <= 0}
+          disabled={isSubmitting || !amount || Number(amount.replace(/,/g, '')) <= 0}
         >
-          기록
+          {isSubmitting ? '저장 중...' : '기록'}
         </Button>
       </DialogFooter>
     </Dialog>

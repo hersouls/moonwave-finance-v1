@@ -1,8 +1,7 @@
 import { useEffect } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { usePwaUpdateStore } from '@/stores/pwaUpdateStore'
-
-const DISMISS_DURATION = 30 * 60 * 1000 // 30 minutes
+import { PWA_DISMISS_DURATION_MS } from '@/utils/constants'
 
 export function UpdateBanner() {
   const isUpdateAvailable = usePwaUpdateStore((s) => s.isUpdateAvailable)
@@ -15,7 +14,7 @@ export function UpdateBanner() {
   useEffect(() => {
     if (!dismissedAt || !waitingWorker) return
 
-    const remaining = DISMISS_DURATION - (Date.now() - dismissedAt)
+    const remaining = PWA_DISMISS_DURATION_MS - (Date.now() - dismissedAt)
     if (remaining <= 0) {
       usePwaUpdateStore.setState({ isUpdateAvailable: true, dismissedAt: null })
       return
@@ -34,7 +33,7 @@ export function UpdateBanner() {
       if (document.visibilityState !== 'visible') return
       const state = usePwaUpdateStore.getState()
       if (!state.waitingWorker || state.isUpdateAvailable) return
-      if (state.dismissedAt && Date.now() - state.dismissedAt >= DISMISS_DURATION) {
+      if (state.dismissedAt && Date.now() - state.dismissedAt >= PWA_DISMISS_DURATION_MS) {
         usePwaUpdateStore.setState({ isUpdateAvailable: true, dismissedAt: null })
       }
     }
@@ -46,7 +45,7 @@ export function UpdateBanner() {
   if (!isUpdateAvailable) return null
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 animate-[slideInFromTop_0.3s_ease-out]">
+    <div className="fixed top-0 left-0 right-0 z-[var(--z-overlay)] animate-[slideInFromTop_0.3s_ease-out]">
       <div className="mx-auto max-w-lg px-4 pt-3 pb-2">
         <div className="flex items-center gap-3 px-4 py-3 bg-primary-600 dark:bg-primary-700 text-white rounded-xl shadow-2xl">
           <RefreshCw className="w-4 h-4 shrink-0" />

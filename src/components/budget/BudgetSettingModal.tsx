@@ -3,6 +3,7 @@ import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/
 import { Button } from '@/components/ui/Button'
 import { useBudgetStore } from '@/stores/budgetStore'
 import { useTransactionStore } from '@/stores/transactionStore'
+import { useToastStore } from '@/stores/toastStore'
 import { formatNumber } from '@/utils/format'
 
 interface BudgetSettingModalProps {
@@ -17,6 +18,7 @@ export function BudgetSettingModal({ open, onClose }: BudgetSettingModalProps) {
   const expenseCategories = categories.filter(c => c.type === 'expense')
 
   const [amounts, setAmounts] = useState<Record<number, string>>({})
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     if (open) {
@@ -30,12 +32,22 @@ export function BudgetSettingModal({ open, onClose }: BudgetSettingModalProps) {
   }, [open, budgets, expenseCategories])
 
   const handleSave = async () => {
+    setIsSaving(true)
+    const errors: string[] = []
     for (const cat of expenseCategories) {
       const val = Number(amounts[cat.id!]?.replace(/,/g, '') || 0)
       if (val > 0) {
-        await setBudget(cat.id!, val)
+        try {
+          await setBudget(cat.id!, val)
+        } catch {
+          errors.push(cat.name)
+        }
       }
     }
+    if (errors.length > 0) {
+      useToastStore.getState().addToast(`일부 예산 저장 실패: ${errors.join(', ')}`, 'error')
+    }
+    setIsSaving(false)
     onClose()
   }
 
@@ -70,7 +82,9 @@ export function BudgetSettingModal({ open, onClose }: BudgetSettingModalProps) {
       </DialogBody>
       <DialogFooter>
         <Button variant="secondary" onClick={onClose}>취소</Button>
-        <Button variant="primary" onClick={handleSave}>저장</Button>
+        <Button variant="primary" onClick={handleSave} disabled={isSaving}>
+          {isSaving ? '저장 중...' : '저장'}
+        </Button>
       </DialogFooter>
     </Dialog>
   )

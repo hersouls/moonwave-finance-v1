@@ -10,9 +10,11 @@ import { AssetEmptyState } from './AssetEmptyState'
 import { AssetListSkeleton } from './AssetListSkeleton'
 import { FAB } from '@/components/ui/FAB'
 import { Tabs } from '@/components/ui/Tabs'
+import { ErrorEmptyState } from '@/components/ui/EmptyState'
 
 export function AssetListPage() {
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [activeMember, setActiveMember] = useState<number | null>(null)
   const [activeCategory, setActiveCategory] = useState<number | null>(null)
 
@@ -23,13 +25,19 @@ export function AssetListPage() {
   const members = useMemberStore((s) => s.members)
   const openAssetCreateModal = useUIStore((s) => s.openAssetCreateModal)
 
-  useEffect(() => {
-    const init = async () => {
+  const loadData = async () => {
+    setError(null)
+    setIsLoading(true)
+    try {
       await Promise.all([loadAll(), loadValues(), loadMembers()])
+    } catch {
+      setError('데이터를 불러오는데 실패했습니다.')
+    } finally {
       setIsLoading(false)
     }
-    init()
-  }, [])
+  }
+
+  useEffect(() => { loadData() }, [])
 
   const memberTabs = useMemo(() => [
     { id: 'all', label: '전체' },
@@ -48,6 +56,14 @@ export function AssetListPage() {
   }, [items, activeMember, activeCategory])
 
   if (isLoading) return <AssetListSkeleton />
+
+  if (error) {
+    return (
+      <div className="p-4 lg:p-6">
+        <ErrorEmptyState description={error} onRetry={loadData} />
+      </div>
+    )
+  }
 
   return (
     <div className="p-4 lg:p-6">

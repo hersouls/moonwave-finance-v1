@@ -6,6 +6,7 @@ import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useBudgetStore } from '@/stores/budgetStore'
 import { useGoalStore } from '@/stores/goalStore'
+import { useSubscriptionStore } from '@/stores/subscriptionStore'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useAssetStats, useCategoryBreakdown } from '@/hooks/useAssetStats'
 import { NetWorthCard } from './NetWorthCard'
@@ -16,14 +17,17 @@ import { DailyChangeChart } from './DailyChangeChart'
 import { MemberSummaryCards } from './MemberSummaryCards'
 import { DashboardSkeleton } from './DashboardSkeleton'
 import { BudgetOverviewCard } from '@/components/budget/BudgetOverviewCard'
+import { SubscriptionWidget } from './SubscriptionWidget'
 import { GoalCard } from '@/components/goals/GoalCard'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Card } from '@/components/ui/Card'
 import { useUIStore } from '@/stores/uiStore'
 import { formatKoreanUnit, formatPercent } from '@/utils/format'
+import { ErrorEmptyState } from '@/components/ui/EmptyState'
 
 export function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
 
   const loadAll = useAssetStore((s) => s.loadAll)
@@ -31,6 +35,7 @@ export function DashboardPage() {
   const loadMembers = useMemberStore((s) => s.loadMembers)
   const loadBudgets = useBudgetStore((s) => s.loadBudgets)
   const loadGoals = useGoalStore((s) => s.loadGoals)
+  const loadSubscriptions = useSubscriptionStore((s) => s.loadSubscriptions)
   const loadTransactions = useTransactionStore((s) => s.loadAll)
   const items = useAssetStore((s) => s.items)
   const activeGoals = useGoalStore((s) => s.getActiveGoals)()
@@ -40,15 +45,29 @@ export function DashboardPage() {
   const liabilityBreakdown = useCategoryBreakdown('liability')
   const openAssetCreateModal = useUIStore((s) => s.openAssetCreateModal)
 
-  useEffect(() => {
-    const init = async () => {
-      await Promise.all([loadAll(), loadValues(), loadMembers(), loadBudgets(), loadGoals(), loadTransactions()])
+  const loadData = async () => {
+    setError(null)
+    setIsLoading(true)
+    try {
+      await Promise.all([loadAll(), loadValues(), loadMembers(), loadBudgets(), loadGoals(), loadSubscriptions(), loadTransactions()])
+    } catch {
+      setError('데이터를 불러오는데 실패했습니다.')
+    } finally {
       setIsLoading(false)
     }
-    init()
-  }, [])
+  }
+
+  useEffect(() => { loadData() }, [])
 
   if (isLoading) return <DashboardSkeleton />
+
+  if (error) {
+    return (
+      <div className="p-4 lg:p-6">
+        <ErrorEmptyState description={error} onRetry={loadData} />
+      </div>
+    )
+  }
 
   if (items.length === 0) {
     return (
@@ -155,6 +174,9 @@ export function DashboardPage() {
 
       {/* Budget Overview */}
       <BudgetOverviewCard />
+
+      {/* Subscription Widget */}
+      <SubscriptionWidget />
 
       {/* Active Goals */}
       {activeGoals.length > 0 && (

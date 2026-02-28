@@ -13,6 +13,8 @@ const LedgerPage = lazy(() => import('./components/ledger/LedgerPage').then(m =>
 const CalendarPage = lazy(() => import('./components/calendar/CalendarPage').then(m => ({ default: m.CalendarPage })))
 const ReportsPage = lazy(() => import('./components/reports/ReportsPage').then(m => ({ default: m.ReportsPage })))
 const ProfilePage = lazy(() => import('./components/profile/ProfilePage').then(m => ({ default: m.ProfilePage })))
+const SubscriptionPage = lazy(() => import('./components/subscriptions/SubscriptionPage').then(m => ({ default: m.SubscriptionPage })))
+const NotFoundPage = lazy(() => import('./components/ui/NotFoundPage').then(m => ({ default: m.NotFoundPage })))
 
 function LazyPage({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<AppLoadingScreen />}>{children}</Suspense>
@@ -31,7 +33,9 @@ export const router = createBrowserRouter([
       { path: 'ledger', element: <LazyPage><LedgerPage /></LazyPage> },
       { path: 'calendar', element: <LazyPage><CalendarPage /></LazyPage> },
       { path: 'reports', element: <LazyPage><ReportsPage /></LazyPage> },
+      { path: 'subscriptions', element: <LazyPage><SubscriptionPage /></LazyPage> },
       { path: 'profile', element: <LazyPage><ProfilePage /></LazyPage> },
+      { path: '*', element: <LazyPage><NotFoundPage /></LazyPage> },
     ],
   },
   { path: '/oauth/callback', element: <OAuthCallback /> },

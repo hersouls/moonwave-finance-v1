@@ -76,3 +76,40 @@ export function getMonthStartEnd(month: string): { start: string; end: string } 
 export function getDayOfMonth(dateStr: string): number {
   return parseISO(dateStr).getDate()
 }
+
+// ─── Subscription Billing Date Utilities ─────────────
+
+export function getNextBillingDate(billingDay: number, cycle: 'monthly' | 'yearly', billingMonth?: number): Date {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() // 0-indexed
+
+  if (cycle === 'yearly') {
+    const bm = (billingMonth ?? 1) - 1 // 0-indexed
+    let next = new Date(year, bm, Math.min(billingDay, getDaysInMonth(new Date(year, bm))))
+    if (next <= now) {
+      next = new Date(year + 1, bm, Math.min(billingDay, getDaysInMonth(new Date(year + 1, bm))))
+    }
+    return next
+  }
+
+  // monthly
+  let next = new Date(year, month, Math.min(billingDay, getDaysInMonth(new Date(year, month))))
+  if (next <= now) {
+    const nextMonth = addMonths(new Date(year, month), 1)
+    next = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), Math.min(billingDay, getDaysInMonth(nextMonth)))
+  }
+  return next
+}
+
+export function getDaysUntilBilling(billingDay: number, cycle: 'monthly' | 'yearly', billingMonth?: number): number {
+  const next = getNextBillingDate(billingDay, cycle, billingMonth)
+  return differenceInDays(startOfDay(next), startOfDay(new Date()))
+}
+
+export function formatBillingSchedule(cycle: 'monthly' | 'yearly', billingDay: number, billingMonth?: number): string {
+  if (cycle === 'yearly') {
+    return `매년 ${billingMonth ?? 1}월 ${billingDay}일`
+  }
+  return `매월 ${billingDay}일`
+}

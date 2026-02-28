@@ -1,4 +1,4 @@
-import { Plus, Wallet } from 'lucide-react'
+import { Plus, Landmark } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useUIStore } from '@/stores/uiStore'
 
@@ -7,7 +7,7 @@ export function AssetEmptyState() {
 
   return (
     <EmptyState
-      icon={<Wallet className="w-full h-full" />}
+      icon={<Landmark className="w-full h-full" />}
       title="등록된 자산이 없습니다"
       description="자산 항목을 추가하면 일별 가치를 기록하고 추적할 수 있습니다."
       action={{

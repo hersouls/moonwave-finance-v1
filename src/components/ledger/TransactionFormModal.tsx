@@ -7,6 +7,7 @@ import { useBudgetStore } from '@/stores/budgetStore'
 import { getTodayString } from '@/lib/dateUtils'
 import { PAYMENT_METHOD_OPTIONS } from '@/utils/paymentMethod'
 import { formatKoreanUnit } from '@/utils/format'
+import { useToastStore } from '@/stores/toastStore'
 import { clsx } from 'clsx'
 import type { Transaction, TransactionType, RepeatType, PaymentMethod } from '@/lib/types'
 
@@ -39,6 +40,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurType, setRecurType] = useState<RepeatType>('monthly')
   const [recurEndDate, setRecurEndDate] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const currentCategories = categories.filter(c => c.type === type)
 
@@ -145,28 +147,35 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
     const numAmount = Number(amount.replace(/,/g, ''))
     if (!numAmount || numAmount <= 0) return
 
-    const txnData = {
-      type,
-      amount: numAmount,
-      categoryId: categoryId ? (categoryId as number) : null,
-      memberId: memberId ? (memberId as number) : null,
-      date,
-      memo: memo.trim() || undefined,
-      paymentMethod: paymentMethod || undefined,
-      paymentMethodDetail: paymentMethodDetail.trim() || undefined,
-      paymentMethodItemId: paymentMethodItemId ? (paymentMethodItemId as number) : undefined,
-    }
+    setIsSubmitting(true)
+    try {
+      const txnData = {
+        type,
+        amount: numAmount,
+        categoryId: categoryId ? (categoryId as number) : null,
+        memberId: memberId ? (memberId as number) : null,
+        date,
+        memo: memo.trim() || undefined,
+        paymentMethod: paymentMethod || undefined,
+        paymentMethodDetail: paymentMethodDetail.trim() || undefined,
+        paymentMethodItemId: paymentMethodItemId ? (paymentMethodItemId as number) : undefined,
+      }
 
-    if (mode === 'edit' && initialData?.id) {
-      await updateTransaction(initialData.id, txnData)
-    } else {
-      await addTransaction({
-        ...txnData,
-        isRecurring,
-        recurPattern: isRecurring ? { type: recurType, interval: 1, endDate: recurEndDate || undefined } : undefined,
-      })
+      if (mode === 'edit' && initialData?.id) {
+        await updateTransaction(initialData.id, txnData)
+      } else {
+        await addTransaction({
+          ...txnData,
+          isRecurring,
+          recurPattern: isRecurring ? { type: recurType, interval: 1, endDate: recurEndDate || undefined } : undefined,
+        })
+      }
+      onClose()
+    } catch {
+      useToastStore.getState().addToast('거래 저장에 실패했습니다.', 'error')
+    } finally {
+      setIsSubmitting(false)
     }
-    onClose()
   }
 
   const handleSelectPaymentMethodItem = (itemId: number, itemName: string) => {
@@ -205,7 +214,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
           {members.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">구성원</label>
-              <div className="flex gap-2">
+              <div className="flex gap-2" role="group" aria-label="구성원 선택">
                 {members.length <= 4 ? (
                   <>
                     <button
@@ -256,7 +265,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
           {/* Type Toggle */}
           <div>
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">유형</label>
-            <div className="flex gap-2">
+            <div className="flex gap-2" role="radiogroup" aria-label="거래 유형">
               <button
                 type="button"
                 onClick={() => setType('expense')}
@@ -472,9 +481,9 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
         <Button
           variant="primary"
           onClick={handleSubmit}
-          disabled={!amount || Number(amount.replace(/,/g, '')) <= 0}
+          disabled={isSubmitting || !amount || Number(amount.replace(/,/g, '')) <= 0}
         >
-          {mode === 'edit' ? '수정' : '기록'}
+          {isSubmitting ? '저장 중...' : (mode === 'edit' ? '수정' : '기록')}
         </Button>
       </DialogFooter>
     </Dialog>

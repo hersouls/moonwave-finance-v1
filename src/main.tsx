@@ -4,6 +4,7 @@ import { RouterProvider } from 'react-router-dom'
 import { router } from './router'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import { usePwaUpdateStore } from './stores/pwaUpdateStore'
+import { PWA_UPDATE_INTERVAL_MS } from './utils/constants'
 import './index.css'
 
 // Service Worker for PWA
@@ -40,7 +41,7 @@ if ('serviceWorker' in navigator) {
 
         // Check for updates immediately + every 10 minutes
         registration.update()
-        setInterval(() => registration.update(), 10 * 60 * 1000)
+        setInterval(() => registration.update(), PWA_UPDATE_INTERVAL_MS)
 
         // Also check on tab focus
         document.addEventListener('visibilitychange', () => {

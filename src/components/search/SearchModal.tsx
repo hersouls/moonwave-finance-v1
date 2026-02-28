@@ -49,7 +49,7 @@ export function SearchModal() {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]" onClick={close}>
+    <div className="fixed inset-0 z-[var(--z-overlay)] flex items-start justify-center pt-[15vh]" onClick={close}>
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
       <div
         className="relative w-full max-w-lg mx-4 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-700 overflow-hidden"
@@ -65,7 +65,7 @@ export function SearchModal() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="자산, 거래, 카테고리 검색..."
-            className="flex-1 py-4 text-sm bg-transparent text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none"
+            className="flex-1 py-4 text-sm bg-transparent text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none"
           />
           {query && (
             <button onClick={() => setQuery('')} className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800">
@@ -82,7 +82,7 @@ export function SearchModal() {
             ) : results.length === 0 ? (
               <div className="px-4 py-8 text-center text-sm text-zinc-400">검색 결과가 없습니다</div>
             ) : (
-              <div className="py-2">
+              <div className="py-2" role="listbox" aria-label="검색 결과">
                 {results.map((r, i) => (
                   <SearchResultItem
                     key={`${r.type}-${r.id}`}

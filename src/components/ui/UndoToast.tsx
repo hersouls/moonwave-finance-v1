@@ -26,7 +26,7 @@ export function UndoToast() {
       aria-live="polite"
       className={clsx(
         'fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2',
-        'z-50 pb-[env(safe-area-inset-bottom)]', /* --z-toast */
+        'z-[var(--z-toast)] pb-[env(safe-area-inset-bottom)]',
         isExiting ? 'animate-slide-out-bottom' : 'animate-[slideInFromBottom_0.3s_ease-out]'
       )}
     >

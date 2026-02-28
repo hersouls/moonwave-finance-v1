@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie'
+import { DEFAULT_MEMBERS } from '@/utils/constants'
 import type {
   Member,
   AssetCategory,
@@ -9,6 +10,7 @@ import type {
   Budget,
   FinancialGoal,
   PaymentMethodItem,
+  Subscription,
 } from '@/lib/types'
 
 class FinanceDatabase extends Dexie {
@@ -21,6 +23,7 @@ class FinanceDatabase extends Dexie {
   budgets!: Table<Budget>
   goals!: Table<FinancialGoal>
   paymentMethodItems!: Table<PaymentMethodItem>
+  subscriptions!: Table<Subscription>
 
   constructor() {
     super('MoonwaveFinance')
@@ -96,6 +99,19 @@ class FinanceDatabase extends Dexie {
           .modify({ paymentMethodItemId: id })
       }
     })
+
+    this.version(5).stores({
+      members: '++id, syncId, name, sortOrder',
+      assetCategories: '++id, syncId, name, type, sortOrder',
+      assetItems: '++id, syncId, memberId, categoryId, type, isActive, sortOrder',
+      dailyValues: '++id, syncId, assetItemId, date, [assetItemId+date]',
+      transactionCategories: '++id, syncId, name, type, sortOrder',
+      transactions: '++id, syncId, memberId, type, categoryId, date, isRecurring, recurSourceId, paymentMethod, paymentMethodItemId',
+      budgets: '++id, syncId, categoryId, month',
+      goals: '++id, syncId, targetDate',
+      paymentMethodItems: '++id, syncId, type, name, sortOrder',
+      subscriptions: '++id, syncId, currency, category, status, billingDay, cycle, sortOrder',
+    })
   }
 }
 
@@ -105,10 +121,9 @@ db.on('populate', () => {
   const now = new Date().toISOString()
 
   // Default members
-  db.members.bulkAdd([
-    { name: '대성', color: '#3B82F6', isDefault: true, sortOrder: 0, createdAt: now, updatedAt: now },
-    { name: '다연', color: '#EC4899', isDefault: true, sortOrder: 1, createdAt: now, updatedAt: now },
-  ])
+  db.members.bulkAdd(
+    DEFAULT_MEMBERS.map((m, i) => ({ ...m, isDefault: true, sortOrder: i, createdAt: now, updatedAt: now }))
+  )
 
   // Default asset categories
   db.assetCategories.bulkAdd([
@@ -426,6 +441,27 @@ export async function deleteGoal(id: number): Promise<void> {
   await db.goals.delete(id)
 }
 
+// ─── Subscription CRUD ──────────────────────────
+export async function getAllSubscriptions(): Promise<Subscription[]> {
+  return db.subscriptions.orderBy('sortOrder').toArray()
+}
+
+export async function getActiveSubscriptions(): Promise<Subscription[]> {
+  return db.subscriptions.where('status').equals('active').sortBy('sortOrder')
+}
+
+export async function addSubscription(sub: Omit<Subscription, 'id'>): Promise<number> {
+  return db.subscriptions.add(sub as Subscription) as Promise<number>
+}
+
+export async function updateSubscription(id: number, updates: Partial<Subscription>): Promise<void> {
+  await db.subscriptions.update(id, { ...updates, updatedAt: new Date().toISOString() })
+}
+
+export async function deleteSubscription(id: number): Promise<void> {
+  await db.subscriptions.delete(id)
+}
+
 // ─── Recurring Transaction Helpers ───────────────
 export async function getRecurringTransactions(): Promise<Transaction[]> {
   return db.transactions.where('isRecurring').equals(1).toArray()
@@ -442,10 +478,10 @@ export async function clearAllData(): Promise<void> {
   await db.budgets.clear()
   await db.goals.clear()
   await db.paymentMethodItems.clear()
+  await db.subscriptions.clear()
 
   const now = new Date().toISOString()
-  await db.members.bulkAdd([
-    { name: '대성', color: '#3B82F6', isDefault: true, sortOrder: 0, createdAt: now, updatedAt: now },
-    { name: '다연', color: '#EC4899', isDefault: true, sortOrder: 1, createdAt: now, updatedAt: now },
-  ])
+  await db.members.bulkAdd(
+    DEFAULT_MEMBERS.map((m, i) => ({ ...m, isDefault: true, sortOrder: i, createdAt: now, updatedAt: now }))
+  )
 }

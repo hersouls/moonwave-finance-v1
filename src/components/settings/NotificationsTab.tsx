@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Bell, BellOff, Clock, Wallet } from 'lucide-react'
+import { Bell, BellOff, Clock, PiggyBank } from 'lucide-react'
 import { clsx } from 'clsx'
 import { ToggleSwitch } from './ToggleSwitch'
 import type { Settings } from '@/lib/types'
@@ -87,7 +87,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
       {/* Budget Alert */}
       <section>
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
-          <Wallet className="w-4 h-4" />
+          <PiggyBank className="w-4 h-4" />
           예산 알림
         </h3>
         <div className="space-y-3">

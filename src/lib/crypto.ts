@@ -1,6 +1,9 @@
 const ALGORITHM = 'AES-GCM'
 const KEY_LENGTH = 256
 const IV_LENGTH = 12
+const PBKDF2_SALT = 'moonwave-fin-salt'
+const PBKDF2_ITERATIONS = 100_000
+const PBKDF2_HASH = 'SHA-256'
 
 async function deriveKey(passphrase: string): Promise<CryptoKey> {
   const encoder = new TextEncoder()
@@ -14,9 +17,9 @@ async function deriveKey(passphrase: string): Promise<CryptoKey> {
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: encoder.encode('moonwave-fin-salt'),
-      iterations: 100000,
-      hash: 'SHA-256',
+      salt: encoder.encode(PBKDF2_SALT),
+      iterations: PBKDF2_ITERATIONS,
+      hash: PBKDF2_HASH,
     },
     keyMaterial,
     { name: ALGORITHM, length: KEY_LENGTH },

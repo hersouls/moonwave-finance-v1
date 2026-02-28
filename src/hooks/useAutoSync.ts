@@ -35,7 +35,7 @@ export function useAutoSync() {
     const tables = [
       db.members, db.assetCategories, db.assetItems, db.dailyValues,
       db.transactionCategories, db.transactions, db.budgets, db.goals,
-      db.paymentMethodItems,
+      db.paymentMethodItems, db.subscriptions,
     ]
 
     const hookRemovers: (() => void)[] = []

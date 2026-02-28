@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { useUIStore } from '@/stores/uiStore'
 import { useAssetStore } from '@/stores/assetStore'
 import { useMemberStore } from '@/stores/memberStore'
+import { useToastStore } from '@/stores/toastStore'
 import type { AssetLiabilityType } from '@/lib/types'
 
 export function AssetCreateModal() {
@@ -18,6 +19,7 @@ export function AssetCreateModal() {
   const [memberId, setMemberId] = useState<number | ''>('')
   const [memo, setMemo] = useState('')
   const [type, setType] = useState<AssetLiabilityType>('asset')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const assetCategories = categories.filter(c => c.type === 'asset')
   const liabilityCategories = categories.filter(c => c.type === 'liability')
@@ -35,14 +37,21 @@ export function AssetCreateModal() {
 
   const handleSubmit = async () => {
     if (!name.trim() || categoryId === '' || memberId === '') return
-    await addItem({
-      memberId: memberId as number,
-      categoryId: categoryId as number,
-      name: name.trim(),
-      type,
-      memo: memo.trim() || undefined,
-    })
-    close()
+    setIsSubmitting(true)
+    try {
+      await addItem({
+        memberId: memberId as number,
+        categoryId: categoryId as number,
+        name: name.trim(),
+        type,
+        memo: memo.trim() || undefined,
+      })
+      close()
+    } catch {
+      useToastStore.getState().addToast('항목 추가에 실패했습니다.', 'error')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -140,9 +149,9 @@ export function AssetCreateModal() {
         <Button
           variant="primary"
           onClick={handleSubmit}
-          disabled={!name.trim() || categoryId === '' || memberId === ''}
+          disabled={isSubmitting || !name.trim() || categoryId === '' || memberId === ''}
         >
-          추가
+          {isSubmitting ? '저장 중...' : '추가'}
         </Button>
       </DialogFooter>
     </Dialog>
