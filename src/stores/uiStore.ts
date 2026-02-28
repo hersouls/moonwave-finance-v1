@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type CurrentView = 'dashboard' | 'assets' | 'liabilities' | 'ledger' | 'calendar' | 'reports' | 'profile' | 'subscriptions'
+export type CurrentView = 'dashboard' | 'assets' | 'ledger' | 'subscriptions' | 'reports' | 'profile'
 
 interface UIState {
   isSidebarOpen: boolean

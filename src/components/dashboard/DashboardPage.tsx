@@ -11,6 +11,7 @@ import { useTransactionStore } from '@/stores/transactionStore'
 import { useAssetStats, useCategoryBreakdown } from '@/hooks/useAssetStats'
 import { NetWorthCard } from './NetWorthCard'
 import { AssetLiabilityBreakdown } from './AssetLiabilityBreakdown'
+import { LedgerSummaryCard } from './LedgerSummaryCard'
 import { NetWorthTrendChart } from './NetWorthTrendChart'
 import { AssetAllocationChart } from './AssetAllocationChart'
 import { DailyChangeChart } from './DailyChangeChart'
@@ -100,8 +101,17 @@ export function DashboardPage() {
       {/* Net Worth Hero */}
       <NetWorthCard stats={stats} />
 
-      {/* Asset/Liability Summary */}
-      <AssetLiabilityBreakdown stats={stats} />
+      {/* 3-Pillar Summary: Asset + Ledger */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AssetLiabilityBreakdown stats={stats} />
+        <LedgerSummaryCard />
+      </div>
+
+      {/* Subscription Widget (KRW/USD split) */}
+      <SubscriptionWidget />
+
+      {/* Budget Overview */}
+      <BudgetOverviewCard />
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -171,12 +181,6 @@ export function DashboardPage() {
           </Card>
         )}
       </div>
-
-      {/* Budget Overview */}
-      <BudgetOverviewCard />
-
-      {/* Subscription Widget */}
-      <SubscriptionWidget />
 
       {/* Active Goals */}
       {activeGoals.length > 0 && (

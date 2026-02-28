@@ -3,6 +3,7 @@ import { devtools } from 'zustand/middleware'
 import type { Transaction, TransactionCategory, TransactionType, RepeatPattern, PaymentMethod, PaymentMethodItem } from '@/lib/types'
 import * as db from '@/services/database'
 import { processRecurringTransactions } from '@/services/recurringEngine'
+import { processSubscriptionTransactions } from '@/services/subscriptionEngine'
 import { useUndoStore } from './undoStore'
 import { useToastStore } from './toastStore'
 import { getCurrentMonthString } from '@/lib/dateUtils'
@@ -91,9 +92,12 @@ export const useTransactionStore = create<TransactionState>()(
             db.getAllPaymentMethodItems(),
           ])
           set({ transactions, categories, paymentMethodItems, isLoading: false })
-          // Process recurring transactions silently in the background
-          processRecurringTransactions().then((created) => {
-            if (created > 0) get().loadTransactions()
+          // Process recurring + subscription transactions silently in the background
+          Promise.all([
+            processRecurringTransactions(),
+            processSubscriptionTransactions(),
+          ]).then(([recurCreated, subCreated]) => {
+            if (recurCreated > 0 || subCreated > 0) get().loadTransactions()
           }).catch(() => {})
         } catch (err) {
           console.error('Failed to load ledger data:', err)

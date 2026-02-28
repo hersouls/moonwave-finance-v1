@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import type { Subscription, SubscriptionCurrency, SubscriptionStatus, SubscriptionCategoryType } from '@/lib/types'
+import type { Subscription, SubscriptionCurrency, SubscriptionStatus, SubscriptionCategoryType, SubscriptionCycle, PauseHistoryEntry } from '@/lib/types'
 import * as db from '@/services/database'
 import { useToastStore } from './toastStore'
 import { useSettingsStore } from './settingsStore'
@@ -16,9 +16,10 @@ interface SubscriptionState {
     description?: string
     currency: SubscriptionCurrency
     amount: number
-    cycle: 'monthly' | 'yearly'
+    cycle: SubscriptionCycle
     billingDay: number
     billingMonth?: number
+    customCycleDays?: number
     category: SubscriptionCategoryType
     startDate: string
     icon?: string
@@ -41,7 +42,18 @@ interface SubscriptionState {
 }
 
 function monthlyAmount(sub: Subscription): number {
-  return sub.cycle === 'yearly' ? sub.amount / 12 : sub.amount
+  switch (sub.cycle) {
+    case 'weekly': return sub.amount * (52 / 12)
+    case 'biweekly': return sub.amount * (26 / 12)
+    case 'monthly': return sub.amount
+    case 'quarterly': return sub.amount / 3
+    case 'semi-annual': return sub.amount / 6
+    case 'yearly': return sub.amount / 12
+    case 'custom': return sub.customCycleDays
+      ? sub.amount * (365 / sub.customCycleDays / 12)
+      : sub.amount
+    default: return sub.amount
+  }
 }
 
 export const useSubscriptionStore = create<SubscriptionState>()(
@@ -91,10 +103,31 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       },
 
       changeStatus: async (id, status) => {
+        const sub = get().subscriptions.find(s => s.id === id)
+        if (!sub) return
+
+        const today = new Date().toISOString().split('T')[0]
         const updates: Partial<Subscription> = { status }
-        if (status === 'cancelled') {
-          updates.endDate = new Date().toISOString().split('T')[0]
+        const history: PauseHistoryEntry[] = [...(sub.pauseHistory ?? [])]
+
+        if (status === 'paused') {
+          history.push({ pausedAt: today })
+          updates.pauseHistory = history
+        } else if (status === 'active' && sub.status === 'paused') {
+          // Resume: close the last pause entry
+          if (history.length > 0 && !history[history.length - 1].resumedAt) {
+            history[history.length - 1] = { ...history[history.length - 1], resumedAt: today }
+          }
+          updates.pauseHistory = history
+        } else if (status === 'cancelled') {
+          // If currently paused, close the pause entry first
+          if (sub.status === 'paused' && history.length > 0 && !history[history.length - 1].resumedAt) {
+            history[history.length - 1] = { ...history[history.length - 1], resumedAt: today }
+            updates.pauseHistory = history
+          }
+          updates.endDate = today
         }
+
         await db.updateSubscription(id, updates)
         await get().loadSubscriptions()
         const labels: Record<SubscriptionStatus, string> = {
@@ -134,10 +167,10 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
       getUpcomingBills: (daysAhead = 7) => {
         return get().getActive()
-          .filter(s => getDaysUntilBilling(s.billingDay, s.cycle, s.billingMonth) <= daysAhead)
+          .filter(s => getDaysUntilBilling(s.billingDay, s.cycle, s.billingMonth, s.startDate, s.customCycleDays) <= daysAhead)
           .sort((a, b) =>
-            getDaysUntilBilling(a.billingDay, a.cycle, a.billingMonth) -
-            getDaysUntilBilling(b.billingDay, b.cycle, b.billingMonth)
+            getDaysUntilBilling(a.billingDay, a.cycle, a.billingMonth, a.startDate, a.customCycleDays) -
+            getDaysUntilBilling(b.billingDay, b.cycle, b.billingMonth, b.startDate, b.customCycleDays)
           )
       },
     }),

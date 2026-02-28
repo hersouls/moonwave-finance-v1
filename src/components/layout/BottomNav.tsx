@@ -3,36 +3,22 @@ import { LayoutDashboard, Landmark, Receipt, Repeat, BarChart3 } from 'lucide-re
 import { clsx } from 'clsx'
 import { useUIStore, type CurrentView } from '@/stores/uiStore'
 
+const NAV_TARGETS: Record<string, string> = {
+  dashboard: '/',
+  assets: '/assets',
+  ledger: '/ledger/expense',
+  subscriptions: '/subscriptions/domestic',
+  reports: '/reports',
+}
+
 export function BottomNav() {
   const navigate = useNavigate()
   const currentView = useUIStore((state) => state.currentView)
   const setCurrentView = useUIStore((state) => state.setCurrentView)
+
   const handleNavigate = (target: CurrentView) => {
-    if (target === 'dashboard') {
-      setCurrentView('dashboard')
-      navigate('/')
-      return
-    }
-    if (target === 'assets') {
-      setCurrentView('assets')
-      navigate('/assets')
-      return
-    }
-    if (target === 'ledger') {
-      setCurrentView('ledger')
-      navigate('/ledger')
-      return
-    }
-    if (target === 'subscriptions') {
-      setCurrentView('subscriptions')
-      navigate('/subscriptions')
-      return
-    }
-    if (target === 'reports') {
-      setCurrentView('reports')
-      navigate('/reports')
-      return
-    }
+    setCurrentView(target)
+    navigate(NAV_TARGETS[target] || '/')
   }
 
   const navItems = [

@@ -2,11 +2,22 @@ import { useState, useEffect, useCallback } from 'react'
 import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { useSubscriptionStore } from '@/stores/subscriptionStore'
+import { useTransactionStore } from '@/stores/transactionStore'
 import { useUIStore } from '@/stores/uiStore'
 import { SUBSCRIPTION_CATEGORIES, SUBSCRIPTION_PRESETS } from '@/utils/constants'
 import { getTodayString } from '@/lib/dateUtils'
 import { clsx } from 'clsx'
 import type { SubscriptionCurrency, SubscriptionCycle, SubscriptionCategoryType } from '@/lib/types'
+
+const CYCLE_OPTIONS: { value: SubscriptionCycle; label: string }[] = [
+  { value: 'weekly', label: '매주' },
+  { value: 'biweekly', label: '격주' },
+  { value: 'monthly', label: '매월' },
+  { value: 'quarterly', label: '분기' },
+  { value: 'semi-annual', label: '반기' },
+  { value: 'yearly', label: '연간' },
+  { value: 'custom', label: '직접' },
+]
 
 const PRESET_COLORS = [
   '#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4',
@@ -24,7 +35,22 @@ export function SubscriptionFormModal() {
   const addSubscription = useSubscriptionStore((s) => s.addSubscription)
   const updateSubscription = useSubscriptionStore((s) => s.updateSubscription)
 
+  const paymentMethodItems = useTransactionStore((s) => s.paymentMethodItems)
+  const transactionCategories = useTransactionStore((s) => s.categories)
+  const loadPaymentMethodItems = useTransactionStore((s) => s.loadPaymentMethodItems)
+  const loadCategories = useTransactionStore((s) => s.loadCategories)
+
   const isOpen = isCreateOpen || isEditOpen
+
+  useEffect(() => {
+    if (isOpen) {
+      loadPaymentMethodItems()
+      loadCategories()
+    }
+  }, [isOpen])
+
+  const creditCards = paymentMethodItems.filter((p) => p.type === 'credit_card')
+  const expenseCategories = transactionCategories.filter((c) => c.type === 'expense')
   const isEdit = isEditOpen && editingId != null
   const editingSub = isEdit ? subscriptions.find(s => s.id === editingId) : null
 
@@ -39,7 +65,12 @@ export function SubscriptionFormModal() {
   const [color, setColor] = useState('#3B82F6')
   const [url, setUrl] = useState('')
   const [memo, setMemo] = useState('')
+  const [customCycleDays, setCustomCycleDays] = useState(30)
+  const [paymentMethodItemId, setPaymentMethodItemId] = useState<number | undefined>(undefined)
+  const [linkedTransactionCategoryId, setLinkedTransactionCategoryId] = useState<number | undefined>(undefined)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const needsBillingDay = !['weekly', 'biweekly', 'custom'].includes(cycle)
 
   useEffect(() => {
     if (isEdit && editingSub) {
@@ -49,11 +80,14 @@ export function SubscriptionFormModal() {
       setCycle(editingSub.cycle)
       setBillingDay(editingSub.billingDay)
       setBillingMonth(editingSub.billingMonth ?? 1)
+      setCustomCycleDays(editingSub.customCycleDays ?? 30)
       setCategory(editingSub.category)
       setStartDate(editingSub.startDate)
       setColor(editingSub.color)
       setUrl(editingSub.url ?? '')
       setMemo(editingSub.memo ?? '')
+      setPaymentMethodItemId(editingSub.paymentMethodItemId)
+      setLinkedTransactionCategoryId(editingSub.linkedTransactionCategoryId)
     } else if (isCreateOpen) {
       resetForm()
     }
@@ -66,11 +100,14 @@ export function SubscriptionFormModal() {
     setCycle('monthly')
     setBillingDay(1)
     setBillingMonth(1)
+    setCustomCycleDays(30)
     setCategory('other')
     setStartDate(getTodayString())
     setColor('#3B82F6')
     setUrl('')
     setMemo('')
+    setPaymentMethodItemId(undefined)
+    setLinkedTransactionCategoryId(undefined)
   }
 
   const handleClose = useCallback(() => {
@@ -105,7 +142,8 @@ export function SubscriptionFormModal() {
 
   const handleSubmit = async () => {
     const parsedAmount = parseAmount()
-    if (!name.trim() || parsedAmount <= 0 || billingDay < 1 || billingDay > 28) return
+    if (!name.trim() || parsedAmount <= 0) return
+    if (needsBillingDay && (billingDay < 1 || billingDay > 28)) return
 
     setIsSubmitting(true)
     try {
@@ -114,13 +152,16 @@ export function SubscriptionFormModal() {
         currency,
         amount: parsedAmount,
         cycle,
-        billingDay,
+        billingDay: needsBillingDay ? billingDay : 1,
         billingMonth: cycle === 'yearly' ? billingMonth : undefined,
+        customCycleDays: cycle === 'custom' ? Math.max(1, Math.min(365, customCycleDays)) : undefined,
         category,
         startDate,
         color,
         url: url.trim() || undefined,
         memo: memo.trim() || undefined,
+        paymentMethodItemId: paymentMethodItemId || undefined,
+        linkedTransactionCategoryId: linkedTransactionCategoryId || undefined,
       }
 
       if (isEdit && editingId) {
@@ -254,60 +295,84 @@ export function SubscriptionFormModal() {
             </div>
           </div>
 
-          {/* Cycle + Billing Day */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
-                결제주기
-              </label>
-              <div className="flex gap-1">
-                {(['monthly', 'yearly'] as const).map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setCycle(c)}
-                    className={clsx(
-                      'flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                      cycle === c
-                        ? 'bg-primary-500 text-white'
-                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
-                    )}
-                  >
-                    {c === 'monthly' ? '월간' : '연간'}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
-                결제일
-              </label>
-              <select
-                value={billingDay}
-                onChange={(e) => setBillingDay(Number(e.target.value))}
-                className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
-                  <option key={d} value={d}>{d}일</option>
-                ))}
-              </select>
+          {/* Cycle */}
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+              결제주기
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {CYCLE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setCycle(opt.value)}
+                  className={clsx(
+                    'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                    cycle === opt.value
+                      ? 'bg-primary-500 text-white'
+                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Billing Month (yearly only) */}
-          {cycle === 'yearly' && (
+          {/* Custom cycle days */}
+          {cycle === 'custom' && (
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
-                결제월
+                반복 일수
               </label>
-              <select
-                value={billingMonth}
-                onChange={(e) => setBillingMonth(Number(e.target.value))}
-                className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                  <option key={m} value={m}>{m}월</option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={customCycleDays}
+                  onChange={(e) => setCustomCycleDays(Math.max(1, Math.min(365, Number(e.target.value) || 1)))}
+                  className="w-24 px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 tabular-nums"
+                />
+                <span className="text-sm text-zinc-500 dark:text-zinc-400">일마다</span>
+              </div>
+            </div>
+          )}
+
+          {/* Billing Day (only for cycles that use it) */}
+          {needsBillingDay && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+                  결제일
+                </label>
+                <select
+                  value={billingDay}
+                  onChange={(e) => setBillingDay(Number(e.target.value))}
+                  className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>{d}일</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Billing Month (yearly only) */}
+              {cycle === 'yearly' && (
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+                    결제월
+                  </label>
+                  <select
+                    value={billingMonth}
+                    onChange={(e) => setBillingMonth(Number(e.target.value))}
+                    className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                      <option key={m} value={m}>{m}월</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           )}
 
@@ -371,6 +436,47 @@ export function SubscriptionFormModal() {
               ))}
             </div>
           </div>
+
+          {/* Payment Method (Credit Card) */}
+          {creditCards.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+                결제 카드 (선택)
+              </label>
+              <select
+                value={paymentMethodItemId ?? ''}
+                onChange={(e) => setPaymentMethodItemId(e.target.value ? Number(e.target.value) : undefined)}
+                className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="">선택 안 함</option>
+                {creditCards.map((pm) => (
+                  <option key={pm.id} value={pm.id}>{pm.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Linked Transaction Category */}
+          {expenseCategories.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+                가계부 카테고리 (선택)
+              </label>
+              <select
+                value={linkedTransactionCategoryId ?? ''}
+                onChange={(e) => setLinkedTransactionCategoryId(e.target.value ? Number(e.target.value) : undefined)}
+                className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="">선택 안 함</option>
+                {expenseCategories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+                가계부 지출에 자동 반영 시 사용할 카테고리
+              </p>
+            </div>
+          )}
 
           {/* URL & Memo */}
           <div>

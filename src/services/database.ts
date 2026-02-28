@@ -112,6 +112,33 @@ class FinanceDatabase extends Dexie {
       paymentMethodItems: '++id, syncId, type, name, sortOrder',
       subscriptions: '++id, syncId, currency, category, status, billingDay, cycle, sortOrder',
     })
+
+    this.version(6).stores({
+      members: '++id, syncId, name, sortOrder',
+      assetCategories: '++id, syncId, name, type, sortOrder',
+      assetItems: '++id, syncId, memberId, categoryId, type, isActive, sortOrder',
+      dailyValues: '++id, syncId, assetItemId, date, [assetItemId+date]',
+      transactionCategories: '++id, syncId, name, type, sortOrder',
+      transactions: '++id, syncId, memberId, type, categoryId, date, isRecurring, recurSourceId, paymentMethod, paymentMethodItemId, subscriptionId',
+      budgets: '++id, syncId, categoryId, month',
+      goals: '++id, syncId, targetDate',
+      paymentMethodItems: '++id, syncId, type, name, sortOrder, linkedAssetItemId',
+      subscriptions: '++id, syncId, currency, category, status, billingDay, cycle, sortOrder, paymentMethodItemId',
+    })
+
+    // v7: pauseHistory, customCycleDays added as non-indexed JSON fields — no schema change needed
+    this.version(7).stores({
+      members: '++id, syncId, name, sortOrder',
+      assetCategories: '++id, syncId, name, type, sortOrder',
+      assetItems: '++id, syncId, memberId, categoryId, type, isActive, sortOrder',
+      dailyValues: '++id, syncId, assetItemId, date, [assetItemId+date]',
+      transactionCategories: '++id, syncId, name, type, sortOrder',
+      transactions: '++id, syncId, memberId, type, categoryId, date, isRecurring, recurSourceId, paymentMethod, paymentMethodItemId, subscriptionId',
+      budgets: '++id, syncId, categoryId, month',
+      goals: '++id, syncId, targetDate',
+      paymentMethodItems: '++id, syncId, type, name, sortOrder, linkedAssetItemId',
+      subscriptions: '++id, syncId, currency, category, status, billingDay, cycle, sortOrder, paymentMethodItemId',
+    })
   }
 }
 
@@ -465,6 +492,10 @@ export async function deleteSubscription(id: number): Promise<void> {
 // ─── Recurring Transaction Helpers ───────────────
 export async function getRecurringTransactions(): Promise<Transaction[]> {
   return db.transactions.where('isRecurring').equals(1).toArray()
+}
+
+export async function getTransactionsBySubscriptionId(subscriptionId: number): Promise<Transaction[]> {
+  return db.transactions.where('subscriptionId').equals(subscriptionId).toArray()
 }
 
 // ─── Bulk Operations ───────────────────────────────

@@ -53,7 +53,7 @@ export interface DailyValue {
 
 // ─── Transaction Types ─────────────────────────────
 export type TransactionType = 'income' | 'expense'
-export type PaymentMethod = 'cash' | 'credit_card' | 'debit_card' | 'bank_transfer' | 'other'
+export type PaymentMethod = 'cash' | 'credit_card' | 'debit_card' | 'bank_transfer' | 'loan' | 'other'
 
 export interface TransactionCategory {
   id?: number
@@ -74,6 +74,7 @@ export interface PaymentMethodItem {
   type: PaymentMethod
   name: string
   memo?: string
+  linkedAssetItemId?: number
   isActive: boolean
   sortOrder: number
   createdAt: string
@@ -103,6 +104,7 @@ export interface Transaction {
   isRecurring: boolean
   recurPattern?: RepeatPattern
   recurSourceId?: number
+  subscriptionId?: number
   createdAt: string
   updatedAt: string
 }
@@ -140,10 +142,17 @@ export interface FinancialGoal {
 // ─── Subscription Types ──────────────────────────────
 export type SubscriptionCurrency = 'KRW' | 'USD'
 export type SubscriptionStatus = 'active' | 'paused' | 'cancelled'
-export type SubscriptionCycle = 'monthly' | 'yearly'
+export type SubscriptionCycle =
+  | 'weekly' | 'biweekly' | 'monthly'
+  | 'quarterly' | 'semi-annual' | 'yearly' | 'custom'
 export type SubscriptionCategoryType =
   | 'entertainment' | 'productivity' | 'cloud' | 'music'
   | 'news' | 'education' | 'health' | 'shopping' | 'finance' | 'other'
+
+export interface PauseHistoryEntry {
+  pausedAt: string    // YYYY-MM-DD
+  resumedAt?: string  // YYYY-MM-DD, undefined = 현재 정지중
+}
 
 export interface Subscription {
   id?: number
@@ -155,14 +164,18 @@ export interface Subscription {
   cycle: SubscriptionCycle
   billingDay: number           // 1-28
   billingMonth?: number        // 1-12 (yearly only)
+  customCycleDays?: number     // cycle === 'custom' 일 때만 사용 (1-365)
   category: SubscriptionCategoryType
   status: SubscriptionStatus
   startDate: string
   endDate?: string
+  pauseHistory?: PauseHistoryEntry[]
   icon?: string
   color: string
   url?: string
   memo?: string
+  paymentMethodItemId?: number
+  linkedTransactionCategoryId?: number
   sortOrder: number
   createdAt: string
   updatedAt: string
@@ -182,6 +195,8 @@ export interface NotificationSettings {
   budgetThreshold: number
   transactionReminder: boolean
   reminderTime: string
+  subscriptionBillingAlert: boolean
+  subscriptionAlertDaysBefore: number[]  // e.g. [0, 1, 3]
 }
 
 export interface Settings {

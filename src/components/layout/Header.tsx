@@ -20,13 +20,17 @@ export function Header() {
   const getPageTitle = (): string => {
     const path = location.pathname
     if (path === '/') return '대시보드'
-    if (path === '/assets') return '자산'
+    if (path === '/assets') return '자본관리'
+    if (path === '/assets/calendar') return '자산 캘린더'
     if (path.startsWith('/assets/')) return '자산 상세'
-    if (path === '/liabilities') return '부채'
+    if (path === '/liabilities') return '부채관리'
     if (path.startsWith('/liabilities/')) return '부채 상세'
-    if (path === '/ledger') return '가계부'
-    if (path === '/calendar') return '캘린더'
+    if (path === '/ledger/expense') return '지출관리'
+    if (path === '/ledger/income') return '수입관리'
+    if (path === '/ledger/calendar') return '가계부 캘린더'
     if (path === '/reports') return '분석'
+    if (path === '/subscriptions/domestic') return '국내 구독'
+    if (path === '/subscriptions/international') return '국외 구독'
     if (path === '/profile') return '프로필'
     return '대시보드'
   }

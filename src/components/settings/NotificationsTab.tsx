@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Bell, BellOff, Clock, PiggyBank } from 'lucide-react'
+import { Bell, BellOff, Clock, PiggyBank, CreditCard } from 'lucide-react'
 import { clsx } from 'clsx'
 import { ToggleSwitch } from './ToggleSwitch'
 import type { Settings } from '@/lib/types'
@@ -13,6 +13,12 @@ type NotificationPermission = 'default' | 'granted' | 'denied' | 'unsupported'
 
 const THRESHOLD_OPTIONS = [50, 60, 70, 80, 90, 100]
 const REMINDER_TIMES = ['09:00', '12:00', '18:00', '21:00']
+const ALERT_DAYS_OPTIONS = [
+  { value: 0, label: '당일' },
+  { value: 1, label: '1일 전' },
+  { value: 3, label: '3일 전' },
+  { value: 7, label: '7일 전' },
+]
 
 export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
   const [permission, setPermission] = useState<NotificationPermission>('default')
@@ -156,6 +162,56 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
                     {t}
                   </button>
                 ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Subscription Billing Alert */}
+      <section>
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+          <CreditCard className="w-4 h-4" />
+          구독 결제일 알림
+        </h3>
+        <div className="space-y-3">
+          <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+            <ToggleSwitch
+              checked={draft.notifications.subscriptionBillingAlert ?? false}
+              onChange={(v) => updateNotification({ subscriptionBillingAlert: v })}
+              label="결제일 미리 알림"
+              description="구독 결제일이 가까워지면 알려줍니다"
+            />
+          </div>
+          {draft.notifications.subscriptionBillingAlert && (
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">알림 시점</p>
+              <div className="flex flex-wrap gap-2">
+                {ALERT_DAYS_OPTIONS.map((opt) => {
+                  const currentDays = draft.notifications.subscriptionAlertDaysBefore ?? [0, 1, 3]
+                  const isSelected = currentDays.includes(opt.value)
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => {
+                        const updated = isSelected
+                          ? currentDays.filter((d) => d !== opt.value)
+                          : [...currentDays, opt.value].sort((a, b) => a - b)
+                        if (updated.length > 0) {
+                          updateNotification({ subscriptionAlertDaysBefore: updated })
+                        }
+                      }}
+                      className={clsx(
+                        'px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
+                        isSelected
+                          ? 'bg-primary-500 text-white'
+                          : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}

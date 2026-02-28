@@ -5,6 +5,7 @@ export const PAYMENT_METHOD_OPTIONS: { value: PaymentMethod; label: string }[] =
   { value: 'credit_card', label: '신용카드' },
   { value: 'debit_card', label: '체크카드' },
   { value: 'bank_transfer', label: '계좌이체' },
+  { value: 'loan', label: '대출' },
   { value: 'other', label: '기타' },
 ]
 

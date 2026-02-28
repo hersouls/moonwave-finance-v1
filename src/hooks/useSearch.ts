@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { db } from '@/services/database'
 
 export interface SearchResult {
-  type: 'asset' | 'transaction' | 'category'
+  type: 'asset' | 'transaction' | 'category' | 'subscription'
   id: number
   title: string
   subtitle?: string
@@ -48,7 +48,7 @@ export function useSearch(query: string) {
               id: txn.id!,
               title: txn.memo || '거래',
               subtitle: `${txn.type === 'income' ? '수입' : '지출'} · ${txn.date}`,
-              path: '/ledger',
+              path: txn.type === 'income' ? '/ledger/income' : '/ledger/expense',
             })
           }
         }
@@ -75,7 +75,21 @@ export function useSearch(query: string) {
               id: cat.id!,
               title: cat.name,
               subtitle: `${cat.type === 'income' ? '수입' : '지출'} 카테고리`,
-              path: '/ledger',
+              path: cat.type === 'income' ? '/ledger/income' : '/ledger/expense',
+            })
+          }
+        }
+
+        // Search subscriptions
+        const subscriptions = await db.subscriptions.toArray()
+        for (const sub of subscriptions) {
+          if (sub.name.toLowerCase().includes(q) || sub.description?.toLowerCase().includes(q) || sub.memo?.toLowerCase().includes(q)) {
+            found.push({
+              type: 'subscription' as SearchResult['type'],
+              id: sub.id!,
+              title: sub.name,
+              subtitle: `구독 · ${sub.status === 'active' ? '활성' : sub.status === 'paused' ? '일시정지' : '해지'}`,
+              path: sub.currency === 'USD' ? '/subscriptions/international' : '/subscriptions/domestic',
             })
           }
         }

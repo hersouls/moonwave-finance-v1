@@ -1,30 +1,105 @@
+import { useState } from 'react'
 import { useUIStore } from '@/stores/uiStore'
 import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react'
 import { clsx } from 'clsx'
 import {
   Landmark,
-  CreditCard,
   Receipt,
-  Calendar,
   BarChart3,
   HelpCircle,
   Palette,
   Plus,
   Settings,
   X,
+  Repeat,
+  ChevronDown,
 } from 'lucide-react'
 import { Fragment, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
+
+interface NavChild {
+  label: string
+  path: string
+}
+
+interface NavGroup {
+  id: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  children: NavChild[]
+}
+
+const navGroups: NavGroup[] = [
+  {
+    id: 'assets',
+    label: '자산',
+    icon: Landmark,
+    children: [
+      { label: '자본관리', path: '/assets' },
+      { label: '부채관리', path: '/liabilities' },
+      { label: '캘린더', path: '/assets/calendar' },
+    ],
+  },
+  {
+    id: 'ledger',
+    label: '가계부',
+    icon: Receipt,
+    children: [
+      { label: '지출관리', path: '/ledger/expense' },
+      { label: '수입관리', path: '/ledger/income' },
+      { label: '캘린더', path: '/ledger/calendar' },
+    ],
+  },
+  {
+    id: 'subscriptions',
+    label: '구독',
+    icon: Repeat,
+    children: [
+      { label: '국내관리', path: '/subscriptions/domestic' },
+      { label: '국외관리', path: '/subscriptions/international' },
+    ],
+  },
+]
+
+function getActiveGroupId(pathname: string): string | null {
+  if (pathname.startsWith('/assets') || pathname.startsWith('/liabilities')) return 'assets'
+  if (pathname.startsWith('/ledger')) return 'ledger'
+  if (pathname.startsWith('/subscriptions')) return 'subscriptions'
+  return null
+}
 
 export function MobileNav() {
   const navigate = useNavigate()
+  const location = useLocation()
 
   const isMobileMenuOpen = useUIStore((state) => state.isMobileMenuOpen)
   const closeMobileMenu = useUIStore((state) => state.closeMobileMenu)
   const openSettingsModal = useUIStore((state) => state.openSettingsModal)
   const openFAQModal = useUIStore((state) => state.openFAQModal)
   const openAssetCreateModal = useUIStore((state) => state.openAssetCreateModal)
-  const setCurrentView = useUIStore((state) => state.setCurrentView)
+
+  const activeGroupId = getActiveGroupId(location.pathname)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+    activeGroupId ? new Set([activeGroupId]) : new Set()
+  )
+
+  useEffect(() => {
+    if (activeGroupId) {
+      setExpandedGroups((prev) => {
+        if (prev.has(activeGroupId)) return prev
+        return new Set([...prev, activeGroupId])
+      })
+    }
+  }, [activeGroupId])
+
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(groupId)) next.delete(groupId)
+      else next.add(groupId)
+      return next
+    })
+  }
 
   const handleOpenSettings = () => {
     closeMobileMenu()
@@ -41,9 +116,8 @@ export function MobileNav() {
     openAssetCreateModal()
   }
 
-  const handleNavigate = (path: string, view: 'assets' | 'liabilities' | 'ledger' | 'calendar' | 'reports') => {
+  const handleNavigate = (path: string) => {
     closeMobileMenu()
-    setCurrentView(view)
     navigate(path)
   }
 
@@ -52,7 +126,6 @@ export function MobileNav() {
     openSettingsModal()
   }
 
-  // Body scroll lock when mobile menu is open
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = 'hidden'
@@ -62,18 +135,9 @@ export function MobileNav() {
     }
   }, [isMobileMenuOpen])
 
-  const navLinks = [
-    { label: '자산', icon: Landmark, path: '/assets', view: 'assets' as const },
-    { label: '부채', icon: CreditCard, path: '/liabilities', view: 'liabilities' as const },
-    { label: '가계부', icon: Receipt, path: '/ledger', view: 'ledger' as const },
-    { label: '캘린더', icon: Calendar, path: '/calendar', view: 'calendar' as const },
-    { label: '분석', icon: BarChart3, path: '/reports', view: 'reports' as const },
-  ]
-
   return (
     <Transition show={isMobileMenuOpen} as={Fragment}>
       <Dialog onClose={closeMobileMenu} className="relative z-50 lg:hidden" id="mobile-nav">
-        {/* Backdrop */}
         <TransitionChild
           as={Fragment}
           enter="ease-out duration-300"
@@ -86,7 +150,6 @@ export function MobileNav() {
           <div className="fixed inset-0 bg-zinc-900/50 backdrop-blur-sm" aria-hidden="true" />
         </TransitionChild>
 
-        {/* Drawer */}
         <TransitionChild
           as={Fragment}
           enter="ease-out duration-300"
@@ -104,14 +167,7 @@ export function MobileNav() {
             <div className="flex items-center justify-between h-16 px-4 border-b border-zinc-200 dark:border-zinc-800 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <img src="/icons/icon-192.png" alt="FIN" className="w-8 h-8 rounded-lg flex-shrink-0" />
-                <div className="flex flex-col">
-                  <span
-                    id="mobile-nav-title"
-                    className="font-bold text-zinc-900 dark:text-zinc-100"
-                  >
-                    FIN
-                  </span>
-                </div>
+                <span id="mobile-nav-title" className="font-bold text-zinc-900 dark:text-zinc-100">FIN</span>
               </div>
               <button
                 onClick={closeMobileMenu}
@@ -136,29 +192,80 @@ export function MobileNav() {
                 </button>
               </div>
 
-              {/* Menu Items */}
               <nav className="px-2" aria-label="모바일 메인 메뉴">
                 <ul className="space-y-1" role="menu">
-                  {/* Nav Links */}
-                  {navLinks.map((link) => {
-                    const Icon = link.icon
+                  {/* Nav Groups */}
+                  {navGroups.map((group) => {
+                    const Icon = group.icon
+                    const isExpanded = expandedGroups.has(group.id)
+                    const isGroupActive = activeGroupId === group.id
+
                     return (
-                      <li key={link.path} role="none">
+                      <li key={group.id} role="none">
                         <button
-                          onClick={() => handleNavigate(link.path, link.view)}
+                          onClick={() => toggleGroup(group.id)}
                           className={clsx(
-                            'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
-                            'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800',
-                            'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 min-h-[44px]'
+                            'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors min-h-[44px]',
+                            'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+                            isGroupActive
+                              ? 'text-primary-700 dark:text-primary-300'
+                              : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                           )}
+                          aria-expanded={isExpanded}
                           role="menuitem"
                         >
                           <Icon className="w-5 h-5" aria-hidden="true" />
-                          <span className="font-medium">{link.label}</span>
+                          <span className="font-medium flex-1 text-left">{group.label}</span>
+                          <ChevronDown
+                            className={clsx(
+                              'w-4 h-4 transition-transform duration-200',
+                              isExpanded && 'rotate-180'
+                            )}
+                            aria-hidden="true"
+                          />
                         </button>
+                        {isExpanded && (
+                          <ul className="mt-1 ml-6 pl-4 border-l border-zinc-200 dark:border-zinc-700 space-y-0.5" role="menu">
+                            {group.children.map((child) => {
+                              const childActive = location.pathname === child.path
+                              return (
+                                <li key={child.path} role="none">
+                                  <button
+                                    onClick={() => handleNavigate(child.path)}
+                                    className={clsx(
+                                      'w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-colors min-h-[44px]',
+                                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+                                      childActive
+                                        ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+                                        : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                    )}
+                                    role="menuitem"
+                                  >
+                                    {child.label}
+                                  </button>
+                                </li>
+                              )
+                            })}
+                          </ul>
+                        )}
                       </li>
                     )
                   })}
+
+                  {/* Divider */}
+                  <li role="separator" className="!my-3 mx-3 border-t border-zinc-200 dark:border-zinc-700" aria-hidden="true" />
+
+                  {/* Reports */}
+                  <li role="none">
+                    <button
+                      onClick={() => handleNavigate('/reports')}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 min-h-[44px]"
+                      role="menuitem"
+                    >
+                      <BarChart3 className="w-5 h-5" aria-hidden="true" />
+                      <span className="font-medium">분석</span>
+                    </button>
+                  </li>
 
                   {/* Theme */}
                   <li role="none">

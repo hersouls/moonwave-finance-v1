@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
@@ -12,13 +13,22 @@ import { MonthlySummary } from './MonthlySummary'
 import { CategoryBreakdown } from './CategoryBreakdown'
 import { LedgerEmptyState } from './LedgerEmptyState'
 import { BudgetOverviewCard } from '@/components/budget/BudgetOverviewCard'
+import { PageSegmentControl } from '@/components/layout/PageSegmentControl'
 import { FAB } from '@/components/ui/FAB'
 import { IconButton } from '@/components/ui/Button'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { formatMonthLabel, getPreviousMonth, getNextMonth } from '@/lib/dateUtils'
 import { ErrorEmptyState } from '@/components/ui/EmptyState'
 
+const LEDGER_SEGMENTS = [
+  { id: 'expense', label: '지출', path: '/ledger/expense' },
+  { id: 'income', label: '수입', path: '/ledger/income' },
+  { id: 'calendar', label: '캘린더', path: '/ledger/calendar' },
+]
+
 export function LedgerPage() {
+  const location = useLocation()
+  const defaultType = location.pathname === '/ledger/income' ? 'income' : 'expense'
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -54,6 +64,11 @@ export function LedgerPage() {
     setMinAmount, setMaxAmount,
     resetFilters, activeFilterCount,
   } = useTransactionFilters(transactions)
+
+  // Sync type filter with route
+  useEffect(() => {
+    setTypeFilter(defaultType)
+  }, [defaultType])
 
   const loadData = async () => {
     setError(null)
@@ -98,6 +113,9 @@ export function LedgerPage() {
 
   return (
     <div className="p-4 lg:p-6 space-y-4">
+      {/* Segment Control */}
+      <PageSegmentControl segments={LEDGER_SEGMENTS} />
+
       {/* Month Navigator */}
       <div className="flex items-center justify-between">
         <IconButton onClick={() => setSelectedMonth(getPreviousMonth(selectedMonth))} plain size="sm">
@@ -118,8 +136,8 @@ export function LedgerPage() {
         netSavings={summary.netSavings}
       />
 
-      {/* Budget Overview */}
-      {budgets.length > 0 && <BudgetOverviewCard />}
+      {/* Budget Overview (expense view only) */}
+      {defaultType === 'expense' && budgets.length > 0 && <BudgetOverviewCard />}
 
       {/* Type Filter + Advanced Filters */}
       <TransactionFilters

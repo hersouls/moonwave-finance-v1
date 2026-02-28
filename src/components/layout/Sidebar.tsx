@@ -1,42 +1,96 @@
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
   Landmark,
-  CreditCard,
   Receipt,
-  Calendar,
   Repeat,
   BarChart3,
   HelpCircle,
   Settings,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  CreditCard,
+  Calendar,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { useUIStore } from '@/stores/uiStore'
 
-type NavItemType = 'link' | 'modal'
+interface NavChild {
+  id: string
+  label: string
+  path: string
+  icon?: React.ComponentType<{ className?: string }>
+}
 
-interface NavItem {
+interface NavGroup {
   id: string
   label: string
   icon: React.ComponentType<{ className?: string }>
-  type: NavItemType
-  path?: string
+  children: NavChild[]
 }
 
-const navItems: NavItem[] = [
-  { id: 'dashboard', label: '대시보드', icon: LayoutDashboard, type: 'link', path: '/' },
-  { id: 'assets', label: '자산', icon: Landmark, type: 'link', path: '/assets' },
-  { id: 'liabilities', label: '부채', icon: CreditCard, type: 'link', path: '/liabilities' },
-  { id: 'ledger', label: '가계부', icon: Receipt, type: 'link', path: '/ledger' },
-  { id: 'calendar', label: '캘린더', icon: Calendar, type: 'link', path: '/calendar' },
-  { id: 'subscriptions', label: '구독', icon: Repeat, type: 'link', path: '/subscriptions' },
-  { id: 'reports', label: '분석', icon: BarChart3, type: 'link', path: '/reports' },
-  { id: 'faq', label: 'FAQ', icon: HelpCircle, type: 'modal' },
-  { id: 'settings', label: '설정', icon: Settings, type: 'modal' },
+interface NavStandalone {
+  id: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  path?: string
+  action?: 'faq' | 'settings'
+}
+
+const navGroups: NavGroup[] = [
+  {
+    id: 'assets',
+    label: '자산',
+    icon: Landmark,
+    children: [
+      { id: 'assets-capital', label: '자본관리', path: '/assets' },
+      { id: 'assets-liability', label: '부채관리', path: '/liabilities', icon: CreditCard },
+      { id: 'assets-calendar', label: '캘린더', path: '/assets/calendar', icon: Calendar },
+    ],
+  },
+  {
+    id: 'ledger',
+    label: '가계부',
+    icon: Receipt,
+    children: [
+      { id: 'ledger-expense', label: '지출관리', path: '/ledger/expense' },
+      { id: 'ledger-income', label: '수입관리', path: '/ledger/income' },
+      { id: 'ledger-calendar', label: '캘린더', path: '/ledger/calendar', icon: Calendar },
+    ],
+  },
+  {
+    id: 'subscriptions',
+    label: '구독',
+    icon: Repeat,
+    children: [
+      { id: 'sub-domestic', label: '국내관리', path: '/subscriptions/domestic' },
+      { id: 'sub-international', label: '국외관리', path: '/subscriptions/international' },
+    ],
+  },
 ]
+
+const standaloneTop: NavStandalone = {
+  id: 'dashboard',
+  label: '대시보드',
+  icon: LayoutDashboard,
+  path: '/',
+}
+
+const standaloneBottom: NavStandalone[] = [
+  { id: 'reports', label: '분석', icon: BarChart3, path: '/reports' },
+  { id: 'faq', label: 'FAQ', icon: HelpCircle, action: 'faq' },
+  { id: 'settings', label: '설정', icon: Settings, action: 'settings' },
+]
+
+function getActiveGroupId(pathname: string): string | null {
+  if (pathname.startsWith('/assets') || pathname.startsWith('/liabilities')) return 'assets'
+  if (pathname.startsWith('/ledger')) return 'ledger'
+  if (pathname.startsWith('/subscriptions')) return 'subscriptions'
+  return null
+}
 
 export function Sidebar() {
   const location = useLocation()
@@ -45,27 +99,158 @@ export function Sidebar() {
   const openFAQModal = useUIStore((state) => state.openFAQModal)
   const openSettingsModal = useUIStore((state) => state.openSettingsModal)
 
-  const handleNavClick = (item: NavItem) => {
-    if (item.type === 'modal') {
-      switch (item.id) {
-        case 'faq':
-          openFAQModal()
-          break
-        case 'settings':
-          openSettingsModal()
-          break
-      }
+  const activeGroupId = getActiveGroupId(location.pathname)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+    activeGroupId ? new Set([activeGroupId]) : new Set()
+  )
+
+  useEffect(() => {
+    if (activeGroupId) {
+      setExpandedGroups((prev) => {
+        if (prev.has(activeGroupId)) return prev
+        return new Set([...prev, activeGroupId])
+      })
     }
+  }, [activeGroupId])
+
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(groupId)) next.delete(groupId)
+      else next.add(groupId)
+      return next
+    })
   }
 
-  const isActive = (item: NavItem) => {
-    if (item.type === 'link' && item.path) {
-      if (item.path === '/') {
-        return location.pathname === '/'
-      }
-      return location.pathname.startsWith(item.path)
+  const isPathActive = (path: string) => {
+    if (path === '/') return location.pathname === '/'
+    return location.pathname === path
+  }
+
+  const handleAction = (action: 'faq' | 'settings') => {
+    if (action === 'faq') openFAQModal()
+    else openSettingsModal()
+  }
+
+  const renderStandaloneLink = (item: NavStandalone) => {
+    const Icon = item.icon
+    const active = item.path ? isPathActive(item.path) : false
+
+    const content = item.path ? (
+      <Link
+        to={item.path}
+        className={clsx(
+          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+          active
+            ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+            : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+        )}
+        role="menuitem"
+        aria-current={active ? 'page' : undefined}
+      >
+        <Icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+        {isSidebarOpen && <span className="text-sm font-medium truncate">{item.label}</span>}
+      </Link>
+    ) : (
+      <button
+        onClick={() => item.action && handleAction(item.action)}
+        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+        role="menuitem"
+      >
+        <Icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+        {isSidebarOpen && <span className="text-sm font-medium truncate">{item.label}</span>}
+      </button>
+    )
+
+    return (
+      <li key={item.id} role="none">
+        {!isSidebarOpen ? (
+          <Tooltip content={item.label} placement="right">
+            {content}
+          </Tooltip>
+        ) : (
+          content
+        )}
+      </li>
+    )
+  }
+
+  const renderGroup = (group: NavGroup) => {
+    const Icon = group.icon
+    const isExpanded = expandedGroups.has(group.id)
+    const isGroupActive = activeGroupId === group.id
+
+    if (!isSidebarOpen) {
+      // Collapsed: show group icon, clicking navigates to first child
+      const firstPath = group.children[0].path
+      return (
+        <li key={group.id} role="none">
+          <Tooltip content={group.label} placement="right">
+            <Link
+              to={firstPath}
+              className={clsx(
+                'w-full flex items-center justify-center px-3 py-2.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+                isGroupActive
+                  ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              )}
+              role="menuitem"
+            >
+              <Icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+            </Link>
+          </Tooltip>
+        </li>
+      )
     }
-    return false
+
+    return (
+      <li key={group.id} role="none">
+        <button
+          onClick={() => toggleGroup(group.id)}
+          className={clsx(
+            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+            isGroupActive
+              ? 'text-primary-700 dark:text-primary-300'
+              : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+          )}
+          aria-expanded={isExpanded}
+        >
+          <Icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+          <span className="text-sm font-medium truncate flex-1 text-left">{group.label}</span>
+          <ChevronDown
+            className={clsx(
+              'w-4 h-4 flex-shrink-0 transition-transform duration-200',
+              isExpanded && 'rotate-180'
+            )}
+            aria-hidden="true"
+          />
+        </button>
+        {isExpanded && (
+          <ul className="mt-1 space-y-0.5 ml-4 pl-4 border-l border-zinc-200 dark:border-zinc-700" role="menu">
+            {group.children.map((child) => {
+              const childActive = isPathActive(child.path)
+              return (
+                <li key={child.id} role="none">
+                  <Link
+                    to={child.path}
+                    className={clsx(
+                      'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+                      childActive
+                        ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    )}
+                    role="menuitem"
+                    aria-current={childActive ? 'page' : undefined}
+                  >
+                    {child.label}
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </li>
+    )
   }
 
   return (
@@ -88,9 +273,7 @@ export function Sidebar() {
           <img src="/icons/icon-192.png" alt="FIN" className="w-8 h-8 rounded-lg flex-shrink-0" />
           {isSidebarOpen && (
             <div className="flex flex-col min-w-0">
-              <span className="font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                FIN
-              </span>
+              <span className="font-bold text-zinc-900 dark:text-zinc-100 truncate">FIN</span>
             </div>
           )}
         </Link>
@@ -99,55 +282,20 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4" aria-label="주 메뉴">
         <ul className="space-y-1 px-2" role="menubar">
-          {navItems.map((item) => {
-            const Icon = item.icon
-            const active = isActive(item)
+          {/* Dashboard */}
+          {renderStandaloneLink(standaloneTop)}
 
-            const navButton = item.type === 'link' ? (
-              <Link
-                to={item.path!}
-                className={clsx(
-                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
-                  active
-                    ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                )}
-                role="menuitem"
-                aria-current={active ? 'page' : undefined}
-              >
-                <Icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-                {isSidebarOpen && (
-                  <span className="text-sm font-medium truncate">{item.label}</span>
-                )}
-              </Link>
-            ) : (
-              <button
-                onClick={() => handleNavClick(item)}
-                className={clsx(
-                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
-                  'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                )}
-                role="menuitem"
-              >
-                <Icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-                {isSidebarOpen && (
-                  <span className="text-sm font-medium truncate">{item.label}</span>
-                )}
-              </button>
-            )
+          {/* Divider */}
+          <li role="separator" className="!my-3 mx-3 border-t border-zinc-200 dark:border-zinc-700" aria-hidden="true" />
 
-            return (
-              <li key={item.id} role="none">
-                {!isSidebarOpen ? (
-                  <Tooltip content={item.label} placement="right">
-                    {navButton}
-                  </Tooltip>
-                ) : (
-                  navButton
-                )}
-              </li>
-            )
-          })}
+          {/* Groups: 자산/가계부/구독 */}
+          {navGroups.map(renderGroup)}
+
+          {/* Divider */}
+          <li role="separator" className="!my-3 mx-3 border-t border-zinc-200 dark:border-zinc-700" aria-hidden="true" />
+
+          {/* Bottom standalone items */}
+          {standaloneBottom.map(renderStandaloneLink)}
         </ul>
       </nav>
 

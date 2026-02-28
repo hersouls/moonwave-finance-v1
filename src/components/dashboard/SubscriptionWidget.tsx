@@ -42,7 +42,7 @@ export function SubscriptionWidget() {
           <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">다음 결제 예정</p>
           <div className="space-y-2">
             {upcoming.slice(0, 3).map((sub) => {
-              const daysLeft = getDaysUntilBilling(sub.billingDay, sub.cycle, sub.billingMonth)
+              const daysLeft = getDaysUntilBilling(sub.billingDay, sub.cycle, sub.billingMonth, sub.startDate, sub.customCycleDays)
               return (
                 <div key={sub.id} className="flex items-center gap-2">
                   <div

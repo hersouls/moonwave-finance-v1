@@ -19,6 +19,8 @@ import { useSettingsStore } from './stores/settingsStore'
 import { useUIStore } from './stores/uiStore'
 import { useAuthStore } from './stores/authStore'
 import { useUndoStore } from './stores/undoStore'
+import { useSubscriptionStore } from './stores/subscriptionStore'
+import { showBillingNotifications } from './services/notificationService'
 import { useOnlineStatus } from './hooks/useOnlineStatus'
 import { useAutoSync } from './hooks/useAutoSync'
 
@@ -36,6 +38,14 @@ export default function App() {
       try {
         initSettings()
         useAuthStore.getState().initialize()
+
+        // Check subscription billing notifications
+        const settings = useSettingsStore.getState().settings
+        if (settings.notifications.subscriptionBillingAlert) {
+          await useSubscriptionStore.getState().loadSubscriptions()
+          const subs = useSubscriptionStore.getState().subscriptions
+          showBillingNotifications(subs, settings.notifications.subscriptionAlertDaysBefore)
+        }
       } finally {
         setIsInitialized(true)
       }
@@ -69,12 +79,10 @@ export default function App() {
   useEffect(() => {
     const path = location.pathname
     if (path === '/') setCurrentView('dashboard')
-    else if (path.startsWith('/assets')) setCurrentView('assets')
-    else if (path.startsWith('/liabilities')) setCurrentView('liabilities')
-    else if (path === '/ledger') setCurrentView('ledger')
-    else if (path === '/calendar') setCurrentView('calendar')
+    else if (path.startsWith('/assets') || path.startsWith('/liabilities')) setCurrentView('assets')
+    else if (path.startsWith('/ledger')) setCurrentView('ledger')
     else if (path === '/reports') setCurrentView('reports')
-    else if (path === '/subscriptions') setCurrentView('subscriptions')
+    else if (path.startsWith('/subscriptions')) setCurrentView('subscriptions')
     else if (path === '/profile') setCurrentView('profile')
   }, [location.pathname, setCurrentView])
 

@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Link2 } from 'lucide-react'
 import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { useTransactionStore } from '@/stores/transactionStore'
+import { useAssetStore } from '@/stores/assetStore'
 import type { PaymentMethod, PaymentMethodItem } from '@/lib/types'
 
 const PAYMENT_METHOD_GROUPS: { type: PaymentMethod; label: string }[] = [
   { type: 'credit_card', label: '신용카드' },
   { type: 'debit_card', label: '체크카드' },
   { type: 'bank_transfer', label: '계좌이체' },
+  { type: 'loan', label: '대출' },
   { type: 'other', label: '기타' },
 ]
 
@@ -19,6 +21,10 @@ export function PaymentMethodManagement() {
   const deletePaymentMethodItem = useTransactionStore((s) => s.deletePaymentMethodItem)
   const loadPaymentMethodItems = useTransactionStore((s) => s.loadPaymentMethodItems)
 
+  // Asset store for linking
+  const assetItems = useAssetStore((s) => s.items)
+  const loadAssets = useAssetStore((s) => s.loadAll)
+
   const [editingItem, setEditingItem] = useState<PaymentMethodItem | null>(null)
   const [editingType, setEditingType] = useState<PaymentMethod>('credit_card')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -28,16 +34,22 @@ export function PaymentMethodManagement() {
   // Form state
   const [name, setName] = useState('')
   const [memo, setMemo] = useState('')
+  const [linkedAssetItemId, setLinkedAssetItemId] = useState<number | undefined>(undefined)
 
   useEffect(() => {
     loadPaymentMethodItems()
-  }, [loadPaymentMethodItems])
+    loadAssets()
+  }, [loadPaymentMethodItems, loadAssets])
+
+  const assetTypeItems = assetItems.filter((i) => i.type === 'asset' && i.isActive)
+  const liabilityTypeItems = assetItems.filter((i) => i.type === 'liability' && i.isActive)
 
   const openCreate = (type: PaymentMethod) => {
     setEditingItem(null)
     setEditingType(type)
     setName('')
     setMemo('')
+    setLinkedAssetItemId(undefined)
     setIsDialogOpen(true)
   }
 
@@ -46,6 +58,7 @@ export function PaymentMethodManagement() {
     setEditingType(item.type)
     setName(item.name)
     setMemo(item.memo || '')
+    setLinkedAssetItemId(item.linkedAssetItemId)
     setIsDialogOpen(true)
   }
 
@@ -56,13 +69,22 @@ export function PaymentMethodManagement() {
 
   const handleSave = async () => {
     if (!name.trim()) return
+    const updates = {
+      name: name.trim(),
+      memo: memo.trim() || undefined,
+      linkedAssetItemId: linkedAssetItemId || undefined,
+    }
     if (editingItem?.id) {
-      await updatePaymentMethodItem(editingItem.id, { name: name.trim(), memo: memo.trim() || undefined })
+      await updatePaymentMethodItem(editingItem.id, updates)
     } else {
-      await addPaymentMethodItem({ type: editingType, name: name.trim(), memo: memo.trim() || undefined })
+      await addPaymentMethodItem({ type: editingType, ...updates })
     }
     setIsDialogOpen(false)
   }
+
+  const showAssetLink = editingType === 'bank_transfer' || editingType === 'loan'
+  const linkableItems = editingType === 'bank_transfer' ? assetTypeItems : liabilityTypeItems
+  const linkLabel = editingType === 'bank_transfer' ? '연결 자산 항목' : '연결 부채 항목'
 
   const handleDelete = async () => {
     if (deletingItem?.id) {
@@ -81,6 +103,7 @@ export function PaymentMethodManagement() {
       case 'credit_card': return '예: 신한카드, 삼성카드'
       case 'debit_card': return '예: 카카오뱅크 체크카드'
       case 'bank_transfer': return '예: 국민은행, 신한은행'
+      case 'loan': return '예: 주택담보대출, 신용대출'
       case 'other': return '예: 페이, 포인트'
       default: return '이름 입력'
     }
@@ -121,6 +144,12 @@ export function PaymentMethodManagement() {
                         {item.name}
                         {item.memo && (
                           <span className="ml-2 text-xs text-zinc-400">({item.memo})</span>
+                        )}
+                        {item.linkedAssetItemId && (
+                          <span className="ml-2 text-xs text-primary-500 dark:text-primary-400 inline-flex items-center gap-0.5">
+                            <Link2 className="w-3 h-3" />
+                            {assetItems.find((a) => a.id === item.linkedAssetItemId)?.name || '연결됨'}
+                          </span>
                         )}
                       </span>
                       <button
@@ -179,6 +208,21 @@ export function PaymentMethodManagement() {
                 className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400"
               />
             </div>
+            {showAssetLink && linkableItems.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">{linkLabel} (선택)</label>
+                <select
+                  value={linkedAssetItemId ?? ''}
+                  onChange={(e) => setLinkedAssetItemId(e.target.value ? Number(e.target.value) : undefined)}
+                  className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="">연결 안 함</option>
+                  {linkableItems.map((item) => (
+                    <option key={item.id} value={item.id}>{item.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </DialogBody>
         <DialogFooter>

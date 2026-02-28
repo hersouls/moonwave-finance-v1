@@ -52,6 +52,8 @@ export const useSettingsStore = create<SettingsState>()(
           budgetThreshold: 80,
           transactionReminder: false,
           reminderTime: '21:00',
+          subscriptionBillingAlert: false,
+          subscriptionAlertDaysBefore: [0, 1, 3],
         },
         exchangeRate: {
           usdToKrw: 1350,
@@ -86,6 +88,16 @@ export const useSettingsStore = create<SettingsState>()(
             budgetThreshold: 80,
             transactionReminder: false,
             reminderTime: '21:00',
+            subscriptionBillingAlert: false,
+            subscriptionAlertDaysBefore: [0, 1, 3],
+          }
+          hasChanges = true
+        }
+        if (newSettings.notifications.subscriptionBillingAlert === undefined) {
+          newSettings.notifications = {
+            ...newSettings.notifications,
+            subscriptionBillingAlert: false,
+            subscriptionAlertDaysBefore: [0, 1, 3],
           }
           hasChanges = true
         }

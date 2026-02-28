@@ -64,7 +64,7 @@ export function SearchModal() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="자산, 거래, 카테고리 검색..."
+            placeholder="자산, 거래, 구독, 카테고리 검색..."
             className="flex-1 py-4 text-sm bg-transparent text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none"
           />
           {query && (

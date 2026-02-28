@@ -1,6 +1,6 @@
 import { memo, useState } from 'react'
 import { clsx } from 'clsx'
-import { Trash2, Pencil } from 'lucide-react'
+import { Trash2, Pencil, RefreshCw } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useTransactionStore } from '@/stores/transactionStore'
@@ -55,6 +55,12 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
             {member && (
               <span className="text-xs px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
                 {member.name}
+              </span>
+            )}
+            {transaction.subscriptionId && (
+              <span className="text-xs px-1.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center gap-0.5">
+                <RefreshCw className="w-3 h-3" />
+                구독
               </span>
             )}
             {pmLabel && (

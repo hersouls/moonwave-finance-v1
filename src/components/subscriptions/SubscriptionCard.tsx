@@ -9,8 +9,27 @@ import { getDaysUntilBilling, formatBillingSchedule } from '@/lib/dateUtils'
 import { SUBSCRIPTION_CATEGORIES } from '@/utils/constants'
 import type { Subscription } from '@/lib/types'
 
+const CYCLE_LABELS: Record<string, string> = {
+  weekly: '/주',
+  biweekly: '/2주',
+  monthly: '/월',
+  quarterly: '/분기',
+  'semi-annual': '/반기',
+  yearly: '/년',
+  custom: '/회',
+}
+
 interface SubscriptionCardProps {
   subscription: Subscription
+}
+
+function getPauseDays(subscription: Subscription): number | null {
+  if (subscription.status !== 'paused' || !subscription.pauseHistory?.length) return null
+  const lastEntry = subscription.pauseHistory[subscription.pauseHistory.length - 1]
+  if (lastEntry.resumedAt) return null
+  const pausedDate = new Date(lastEntry.pausedAt)
+  const today = new Date()
+  return Math.floor((today.getTime() - pausedDate.getTime()) / (1000 * 60 * 60 * 24))
 }
 
 function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
@@ -33,12 +52,19 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
   }, [menuOpen])
 
   const cat = SUBSCRIPTION_CATEGORIES.find(c => c.value === subscription.category)
-  const daysUntil = getDaysUntilBilling(subscription.billingDay, subscription.cycle, subscription.billingMonth)
-  const schedule = formatBillingSchedule(subscription.cycle, subscription.billingDay, subscription.billingMonth)
+  const daysUntil = getDaysUntilBilling(
+    subscription.billingDay, subscription.cycle, subscription.billingMonth,
+    subscription.startDate, subscription.customCycleDays
+  )
+  const schedule = formatBillingSchedule(
+    subscription.cycle, subscription.billingDay, subscription.billingMonth,
+    subscription.customCycleDays
+  )
   const isActive = subscription.status === 'active'
   const isPaused = subscription.status === 'paused'
   const isCancelled = subscription.status === 'cancelled'
-  const cycleLabel = subscription.cycle === 'yearly' ? '/년' : '/월'
+  const cycleLabel = CYCLE_LABELS[subscription.cycle] ?? '/월'
+  const pauseDays = getPauseDays(subscription)
 
   return (
     <Card className={clsx('!p-4', !isActive && 'opacity-60')}>
@@ -64,7 +90,7 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
             </span>
             {isPaused && (
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">
-                일시정지
+                일시정지{pauseDays != null ? ` ${pauseDays}일째` : ''}
               </span>
             )}
             {isCancelled && (

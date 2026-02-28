@@ -1,4 +1,4 @@
-import { TrendingUp, Receipt, Tag } from 'lucide-react'
+import { TrendingUp, Receipt, Tag, RefreshCw } from 'lucide-react'
 import type { SearchResult } from '@/hooks/useSearch'
 
 interface SearchResultItemProps {
@@ -7,12 +7,15 @@ interface SearchResultItemProps {
   isActive?: boolean
 }
 
+const ICONS = {
+  asset: <TrendingUp className="w-4 h-4" />,
+  transaction: <Receipt className="w-4 h-4" />,
+  subscription: <RefreshCw className="w-4 h-4" />,
+  category: <Tag className="w-4 h-4" />,
+}
+
 export function SearchResultItem({ result, onClick, isActive }: SearchResultItemProps) {
-  const icon = result.type === 'asset'
-    ? <TrendingUp className="w-4 h-4" />
-    : result.type === 'transaction'
-      ? <Receipt className="w-4 h-4" />
-      : <Tag className="w-4 h-4" />
+  const icon = ICONS[result.type] ?? <Tag className="w-4 h-4" />
 
   return (
     <button
