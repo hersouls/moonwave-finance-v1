@@ -170,16 +170,33 @@ db.on('populate', () => {
 
   // Default transaction categories
   db.transactionCategories.bulkAdd([
+    // Income
     { name: '월급', type: 'income', color: '#10B981', icon: 'Briefcase', isDefault: true, sortOrder: 0, createdAt: now, updatedAt: now },
     { name: '부수입', type: 'income', color: '#06B6D4', icon: 'Coins', isDefault: true, sortOrder: 1, createdAt: now, updatedAt: now },
     { name: '투자수익', type: 'income', color: '#8B5CF6', icon: 'TrendingUp', isDefault: true, sortOrder: 2, createdAt: now, updatedAt: now },
+    { name: '다연여행수입', type: 'income', color: '#14B8A6', icon: 'Plane', isDefault: true, sortOrder: 3, createdAt: now, updatedAt: now },
+    { name: '가상화폐수익', type: 'income', color: '#F59E0B', icon: 'Bitcoin', isDefault: true, sortOrder: 4, createdAt: now, updatedAt: now },
+    { name: '주식수익', type: 'income', color: '#22C55E', icon: 'LineChart', isDefault: true, sortOrder: 5, createdAt: now, updatedAt: now },
+    { name: '기타', type: 'income', color: '#71717A', icon: 'MoreHorizontal', isDefault: true, sortOrder: 6, createdAt: now, updatedAt: now },
+    // Expense
     { name: '식비', type: 'expense', color: '#F59E0B', icon: 'UtensilsCrossed', isDefault: true, sortOrder: 0, createdAt: now, updatedAt: now },
     { name: '교통비', type: 'expense', color: '#3B82F6', icon: 'Car', isDefault: true, sortOrder: 1, createdAt: now, updatedAt: now },
     { name: '주거비', type: 'expense', color: '#8B5CF6', icon: 'Home', isDefault: true, sortOrder: 2, createdAt: now, updatedAt: now },
     { name: '통신비', type: 'expense', color: '#EC4899', icon: 'Smartphone', isDefault: true, sortOrder: 3, createdAt: now, updatedAt: now },
     { name: '의료비', type: 'expense', color: '#EF4444', icon: 'Heart', isDefault: true, sortOrder: 4, createdAt: now, updatedAt: now },
     { name: '교육비', type: 'expense', color: '#6366F1', icon: 'GraduationCap', isDefault: true, sortOrder: 5, createdAt: now, updatedAt: now },
-    { name: '기타', type: 'expense', color: '#71717A', icon: 'MoreHorizontal', isDefault: true, sortOrder: 6, createdAt: now, updatedAt: now },
+    { name: '건강', type: 'expense', color: '#EF4444', icon: 'HeartPulse', isDefault: true, sortOrder: 6, createdAt: now, updatedAt: now },
+    { name: '경조사/회비', type: 'expense', color: '#A855F7', icon: 'Gift', isDefault: true, sortOrder: 7, createdAt: now, updatedAt: now },
+    { name: '대출상환', type: 'expense', color: '#DC2626', icon: 'Landmark', isDefault: true, sortOrder: 8, createdAt: now, updatedAt: now },
+    { name: '마트/편의점', type: 'expense', color: '#FB923C', icon: 'ShoppingCart', isDefault: true, sortOrder: 9, createdAt: now, updatedAt: now },
+    { name: '보험', type: 'expense', color: '#0EA5E9', icon: 'Shield', isDefault: true, sortOrder: 10, createdAt: now, updatedAt: now },
+    { name: '부모님', type: 'expense', color: '#EC4899', icon: 'Heart', isDefault: true, sortOrder: 11, createdAt: now, updatedAt: now },
+    { name: '생활용품', type: 'expense', color: '#84CC16', icon: 'Package', isDefault: true, sortOrder: 12, createdAt: now, updatedAt: now },
+    { name: '여행', type: 'expense', color: '#06B6D4', icon: 'Map', isDefault: true, sortOrder: 13, createdAt: now, updatedAt: now },
+    { name: '카드대금', type: 'expense', color: '#F43F5E', icon: 'CreditCard', isDefault: true, sortOrder: 14, createdAt: now, updatedAt: now },
+    { name: '투자', type: 'expense', color: '#6366F1', icon: 'TrendingUp', isDefault: true, sortOrder: 15, createdAt: now, updatedAt: now },
+    { name: '패션/미용', type: 'expense', color: '#E879F9', icon: 'Shirt', isDefault: true, sortOrder: 16, createdAt: now, updatedAt: now },
+    { name: '기타', type: 'expense', color: '#71717A', icon: 'MoreHorizontal', isDefault: true, sortOrder: 17, createdAt: now, updatedAt: now },
   ])
 })
 

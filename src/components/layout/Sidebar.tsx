@@ -68,6 +68,7 @@ const navGroups: NavGroup[] = [
     children: [
       { id: 'sub-domestic', label: '국내관리', path: '/subscriptions/domestic' },
       { id: 'sub-international', label: '국외관리', path: '/subscriptions/international' },
+      { id: 'sub-calendar', label: '캘린더', path: '/subscriptions/calendar', icon: Calendar },
     ],
   },
 ]

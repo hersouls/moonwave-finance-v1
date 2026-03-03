@@ -27,6 +27,15 @@ type SyncableTable = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues
 
 const BATCH_LIMIT = 499
 
+/** Strip undefined values from an object — Firestore rejects undefined fields */
+function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
+  const result = {} as Record<string, unknown>
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) result[key] = value
+  }
+  return result as T
+}
+
 function getUserCollectionPath(uid: string, tableName: SyncableTable): string {
   return `users/${uid}/${tableName}`
 }
@@ -47,8 +56,8 @@ async function uploadTable<T extends { syncId?: string }>(
     const batch = writeBatch(firestore)
     for (const record of chunk) {
       const ref = doc(firestore, getUserDocPath(uid, tableName, record.syncId!))
-      const data = { ...record }
-      delete (data as Record<string, unknown>).id
+      const data = stripUndefined({ ...record } as Record<string, unknown>)
+      delete data.id
       batch.set(ref, data, { merge: true })
     }
     await batch.commit()
@@ -228,8 +237,8 @@ export async function uploadSingleRecord<T extends { syncId?: string }>(
   try {
     const batch = writeBatch(firestore)
     const ref = doc(firestore, getUserDocPath(uid, tableName, record.syncId))
-    const data = { ...record }
-    delete (data as Record<string, unknown>).id
+    const data = stripUndefined({ ...record } as Record<string, unknown>)
+    delete data.id
     batch.set(ref, data, { merge: true })
     await batch.commit()
   } catch (err) {
@@ -307,6 +316,11 @@ export function startRealtimeSync(uid: string): void {
         } catch (err) {
           console.error(`[sync] real-time ${tableName} ${change.type} error:`, err)
         }
+      }
+
+      // Notify React stores that IndexedDB was updated
+      if (snapshot.docChanges().length > 0) {
+        window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: tableName } }))
       }
     }, (err) => {
       console.error(`[sync] ${tableName} listener error:`, err)

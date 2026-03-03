@@ -60,6 +60,13 @@ export function DashboardPage() {
 
   useEffect(() => { loadData() }, [])
 
+  // Reload when Firestore sync updates IndexedDB
+  useEffect(() => {
+    const handler = () => { loadData() }
+    window.addEventListener('fin-sync-update', handler)
+    return () => window.removeEventListener('fin-sync-update', handler)
+  }, [])
+
   if (isLoading) return <DashboardSkeleton />
 
   if (error) {

@@ -15,6 +15,7 @@ const AssetCalendarPage = lazy(() => import('./components/calendar/AssetCalendar
 const ReportsPage = lazy(() => import('./components/reports/ReportsPage').then(m => ({ default: m.ReportsPage })))
 const ProfilePage = lazy(() => import('./components/profile/ProfilePage').then(m => ({ default: m.ProfilePage })))
 const SubscriptionPage = lazy(() => import('./components/subscriptions/SubscriptionPage').then(m => ({ default: m.SubscriptionPage })))
+const SubscriptionCalendarPage = lazy(() => import('./components/subscriptions/SubscriptionCalendarPage').then(m => ({ default: m.SubscriptionCalendarPage })))
 const NotFoundPage = lazy(() => import('./components/ui/NotFoundPage').then(m => ({ default: m.NotFoundPage })))
 
 function LazyPage({ children }: { children: React.ReactNode }) {
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
       { path: 'subscriptions', element: <Navigate to="/subscriptions/domestic" replace /> },
       { path: 'subscriptions/domestic', element: <LazyPage><SubscriptionPage /></LazyPage> },
       { path: 'subscriptions/international', element: <LazyPage><SubscriptionPage /></LazyPage> },
+      { path: 'subscriptions/calendar', element: <LazyPage><SubscriptionCalendarPage /></LazyPage> },
       // 기타
       { path: 'reports', element: <LazyPage><ReportsPage /></LazyPage> },
       { path: 'profile', element: <LazyPage><ProfilePage /></LazyPage> },

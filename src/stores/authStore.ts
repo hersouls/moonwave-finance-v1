@@ -45,6 +45,17 @@ function toAuthUser(u: User): AuthUser {
   }
 }
 
+async function reloadStoresAfterSync() {
+  const { useSubscriptionStore } = await import('@/stores/subscriptionStore')
+  const { useTransactionStore } = await import('@/stores/transactionStore')
+  await Promise.all([
+    useSubscriptionStore.getState().loadSubscriptions(),
+    useTransactionStore.getState().loadTransactions(),
+    useTransactionStore.getState().loadPaymentMethodItems(),
+    useTransactionStore.getState().loadCategories(),
+  ])
+}
+
 export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   isLoading: false,
@@ -71,6 +82,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         // Sync on login: upload local if cloud empty, download cloud if exists
         try {
           await syncOnLogin(authUser.uid)
+          await reloadStoresAfterSync()
           startRealtimeSync(authUser.uid)
         } catch (err) {
           console.error('Sync on login failed:', err)
@@ -133,6 +145,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     if (!user) return
     const { fullDownload } = await import('@/services/firestoreSync')
     await fullDownload(user.uid)
+    await reloadStoresAfterSync()
   },
 
   setSyncStatus: (status) => set({ syncStatus: status }),

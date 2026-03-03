@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Cloud, CloudOff, Upload, Download, FileSpreadsheet,
-  Loader2, CheckCircle2, AlertCircle, Database,
+  Loader2, CheckCircle2, AlertCircle, Database, FileUp,
 } from 'lucide-react'
 import { UI_DELAYS } from '@/utils/constants'
 import { useAuthStore, type SyncStatus } from '@/stores/authStore'
@@ -10,6 +10,7 @@ import { useToastStore } from '@/stores/toastStore'
 import { Button } from '@/components/ui/Button'
 import { exportBackup, importBackup, exportTransactionsCSV, exportAssetValuesCSV } from '@/services/backup'
 import { formatRelativeTime } from '@/utils/format'
+import { EasyLedgerImportDialog } from './EasyLedgerImportDialog'
 
 function SyncStatusIndicator({ status }: { status: SyncStatus }) {
   if (status === 'syncing') return <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
@@ -37,6 +38,8 @@ export function DataTab() {
 
   const [isBackingUp, setIsBackingUp] = useState(false)
   const [isRestoring, setIsRestoring] = useState(false)
+  const [showEasyLedgerImport, setShowEasyLedgerImport] = useState(false)
+  const [easyLedgerFile, setEasyLedgerFile] = useState<File | null>(null)
 
   const handleExportBackup = async () => {
     setIsBackingUp(true)
@@ -68,6 +71,19 @@ export function DataTab() {
       } finally {
         setIsRestoring(false)
       }
+    }
+    input.click()
+  }
+
+  const handleEasyLedgerImport = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.html,.htm,.xls'
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) return
+      setEasyLedgerFile(file)
+      setShowEasyLedgerImport(true)
     }
     input.click()
   }
@@ -191,6 +207,30 @@ export function DataTab() {
         </div>
       </section>
 
+      {/* Easy Ledger Import */}
+      <section>
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+          <FileUp className="w-4 h-4" />
+          편한가계부 가져오기
+        </h3>
+        <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+          <div>
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">외부 데이터 가져오기</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              편한가계부 앱의 Excel 내보내기 파일에서 거래 데이터를 가져옵니다
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleEasyLedgerImport}
+            leftIcon={<FileUp className="w-4 h-4" />}
+          >
+            파일 선택
+          </Button>
+        </div>
+      </section>
+
       {/* CSV Export */}
       <section>
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
@@ -221,6 +261,16 @@ export function DataTab() {
           </div>
         </div>
       </section>
+
+      {/* Easy Ledger Import Dialog */}
+      <EasyLedgerImportDialog
+        open={showEasyLedgerImport}
+        file={easyLedgerFile}
+        onClose={() => {
+          setShowEasyLedgerImport(false)
+          setEasyLedgerFile(null)
+        }}
+      />
     </div>
   )
 }

@@ -6,6 +6,20 @@ import { useToastStore } from './toastStore'
 import { useSettingsStore } from './settingsStore'
 import { getDaysUntilBilling } from '@/lib/dateUtils'
 
+/** Immediately sync a subscription record to Firestore (fire-and-forget) */
+async function syncSubscriptionToCloud(sub: Subscription) {
+  try {
+    const { useAuthStore } = await import('./authStore')
+    const user = useAuthStore.getState().user
+    if (!user || !sub.syncId) return
+
+    const { uploadSingleRecord } = await import('@/services/firestoreSync')
+    await uploadSingleRecord(user.uid, 'subscriptions', sub)
+  } catch (err) {
+    console.error('[subscription] immediate sync failed:', err)
+  }
+}
+
 interface SubscriptionState {
   subscriptions: Subscription[]
   isLoading: boolean
@@ -77,15 +91,18 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         const now = new Date().toISOString()
         const subs = get().subscriptions
         const maxOrder = subs.length > 0 ? Math.max(...subs.map(s => s.sortOrder)) : -1
-        const id = await db.addSubscription({
+        const newSub = {
           ...data,
-          status: 'active',
+          status: 'active' as const,
           sortOrder: maxOrder + 1,
           syncId: crypto.randomUUID(),
           createdAt: now,
           updatedAt: now,
-        })
+        }
+        const id = await db.addSubscription(newSub)
         await get().loadSubscriptions()
+        // Immediately sync to Firestore (don't wait for 5s debounce)
+        syncSubscriptionToCloud({ ...newSub, id } as Subscription)
         useToastStore.getState().addToast('구독이 등록되었습니다.', 'success')
         return id
       },
@@ -93,12 +110,27 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       updateSubscription: async (id, updates) => {
         await db.updateSubscription(id, updates)
         await get().loadSubscriptions()
+        // Immediately sync updated record to Firestore
+        const updated = get().subscriptions.find(s => s.id === id)
+        if (updated) syncSubscriptionToCloud(updated)
         useToastStore.getState().addToast('구독이 수정되었습니다.', 'success')
       },
 
       deleteSubscription: async (id) => {
+        // Get syncId before deletion for Firestore cleanup
+        const sub = get().subscriptions.find(s => s.id === id)
         await db.deleteSubscription(id)
         await get().loadSubscriptions()
+        // Immediately delete from Firestore
+        if (sub?.syncId) {
+          import('./authStore').then(({ useAuthStore }) => {
+            const user = useAuthStore.getState().user
+            if (!user) return
+            import('@/services/firestoreSync').then(({ deleteFromCloud }) => {
+              deleteFromCloud(user.uid, 'subscriptions', sub.syncId!)
+            })
+          }).catch(err => console.error('[subscription] delete sync failed:', err))
+        }
         useToastStore.getState().addToast('구독이 삭제되었습니다.', 'info')
       },
 
@@ -130,6 +162,9 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
         await db.updateSubscription(id, updates)
         await get().loadSubscriptions()
+        // Immediately sync status change to Firestore
+        const updatedSub = get().subscriptions.find(s => s.id === id)
+        if (updatedSub) syncSubscriptionToCloud(updatedSub)
         const labels: Record<SubscriptionStatus, string> = {
           active: '구독이 재개되었습니다.',
           paused: '구독이 일시정지되었습니다.',
