@@ -6,6 +6,7 @@ import { useMemberStore } from '@/stores/memberStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useBudgetStore } from '@/stores/budgetStore'
 import { useTransactionFilters } from '@/hooks/useTransactionFilters'
+import { useSyncListener } from '@/hooks/useSyncListener'
 import { TransactionCard } from './TransactionCard'
 import { TransactionFormModal } from './TransactionFormModal'
 import { TransactionFilters } from './TransactionFilters'
@@ -83,6 +84,7 @@ export function LedgerPage() {
   }
 
   useEffect(() => { loadData() }, [])
+  useSyncListener(loadData, ['transactions', 'transactionCategories', 'paymentMethodItems'])
 
   useEffect(() => {
     loadBudgets(selectedMonth)

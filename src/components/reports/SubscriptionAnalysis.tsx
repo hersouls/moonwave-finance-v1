@@ -26,11 +26,13 @@ function getMonthlyAmount(sub: { cycle: string; amount: number; customCycleDays?
 }
 
 export function SubscriptionAnalysis() {
-  const active = useSubscriptionStore((s) => s.getActive())
-  const monthlyKRW = useSubscriptionStore((s) => s.getMonthlyTotalKRW())
-  const monthlyUSD = useSubscriptionStore((s) => s.getMonthlyTotalUSD())
-  const monthlyCombined = useSubscriptionStore((s) => s.getMonthlyTotalCombinedKRW())
-  const yearlyCombined = useSubscriptionStore((s) => s.getYearlyTotalCombinedKRW())
+  const subscriptions = useSubscriptionStore((s) => s.subscriptions)
+  const store = useSubscriptionStore
+  const active = useMemo(() => store.getState().getActive(), [subscriptions])
+  const monthlyKRW = useMemo(() => store.getState().getMonthlyTotalKRW(), [subscriptions])
+  const monthlyUSD = useMemo(() => store.getState().getMonthlyTotalUSD(), [subscriptions])
+  const monthlyCombined = useMemo(() => store.getState().getMonthlyTotalCombinedKRW(), [subscriptions])
+  const yearlyCombined = useMemo(() => store.getState().getYearlyTotalCombinedKRW(), [subscriptions])
   const exchangeRate = useSettingsStore((s) => s.settings.exchangeRate?.usdToKrw ?? 1350)
 
   // Category breakdown for doughnut chart

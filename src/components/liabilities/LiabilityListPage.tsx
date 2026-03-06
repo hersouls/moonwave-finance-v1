@@ -10,6 +10,7 @@ import { AssetCategoryTabs } from '@/components/assets/AssetCategoryTabs'
 import { FAB } from '@/components/ui/FAB'
 import { Tabs } from '@/components/ui/Tabs'
 import { SkeletonCard } from '@/components/ui/Skeleton'
+import { useSyncListener } from '@/hooks/useSyncListener'
 
 export function LiabilityListPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -23,13 +24,13 @@ export function LiabilityListPage() {
   const members = useMemberStore((s) => s.members)
   const openLiabilityCreateModal = useUIStore((s) => s.openLiabilityCreateModal)
 
-  useEffect(() => {
-    const init = async () => {
-      await Promise.all([loadAll(), loadValues(), loadMembers()])
-      setIsLoading(false)
-    }
-    init()
-  }, [])
+  const loadData = async () => {
+    await Promise.all([loadAll(), loadValues(), loadMembers()])
+    setIsLoading(false)
+  }
+
+  useEffect(() => { loadData() }, [])
+  useSyncListener(loadData, ['assetCategories', 'assetItems', 'dailyValues', 'members'])
 
   const memberTabs = useMemo(() => [
     { id: 'all', label: '전체' },

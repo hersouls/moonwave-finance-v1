@@ -48,13 +48,25 @@ function toAuthUser(u: User): AuthUser {
 async function reloadStoresAfterSync() {
   const { useSubscriptionStore } = await import('@/stores/subscriptionStore')
   const { useTransactionStore } = await import('@/stores/transactionStore')
+  const { useAssetStore } = await import('@/stores/assetStore')
+  const { useMemberStore } = await import('@/stores/memberStore')
+  const { useBudgetStore } = await import('@/stores/budgetStore')
+  const { useGoalStore } = await import('@/stores/goalStore')
+  const { useDailyValueStore } = await import('@/stores/dailyValueStore')
   await Promise.all([
     useSubscriptionStore.getState().loadSubscriptions(),
     useTransactionStore.getState().loadTransactions(),
     useTransactionStore.getState().loadPaymentMethodItems(),
     useTransactionStore.getState().loadCategories(),
+    useAssetStore.getState().loadAll(),
+    useMemberStore.getState().loadMembers(),
+    useBudgetStore.getState().loadBudgets(),
+    useGoalStore.getState().loadGoals(),
+    useDailyValueStore.getState().loadValues(),
   ])
 }
+
+let hasSyncedOnLogin = false
 
 export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
@@ -79,16 +91,20 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         const authUser = toAuthUser(firebaseUser)
         set({ user: authUser, isLoading: false, isSigningIn: false })
 
-        // Sync on login: upload local if cloud empty, download cloud if exists
-        try {
-          await syncOnLogin(authUser.uid)
-          await reloadStoresAfterSync()
-          startRealtimeSync(authUser.uid)
-        } catch (err) {
-          console.error('Sync on login failed:', err)
-          set({ syncStatus: 'error' })
+        // Sync on login: only run once per session (skip token refreshes)
+        if (!hasSyncedOnLogin) {
+          hasSyncedOnLogin = true
+          try {
+            await syncOnLogin(authUser.uid)
+            await reloadStoresAfterSync()
+            startRealtimeSync(authUser.uid)
+          } catch (err) {
+            console.error('Sync on login failed:', err)
+            set({ syncStatus: 'error' })
+          }
         }
       } else {
+        hasSyncedOnLogin = false
         stopRealtimeSync()
         set({ user: null, isLoading: false, syncStatus: 'idle', lastSyncTime: null })
       }

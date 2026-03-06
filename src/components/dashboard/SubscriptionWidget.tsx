@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
@@ -7,11 +8,13 @@ import { getDaysUntilBilling } from '@/lib/dateUtils'
 
 export function SubscriptionWidget() {
   const navigate = useNavigate()
-  const active = useSubscriptionStore((s) => s.getActive())
-  const monthlyCombined = useSubscriptionStore((s) => s.getMonthlyTotalCombinedKRW())
-  const monthlyKRW = useSubscriptionStore((s) => s.getMonthlyTotalKRW())
-  const monthlyUSD = useSubscriptionStore((s) => s.getMonthlyTotalUSD())
-  const upcoming = useSubscriptionStore((s) => s.getUpcomingBills(7))
+  const subscriptions = useSubscriptionStore((s) => s.subscriptions)
+  const store = useSubscriptionStore
+  const active = useMemo(() => store.getState().getActive(), [subscriptions])
+  const monthlyCombined = useMemo(() => store.getState().getMonthlyTotalCombinedKRW(), [subscriptions])
+  const monthlyKRW = useMemo(() => store.getState().getMonthlyTotalKRW(), [subscriptions])
+  const monthlyUSD = useMemo(() => store.getState().getMonthlyTotalUSD(), [subscriptions])
+  const upcoming = useMemo(() => store.getState().getUpcomingBills(7), [subscriptions])
 
   if (active.length === 0) return null
 

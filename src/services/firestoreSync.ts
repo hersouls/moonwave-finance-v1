@@ -23,7 +23,7 @@ import type {
   Subscription,
 } from '@/lib/types'
 
-type SyncableTable = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions'
+export type SyncableTable = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions'
 
 const BATCH_LIMIT = 499
 
@@ -80,6 +80,32 @@ function ensureSyncId<T extends { syncId?: string }>(record: T): T {
   return record
 }
 
+// Delete Firestore documents that no longer exist in local IndexedDB
+async function reconcileOrphans(uid: string, localSyncIds: Record<SyncableTable, Set<string>>): Promise<void> {
+  const tables = Object.keys(localSyncIds) as SyncableTable[]
+  for (const tableName of tables) {
+    const cloudDocs = await getDocs(collection(firestore, getUserCollectionPath(uid, tableName)))
+    const orphanSyncIds: string[] = []
+    for (const docSnap of cloudDocs.docs) {
+      const syncId = docSnap.data().syncId as string | undefined
+      if (syncId && !localSyncIds[tableName].has(syncId)) {
+        orphanSyncIds.push(syncId)
+      }
+    }
+    if (orphanSyncIds.length > 0) {
+      console.log(`[sync] removing ${orphanSyncIds.length} orphan(s) from ${tableName}`)
+      for (let i = 0; i < orphanSyncIds.length; i += BATCH_LIMIT) {
+        const chunk = orphanSyncIds.slice(i, i + BATCH_LIMIT)
+        const batch = writeBatch(firestore)
+        for (const syncId of chunk) {
+          batch.delete(doc(firestore, getUserDocPath(uid, tableName, syncId)))
+        }
+        await batch.commit()
+      }
+    }
+  }
+}
+
 async function withRetry<T>(fn: () => Promise<T>, maxRetries: number = 3): Promise<T> {
   let lastError: unknown
   for (let i = 0; i < maxRetries; i++) {
@@ -120,7 +146,7 @@ async function ensureAndPersistSyncIds() {
   }
 }
 
-export async function fullUpload(uid: string): Promise<void> {
+export async function fullUpload(uid: string, options?: { reconcile?: boolean }): Promise<void> {
   useAuthStore.getState().setSyncStatus('syncing')
   try {
     await ensureAndPersistSyncIds()
@@ -151,6 +177,28 @@ export async function fullUpload(uid: string): Promise<void> {
       uploadTable(uid, 'subscriptions', subscriptions.map(ensureSyncId)),
     ]))
 
+    // Reconcile: delete Firestore documents that no longer exist locally
+    const localSyncIds: Record<SyncableTable, Set<string>> = {
+      members: new Set(members.map(r => r.syncId).filter(Boolean) as string[]),
+      assetCategories: new Set(assetCategories.map(r => r.syncId).filter(Boolean) as string[]),
+      assetItems: new Set(assetItems.map(r => r.syncId).filter(Boolean) as string[]),
+      dailyValues: new Set(dailyValues.map(r => r.syncId).filter(Boolean) as string[]),
+      transactionCategories: new Set(transactionCategories.map(r => r.syncId).filter(Boolean) as string[]),
+      transactions: new Set(transactions.map(r => r.syncId).filter(Boolean) as string[]),
+      budgets: new Set(budgets.map(r => r.syncId).filter(Boolean) as string[]),
+      goals: new Set(goals.map(r => r.syncId).filter(Boolean) as string[]),
+      paymentMethodItems: new Set(paymentMethodItems.map(r => r.syncId).filter(Boolean) as string[]),
+      subscriptions: new Set(subscriptions.map(r => r.syncId).filter(Boolean) as string[]),
+    }
+
+    if (options?.reconcile) {
+      try {
+        await reconcileOrphans(uid, localSyncIds)
+      } catch (err) {
+        console.error('[sync] orphan reconciliation failed:', err)
+      }
+    }
+
     useAuthStore.getState().setSyncStatus('synced')
     useAuthStore.getState().setLastSyncTime(new Date().toISOString())
   } catch (err) {
@@ -175,29 +223,34 @@ export async function fullDownload(uid: string): Promise<void> {
       downloadTable<Subscription>(uid, 'subscriptions'),
     ]))
 
-    await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions], async () => {
-      await db.members.clear()
-      await db.assetCategories.clear()
-      await db.assetItems.clear()
-      await db.dailyValues.clear()
-      await db.transactionCategories.clear()
-      await db.transactions.clear()
-      await db.budgets.clear()
-      await db.goals.clear()
-      await db.paymentMethodItems.clear()
-      await db.subscriptions.clear()
+    syncWritingCount++
+    try {
+      await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions], async () => {
+        await db.members.clear()
+        await db.assetCategories.clear()
+        await db.assetItems.clear()
+        await db.dailyValues.clear()
+        await db.transactionCategories.clear()
+        await db.transactions.clear()
+        await db.budgets.clear()
+        await db.goals.clear()
+        await db.paymentMethodItems.clear()
+        await db.subscriptions.clear()
 
-      if (members.length > 0) await db.members.bulkAdd(members)
-      if (assetCategories.length > 0) await db.assetCategories.bulkAdd(assetCategories)
-      if (assetItems.length > 0) await db.assetItems.bulkAdd(assetItems)
-      if (dailyValues.length > 0) await db.dailyValues.bulkAdd(dailyValues)
-      if (transactionCategories.length > 0) await db.transactionCategories.bulkAdd(transactionCategories)
-      if (transactions.length > 0) await db.transactions.bulkAdd(transactions)
-      if (budgets.length > 0) await db.budgets.bulkAdd(budgets)
-      if (goals.length > 0) await db.goals.bulkAdd(goals)
-      if (paymentMethodItems.length > 0) await db.paymentMethodItems.bulkAdd(paymentMethodItems)
-      if (subscriptions.length > 0) await db.subscriptions.bulkAdd(subscriptions)
-    })
+        if (members.length > 0) await db.members.bulkPut(members)
+        if (assetCategories.length > 0) await db.assetCategories.bulkPut(assetCategories)
+        if (assetItems.length > 0) await db.assetItems.bulkPut(assetItems)
+        if (dailyValues.length > 0) await db.dailyValues.bulkPut(dailyValues)
+        if (transactionCategories.length > 0) await db.transactionCategories.bulkPut(transactionCategories)
+        if (transactions.length > 0) await db.transactions.bulkPut(transactions)
+        if (budgets.length > 0) await db.budgets.bulkPut(budgets)
+        if (goals.length > 0) await db.goals.bulkPut(goals)
+        if (paymentMethodItems.length > 0) await db.paymentMethodItems.bulkPut(paymentMethodItems)
+        if (subscriptions.length > 0) await db.subscriptions.bulkPut(subscriptions)
+      })
+    } finally {
+      syncWritingCount = Math.max(0, syncWritingCount - 1)
+    }
 
     useAuthStore.getState().setSyncStatus('synced')
     useAuthStore.getState().setLastSyncTime(new Date().toISOString())
@@ -212,7 +265,7 @@ export async function syncOnLogin(uid: string): Promise<void> {
   const snapshot = await getDocs(colRef)
 
   if (snapshot.empty) {
-    await fullUpload(uid)
+    await fullUpload(uid, { reconcile: true })
   } else {
     await fullDownload(uid)
   }
@@ -224,6 +277,23 @@ export async function deleteFromCloud(uid: string, tableName: SyncableTable, syn
     await deleteDoc(doc(firestore, getUserDocPath(uid, tableName, syncId)))
   } catch (err) {
     console.error(`[sync] delete ${tableName}/${syncId} failed:`, err)
+  }
+}
+
+// Delete multiple documents from Firestore (batch)
+export async function deleteMultipleFromCloud(uid: string, tableName: SyncableTable, syncIds: string[]): Promise<void> {
+  if (syncIds.length === 0) return
+  try {
+    for (let i = 0; i < syncIds.length; i += BATCH_LIMIT) {
+      const chunk = syncIds.slice(i, i + BATCH_LIMIT)
+      const batch = writeBatch(firestore)
+      for (const syncId of chunk) {
+        batch.delete(doc(firestore, getUserDocPath(uid, tableName, syncId)))
+      }
+      await batch.commit()
+    }
+  } catch (err) {
+    console.error(`[sync] batch delete ${tableName} failed:`, err)
   }
 }
 
@@ -250,9 +320,13 @@ export async function uploadSingleRecord<T extends { syncId?: string }>(
 
 let unsubscribers: Unsubscribe[] = []
 let realtimeSyncPaused = false
+let syncWritingCount = 0
 
 export function pauseRealtimeSync() { realtimeSyncPaused = true }
 export function resumeRealtimeSync() { realtimeSyncPaused = false }
+export function getIsSyncWriting() { return syncWritingCount > 0 }
+export function beginSyncWriting() { syncWritingCount++ }
+export function endSyncWriting() { syncWritingCount = Math.max(0, syncWritingCount - 1) }
 
 type DexieTable = typeof db.members | typeof db.assetCategories | typeof db.assetItems |
   typeof db.dailyValues | typeof db.transactionCategories | typeof db.transactions |
@@ -274,18 +348,17 @@ function getLocalTable(tableName: SyncableTable): DexieTable {
   return map[tableName]
 }
 
-export function startRealtimeSync(uid: string): void {
-  stopRealtimeSync()
+let currentSyncUid: string | null = null
 
-  const tables: SyncableTable[] = ['members', 'assetCategories', 'assetItems', 'dailyValues', 'transactionCategories', 'transactions', 'budgets', 'goals', 'paymentMethodItems', 'subscriptions']
+function subscribeTable(uid: string, tableName: SyncableTable, retryCount = 0): void {
+  const colRef = collection(firestore, getUserCollectionPath(uid, tableName))
+  const unsub = onSnapshot(colRef, async (snapshot) => {
+    if (realtimeSyncPaused) return
 
-  for (const tableName of tables) {
-    const colRef = collection(firestore, getUserCollectionPath(uid, tableName))
-    const unsub = onSnapshot(colRef, async (snapshot) => {
-      if (realtimeSyncPaused) return
+    const localTable = getLocalTable(tableName)
 
-      const localTable = getLocalTable(tableName)
-
+    syncWritingCount++
+    try {
       for (const change of snapshot.docChanges()) {
         const cloudData = change.doc.data()
         const syncId = cloudData.syncId as string | undefined
@@ -294,17 +367,14 @@ export function startRealtimeSync(uid: string): void {
 
         try {
           if (change.type === 'added' || change.type === 'modified') {
-            // Check if record exists locally by syncId
             const existing = await (localTable as typeof db.members).where('syncId').equals(syncId).first()
             if (existing) {
-              // Update only if cloud is newer
               const cloudUpdatedAt = cloudData.updatedAt as string
               if (cloudUpdatedAt && cloudUpdatedAt > (existing.updatedAt || '')) {
                 const { ...updates } = cloudData
                 await (localTable as typeof db.members).update(existing.id!, updates)
               }
             } else {
-              // Add new record from cloud
               await (localTable as typeof db.members).add(cloudData as Member)
             }
           } else if (change.type === 'removed') {
@@ -317,19 +387,42 @@ export function startRealtimeSync(uid: string): void {
           console.error(`[sync] real-time ${tableName} ${change.type} error:`, err)
         }
       }
+    } finally {
+      syncWritingCount = Math.max(0, syncWritingCount - 1)
+    }
 
-      // Notify React stores that IndexedDB was updated
-      if (snapshot.docChanges().length > 0) {
-        window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: tableName } }))
-      }
-    }, (err) => {
-      console.error(`[sync] ${tableName} listener error:`, err)
-    })
-    unsubscribers.push(unsub)
+    if (snapshot.docChanges().length > 0) {
+      window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: tableName } }))
+    }
+  }, (err) => {
+    console.error(`[sync] ${tableName} listener error:`, err)
+    // Auto-reconnect with exponential backoff (max 30s)
+    if (currentSyncUid === uid && retryCount < 5) {
+      const delay = Math.min(Math.pow(2, retryCount) * 1000, 30000)
+      console.log(`[sync] retrying ${tableName} listener in ${delay}ms (attempt ${retryCount + 1})`)
+      setTimeout(() => {
+        if (currentSyncUid === uid) {
+          subscribeTable(uid, tableName, retryCount + 1)
+        }
+      }, delay)
+    }
+  })
+  unsubscribers.push(unsub)
+}
+
+export function startRealtimeSync(uid: string): void {
+  stopRealtimeSync()
+  currentSyncUid = uid
+
+  const tables: SyncableTable[] = ['members', 'assetCategories', 'assetItems', 'dailyValues', 'transactionCategories', 'transactions', 'budgets', 'goals', 'paymentMethodItems', 'subscriptions']
+
+  for (const tableName of tables) {
+    subscribeTable(uid, tableName)
   }
 }
 
 export function stopRealtimeSync(): void {
+  currentSyncUid = null
   for (const unsub of unsubscribers) {
     unsub()
   }

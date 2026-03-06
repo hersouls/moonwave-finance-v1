@@ -20,6 +20,7 @@ import { Tabs } from '@/components/ui/Tabs'
 import { Card } from '@/components/ui/Card'
 import { formatKoreanUnit, formatPercent } from '@/utils/format'
 import { clsx } from 'clsx'
+import { useSyncListener } from '@/hooks/useSyncListener'
 
 const REPORT_TABS = [
   { id: 'asset', label: '자산 분석' },
@@ -54,6 +55,7 @@ export function ReportsPage() {
   }
 
   useEffect(() => { loadData() }, [])
+  useSyncListener(loadData)
 
   if (isLoading) return <ReportsSkeleton />
 

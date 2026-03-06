@@ -73,8 +73,32 @@ export const useMemberStore = create<MemberState>()(
       deleteMember: async (id: number) => {
         const prev = get().members.find(m => m.id === id)
         if (!prev) return
+        // Collect all cascaded syncIds before deletion
+        const cascadeItems = await db.getAssetItemsByMember(id)
+        const cascadeItemSyncIds = cascadeItems.map(i => i.syncId).filter(Boolean) as string[]
+        const cascadeDailyValueSyncIds: string[] = []
+        for (const item of cascadeItems) {
+          const values = await db.getDailyValuesByItem(item.id!)
+          cascadeDailyValueSyncIds.push(...values.map(v => v.syncId).filter(Boolean) as string[])
+        }
+        const cascadeTransactions = await db.getAllTransactions()
+        const memberTxnSyncIds = cascadeTransactions
+          .filter(t => t.memberId === id && t.syncId)
+          .map(t => t.syncId) as string[]
+
         await db.deleteMember(id)
         await get().loadMembers()
+        // Delete from Firestore
+        import('@/services/firestoreSync').then(({ deleteFromCloud, deleteMultipleFromCloud }) => {
+          import('./authStore').then(({ useAuthStore }) => {
+            const user = useAuthStore.getState().user
+            if (!user) return
+            if (prev.syncId) deleteFromCloud(user.uid, 'members', prev.syncId)
+            deleteMultipleFromCloud(user.uid, 'assetItems', cascadeItemSyncIds)
+            deleteMultipleFromCloud(user.uid, 'dailyValues', cascadeDailyValueSyncIds)
+            deleteMultipleFromCloud(user.uid, 'transactions', memberTxnSyncIds)
+          })
+        }).catch(err => console.error('[member] delete sync failed:', err))
         useToastStore.getState().addToast(`${prev.name} 구성원이 삭제되었습니다.`, 'info')
       },
 

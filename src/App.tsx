@@ -11,6 +11,7 @@ import { TermsModal } from './components/layout/TermsModal'
 import { UndoToast } from './components/ui/UndoToast'
 import { ToastContainer } from './components/ui/ToastContainer'
 import { UpdateBanner } from './components/ui/UpdateBanner'
+import { IOSInstallBanner } from './components/ui/IOSInstallBanner'
 import { OfflineBanner } from './components/ui/OfflineBanner'
 import { AppLoadingScreen } from './components/ui/AppLoadingScreen'
 import { SearchModal } from './components/search/SearchModal'
@@ -107,6 +108,7 @@ export default function App() {
       <UndoToast />
       <ToastContainer />
       <UpdateBanner />
+      <IOSInstallBanner />
       <SearchModal />
       {!hasCompletedOnboarding && (
         <OnboardingWizard onComplete={() => setHasCompletedOnboarding(true)} />

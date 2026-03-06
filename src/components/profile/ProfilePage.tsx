@@ -29,6 +29,7 @@ export function ProfilePage() {
   const setLastBackupDate = useSettingsStore((s) => s.setLastBackupDate)
 
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [memberToDelete, setMemberToDelete] = useState<{ id: number; name: string } | null>(null)
   const [isSeeding, setIsSeeding] = useState(false)
   const [showMemberModal, setShowMemberModal] = useState(false)
   const [editingMember, setEditingMember] = useState<{ id: number; name: string; color: string } | null>(null)
@@ -258,7 +259,7 @@ export function ProfilePage() {
                     <Edit3 className="w-4 h-4" />
                   </IconButton>
                   {!m.isDefault && (
-                    <IconButton onClick={() => deleteMember(m.id!)} color="danger" plain size="sm">
+                    <IconButton onClick={() => setMemberToDelete({ id: m.id!, name: m.name })} color="danger" plain size="sm">
                       <Trash2 className="w-4 h-4" />
                     </IconButton>
                   )}
@@ -354,7 +355,7 @@ export function ProfilePage() {
           <Card className="!p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 text-red-600 dark:text-red-400">데이터 초기화</p>
+                <p className="text-sm font-medium text-red-600 dark:text-red-400">데이터 초기화</p>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">모든 데이터를 삭제하고 초기 상태로 되돌립니다</p>
               </div>
               <Button variant="danger" size="sm" onClick={() => setShowResetConfirm(true)} leftIcon={<Trash2 className="w-4 h-4" />}>
@@ -404,6 +405,22 @@ export function ProfilePage() {
           </Button>
         </DialogFooter>
       </Dialog>
+
+      {/* Member Delete Confirm */}
+      <ConfirmDialog
+        open={!!memberToDelete}
+        onClose={() => setMemberToDelete(null)}
+        onConfirm={async () => {
+          if (memberToDelete) {
+            await deleteMember(memberToDelete.id)
+            setMemberToDelete(null)
+          }
+        }}
+        title="구성원 삭제"
+        description={`'${memberToDelete?.name ?? ''}' 구성원을 삭제하면 해당 구성원의 모든 자산, 거래 데이터가 함께 삭제됩니다. 이 작업은 되돌릴 수 없습니다.`}
+        confirmText="삭제"
+        variant="danger"
+      />
 
       {/* Reset Confirm */}
       <ConfirmDialog

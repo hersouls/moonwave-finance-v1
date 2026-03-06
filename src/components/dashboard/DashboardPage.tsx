@@ -25,6 +25,7 @@ import { Card } from '@/components/ui/Card'
 import { useUIStore } from '@/stores/uiStore'
 import { formatKoreanUnit, formatPercent } from '@/utils/format'
 import { ErrorEmptyState } from '@/components/ui/EmptyState'
+import { useSyncListener } from '@/hooks/useSyncListener'
 
 export function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -59,13 +60,7 @@ export function DashboardPage() {
   }
 
   useEffect(() => { loadData() }, [])
-
-  // Reload when Firestore sync updates IndexedDB
-  useEffect(() => {
-    const handler = () => { loadData() }
-    window.addEventListener('fin-sync-update', handler)
-    return () => window.removeEventListener('fin-sync-update', handler)
-  }, [])
+  useSyncListener(loadData)
 
   if (isLoading) return <DashboardSkeleton />
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'moonwave-finance-v2'
+const CACHE_NAME = '__SW_VERSION__'
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -11,7 +11,6 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   )
-  self.skipWaiting()
 })
 
 self.addEventListener('activate', (event) => {

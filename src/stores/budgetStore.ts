@@ -49,8 +49,18 @@ export const useBudgetStore = create<BudgetState>()(
       },
 
       deleteBudget: async (id: number) => {
+        const budget = get().budgets.find(b => b.id === id)
         await db.deleteBudget(id)
         await get().loadBudgets()
+        // Delete from Firestore
+        if (budget?.syncId) {
+          import('@/services/firestoreSync').then(({ deleteFromCloud }) => {
+            import('./authStore').then(({ useAuthStore }) => {
+              const user = useAuthStore.getState().user
+              if (user) deleteFromCloud(user.uid, 'budgets', budget.syncId!)
+            })
+          }).catch(err => console.error('[budget] delete sync failed:', err))
+        }
       },
 
       getBudgetForCategory: (categoryId: number) => {
@@ -58,9 +68,10 @@ export const useBudgetStore = create<BudgetState>()(
       },
 
       getUsageForCategory: (categoryId: number) => {
+        const month = get().selectedMonth
         const transactions = useTransactionStore.getState().transactions
         return transactions
-          .filter(t => t.type === 'expense' && t.categoryId === categoryId)
+          .filter(t => t.type === 'expense' && t.categoryId === categoryId && t.date.startsWith(month))
           .reduce((sum, t) => sum + t.amount, 0)
       },
 
@@ -69,11 +80,11 @@ export const useBudgetStore = create<BudgetState>()(
       },
 
       getTotalUsed: () => {
+        const month = get().selectedMonth
         const transactions = useTransactionStore.getState().transactions
-        // Only count categories that have budgets
         const budgetCatIds = new Set(get().budgets.map(b => b.categoryId))
         return transactions
-          .filter(t => t.type === 'expense' && t.categoryId !== null && budgetCatIds.has(t.categoryId))
+          .filter(t => t.type === 'expense' && t.categoryId !== null && budgetCatIds.has(t.categoryId) && t.date.startsWith(month))
           .reduce((sum, t) => sum + t.amount, 0)
       },
     }),

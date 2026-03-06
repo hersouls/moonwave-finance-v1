@@ -11,6 +11,7 @@ import { AssetListSkeleton } from './AssetListSkeleton'
 import { FAB } from '@/components/ui/FAB'
 import { Tabs } from '@/components/ui/Tabs'
 import { ErrorEmptyState } from '@/components/ui/EmptyState'
+import { useSyncListener } from '@/hooks/useSyncListener'
 
 export function AssetListPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -38,6 +39,7 @@ export function AssetListPage() {
   }
 
   useEffect(() => { loadData() }, [])
+  useSyncListener(loadData, ['assetCategories', 'assetItems', 'dailyValues', 'members'])
 
   const memberTabs = useMemo(() => [
     { id: 'all', label: '전체' },

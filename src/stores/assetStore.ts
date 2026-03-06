@@ -92,8 +92,26 @@ export const useAssetStore = create<AssetState>()(
       deleteCategory: async (id) => {
         const cat = get().categories.find(c => c.id === id)
         if (!cat) return
+        // Collect syncIds of cascaded records before deletion
+        const cascadeItems = get().items.filter(i => i.categoryId === id)
+        const cascadeItemSyncIds = cascadeItems.map(i => i.syncId).filter(Boolean) as string[]
+        const cascadeDailyValueSyncIds: string[] = []
+        for (const item of cascadeItems) {
+          const values = await db.getDailyValuesByItem(item.id!)
+          cascadeDailyValueSyncIds.push(...values.map(v => v.syncId).filter(Boolean) as string[])
+        }
         await db.deleteAssetCategory(id)
         await get().loadAll()
+        // Delete from Firestore
+        import('@/services/firestoreSync').then(({ deleteFromCloud, deleteMultipleFromCloud }) => {
+          import('./authStore').then(({ useAuthStore }) => {
+            const user = useAuthStore.getState().user
+            if (!user) return
+            if (cat.syncId) deleteFromCloud(user.uid, 'assetCategories', cat.syncId)
+            deleteMultipleFromCloud(user.uid, 'assetItems', cascadeItemSyncIds)
+            deleteMultipleFromCloud(user.uid, 'dailyValues', cascadeDailyValueSyncIds)
+          })
+        }).catch(err => console.error('[asset] delete category sync failed:', err))
         useToastStore.getState().addToast(`${cat.name} 카테고리가 삭제되었습니다.`, 'info')
       },
 
@@ -143,8 +161,20 @@ export const useAssetStore = create<AssetState>()(
       deleteItem: async (id) => {
         const prev = get().items.find(i => i.id === id)
         if (!prev) return
+        // Collect dailyValue syncIds before deletion
+        const values = await db.getDailyValuesByItem(id)
+        const valueSyncIds = values.map(v => v.syncId).filter(Boolean) as string[]
         await db.deleteAssetItem(id)
         await get().loadItems()
+        // Delete from Firestore
+        import('@/services/firestoreSync').then(({ deleteFromCloud, deleteMultipleFromCloud }) => {
+          import('./authStore').then(({ useAuthStore }) => {
+            const user = useAuthStore.getState().user
+            if (!user) return
+            if (prev.syncId) deleteFromCloud(user.uid, 'assetItems', prev.syncId)
+            deleteMultipleFromCloud(user.uid, 'dailyValues', valueSyncIds)
+          })
+        }).catch(err => console.error('[asset] delete item sync failed:', err))
         useToastStore.getState().addToast(`${prev.name} 항목이 삭제되었습니다.`, 'info')
       },
 

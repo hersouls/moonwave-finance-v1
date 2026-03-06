@@ -334,12 +334,11 @@ export async function bulkSetDailyValues(entries: { assetItemId: number; date: s
 }
 
 export async function getLatestDailyValues(assetItemId: number, limit: number = 30): Promise<DailyValue[]> {
-  return db.dailyValues
+  const vals = await db.dailyValues
     .where('assetItemId')
     .equals(assetItemId)
-    .reverse()
-    .sortBy('date')
-    .then(vals => vals.slice(0, limit))
+    .toArray()
+  return vals.sort((a, b) => b.date.localeCompare(a.date)).slice(0, limit)
 }
 
 // ─── TransactionCategory CRUD ─────────────────────
@@ -356,8 +355,10 @@ export async function updateTransactionCategory(id: number, updates: Partial<Tra
 }
 
 export async function deleteTransactionCategory(id: number): Promise<void> {
-  await db.transactionCategories.delete(id)
-  await db.transactions.where('categoryId').equals(id).modify({ categoryId: null })
+  await db.transaction('rw', [db.transactionCategories, db.transactions], async () => {
+    await db.transactions.where('categoryId').equals(id).modify({ categoryId: null })
+    await db.transactionCategories.delete(id)
+  })
 }
 
 // ─── PaymentMethodItem CRUD ──────────────────────
@@ -378,8 +379,10 @@ export async function updatePaymentMethodItem(id: number, updates: Partial<Payme
 }
 
 export async function deletePaymentMethodItem(id: number): Promise<void> {
-  await db.transactions.where('paymentMethodItemId').equals(id).modify({ paymentMethodItemId: undefined })
-  await db.paymentMethodItems.delete(id)
+  await db.transaction('rw', [db.paymentMethodItems, db.transactions], async () => {
+    await db.transactions.where('paymentMethodItemId').equals(id).modify({ paymentMethodItemId: undefined })
+    await db.paymentMethodItems.delete(id)
+  })
 }
 
 // ─── Transaction CRUD ─────────────────────────────

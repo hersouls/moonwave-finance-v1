@@ -15,6 +15,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { getTodayString } from '@/lib/dateUtils'
 import * as db from '@/services/database'
 import type { Transaction } from '@/lib/types'
+import { useSyncListener } from '@/hooks/useSyncListener'
 
 export function CalendarPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -51,6 +52,7 @@ export function CalendarPage() {
   }
 
   useEffect(() => { loadData() }, [])
+  useSyncListener(() => { loadData(); fetchTransactions() }, ['transactions', 'transactionCategories'])
 
   const fetchTransactions = async () => {
     const txns = await db.getTransactionsByMonth(monthString)

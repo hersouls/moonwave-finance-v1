@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { db } from '@/services/database'
-import { fullUpload, pauseRealtimeSync, resumeRealtimeSync } from '@/services/firestoreSync'
+import { fullUpload, pauseRealtimeSync, resumeRealtimeSync, getIsSyncWriting } from '@/services/firestoreSync'
 
 /**
  * Watches Dexie for changes and debounce-uploads to Firestore when user is logged in.
@@ -31,6 +31,12 @@ export function useAutoSync() {
       }, DEBOUNCE_MS)
     }
 
+    // Sync when coming back online (uploads offline changes)
+    const handleOnline = () => {
+      scheduleSync()
+    }
+    window.addEventListener('online', handleOnline)
+
     // Dexie hooks: listen to creates, updates, deletes on all tables
     const tables = [
       db.members, db.assetCategories, db.assetItems, db.dailyValues,
@@ -41,9 +47,9 @@ export function useAutoSync() {
     const hookRemovers: (() => void)[] = []
 
     for (const table of tables) {
-      const createHook = () => scheduleSync()
-      const updateHook = () => scheduleSync()
-      const deleteHook = () => scheduleSync()
+      const createHook = () => { if (!getIsSyncWriting()) scheduleSync() }
+      const updateHook = () => { if (!getIsSyncWriting()) scheduleSync() }
+      const deleteHook = () => { if (!getIsSyncWriting()) scheduleSync() }
 
       table.hook('creating', createHook)
       table.hook('updating', updateHook)
@@ -58,6 +64,7 @@ export function useAutoSync() {
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
+      window.removeEventListener('online', handleOnline)
       for (const remove of hookRemovers) {
         remove()
       }

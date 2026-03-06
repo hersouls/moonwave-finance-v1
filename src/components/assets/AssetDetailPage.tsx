@@ -11,6 +11,7 @@ import { formatKRW, formatChange } from '@/utils/format'
 import { getMonthDates, formatMonthLabel, getPreviousMonth, getNextMonth } from '@/lib/dateUtils'
 import { clsx } from 'clsx'
 import { UI_DELAYS } from '@/utils/constants'
+import { useSyncListener } from '@/hooks/useSyncListener'
 
 export function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -41,13 +42,13 @@ export function AssetDetailPage() {
   const member = item ? members.find(m => m.id === item.memberId) : null
   const dates = getMonthDates(selectedMonth)
 
-  useEffect(() => {
-    const init = async () => {
-      await Promise.all([loadAll(), loadValues(), loadMembers()])
-      setIsLoading(false)
-    }
-    init()
-  }, [])
+  const loadData = async () => {
+    await Promise.all([loadAll(), loadValues(), loadMembers()])
+    setIsLoading(false)
+  }
+
+  useEffect(() => { loadData() }, [])
+  useSyncListener(loadData, ['assetCategories', 'assetItems', 'dailyValues', 'members'])
 
   const handleCellClick = useCallback((date: string) => {
     const key = `${itemId}-${date}`

@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Card } from '@/components/ui/Card'
 import { useSubscriptionStore } from '@/stores/subscriptionStore'
 import { formatKRW, formatUSD, formatKoreanUnit } from '@/utils/format'
@@ -8,10 +9,12 @@ interface SubscriptionSummaryProps {
 }
 
 export function SubscriptionSummary({ currencyFilter }: SubscriptionSummaryProps) {
-  const monthlyKRW = useSubscriptionStore((s) => s.getMonthlyTotalKRW())
-  const monthlyUSD = useSubscriptionStore((s) => s.getMonthlyTotalUSD())
-  const monthlyCombined = useSubscriptionStore((s) => s.getMonthlyTotalCombinedKRW())
-  const yearlyCombined = useSubscriptionStore((s) => s.getYearlyTotalCombinedKRW())
+  const subscriptions = useSubscriptionStore((s) => s.subscriptions)
+  const store = useSubscriptionStore
+  const monthlyKRW = useMemo(() => store.getState().getMonthlyTotalKRW(), [subscriptions])
+  const monthlyUSD = useMemo(() => store.getState().getMonthlyTotalUSD(), [subscriptions])
+  const monthlyCombined = useMemo(() => store.getState().getMonthlyTotalCombinedKRW(), [subscriptions])
+  const yearlyCombined = useMemo(() => store.getState().getYearlyTotalCombinedKRW(), [subscriptions])
 
   if (currencyFilter === 'KRW') {
     return (

@@ -20,6 +20,8 @@ interface SettingsState {
   setExchangeRate: (rate: number) => void
 }
 
+let themeListenerAdded = false
+
 export function applyTheme(theme: ThemeMode) {
   const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
   document.documentElement.classList.toggle('dark', isDark)
@@ -110,9 +112,12 @@ export const useSettingsStore = create<SettingsState>()(
         applyTheme(theme)
         applyColorPalette(colorPalette)
 
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-          if (get().settings.theme === 'system') applyTheme('system')
-        })
+        if (!themeListenerAdded) {
+          themeListenerAdded = true
+          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (get().settings.theme === 'system') applyTheme('system')
+          })
+        }
       },
 
       setTheme: (theme) => {

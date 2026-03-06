@@ -12,6 +12,7 @@ import { FAB } from '@/components/ui/FAB'
 import { SUBSCRIPTION_CATEGORIES } from '@/utils/constants'
 import { clsx } from 'clsx'
 import type { SubscriptionCategoryType } from '@/lib/types'
+import { useSyncListener } from '@/hooks/useSyncListener'
 
 const SUB_SEGMENTS = [
   { id: 'domestic', label: '국내', path: '/subscriptions/domestic' },
@@ -33,13 +34,7 @@ export function SubscriptionPage() {
   useEffect(() => {
     loadSubscriptions()
   }, [loadSubscriptions])
-
-  // Reload when Firestore sync updates IndexedDB
-  useEffect(() => {
-    const handler = () => loadSubscriptions()
-    window.addEventListener('fin-sync-update', handler)
-    return () => window.removeEventListener('fin-sync-update', handler)
-  }, [loadSubscriptions])
+  useSyncListener(loadSubscriptions, ['subscriptions'])
 
   // Filter subscriptions by route-based currency
   const filtered = subscriptions.filter((s) => {

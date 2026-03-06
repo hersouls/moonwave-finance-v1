@@ -151,6 +151,12 @@ export const PWA_UPDATE_INTERVAL_MS = 10 * 60 * 1000
 /** PWA update banner dismiss duration (30 minutes) */
 export const PWA_DISMISS_DURATION_MS = 30 * 60 * 1000
 
+/** iOS install banner temporary dismiss duration (7 days) */
+export const IOS_INSTALL_DISMISS_DURATION_MS = 7 * 24 * 60 * 60 * 1000
+
+/** LocalStorage key for iOS install banner dismiss state */
+export const IOS_INSTALL_DISMISSED_KEY = 'fin-ios-install-dismissed'
+
 /** UI delay constants (ms) */
 export const UI_DELAYS = {
   /** Short delay for navigation after state changes */

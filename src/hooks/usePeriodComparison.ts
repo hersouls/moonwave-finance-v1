@@ -41,6 +41,8 @@ export function usePeriodComparison(month?: string): PeriodComparisonData {
       setCurrentTxns(cur)
       setPreviousTxns(prev)
       setIsLoading(false)
+    }).catch(() => {
+      setIsLoading(false)
     })
   }, [currentMonth, previousMonth])
 

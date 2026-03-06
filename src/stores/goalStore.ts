@@ -61,8 +61,18 @@ export const useGoalStore = create<GoalState>()(
       },
 
       deleteGoal: async (id) => {
+        const goal = get().goals.find(g => g.id === id)
         await db.deleteGoal(id)
         await get().loadGoals()
+        // Delete from Firestore
+        if (goal?.syncId) {
+          import('@/services/firestoreSync').then(({ deleteFromCloud }) => {
+            import('./authStore').then(({ useAuthStore }) => {
+              const user = useAuthStore.getState().user
+              if (user) deleteFromCloud(user.uid, 'goals', goal.syncId!)
+            })
+          }).catch(err => console.error('[goal] delete sync failed:', err))
+        }
         useToastStore.getState().addToast('목표가 삭제되었습니다.', 'info')
       },
 

@@ -37,7 +37,7 @@ export default defineConfig({
     port: 3000,
   },
   build: {
-    sourcemap: true,
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {

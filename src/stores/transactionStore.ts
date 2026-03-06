@@ -169,6 +169,15 @@ export const useTransactionStore = create<TransactionState>()(
         if (!prev) return
         await db.deleteTransaction(id)
         await get().loadTransactions()
+        // Delete from Firestore
+        if (prev.syncId) {
+          import('@/services/firestoreSync').then(({ deleteFromCloud }) => {
+            import('./authStore').then(({ useAuthStore }) => {
+              const user = useAuthStore.getState().user
+              if (user) deleteFromCloud(user.uid, 'transactions', prev.syncId!)
+            })
+          }).catch(err => console.error('[transaction] delete sync failed:', err))
+        }
         useToastStore.getState().addToast('거래가 삭제되었습니다.', 'info')
       },
 
@@ -198,9 +207,19 @@ export const useTransactionStore = create<TransactionState>()(
       },
 
       deleteCategory: async (id) => {
+        const cat = get().categories.find(c => c.id === id)
         await db.deleteTransactionCategory(id)
         await get().loadCategories()
         await get().loadTransactions()
+        // Delete from Firestore
+        if (cat?.syncId) {
+          import('@/services/firestoreSync').then(({ deleteFromCloud }) => {
+            import('./authStore').then(({ useAuthStore }) => {
+              const user = useAuthStore.getState().user
+              if (user) deleteFromCloud(user.uid, 'transactionCategories', cat.syncId!)
+            })
+          }).catch(err => console.error('[transaction] delete category sync failed:', err))
+        }
         useToastStore.getState().addToast('카테고리가 삭제되었습니다.', 'info')
       },
 
@@ -229,8 +248,18 @@ export const useTransactionStore = create<TransactionState>()(
       },
 
       deletePaymentMethodItem: async (id) => {
+        const item = get().paymentMethodItems.find(i => i.id === id)
         await db.deletePaymentMethodItem(id)
         await get().loadPaymentMethodItems()
+        // Delete from Firestore
+        if (item?.syncId) {
+          import('@/services/firestoreSync').then(({ deleteFromCloud }) => {
+            import('./authStore').then(({ useAuthStore }) => {
+              const user = useAuthStore.getState().user
+              if (user) deleteFromCloud(user.uid, 'paymentMethodItems', item.syncId!)
+            })
+          }).catch(err => console.error('[transaction] delete paymentMethod sync failed:', err))
+        }
         useToastStore.getState().addToast('거래수단이 삭제되었습니다.', 'info')
       },
     }),

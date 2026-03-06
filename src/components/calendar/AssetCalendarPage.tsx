@@ -10,6 +10,7 @@ import { PageSegmentControl } from '@/components/layout/PageSegmentControl'
 import { formatKRW, formatKoreanUnit } from '@/utils/format'
 import { eachDayOfInterval, startOfMonth, endOfMonth, format } from 'date-fns'
 import { clsx } from 'clsx'
+import { useSyncListener } from '@/hooks/useSyncListener'
 
 const ASSET_SEGMENTS = [
   { id: 'capital', label: '자본', path: '/assets' },
@@ -30,14 +31,16 @@ export function AssetCalendarPage() {
 
   const { days, monthLabel, monthString, goToPreviousMonth, goToNextMonth, goToToday } = useCalendar()
 
+  const loadData = async () => {
+    await Promise.all([loadAll(), loadValues()])
+    setIsLoading(false)
+  }
+
   useEffect(() => {
-    const load = async () => {
-      setIsLoading(true)
-      await Promise.all([loadAll(), loadValues()])
-      setIsLoading(false)
-    }
-    load()
+    setIsLoading(true)
+    loadData()
   }, [])
+  useSyncListener(loadData, ['assetCategories', 'assetItems', 'dailyValues'])
 
   // Get all dates in the current month
   const monthDates = useMemo(() => {

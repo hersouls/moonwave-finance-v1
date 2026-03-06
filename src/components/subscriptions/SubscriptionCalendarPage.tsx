@@ -14,6 +14,7 @@ import { generateBillingDates } from '@/services/subscriptionEngine'
 import { startOfMonth, endOfMonth } from 'date-fns'
 import { clsx } from 'clsx'
 import type { Subscription } from '@/lib/types'
+import { useSyncListener } from '@/hooks/useSyncListener'
 
 const SUB_SEGMENTS = [
   { id: 'domestic', label: '국내', path: '/subscriptions/domestic' },
@@ -57,13 +58,7 @@ export function SubscriptionCalendarPage() {
   useEffect(() => {
     loadSubscriptions()
   }, [loadSubscriptions])
-
-  // Reload when Firestore sync updates IndexedDB
-  useEffect(() => {
-    const handler = () => loadSubscriptions()
-    window.addEventListener('fin-sync-update', handler)
-    return () => window.removeEventListener('fin-sync-update', handler)
-  }, [loadSubscriptions])
+  useSyncListener(loadSubscriptions, ['subscriptions'])
 
   const billingMap = useMemo(
     () => getBillingMap(subscriptions, monthString),

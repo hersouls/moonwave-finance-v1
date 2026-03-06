@@ -74,7 +74,7 @@ export async function showBillingNotifications(
     new Notification(`구독 결제 예정: ${subscription.name}`, {
       body: `${timeLabel} ${amountLabel} 결제 예정`,
       tag: `sub-billing-${subscription.id}-${daysUntil}`,
-      icon: '/icons/icon-192x192.png',
+      icon: '/icons/icon-192.png',
     })
   }
 
