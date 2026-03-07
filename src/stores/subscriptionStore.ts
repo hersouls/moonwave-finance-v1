@@ -49,7 +49,7 @@ function monthlyAmount(sub: Subscription): number {
     case 'quarterly': return sub.amount / 3
     case 'semi-annual': return sub.amount / 6
     case 'yearly': return sub.amount / 12
-    case 'custom': return sub.customCycleDays
+    case 'custom': return (sub.customCycleDays && sub.customCycleDays > 0)
       ? sub.amount * (365 / sub.customCycleDays / 12)
       : sub.amount
     default: return sub.amount

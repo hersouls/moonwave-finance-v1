@@ -124,7 +124,7 @@ export function CalendarPage() {
       {/* Selected Day Transactions */}
       {selectedDate && (
         <div>
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
+          <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">
             {parseInt(selectedDate.split('-')[2])}일 거래 내역
           </h3>
           {selectedDayTransactions.length === 0 ? (

@@ -19,7 +19,7 @@ export function FirstAssetStep({ onNext, onBack }: FirstAssetStepProps) {
       <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4">
         <TrendingUp className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
       </div>
-      <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">자산 등록 가이드</h2>
+      <h2 className="text-title1 text-zinc-900 dark:text-zinc-100 mb-2">자산 등록 가이드</h2>
       <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8 text-center">설정 완료 후 자산을 등록해보세요</p>
 
       <div className="w-full max-w-sm space-y-3 mb-10">

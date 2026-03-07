@@ -24,7 +24,7 @@ export function AssetCategoryTabs({ activeCategory, onChange, type }: AssetCateg
       tabs={tabs}
       activeTab={activeCategory === null ? 'all' : String(activeCategory)}
       onChange={(tabId) => onChange(tabId === 'all' ? null : Number(tabId))}
-      className="overflow-x-auto"
+      className="overflow-x-auto scrollbar-none"
     />
   )
 }

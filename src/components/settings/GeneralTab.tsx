@@ -42,7 +42,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
     <div className="space-y-8">
       {/* Theme Selection */}
       <section>
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">화면 테마</h3>
+        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">화면 테마</h3>
         <div className="grid grid-cols-3 gap-3">
           {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
             <button
@@ -62,7 +62,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
                   : 'text-zinc-500 dark:text-zinc-400'
               )} />
               <span className={clsx(
-                'text-sm font-medium',
+                'text-body3',
                 draft.theme === value
                   ? 'text-primary-700 dark:text-primary-300'
                   : 'text-zinc-600 dark:text-zinc-400'
@@ -73,7 +73,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
           ))}
         </div>
         {draft.theme === 'system' && (
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+          <p className="text-caption text-zinc-500 dark:text-zinc-400 mt-2">
             시스템 설정에 따라 자동으로 변경됩니다
           </p>
         )}
@@ -81,7 +81,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
 
       {/* Color Palette */}
       <section>
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">강조 색상</h3>
+        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">강조 색상</h3>
         <div className="grid grid-cols-5 gap-2">
           {(Object.values(COLOR_PALETTES) as { id: ColorPalette; nameKo: string; colors: { primary: string } }[]).map((palette) => (
             <button
@@ -95,15 +95,15 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
               )}
             >
               <div
-                className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-zinc-800 shadow-sm"
+                className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-zinc-800 elevation-1"
                 style={{ backgroundColor: palette.colors.primary }}
               />
-              <span className="text-xs text-zinc-600 dark:text-zinc-400">{palette.nameKo}</span>
+              <span className="text-caption text-zinc-600 dark:text-zinc-400">{palette.nameKo}</span>
             </button>
           ))}
         </div>
         {draft.theme === 'dark' && (
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+          <p className="text-caption text-zinc-500 dark:text-zinc-400 mt-2">
             다크 모드에서는 색상이 자동 조정됩니다
           </p>
         )}
@@ -111,7 +111,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
 
       {/* Currency Unit */}
       <section>
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">통화 단위</h3>
+        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">통화 단위</h3>
         <div className="flex gap-2">
           {([
             { value: 'won' as const, label: '₩ 원 (KRW)' },
@@ -121,7 +121,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
               key={value}
               onClick={() => onChange({ currencyUnit: value })}
               className={clsx(
-                'flex-1 py-2.5 px-4 rounded-lg border-2 text-sm font-medium transition-all',
+                'flex-1 py-2.5 px-4 rounded-lg border-2 text-body3 transition-all',
                 draft.currencyUnit === value
                   ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
                   : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'
@@ -135,7 +135,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
 
       {/* Exchange Rate */}
       <section>
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">USD/KRW 환율</h3>
+        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">USD/KRW 환율</h3>
         <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl space-y-3">
           <div className="flex items-center gap-3">
             <span className="text-sm text-zinc-600 dark:text-zinc-400 whitespace-nowrap">1 USD =</span>
@@ -148,16 +148,16 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
                 if (v > 0) setExchangeRate(v)
                 else setRateInput(String(exchangeRate?.usdToKrw ?? 1350))
               }}
-              className="w-32 px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 tabular-nums"
+              className="input-base w-32 tabular-nums"
             />
             <span className="text-sm text-zinc-600 dark:text-zinc-400">KRW</span>
           </div>
           {exchangeRate?.lastUpdated && (
-            <p className="text-xs text-zinc-400 dark:text-zinc-500">
+            <p className="text-caption text-zinc-400 dark:text-zinc-500">
               마지막 업데이트: {formatRelativeTime(exchangeRate.lastUpdated)}
             </p>
           )}
-          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+          <p className="text-caption text-zinc-400 dark:text-zinc-500">
             구독 합산 금액 계산에 사용됩니다
           </p>
         </div>
@@ -165,7 +165,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
 
       {/* High Contrast */}
       <section>
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">접근성</h3>
+        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">접근성</h3>
         <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
           <ToggleSwitch
             checked={draft.highContrastMode}
@@ -178,7 +178,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
 
       {/* App Info */}
       <section>
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">앱 정보</h3>
+        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">앱 정보</h3>
         <div className="space-y-2">
           <div className="flex items-center gap-2 px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
             <Info className="w-4 h-4 text-zinc-400" />

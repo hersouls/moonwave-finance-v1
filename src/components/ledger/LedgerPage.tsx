@@ -94,7 +94,7 @@ export function LedgerPage() {
 
   useEffect(() => {
     loadBudgets(selectedMonth)
-  }, [selectedMonth])
+  }, [selectedMonth, loadBudgets])
 
   if (isLoading) {
     return (

@@ -18,9 +18,9 @@ export function AssetLiabilityBreakdown({ stats }: AssetLiabilityBreakdownProps)
           <div className="p-2.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
             <Landmark className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">총 자산</span>
+          <span className="text-body3 text-zinc-500 dark:text-zinc-400">총 자산</span>
         </div>
-        <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+        <p className="text-heading2 text-emerald-600 dark:text-emerald-400 tabular-nums">
           {formatKoreanUnit(totalAssets)}
           <span className="text-sm text-zinc-400 dark:text-zinc-500 ml-1">원</span>
         </p>
@@ -33,9 +33,9 @@ export function AssetLiabilityBreakdown({ stats }: AssetLiabilityBreakdownProps)
             <CreditCard className="w-5 h-5 text-red-600 dark:text-red-400" />
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">총 부채</span>
+            <span className="text-body3 text-zinc-500 dark:text-zinc-400">총 부채</span>
             <span className={clsx(
-              'text-xs px-2 py-0.5 rounded-full font-medium',
+              'text-caption px-2 py-0.5 rounded-full font-medium',
               debtRatio < 30
                 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                 : debtRatio < 60
@@ -46,7 +46,7 @@ export function AssetLiabilityBreakdown({ stats }: AssetLiabilityBreakdownProps)
             </span>
           </div>
         </div>
-        <p className="text-2xl font-bold text-red-600 dark:text-red-400 tabular-nums">
+        <p className="text-heading2 text-red-600 dark:text-red-400 tabular-nums">
           {formatKoreanUnit(totalLiabilities)}
           <span className="text-sm text-zinc-400 dark:text-zinc-500 ml-1">원</span>
         </p>

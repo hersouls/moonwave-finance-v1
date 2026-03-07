@@ -34,10 +34,10 @@ export function LedgerSummaryCard() {
   return (
     <Card className="card-pad-lg">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">이번 달 가계부</h3>
+        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100">이번 달 가계부</h3>
         <button
           onClick={() => navigate('/ledger/expense')}
-          className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
+          className="text-caption text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
         >
           전체보기 <ArrowRight className="w-3 h-3" />
         </button>
@@ -49,7 +49,7 @@ export function LedgerSummaryCard() {
             <TrendingUp className="w-4 h-4 text-emerald-500" />
             <span className="text-sm text-zinc-600 dark:text-zinc-400">수입</span>
           </div>
-          <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+          <span className="text-body3-semi text-emerald-600 dark:text-emerald-400 tabular-nums">
             +{formatKoreanUnit(animatedIncome)}
           </span>
         </div>
@@ -59,7 +59,7 @@ export function LedgerSummaryCard() {
             <TrendingDown className="w-4 h-4 text-red-500" />
             <span className="text-sm text-zinc-600 dark:text-zinc-400">지출</span>
           </div>
-          <span className="text-sm font-semibold text-red-600 dark:text-red-400 tabular-nums">
+          <span className="text-body3-semi text-red-600 dark:text-red-400 tabular-nums">
             -{formatKoreanUnit(animatedExpense)}
           </span>
         </div>
@@ -67,7 +67,7 @@ export function LedgerSummaryCard() {
         <div className="border-t border-zinc-200 dark:border-zinc-700 pt-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Minus className="w-4 h-4 text-zinc-400" />
-            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">잔액</span>
+            <span className="text-body3 text-zinc-700 dark:text-zinc-300">잔액</span>
           </div>
           <span className={clsx(
             'text-sm font-bold tabular-nums',

@@ -53,7 +53,7 @@ export function DailyChangeChart() {
 
   return (
     <Card className="card-pad-lg">
-      <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4">일별 변동</h3>
+      <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-4">일별 변동</h3>
       <div className="h-52">
         <Bar
           data={chartData}

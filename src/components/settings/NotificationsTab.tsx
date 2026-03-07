@@ -45,7 +45,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
     <div className="space-y-8">
       {/* Browser Notification Permission */}
       <section>
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
           <Bell className="w-4 h-4" />
           브라우저 알림
         </h3>
@@ -62,7 +62,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
                 <BellOff className="w-4 h-4 text-red-500" />
                 <span className="text-sm text-red-700 dark:text-red-400 font-medium">알림이 차단되었습니다</span>
               </div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="text-caption text-zinc-500 dark:text-zinc-400">
                 브라우저 설정에서 알림 권한을 허용해주세요
               </p>
             </div>
@@ -70,12 +70,12 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
           {permission === 'default' && (
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">푸시 알림 활성화</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">알림을 받으려면 브라우저 권한이 필요합니다</p>
+                <p className="text-body3 text-zinc-900 dark:text-zinc-100">푸시 알림 활성화</p>
+                <p className="text-caption text-zinc-500 dark:text-zinc-400">알림을 받으려면 브라우저 권한이 필요합니다</p>
               </div>
               <button
                 onClick={handleRequestPermission}
-                className="px-3 py-1.5 text-sm font-medium text-primary-700 dark:text-primary-300 bg-primary-100 dark:bg-primary-900/30 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-colors"
+                className="px-3 py-1.5 text-body3 text-primary-700 dark:text-primary-300 bg-primary-100 dark:bg-primary-900/30 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-colors"
               >
                 허용
               </button>
@@ -92,7 +92,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
 
       {/* Budget Alert */}
       <section>
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
           <PiggyBank className="w-4 h-4" />
           예산 알림
         </h3>
@@ -107,14 +107,14 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
           </div>
           {draft.notifications.budgetAlert && (
             <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">알림 기준</p>
+              <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-2">알림 기준</p>
               <div className="flex flex-wrap gap-2">
                 {THRESHOLD_OPTIONS.map((v) => (
                   <button
                     key={v}
                     onClick={() => updateNotification({ budgetThreshold: v })}
                     className={clsx(
-                      'px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
+                      'px-3 py-1.5 rounded-lg text-body3 transition-all',
                       draft.notifications.budgetThreshold === v
                         ? 'bg-primary-500 text-white'
                         : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
@@ -131,7 +131,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
 
       {/* Transaction Reminder */}
       <section>
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
           <Clock className="w-4 h-4" />
           거래 기록 알림
         </h3>
@@ -146,14 +146,14 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
           </div>
           {draft.notifications.transactionReminder && (
             <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">알림 시간</p>
+              <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-2">알림 시간</p>
               <div className="flex flex-wrap gap-2">
                 {REMINDER_TIMES.map((t) => (
                   <button
                     key={t}
                     onClick={() => updateNotification({ reminderTime: t })}
                     className={clsx(
-                      'px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
+                      'px-3 py-1.5 rounded-lg text-body3 transition-all',
                       draft.notifications.reminderTime === t
                         ? 'bg-primary-500 text-white'
                         : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
@@ -170,7 +170,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
 
       {/* Subscription Billing Alert */}
       <section>
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
           <CreditCard className="w-4 h-4" />
           구독 결제일 알림
         </h3>
@@ -185,7 +185,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
           </div>
           {draft.notifications.subscriptionBillingAlert && (
             <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">알림 시점</p>
+              <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-2">알림 시점</p>
               <div className="flex flex-wrap gap-2">
                 {ALERT_DAYS_OPTIONS.map((opt) => {
                   const currentDays = draft.notifications.subscriptionAlertDaysBefore ?? [0, 1, 3]
@@ -202,7 +202,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
                         }
                       }}
                       className={clsx(
-                        'px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
+                        'px-3 py-1.5 rounded-lg text-body3 transition-all',
                         isSelected
                           ? 'bg-primary-500 text-white'
                           : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'

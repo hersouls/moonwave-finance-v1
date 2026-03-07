@@ -43,7 +43,7 @@ export function CategoryBreakdown({ transactions, type, budgets }: CategoryBreak
 
   return (
     <div className="card-base">
-      <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
+      <h4 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">
         {type === 'income' ? '수입' : '지출'} 카테고리
       </h4>
       <div className="space-y-2.5">
@@ -55,10 +55,10 @@ export function CategoryBreakdown({ transactions, type, budgets }: CategoryBreak
                 <span className="text-sm text-zinc-700 dark:text-zinc-300">{b.name}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 tabular-nums">
+                <span className="text-body3 text-zinc-900 dark:text-zinc-100 tabular-nums">
                   {formatKoreanUnit(b.total)}
                 </span>
-                <span className="text-xs text-zinc-400 w-10 text-right tabular-nums">
+                <span className="text-caption text-zinc-400 w-10 text-right tabular-nums">
                   {formatPercent(b.percentage, 0)}
                 </span>
               </div>

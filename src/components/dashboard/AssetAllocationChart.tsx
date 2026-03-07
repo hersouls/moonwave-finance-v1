@@ -28,7 +28,7 @@ export function AssetAllocationChart() {
 
   return (
     <Card className="card-pad-lg">
-      <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4">자산 구성</h3>
+      <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-4">자산 구성</h3>
       <div className="flex items-center gap-6">
         <div className="w-36 h-36 flex-shrink-0">
           <Doughnut
@@ -57,8 +57,8 @@ export function AssetAllocationChart() {
           {breakdown.slice(0, 5).map((b) => (
             <div key={b.categoryId} className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: b.categoryColor }} />
-              <span className="text-xs text-zinc-600 dark:text-zinc-400 truncate flex-1">{b.categoryName}</span>
-              <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100 tabular-nums">
+              <span className="text-caption text-zinc-600 dark:text-zinc-400 truncate flex-1">{b.categoryName}</span>
+              <span className="text-caption text-zinc-900 dark:text-zinc-100 tabular-nums">
                 {formatPercent(b.percentage, 0)}
               </span>
             </div>

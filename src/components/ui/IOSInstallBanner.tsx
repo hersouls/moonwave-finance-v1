@@ -9,7 +9,7 @@ export function IOSInstallBanner() {
   return (
     <div className="fixed top-0 left-0 right-0 z-[var(--z-overlay)] animate-[slideInFromTop_0.3s_ease-out]">
       <div className="mx-auto max-w-lg px-4 pt-3 pb-2">
-        <div className="relative px-4 py-3 bg-zinc-800 dark:bg-zinc-700 text-white rounded-xl shadow-2xl">
+        <div className="relative px-4 py-3 bg-zinc-800 dark:bg-zinc-700 text-white rounded-xl elevation-4">
           {/* Close button */}
           <button
             type="button"
@@ -21,12 +21,12 @@ export function IOSInstallBanner() {
           </button>
 
           {/* Title */}
-          <p className="text-sm font-semibold mb-2.5 pr-6">
+          <p className="text-body3-semi mb-2.5 pr-6">
             홈 화면에 추가하세요
           </p>
 
           {/* Step-by-step instructions */}
-          <div className="space-y-2 text-xs text-white/80">
+          <div className="space-y-2 text-caption text-white/80">
             <div className="flex items-center gap-2.5">
               <span className="flex items-center justify-center w-6 h-6 rounded-md bg-white/10 shrink-0">
                 <Share className="w-3.5 h-3.5" />

@@ -26,7 +26,7 @@ export function CalendarDayCell({ day, summary, isSelected, onClick }: CalendarD
       )}
     >
       <span className={clsx(
-        'text-xs font-medium',
+        'text-caption',
         day.isToday && 'text-primary-600 dark:text-primary-400 font-bold',
       )}>
         {day.day}

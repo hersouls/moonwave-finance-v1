@@ -46,7 +46,7 @@ export function Dialog({ open, onClose, children, size = 'lg', noPadding = false
           <DialogPanel
             transition
             className={clsx(
-              'row-start-2 w-full min-w-0 rounded-t-2xl bg-white shadow-2xl ring-1 ring-zinc-200',
+              'row-start-2 w-full min-w-0 rounded-t-2xl bg-white elevation-4 ring-1 ring-zinc-200',
               noPadding
                 ? 'pb-[env(safe-area-inset-bottom,0px)]'
                 : 'p-6 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] sm:p-8 sm:pb-8',
@@ -76,7 +76,7 @@ interface DialogHeaderProps {
 export function DialogHeader({ title, description, onClose }: DialogHeaderProps) {
   return (
     <div className="relative">
-      <DialogTitle className="text-balance text-lg/6 font-semibold text-zinc-950 dark:text-white sm:text-base/6">
+      <DialogTitle className="text-balance text-title2 text-zinc-950 dark:text-white sm:text-base/6">
         {title}
       </DialogTitle>
       {description && (

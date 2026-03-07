@@ -18,7 +18,7 @@ export function ToggleSwitch({ checked, onChange, label, description, disabled =
             {label}
           </Switch.Label>
           {description && (
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{description}</p>
+            <p className="text-caption text-zinc-500 dark:text-zinc-400 mt-0.5">{description}</p>
           )}
         </div>
         <Switch

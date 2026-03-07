@@ -57,7 +57,7 @@ export function NetWorthTrendChart() {
 
   return (
     <Card className="card-pad-lg">
-      <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4">순자산 추이</h3>
+      <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-4">순자산 추이</h3>
       <div className="h-52">
         <Line
           data={chartData}

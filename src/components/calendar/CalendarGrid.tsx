@@ -19,7 +19,7 @@ export function CalendarGrid({ days, summaries, selectedDate, onSelectDate }: Ca
         {WEEKDAY_LABELS.map((label, i) => (
           <div
             key={label}
-            className={`text-center text-xs font-medium py-2 ${
+            className={`text-center text-caption py-2 ${
               i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-zinc-500 dark:text-zinc-400'
             }`}
           >

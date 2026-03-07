@@ -21,20 +21,20 @@ export function SubscriptionWidget() {
   return (
     <Card className="card-pad-lg">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">구독 현황</h3>
+        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100">구독 현황</h3>
         <button
           onClick={() => navigate('/subscriptions')}
-          className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
+          className="text-caption text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
         >
           전체보기 <ArrowRight className="w-3 h-3" />
         </button>
       </div>
 
       <div className="mb-3">
-        <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
+        <p className="text-title2 text-zinc-900 dark:text-zinc-100 tabular-nums">
           월 {formatKRW(monthlyCombined)}
         </p>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="text-caption text-zinc-500 dark:text-zinc-400">
           (원화 {formatKRW(monthlyKRW)}
           {monthlyUSD > 0 && ` + 달러 ${formatUSD(monthlyUSD)}`})
         </p>
@@ -42,7 +42,7 @@ export function SubscriptionWidget() {
 
       {upcoming.length > 0 && (
         <div>
-          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">다음 결제 예정</p>
+          <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-2">다음 결제 예정</p>
           <div className="space-y-2">
             {upcoming.slice(0, 3).map((sub) => {
               const daysLeft = getDaysUntilBilling(sub.billingDay, sub.cycle, sub.billingMonth, sub.startDate, sub.customCycleDays)
@@ -55,10 +55,10 @@ export function SubscriptionWidget() {
                   <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1 truncate">
                     {sub.name}
                   </span>
-                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 tabular-nums">
+                  <span className="text-body3 text-zinc-900 dark:text-zinc-100 tabular-nums">
                     {formatSubscriptionAmount(sub.amount, sub.currency)}
                   </span>
-                  <span className="text-xs text-zinc-400 dark:text-zinc-500 w-10 text-right">
+                  <span className="text-caption text-zinc-400 dark:text-zinc-500 w-10 text-right">
                     D-{daysLeft}
                   </span>
                 </div>

@@ -76,7 +76,7 @@ export function SettingsModal() {
         <nav className="shrink-0 md:w-52 md:border-r border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/30 md:rounded-l-xl">
           {/* Header */}
           <div className="flex items-center justify-between p-4 pb-2 md:p-5 md:pb-4">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">설정</h2>
+            <h2 className="text-title2 text-zinc-900 dark:text-zinc-100">설정</h2>
             <button
               onClick={handleClose}
               className="p-2 rounded-lg text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
@@ -102,7 +102,7 @@ export function SettingsModal() {
                 onClick={() => setActiveTab(tab.id)}
                 onKeyDown={(e) => handleTabKeyDown(e, index)}
                 className={clsx(
-                  'flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all',
+                  'flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-body3 whitespace-nowrap transition-all',
                   'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                   activeTab === tab.id
                     ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'

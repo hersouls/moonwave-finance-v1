@@ -123,7 +123,7 @@ export function ProfilePage() {
     <div className="p-4 lg:p-6 space-y-6 max-w-2xl">
       {/* Profile Section */}
       <section>
-        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+        <h2 className="text-title2 text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
           <User className="w-5 h-5" />
           프로필
         </h2>
@@ -151,7 +151,7 @@ export function ProfilePage() {
       {/* Cloud Sync Section */}
       {user && (
         <section>
-          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+          <h2 className="text-title2 text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
             <Cloud className="w-5 h-5" />
             클라우드 동기화
           </h2>
@@ -161,14 +161,14 @@ export function ProfilePage() {
                 <div className="flex items-center gap-3">
                   <SyncStatusIndicator status={syncStatus} />
                   <div>
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                    <p className="text-body3 text-zinc-900 dark:text-zinc-100">
                       {syncStatus === 'syncing' && '동기화 중...'}
                       {syncStatus === 'synced' && '동기화 완료'}
                       {syncStatus === 'error' && '동기화 오류'}
                       {syncStatus === 'idle' && '동기화 대기'}
                     </p>
                     {lastSyncTime && (
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      <p className="text-caption text-zinc-500 dark:text-zinc-400">
                         마지막 동기화: {formatRelativeTime(lastSyncTime)}
                       </p>
                     )}
@@ -180,7 +180,7 @@ export function ProfilePage() {
               <Card>
                 <div className="flex flex-col items-center gap-2">
                   <Upload className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center">로컬 → 클라우드</p>
+                  <p className="text-caption text-zinc-600 dark:text-zinc-400 text-center">로컬 → 클라우드</p>
                   <Button
                     variant="secondary"
                     size="sm"
@@ -201,7 +201,7 @@ export function ProfilePage() {
               <Card>
                 <div className="flex flex-col items-center gap-2">
                   <Download className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center">클라우드 → 로컬</p>
+                  <p className="text-caption text-zinc-600 dark:text-zinc-400 text-center">클라우드 → 로컬</p>
                   <Button
                     variant="secondary"
                     size="sm"
@@ -228,7 +228,7 @@ export function ProfilePage() {
       {/* Members Section */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+          <h2 className="text-title2 text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
             <Users className="w-5 h-5" />
             가족 구성원
           </h2>
@@ -247,9 +247,9 @@ export function ProfilePage() {
                   >
                     {m.name.charAt(0)}
                   </div>
-                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{m.name}</span>
+                  <span className="text-body3 text-zinc-900 dark:text-zinc-100">{m.name}</span>
                   {m.isDefault && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
+                    <span className="text-caption px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
                       기본
                     </span>
                   )}
@@ -272,7 +272,7 @@ export function ProfilePage() {
 
       {/* Data Section */}
       <section>
-        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+        <h2 className="text-title2 text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
           <Database className="w-5 h-5" />
           데이터 관리
         </h2>
@@ -280,8 +280,8 @@ export function ProfilePage() {
           <Card>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">백업 내보내기</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="text-body3 text-zinc-900 dark:text-zinc-100">백업 내보내기</p>
+                <p className="text-caption text-zinc-500 dark:text-zinc-400">
                   {settings.lastBackupDate
                     ? `마지막 백업: ${formatRelativeTime(settings.lastBackupDate)}`
                     : '백업한 적이 없습니다'
@@ -296,8 +296,8 @@ export function ProfilePage() {
           <Card>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">백업 복원</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">JSON 백업 파일에서 복원</p>
+                <p className="text-body3 text-zinc-900 dark:text-zinc-100">백업 복원</p>
+                <p className="text-caption text-zinc-500 dark:text-zinc-400">JSON 백업 파일에서 복원</p>
               </div>
               <Button variant="secondary" size="sm" onClick={handleImportBackup} leftIcon={<Upload className="w-4 h-4" />}>
                 복원
@@ -307,8 +307,8 @@ export function ProfilePage() {
           <Card>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">CSV 내보내기</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">거래내역 또는 자산가치를 Excel 호환 CSV로 내보내기</p>
+                <p className="text-body3 text-zinc-900 dark:text-zinc-100">CSV 내보내기</p>
+                <p className="text-caption text-zinc-500 dark:text-zinc-400">거래내역 또는 자산가치를 Excel 호환 CSV로 내보내기</p>
               </div>
               <div className="flex gap-2">
                 <Button variant="secondary" size="sm" onClick={handleExportTransactionsCSV} leftIcon={<FileSpreadsheet className="w-4 h-4" />}>
@@ -324,8 +324,8 @@ export function ProfilePage() {
             <Card className="border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-amber-700 dark:text-amber-400">테스트 데이터 생성</p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">가상의 자산/거래/예산/목표 데이터를 생성하고 Firebase에 업로드합니다</p>
+                  <p className="text-body3 text-amber-700 dark:text-amber-400">테스트 데이터 생성</p>
+                  <p className="text-caption text-zinc-500 dark:text-zinc-400">가상의 자산/거래/예산/목표 데이터를 생성하고 Firebase에 업로드합니다</p>
                 </div>
                 <Button
                   variant="secondary"
@@ -355,8 +355,8 @@ export function ProfilePage() {
           <Card>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-red-600 dark:text-red-400">데이터 초기화</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">모든 데이터를 삭제하고 초기 상태로 되돌립니다</p>
+                <p className="text-body3 text-red-600 dark:text-red-400">데이터 초기화</p>
+                <p className="text-caption text-zinc-500 dark:text-zinc-400">모든 데이터를 삭제하고 초기 상태로 되돌립니다</p>
               </div>
               <Button variant="danger" size="sm" onClick={() => setShowResetConfirm(true)} leftIcon={<Trash2 className="w-4 h-4" />}>
                 초기화
@@ -372,18 +372,18 @@ export function ProfilePage() {
         <DialogBody>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">이름</label>
+              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">이름</label>
               <input
                 type="text"
                 value={memberName}
                 onChange={(e) => setMemberName(e.target.value)}
                 placeholder="이름을 입력하세요"
-                className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-base"
                 autoFocus
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">색상</label>
+              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">색상</label>
               <div className="flex gap-2 flex-wrap">
                 {MEMBER_COLORS.map(c => (
                   <button

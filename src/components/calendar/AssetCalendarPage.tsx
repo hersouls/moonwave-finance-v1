@@ -112,25 +112,25 @@ export function AssetCalendarPage() {
       {monthSummary && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Card className="card-pad-sm">
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">순자산</p>
+            <p className="text-caption text-zinc-500 dark:text-zinc-400">순자산</p>
             <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
               {formatKoreanUnit(monthSummary.netWorth)}
             </p>
           </Card>
           <Card className="card-pad-sm">
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">총 자산</p>
+            <p className="text-caption text-zinc-500 dark:text-zinc-400">총 자산</p>
             <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
               {formatKoreanUnit(monthSummary.totalAssets)}
             </p>
           </Card>
           <Card className="card-pad-sm">
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">총 부채</p>
+            <p className="text-caption text-zinc-500 dark:text-zinc-400">총 부채</p>
             <p className="text-sm font-bold text-red-600 dark:text-red-400 tabular-nums">
               {formatKoreanUnit(monthSummary.totalLiabilities)}
             </p>
           </Card>
           <Card className="card-pad-sm">
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">월간 변동</p>
+            <p className="text-caption text-zinc-500 dark:text-zinc-400">월간 변동</p>
             <p className={clsx(
               'text-sm font-bold tabular-nums',
               monthSummary.monthChange >= 0
@@ -151,7 +151,7 @@ export function AssetCalendarPage() {
             <div
               key={d}
               className={clsx(
-                'text-center text-xs font-medium py-1',
+                'text-center text-caption py-1',
                 i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-zinc-400 dark:text-zinc-500'
               )}
             >
@@ -177,7 +177,7 @@ export function AssetCalendarPage() {
       {/* Selected Day Detail */}
       {selectedDate && selectedData && (
         <Card>
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
+          <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">
             {parseInt(selectedDate.split('-')[2])}일 자산 현황
           </h3>
           <div className="space-y-2">
@@ -200,7 +200,7 @@ export function AssetCalendarPage() {
               </span>
             </div>
             {selectedData.change !== 0 && (
-              <div className="flex items-center justify-end gap-1 text-xs">
+              <div className="flex items-center justify-end gap-1 text-caption">
                 {selectedData.change > 0 ? (
                   <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
                 ) : (
@@ -243,7 +243,7 @@ function AssetDayCell({ day, data, isSelected, onSelect }: AssetDayCellProps) {
       )}
     >
       <span className={clsx(
-        'text-xs font-medium',
+        'text-caption',
         day.isToday
           ? 'text-primary-600 dark:text-primary-400 font-bold'
           : 'text-zinc-600 dark:text-zinc-400'

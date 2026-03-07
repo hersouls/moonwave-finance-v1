@@ -74,7 +74,7 @@ export function Header() {
             <img src="/icons/icon-192.png" alt="FIN" className="w-8 h-8 rounded-lg" />
             <span className="font-bold text-zinc-900 dark:text-zinc-100">FIN</span>
           </Link>
-          <h2 className="hidden lg:block text-lg font-semibold text-zinc-900 dark:text-zinc-100">{getPageTitle()}</h2>
+          <h2 className="hidden lg:block text-title2 text-zinc-900 dark:text-zinc-100">{getPageTitle()}</h2>
         </div>
         <div className="flex-1" />
         <div className="nav-header-actions">
@@ -82,9 +82,9 @@ export function Header() {
             <Tooltip content={user.displayName || user.email} placement="bottom">
               <button type="button" onClick={() => navigate('/profile')} className="mr-1 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500" aria-label="프로필 보기">
                 {user.photoURL ? (
-                  <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-zinc-800 shadow-sm object-cover" referrerPolicy="no-referrer" />
+                  <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-zinc-800 elevation-1 object-cover" referrerPolicy="no-referrer" />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-300 text-sm font-bold ring-2 ring-white dark:ring-zinc-800 shadow-sm">
+                  <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-300 text-sm font-bold ring-2 ring-white dark:ring-zinc-800 elevation-1">
                     {user.displayName?.[0] || user.email?.[0] || '?'}
                   </div>
                 )}

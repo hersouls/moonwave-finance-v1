@@ -6,6 +6,7 @@ import { useAssetStore } from '@/stores/assetStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
+import { Select } from '@/components/ui/Select'
 import { format } from 'date-fns'
 
 export function LiabilityCreateModal() {
@@ -64,34 +65,30 @@ export function LiabilityCreateModal() {
       <DialogBody>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">항목명</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">항목명</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="예: 아파트 대출"
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+              className="input-base"
               autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">카테고리</label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              <option value="">카테고리 선택</option>
-              {liabilityCategories.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">카테고리</label>
+            <Select
+              value={String(categoryId)}
+              onChange={(v) => setCategoryId(v ? Number(v) : '')}
+              options={liabilityCategories.map(c => ({ value: String(c.id), label: c.name }))}
+              placeholder="카테고리 선택"
+            />
           </div>
 
           {/* Initial Amount */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">초기 금액 (선택)</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">초기 금액 (선택)</label>
             <input
               type="text"
               inputMode="numeric"
@@ -101,32 +98,28 @@ export function LiabilityCreateModal() {
                 setInitialAmount(raw ? Number(raw).toLocaleString('ko-KR') : '')
               }}
               placeholder="0"
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-right tabular-nums"
+              className="input-base text-right tabular-nums"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">구성원</label>
-            <select
-              value={memberId}
-              onChange={(e) => setMemberId(e.target.value ? Number(e.target.value) : '')}
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              <option value="">구성원 선택</option>
-              {members.map(m => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">구성원</label>
+            <Select
+              value={String(memberId)}
+              onChange={(v) => setMemberId(v ? Number(v) : '')}
+              options={members.map(m => ({ value: String(m.id), label: m.name }))}
+              placeholder="구성원 선택"
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
             <input
               type="text"
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
               placeholder="메모를 입력하세요"
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+              className="input-base"
             />
           </div>
         </div>

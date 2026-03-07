@@ -19,7 +19,7 @@ export function NetWorthCard({ stats }: NetWorthCardProps) {
   return (
     <div className="card-base card-pad-xl">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">순자산</span>
+        <span className="text-body3 text-zinc-500 dark:text-zinc-400">순자산</span>
       </div>
       <p className="text-3xl lg:text-4xl font-bold text-zinc-900 dark:text-zinc-100 tabular-nums tracking-tight">
         {formatKoreanUnit(animatedNetWorth)}
@@ -35,14 +35,14 @@ export function NetWorthCard({ stats }: NetWorthCardProps) {
             <Minus className="w-4 h-4 text-zinc-400" />
           )}
           <span className={clsx(
-            'text-sm font-medium tabular-nums',
+            'text-body3 tabular-nums',
             isPositiveDaily && 'text-emerald-600 dark:text-emerald-400',
             isNegativeDaily && 'text-red-600 dark:text-red-400',
             !isPositiveDaily && !isNegativeDaily && 'text-zinc-500 dark:text-zinc-400'
           )}>
             {formatChangeUnit(dailyChange)}
           </span>
-          <span className="text-xs text-zinc-400 dark:text-zinc-500">오늘</span>
+          <span className="text-caption text-zinc-400 dark:text-zinc-500">오늘</span>
         </div>
         <div className="flex items-center gap-1.5">
           {isPositiveMonthly ? (
@@ -53,14 +53,14 @@ export function NetWorthCard({ stats }: NetWorthCardProps) {
             <Minus className="w-4 h-4 text-zinc-400" />
           )}
           <span className={clsx(
-            'text-sm font-medium tabular-nums',
+            'text-body3 tabular-nums',
             isPositiveMonthly && 'text-emerald-600 dark:text-emerald-400',
             isNegativeMonthly && 'text-red-600 dark:text-red-400',
             !isPositiveMonthly && !isNegativeMonthly && 'text-zinc-500 dark:text-zinc-400'
           )}>
             {formatChangeUnit(monthlyChange)}
           </span>
-          <span className="text-xs text-zinc-400 dark:text-zinc-500">이번달</span>
+          <span className="text-caption text-zinc-400 dark:text-zinc-500">이번달</span>
         </div>
       </div>
     </div>

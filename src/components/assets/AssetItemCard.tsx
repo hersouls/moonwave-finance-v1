@@ -47,17 +47,17 @@ function AssetItemCardInner({ itemId, name, categoryId, type }: AssetItemCardPro
                 style={{ backgroundColor: category.color }}
               />
             )}
-            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+            <span className="text-body3 text-zinc-900 dark:text-zinc-100 truncate">
               {name}
             </span>
           </div>
-          <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
+          <p className="text-title2 text-zinc-900 dark:text-zinc-100 tabular-nums">
             {formatKoreanUnit(latestValue)}
-            <span className="text-xs text-zinc-400 ml-1">원</span>
+            <span className="text-caption text-zinc-400 ml-1">원</span>
           </p>
           {change !== 0 && (
             <p className={clsx(
-              'text-xs tabular-nums mt-0.5',
+              'text-caption tabular-nums mt-0.5',
               change > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
             )}>
               {formatChange(change)}

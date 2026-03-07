@@ -30,7 +30,7 @@ export function FinancialGoals() {
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+        <h2 className="text-title2 text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
           <Target className="w-5 h-5" />
           재정 목표
         </h2>

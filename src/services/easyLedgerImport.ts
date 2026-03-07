@@ -1,5 +1,5 @@
 import { db } from '@/services/database'
-import type { TransactionType, PaymentMethod, TransactionCategory, PaymentMethodItem } from '@/lib/types'
+import type { Transaction, TransactionType, PaymentMethod, TransactionCategory, PaymentMethodItem } from '@/lib/types'
 
 // ─── Types ──────────────────────────────────────────
 
@@ -187,7 +187,7 @@ export async function previewEasyLedgerImport(file: File): Promise<ImportPreview
 
   return {
     totalRecords: rows.length,
-    dateRange: { from: dates[0], to: dates[dates.length - 1] },
+    dateRange: dates.length > 0 ? { from: dates[0], to: dates[dates.length - 1] } : { from: '', to: '' },
     categories,
     assets: Array.from(assetCount.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
     members: Array.from(memberCount.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
@@ -351,7 +351,7 @@ export async function importEasyLedger(
       }
     })
 
-    await db.transactions.bulkAdd(transactions as any[])
+    await db.transactions.bulkAdd(transactions as Omit<Transaction, 'id'>[])
     importedCount += transactions.length
   }
 
@@ -362,7 +362,7 @@ export async function importEasyLedger(
     totalImported: importedCount,
     createdCategories,
     createdPaymentMethods,
-    dateRange: { from: dates[0], to: dates[dates.length - 1] },
+    dateRange: dates.length > 0 ? { from: dates[0], to: dates[dates.length - 1] } : { from: '', to: '' },
     warnings,
   }
 }

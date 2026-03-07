@@ -134,7 +134,7 @@ export function AssetDetailPage() {
               {category && (
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: category.color }} />
               )}
-              <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{item.name}</h1>
+              <h1 className="text-title1 text-zinc-900 dark:text-zinc-100">{item.name}</h1>
             </div>
             <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
               {category && <span>{category.name}</span>}
@@ -155,7 +155,7 @@ export function AssetDetailPage() {
       {/* Current Value Summary */}
       <Card className="card-pad-lg">
         <span className="text-sm text-zinc-500 dark:text-zinc-400">현재 가치</span>
-        <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 tabular-nums mt-1">
+        <p className="text-heading2 text-zinc-900 dark:text-zinc-100 tabular-nums mt-1">
           {formatKRW(latestValue)}
         </p>
         {latestValue !== prevValue && (
@@ -177,7 +177,7 @@ export function AssetDetailPage() {
           <IconButton onClick={() => setSelectedMonth(getPreviousMonth(selectedMonth))} plain size="sm">
             <ChevronLeft className="w-5 h-5" />
           </IconButton>
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100">
             {formatMonthLabel(selectedMonth)}
           </h3>
           <IconButton onClick={() => setSelectedMonth(getNextMonth(selectedMonth))} plain size="sm">
@@ -228,7 +228,7 @@ export function AssetDetailPage() {
                   </div>
                   {change !== 0 && !isEditing && (
                     <span className={clsx(
-                      'text-xs tabular-nums ml-2',
+                      'text-caption tabular-nums ml-2',
                       change > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
                     )}>
                       {formatChange(change)}

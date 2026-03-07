@@ -6,6 +6,7 @@ import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { getTodayString } from '@/lib/dateUtils'
 import { useToastStore } from '@/stores/toastStore'
+import { Select } from '@/components/ui/Select'
 import type { TransactionType, RepeatType } from '@/lib/types'
 
 export function TransactionCreateModal() {
@@ -81,12 +82,12 @@ export function TransactionCreateModal() {
         <div className="space-y-4">
           {/* Type Toggle */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">유형</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-2">유형</label>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setType('expense')}
-                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'expense'
                     ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                     : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
@@ -97,7 +98,7 @@ export function TransactionCreateModal() {
               <button
                 type="button"
                 onClick={() => setType('income')}
-                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'income'
                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                     : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
@@ -110,7 +111,7 @@ export function TransactionCreateModal() {
 
           {/* Amount */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">금액</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">금액</label>
             <div className="relative">
               <input
                 type="text"
@@ -124,66 +125,58 @@ export function TransactionCreateModal() {
                   setAmountError('')
                 }}
                 placeholder="0"
-                className="w-full px-3 py-2.5 pr-8 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400"
+                className="input-base !pr-8 tabular-nums"
                 autoFocus
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400">원</span>
             </div>
             {amountError && (
-              <p className="text-xs text-red-500 dark:text-red-400 mt-1">{amountError}</p>
+              <p className="text-caption text-red-500 dark:text-red-400 mt-1">{amountError}</p>
             )}
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">카테고리</label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              <option value="">카테고리 선택</option>
-              {currentCategories.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">카테고리</label>
+            <Select
+              value={String(categoryId)}
+              onChange={(v) => setCategoryId(v ? Number(v) : '')}
+              options={currentCategories.map(c => ({ value: String(c.id), label: c.name }))}
+              placeholder="카테고리 선택"
+            />
           </div>
 
           {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">날짜</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">날짜</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-base"
             />
           </div>
 
           {/* Member */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">구성원 (선택)</label>
-            <select
-              value={memberId}
-              onChange={(e) => setMemberId(e.target.value ? Number(e.target.value) : '')}
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              <option value="">선택 안함</option>
-              {members.map(m => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">구성원 (선택)</label>
+            <Select
+              value={String(memberId)}
+              onChange={(v) => setMemberId(v ? Number(v) : '')}
+              options={members.map(m => ({ value: String(m.id), label: m.name }))}
+              placeholder="선택 안함"
+            />
           </div>
 
           {/* Memo */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
             <input
               type="text"
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
               placeholder="메모를 입력하세요"
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+              className="input-base"
             />
           </div>
 
@@ -196,32 +189,32 @@ export function TransactionCreateModal() {
                 onChange={(e) => setIsRecurring(e.target.checked)}
                 className="check"
               />
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">반복 거래</span>
+              <span className="text-body3 text-zinc-700 dark:text-zinc-300">반복 거래</span>
             </label>
           </div>
 
           {isRecurring && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">반복 주기</label>
-                <select
+                <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">반복 주기</label>
+                <Select
                   value={recurType}
-                  onChange={(e) => setRecurType(e.target.value as RepeatType)}
-                  className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="monthly">매월</option>
-                  <option value="weekly">매주</option>
-                  <option value="daily">매일</option>
-                  <option value="yearly">매년</option>
-                </select>
+                  onChange={(v) => setRecurType(v as RepeatType)}
+                  options={[
+                    { value: 'monthly', label: '매월' },
+                    { value: 'weekly', label: '매주' },
+                    { value: 'daily', label: '매일' },
+                    { value: 'yearly', label: '매년' },
+                  ]}
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">종료일 (선택)</label>
+                <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">종료일 (선택)</label>
                 <input
                   type="date"
                   value={recurEndDate}
                   onChange={(e) => setRecurEndDate(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="input-base"
                 />
               </div>
             </div>

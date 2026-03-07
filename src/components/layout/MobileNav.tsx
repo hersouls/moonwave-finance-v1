@@ -161,7 +161,7 @@ export function MobileNav() {
           leaveTo="-translate-x-full"
         >
           <DialogPanel
-            className="fixed inset-y-0 left-0 w-full max-w-xs bg-white dark:bg-zinc-950 shadow-xl dark:shadow-zinc-900/50 flex flex-col"
+            className="fixed inset-y-0 left-0 w-full max-w-xs bg-white dark:bg-zinc-950 elevation-4 flex flex-col"
             aria-labelledby="mobile-nav-title"
           >
             {/* Header */}

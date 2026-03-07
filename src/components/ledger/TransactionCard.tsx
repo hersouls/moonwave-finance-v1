@@ -49,7 +49,7 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
         {/* Transaction details */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+            <span className="text-body3 text-zinc-900 dark:text-zinc-100 truncate">
               {category?.name || '미분류'}
             </span>
             {member && (
@@ -58,23 +58,23 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
               </span>
             )}
             {transaction.subscriptionId && (
-              <span className="text-xs px-1.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center gap-0.5">
+              <span className="text-caption px-1.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center gap-0.5">
                 <RefreshCw className="w-3 h-3" />
                 구독
               </span>
             )}
             {pmLabel && (
-              <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+              <span className="text-caption px-1.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
                 {pmLabel}
               </span>
             )}
           </div>
           {transaction.memo && (
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
+            <p className="text-caption text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
               {transaction.memo}
             </p>
           )}
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+          <p className="text-caption text-zinc-400 dark:text-zinc-500 mt-0.5">
             {formatDate(transaction.date)}
           </p>
         </div>

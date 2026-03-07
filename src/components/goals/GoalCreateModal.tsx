@@ -106,26 +106,26 @@ export function GoalCreateModal({ open, onClose, editGoal }: GoalCreateModalProp
       <DialogBody>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">목표명</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">목표명</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="예: 비상금 1000만원 모으기"
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400"
+              className="input-base"
               autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">유형</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">유형</label>
             <div className="grid grid-cols-4 gap-2">
               {GOAL_TYPES.map(gt => (
                 <button
                   key={gt.value}
                   type="button"
                   onClick={() => setType(gt.value)}
-                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${
+                  className={`py-2 rounded-lg text-caption transition-colors ${
                     type === gt.value
                       ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
                       : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
@@ -139,45 +139,45 @@ export function GoalCreateModal({ open, onClose, editGoal }: GoalCreateModalProp
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">목표 금액</label>
+              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">목표 금액</label>
               <div className="relative">
                 <input
                   type="text" inputMode="numeric"
                   value={targetAmount}
                   onChange={(e) => setTargetAmount(formatAmountInput(e.target.value))}
                   placeholder="0"
-                  className="w-full px-3 py-2.5 pr-8 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="input-base !pr-8 tabular-nums"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">원</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-caption text-zinc-400">원</span>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">현재 금액</label>
+              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">현재 금액</label>
               <div className="relative">
                 <input
                   type="text" inputMode="numeric"
                   value={currentAmount}
                   onChange={(e) => setCurrentAmount(formatAmountInput(e.target.value))}
                   placeholder="0"
-                  className="w-full px-3 py-2.5 pr-8 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="input-base !pr-8 tabular-nums"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">원</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-caption text-zinc-400">원</span>
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">목표 날짜</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">목표 날짜</label>
             <input
               type="date"
               value={targetDate}
               onChange={(e) => setTargetDate(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-base"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">색상</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">색상</label>
             <div className="flex gap-2 flex-wrap">
               {GOAL_COLORS.map(c => (
                 <button
@@ -192,13 +192,13 @@ export function GoalCreateModal({ open, onClose, editGoal }: GoalCreateModalProp
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
             <input
               type="text"
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
               placeholder="메모를 입력하세요"
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400"
+              className="input-base"
             />
           </div>
         </div>

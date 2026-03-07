@@ -129,10 +129,10 @@ export function DashboardPage() {
         {assetBreakdown.length > 0 && (
           <Card className="card-pad-lg">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">자산 구성</h3>
+              <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100">자산 구성</h3>
               <button
                 onClick={() => navigate('/assets')}
-                className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
+                className="text-caption text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
               >
                 전체보기 <ArrowRight className="w-3 h-3" />
               </button>
@@ -142,10 +142,10 @@ export function DashboardPage() {
                 <div key={bd.categoryId} className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: bd.categoryColor }} />
                   <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1 truncate">{bd.categoryName}</span>
-                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 tabular-nums">
+                  <span className="text-body3 text-zinc-900 dark:text-zinc-100 tabular-nums">
                     {formatKoreanUnit(bd.total)}
                   </span>
-                  <span className="text-xs text-zinc-400 dark:text-zinc-500 w-12 text-right tabular-nums">
+                  <span className="text-caption text-zinc-400 dark:text-zinc-500 w-12 text-right tabular-nums">
                     {formatPercent(bd.percentage, 0)}
                   </span>
                 </div>
@@ -158,10 +158,10 @@ export function DashboardPage() {
         {liabilityBreakdown.length > 0 && (
           <Card className="card-pad-lg">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">부채 구성</h3>
+              <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100">부채 구성</h3>
               <button
                 onClick={() => navigate('/liabilities')}
-                className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
+                className="text-caption text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
               >
                 전체보기 <ArrowRight className="w-3 h-3" />
               </button>
@@ -171,10 +171,10 @@ export function DashboardPage() {
                 <div key={bd.categoryId} className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: bd.categoryColor }} />
                   <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1 truncate">{bd.categoryName}</span>
-                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 tabular-nums">
+                  <span className="text-body3 text-zinc-900 dark:text-zinc-100 tabular-nums">
                     {formatKoreanUnit(bd.total)}
                   </span>
-                  <span className="text-xs text-zinc-400 dark:text-zinc-500 w-12 text-right tabular-nums">
+                  <span className="text-caption text-zinc-400 dark:text-zinc-500 w-12 text-right tabular-nums">
                     {formatPercent(bd.percentage, 0)}
                   </span>
                 </div>
@@ -188,10 +188,10 @@ export function DashboardPage() {
       {activeGoals.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">진행 중인 목표</h3>
+            <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100">진행 중인 목표</h3>
             <button
               onClick={() => navigate('/profile')}
-              className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
+              className="text-caption text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
             >
               전체보기 <ArrowRight className="w-3 h-3" />
             </button>

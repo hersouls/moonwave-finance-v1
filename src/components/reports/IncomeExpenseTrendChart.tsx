@@ -33,7 +33,7 @@ export function IncomeExpenseTrendChart() {
 
   return (
     <Card className="card-pad-lg">
-      <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4">수입/지출 추세 (6개월)</h3>
+      <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-4">수입/지출 추세 (6개월)</h3>
       <div className="h-64">
         <Bar
           data={{

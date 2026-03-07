@@ -4,10 +4,12 @@ export const KOREAN_UNIT_EUK = 100_000_000
 export const KOREAN_UNIT_MAN = 10_000
 
 export function formatKRW(value: number): string {
+  if (!Number.isFinite(value)) return '0원'
   return Math.round(value).toLocaleString('ko-KR') + '원'
 }
 
 export function formatKoreanUnit(value: number): string {
+  if (!Number.isFinite(value)) return '0'
   const abs = Math.abs(value)
   const sign = value < 0 ? '-' : ''
   if (abs >= KOREAN_UNIT_EUK) {
@@ -34,6 +36,7 @@ export function formatChangeUnit(value: number): string {
 }
 
 export function formatPercent(value: number, decimals: number = 1): string {
+  if (!Number.isFinite(value)) return '0%'
   return value.toFixed(decimals) + '%'
 }
 
@@ -46,6 +49,7 @@ export function formatCurrency(value: number): string {
 }
 
 export function formatUSD(value: number): string {
+  if (!Number.isFinite(value)) return '$0.00'
   return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 

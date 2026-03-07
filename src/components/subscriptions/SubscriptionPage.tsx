@@ -76,7 +76,7 @@ export function SubscriptionPage() {
         <button
           onClick={() => setCategoryFilter(null)}
           className={clsx(
-            'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0',
+            'px-3 py-1.5 rounded-full text-caption whitespace-nowrap transition-colors flex-shrink-0',
             !categoryFilter
               ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
               : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
@@ -89,7 +89,7 @@ export function SubscriptionPage() {
             key={cat.value}
             onClick={() => setCategoryFilter(categoryFilter === cat.value ? null : cat.value)}
             className={clsx(
-              'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0',
+              'px-3 py-1.5 rounded-full text-caption whitespace-nowrap transition-colors flex-shrink-0',
               categoryFilter === cat.value
                 ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'

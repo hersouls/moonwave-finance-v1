@@ -76,11 +76,11 @@ export function SubscriptionCalendarView() {
       {/* Monthly Summary */}
       <div className="flex gap-3">
         <Card className="card-pad-sm flex-1">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">결제 예정</p>
+          <p className="text-caption text-zinc-500 dark:text-zinc-400">결제 예정</p>
           <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{monthlyBillingCount}건</p>
         </Card>
         <Card className="card-pad-sm flex-1">
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">결제일 수</p>
+          <p className="text-caption text-zinc-500 dark:text-zinc-400">결제일 수</p>
           <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{billingMap.size}일</p>
         </Card>
       </div>
@@ -93,7 +93,7 @@ export function SubscriptionCalendarView() {
             <div
               key={d}
               className={clsx(
-                'text-center text-xs font-medium py-1',
+                'text-center text-caption py-1',
                 i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-zinc-400 dark:text-zinc-500'
               )}
             >
@@ -119,7 +119,7 @@ export function SubscriptionCalendarView() {
       {/* Selected Day Detail */}
       {selectedDate && (
         <Card>
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
+          <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">
             {parseInt(selectedDate.split('-')[1])}월 {parseInt(selectedDate.split('-')[2])}일 결제 예정
           </h3>
           {selectedSubs.length === 0 ? (
@@ -132,13 +132,13 @@ export function SubscriptionCalendarView() {
                     className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: sub.color + '20' }}
                   >
-                    <span className="text-xs font-bold" style={{ color: sub.color }}>
+                    <span className="text-caption-bold" style={{ color: sub.color }}>
                       {sub.name.charAt(0)}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{sub.name}</p>
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                    <p className="text-body3 text-zinc-900 dark:text-zinc-100 truncate">{sub.name}</p>
+                    <p className="text-caption text-zinc-400 dark:text-zinc-500">
                       {formatBillingSchedule(sub.cycle, sub.billingDay, sub.billingMonth, sub.customCycleDays)}
                     </p>
                   </div>
@@ -186,7 +186,7 @@ function BillingDayCell({ day, subscriptions, isSelected, onSelect }: BillingDay
       )}
     >
       <span className={clsx(
-        'text-xs font-medium',
+        'text-caption',
         day.isToday
           ? 'text-primary-600 dark:text-primary-400 font-bold'
           : 'text-zinc-600 dark:text-zinc-400'

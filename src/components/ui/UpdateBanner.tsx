@@ -47,20 +47,20 @@ export function UpdateBanner() {
   return (
     <div className="fixed top-0 left-0 right-0 z-[var(--z-overlay)] animate-[slideInFromTop_0.3s_ease-out]">
       <div className="mx-auto max-w-lg px-4 pt-3 pb-2">
-        <div className="flex items-center gap-3 px-4 py-3 bg-primary-600 dark:bg-primary-700 text-white rounded-xl shadow-2xl">
+        <div className="flex items-center gap-3 px-4 py-3 bg-primary-600 dark:bg-primary-700 text-white rounded-xl elevation-4">
           <RefreshCw className="w-4 h-4 shrink-0" />
           <span className="text-sm flex-1">새 버전이 있습니다.</span>
           <button
             type="button"
             onClick={acceptUpdate}
-            className="px-3 py-1 text-sm font-medium bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+            className="px-3 py-1 text-body3 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
           >
             업데이트
           </button>
           <button
             type="button"
             onClick={dismissUpdate}
-            className="text-white/60 hover:text-white/90 text-xs"
+            className="text-white/60 hover:text-white/90 text-caption"
           >
             나중에
           </button>

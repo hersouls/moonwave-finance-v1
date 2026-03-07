@@ -438,6 +438,12 @@ html.dark[data-palette="forest"] {
 .text-body2      { font-size: 15px; font-weight: 700; line-height: 1.48; }
 .text-label3     { font-size: 13px; font-weight: 700; line-height: 1.48; }
 .text-label3-md  { font-size: 13px; font-weight: 500; line-height: 1.48; }
+.text-body2-md   { font-size: 15px; font-weight: 500; line-height: 1.48; }
+.text-body3      { font-size: 14px; font-weight: 500; line-height: 1.48; }
+.text-body3-semi { font-size: 14px; font-weight: 600; line-height: 1.48; }
+.text-body3-bold { font-size: 14px; font-weight: 700; line-height: 1.48; }
+.text-caption    { font-size: 12px; font-weight: 500; line-height: 1.48; }
+.text-caption-bold { font-size: 12px; font-weight: 700; line-height: 1.48; }
 
 /* ========================================
    Icon Utilities
@@ -1709,7 +1715,7 @@ input[type="range"].slider:disabled::-moz-range-thumb {
   color: oklch(0.55 0 0);
 }
 .dark .card-info-label {
-  color: oklch(0.55 0 0);
+  color: oklch(0.65 0 0);
 }
 .card-info-value {
   font-size: 15px;
@@ -1749,7 +1755,7 @@ input[type="range"].slider:disabled::-moz-range-thumb {
   color: oklch(0.55 0 0);
 }
 .dark .card-file-meta {
-  color: oklch(0.55 0 0);
+  color: oklch(0.65 0 0);
 }
 .card-file-action {
   flex: 0 0 auto;

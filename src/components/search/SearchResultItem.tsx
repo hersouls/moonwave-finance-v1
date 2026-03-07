@@ -31,9 +31,9 @@ export function SearchResultItem({ result, onClick, isActive }: SearchResultItem
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{result.title}</p>
+        <p className="text-body3 text-zinc-900 dark:text-zinc-100 truncate">{result.title}</p>
         {result.subtitle && (
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{result.subtitle}</p>
+          <p className="text-caption text-zinc-500 dark:text-zinc-400 truncate">{result.subtitle}</p>
         )}
       </div>
     </button>

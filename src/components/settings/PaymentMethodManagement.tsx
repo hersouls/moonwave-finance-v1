@@ -4,6 +4,7 @@ import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/
 import { Button } from '@/components/ui/Button'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useAssetStore } from '@/stores/assetStore'
+import { Select } from '@/components/ui/Select'
 import type { PaymentMethod, PaymentMethodItem } from '@/lib/types'
 
 const PAYMENT_METHOD_GROUPS: { type: PaymentMethod; label: string }[] = [
@@ -111,8 +112,8 @@ export function PaymentMethodManagement() {
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">거래수단 관리</h3>
-      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
+      <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">거래수단 관리</h3>
+      <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-4">
         자주 사용하는 카드나 계좌를 등록하면 거래 기록 시 빠르게 선택할 수 있습니다.
       </p>
 
@@ -122,12 +123,12 @@ export function PaymentMethodManagement() {
           return (
             <div key={group.type}>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <h4 className="text-caption text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   {group.label}
                 </h4>
                 <button
                   onClick={() => openCreate(group.type)}
-                  className="flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+                  className="flex items-center gap-1 text-caption text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   추가
@@ -143,10 +144,10 @@ export function PaymentMethodManagement() {
                       <span className="flex-1 text-sm text-zinc-900 dark:text-zinc-100">
                         {item.name}
                         {item.memo && (
-                          <span className="ml-2 text-xs text-zinc-400">({item.memo})</span>
+                          <span className="ml-2 text-caption text-zinc-400">({item.memo})</span>
                         )}
                         {item.linkedAssetItemId && (
-                          <span className="ml-2 text-xs text-primary-500 dark:text-primary-400 inline-flex items-center gap-0.5">
+                          <span className="ml-2 text-caption text-primary-500 dark:text-primary-400 inline-flex items-center gap-0.5">
                             <Link2 className="w-3 h-3" />
                             {assetItems.find((a) => a.id === item.linkedAssetItemId)?.name || '연결됨'}
                           </span>
@@ -170,7 +171,7 @@ export function PaymentMethodManagement() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-zinc-400 dark:text-zinc-500 px-3 py-2">
+                <p className="text-caption text-zinc-400 dark:text-zinc-500 px-3 py-2">
                   등록된 {group.label}이(가) 없습니다.
                 </p>
               )}
@@ -188,39 +189,35 @@ export function PaymentMethodManagement() {
         <DialogBody>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">이름</label>
+              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">이름</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={getPlaceholder(editingType)}
-                className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-base"
                 autoFocus
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
+              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
               <input
                 type="text"
                 value={memo}
                 onChange={(e) => setMemo(e.target.value)}
                 placeholder="메모 입력"
-                className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400"
+                className="input-base"
               />
             </div>
             {showAssetLink && linkableItems.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">{linkLabel} (선택)</label>
-                <select
-                  value={linkedAssetItemId ?? ''}
-                  onChange={(e) => setLinkedAssetItemId(e.target.value ? Number(e.target.value) : undefined)}
-                  className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="">연결 안 함</option>
-                  {linkableItems.map((item) => (
-                    <option key={item.id} value={item.id}>{item.name}</option>
-                  ))}
-                </select>
+                <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">{linkLabel} (선택)</label>
+                <Select
+                  value={String(linkedAssetItemId ?? '')}
+                  onChange={(v) => setLinkedAssetItemId(v ? Number(v) : undefined)}
+                  options={linkableItems.map(item => ({ value: String(item.id), label: item.name }))}
+                  placeholder="연결 안 함"
+                />
               </div>
             )}
           </div>
@@ -240,7 +237,7 @@ export function PaymentMethodManagement() {
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             <span className="font-medium text-zinc-900 dark:text-zinc-100">{deletingItem?.name}</span>을(를) 삭제하시겠습니까?
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-500">
+          <p className="mt-2 text-caption text-zinc-500 dark:text-zinc-500">
             관련 거래에서 이 거래수단 정보가 제거됩니다.
           </p>
         </DialogBody>

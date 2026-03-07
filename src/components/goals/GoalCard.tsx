@@ -21,7 +21,7 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
   const daysLeft = Math.max(0, Math.ceil((new Date(goal.targetDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
 
   return (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={onEdit}>
+    <Card variant="interactive" onClick={onEdit}>
       <div className="flex items-center gap-4">
         {/* Progress Ring */}
         <div className="relative flex-shrink-0">
@@ -42,7 +42,7 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
             {goal.isCompleted ? (
               <Check className="w-5 h-5 text-emerald-500" />
             ) : (
-              <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 tabular-nums">{Math.round(percentage)}%</span>
+              <span className="text-caption-bold text-zinc-700 dark:text-zinc-300 tabular-nums">{Math.round(percentage)}%</span>
             )}
           </div>
         </div>
@@ -51,13 +51,13 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <Target className="w-3.5 h-3.5 flex-shrink-0" style={{ color: goal.color }} />
-            <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">{goal.name}</h4>
+            <h4 className="text-body3-semi text-zinc-900 dark:text-zinc-100 truncate">{goal.name}</h4>
           </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 tabular-nums">
+          <p className="text-caption text-zinc-500 dark:text-zinc-400 mt-1 tabular-nums">
             {formatKoreanUnit(goal.currentAmount)} / {formatKoreanUnit(goal.targetAmount)}
           </p>
           {!goal.isCompleted && (
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+            <p className="text-caption text-zinc-400 dark:text-zinc-500 mt-0.5">
               D-{daysLeft}
             </p>
           )}

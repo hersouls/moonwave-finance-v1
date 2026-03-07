@@ -52,7 +52,7 @@ export function SearchModal() {
     <div className="fixed inset-0 z-[var(--z-overlay)] flex items-start justify-center pt-[15vh]" onClick={close}>
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-lg mx-4 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-700 overflow-hidden"
+        className="relative w-full max-w-lg mx-4 bg-white dark:bg-zinc-900 rounded-xl elevation-4 border border-zinc-200 dark:border-zinc-700 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input */}
@@ -97,7 +97,7 @@ export function SearchModal() {
         )}
 
         {/* Footer hint */}
-        <div className="px-4 py-2 border-t border-zinc-100 dark:border-zinc-800 flex gap-4 text-xs text-zinc-400">
+        <div className="px-4 py-2 border-t border-zinc-100 dark:border-zinc-800 flex gap-4 text-caption text-zinc-400">
           <span>↑↓ 이동</span>
           <span>↵ 선택</span>
           <span>ESC 닫기</span>

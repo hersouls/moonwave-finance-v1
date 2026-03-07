@@ -72,9 +72,9 @@ export function BudgetSettingModal({ open, onClose }: BudgetSettingModalProps) {
                   value={amounts[cat.id!] || ''}
                   onChange={(e) => setAmounts(prev => ({ ...prev, [cat.id!]: formatAmountInput(e.target.value) }))}
                   placeholder="0"
-                  className="w-full px-3 py-2 pr-8 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="input-base !pr-8 text-right tabular-nums"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">원</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-caption text-zinc-400">원</span>
               </div>
             </div>
           ))}

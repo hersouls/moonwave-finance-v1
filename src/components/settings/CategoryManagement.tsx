@@ -76,7 +76,7 @@ export function CategoryManagement() {
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">카테고리 관리</h3>
+      <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">카테고리 관리</h3>
 
       {/* Type tabs */}
       <div className="flex gap-2 mb-4">
@@ -85,7 +85,7 @@ export function CategoryManagement() {
             key={t}
             onClick={() => setActiveType(t)}
             className={clsx(
-              'px-4 py-1.5 rounded-lg text-sm font-medium transition-colors',
+              'px-4 py-1.5 rounded-lg text-body3 transition-colors',
               activeType === t
                 ? t === 'expense'
                   ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
@@ -131,7 +131,7 @@ export function CategoryManagement() {
       {/* Add button */}
       <button
         onClick={openCreate}
-        className="mt-3 flex items-center gap-1.5 text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+        className="mt-3 flex items-center gap-1.5 text-body3 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
       >
         <Plus className="w-4 h-4" />
         카테고리 추가
@@ -146,18 +146,18 @@ export function CategoryManagement() {
         <DialogBody>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">이름</label>
+              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">이름</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="카테고리 이름"
-                className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="input-base"
                 autoFocus
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">색상</label>
+              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">색상</label>
               <div className="grid grid-cols-9 gap-2">
                 {PRESET_COLORS.map(c => (
                   <button
@@ -190,7 +190,7 @@ export function CategoryManagement() {
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             <span className="font-medium text-zinc-900 dark:text-zinc-100">{deletingCategory?.name}</span>을(를) 삭제하시겠습니까?
           </p>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-500">
+          <p className="mt-2 text-caption text-zinc-500 dark:text-zinc-500">
             이 카테고리의 거래는 '미분류'로 변경됩니다.
           </p>
         </DialogBody>

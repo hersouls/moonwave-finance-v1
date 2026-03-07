@@ -150,7 +150,7 @@ export function Sidebar() {
         aria-current={active ? 'page' : undefined}
       >
         <Icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-        {isSidebarOpen && <span className="text-sm font-medium truncate">{item.label}</span>}
+        {isSidebarOpen && <span className="text-body3 truncate">{item.label}</span>}
       </Link>
     ) : (
       <button
@@ -159,7 +159,7 @@ export function Sidebar() {
         role="menuitem"
       >
         <Icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-        {isSidebarOpen && <span className="text-sm font-medium truncate">{item.label}</span>}
+        {isSidebarOpen && <span className="text-body3 truncate">{item.label}</span>}
       </button>
     )
 
@@ -217,7 +217,7 @@ export function Sidebar() {
           aria-expanded={isExpanded}
         >
           <Icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-          <span className="text-sm font-medium truncate flex-1 text-left">{group.label}</span>
+          <span className="text-body3 truncate flex-1 text-left">{group.label}</span>
           <ChevronDown
             className={clsx(
               'w-4 h-4 flex-shrink-0 transition-transform duration-200',

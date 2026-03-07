@@ -83,7 +83,7 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className={clsx(
-              'text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate',
+              'text-body3 text-zinc-900 dark:text-zinc-100 truncate',
               isCancelled && 'line-through'
             )}>
               {subscription.name}
@@ -101,12 +101,12 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
           </div>
           <div className="flex items-center gap-2 mt-0.5">
             {cat && (
-              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+              <span className="text-caption text-zinc-500 dark:text-zinc-400">
                 {cat.label}
               </span>
             )}
             {isActive && (
-              <span className="text-xs text-zinc-400 dark:text-zinc-500">
+              <span className="text-caption text-zinc-400 dark:text-zinc-500">
                 {schedule} D-{daysUntil}
               </span>
             )}
@@ -118,7 +118,7 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
           <p className="text-sm font-bold tabular-nums text-zinc-900 dark:text-zinc-100">
             {formatSubscriptionAmount(subscription.amount, subscription.currency)}
           </p>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500">{cycleLabel}</p>
+          <p className="text-caption text-zinc-400 dark:text-zinc-500">{cycleLabel}</p>
         </div>
 
         {/* Menu */}
@@ -132,7 +132,7 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-36 py-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 z-50">
+            <div className="context-menu absolute right-0 top-full mt-1 z-50">
               <button
                 onClick={() => { setMenuOpen(false); openEdit(subscription.id!) }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"

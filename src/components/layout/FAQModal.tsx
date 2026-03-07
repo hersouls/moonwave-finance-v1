@@ -19,7 +19,7 @@ export function FAQModal() {
         <div className="space-y-4">
           {faqs.map((faq, i) => (
             <div key={i} className="p-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Q. {faq.q}</h3>
+              <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-2">Q. {faq.q}</h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">{faq.a}</p>
             </div>
           ))}

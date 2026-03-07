@@ -7,6 +7,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { SUBSCRIPTION_CATEGORIES, SUBSCRIPTION_PRESETS } from '@/utils/constants'
 import { getTodayString } from '@/lib/dateUtils'
 import { clsx } from 'clsx'
+import { Select } from '@/components/ui/Select'
 import type { SubscriptionCurrency, SubscriptionCycle, SubscriptionCategoryType } from '@/lib/types'
 
 const CYCLE_OPTIONS: { value: SubscriptionCycle; label: string }[] = [
@@ -188,14 +189,14 @@ export function SubscriptionFormModal() {
           {/* Presets */}
           {!isEdit && (
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-2">
                 빠른 선택
               </label>
               <div className="flex gap-1 mb-2">
                 <button
                   onClick={() => setCurrency('KRW')}
                   className={clsx(
-                    'px-3 py-1 text-xs rounded-full transition-colors',
+                    'px-3 py-1 text-caption rounded-full transition-colors',
                     currency === 'KRW'
                       ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
                       : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
@@ -206,7 +207,7 @@ export function SubscriptionFormModal() {
                 <button
                   onClick={() => setCurrency('USD')}
                   className={clsx(
-                    'px-3 py-1 text-xs rounded-full transition-colors',
+                    'px-3 py-1 text-caption rounded-full transition-colors',
                     currency === 'USD'
                       ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
                       : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
@@ -221,7 +222,7 @@ export function SubscriptionFormModal() {
                     key={preset.name}
                     onClick={() => handlePresetClick(preset)}
                     className={clsx(
-                      'flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors border',
+                      'flex items-center gap-2 px-3 py-2 rounded-lg text-caption transition-colors border',
                       name === preset.name
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                         : 'border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800'
@@ -240,7 +241,7 @@ export function SubscriptionFormModal() {
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
               서비스명 *
             </label>
             <input
@@ -248,14 +249,14 @@ export function SubscriptionFormModal() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="예: 넷플릭스"
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="input-base"
             />
           </div>
 
           {/* Currency + Amount */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
                 통화
               </label>
               <div className="flex gap-1">
@@ -264,7 +265,7 @@ export function SubscriptionFormModal() {
                     key={c}
                     onClick={() => { setCurrency(c); setAmount('') }}
                     className={clsx(
-                      'flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                      'flex-1 py-2.5 rounded-lg text-body3 transition-colors',
                       currency === c
                         ? 'bg-primary-500 text-white'
                         : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
@@ -276,7 +277,7 @@ export function SubscriptionFormModal() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
                 금액 *
               </label>
               <div className="relative">
@@ -289,7 +290,7 @@ export function SubscriptionFormModal() {
                   value={amount}
                   onChange={(e) => handleAmountChange(e.target.value)}
                   placeholder={currency === 'KRW' ? '0' : '0.00'}
-                  className="w-full pl-8 pr-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 tabular-nums"
+                  className="input-base !pl-8 tabular-nums"
                 />
               </div>
             </div>
@@ -297,7 +298,7 @@ export function SubscriptionFormModal() {
 
           {/* Cycle */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
               결제주기
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -306,7 +307,7 @@ export function SubscriptionFormModal() {
                   key={opt.value}
                   onClick={() => setCycle(opt.value)}
                   className={clsx(
-                    'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                    'px-3 py-2 rounded-lg text-body3 transition-colors',
                     cycle === opt.value
                       ? 'bg-primary-500 text-white'
                       : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
@@ -321,7 +322,7 @@ export function SubscriptionFormModal() {
           {/* Custom cycle days */}
           {cycle === 'custom' && (
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
                 반복 일수
               </label>
               <div className="flex items-center gap-2">
@@ -331,7 +332,7 @@ export function SubscriptionFormModal() {
                   max={365}
                   value={customCycleDays}
                   onChange={(e) => setCustomCycleDays(Math.max(1, Math.min(365, Number(e.target.value) || 1)))}
-                  className="w-24 px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 tabular-nums"
+                  className="input-base w-24 tabular-nums"
                 />
                 <span className="text-sm text-zinc-500 dark:text-zinc-400">일마다</span>
               </div>
@@ -342,35 +343,27 @@ export function SubscriptionFormModal() {
           {needsBillingDay && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+                <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
                   결제일
                 </label>
-                <select
-                  value={billingDay}
-                  onChange={(e) => setBillingDay(Number(e.target.value))}
-                  className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
-                    <option key={d} value={d}>{d}일</option>
-                  ))}
-                </select>
+                <Select
+                  value={String(billingDay)}
+                  onChange={(v) => setBillingDay(Number(v))}
+                  options={Array.from({ length: 28 }, (_, i) => ({ value: String(i + 1), label: `${i + 1}일` }))}
+                />
               </div>
 
               {/* Billing Month (yearly only) */}
               {cycle === 'yearly' && (
                 <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+                  <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
                     결제월
                   </label>
-                  <select
-                    value={billingMonth}
-                    onChange={(e) => setBillingMonth(Number(e.target.value))}
-                    className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                      <option key={m} value={m}>{m}월</option>
-                    ))}
-                  </select>
+                  <Select
+                    value={String(billingMonth)}
+                    onChange={(v) => setBillingMonth(Number(v))}
+                    options={Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: `${i + 1}월` }))}
+                  />
                 </div>
               )}
             </div>
@@ -378,7 +371,7 @@ export function SubscriptionFormModal() {
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
               카테고리
             </label>
             <div className="grid grid-cols-5 gap-2">
@@ -387,7 +380,7 @@ export function SubscriptionFormModal() {
                   key={cat.value}
                   onClick={() => setCategory(cat.value)}
                   className={clsx(
-                    'flex flex-col items-center gap-1 py-2 rounded-lg text-xs transition-colors border',
+                    'flex flex-col items-center gap-1 py-2 rounded-lg text-caption transition-colors border',
                     category === cat.value
                       ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
                       : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'
@@ -405,20 +398,20 @@ export function SubscriptionFormModal() {
 
           {/* Start Date */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
               시작일
             </label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="input-base"
             />
           </div>
 
           {/* Color */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
               색상
             </label>
             <div className="flex gap-2 flex-wrap">
@@ -440,39 +433,31 @@ export function SubscriptionFormModal() {
           {/* Payment Method (Credit Card) */}
           {creditCards.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
                 결제 카드 (선택)
               </label>
-              <select
-                value={paymentMethodItemId ?? ''}
-                onChange={(e) => setPaymentMethodItemId(e.target.value ? Number(e.target.value) : undefined)}
-                className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">선택 안 함</option>
-                {creditCards.map((pm) => (
-                  <option key={pm.id} value={pm.id}>{pm.name}</option>
-                ))}
-              </select>
+              <Select
+                value={String(paymentMethodItemId ?? '')}
+                onChange={(v) => setPaymentMethodItemId(v ? Number(v) : undefined)}
+                options={creditCards.map(pm => ({ value: String(pm.id), label: pm.name }))}
+                placeholder="선택 안 함"
+              />
             </div>
           )}
 
           {/* Linked Transaction Category */}
           {expenseCategories.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
                 가계부 카테고리 (선택)
               </label>
-              <select
-                value={linkedTransactionCategoryId ?? ''}
-                onChange={(e) => setLinkedTransactionCategoryId(e.target.value ? Number(e.target.value) : undefined)}
-                className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">선택 안 함</option>
-                {expenseCategories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+              <Select
+                value={String(linkedTransactionCategoryId ?? '')}
+                onChange={(v) => setLinkedTransactionCategoryId(v ? Number(v) : undefined)}
+                options={expenseCategories.map(cat => ({ value: String(cat.id), label: cat.name }))}
+                placeholder="선택 안 함"
+              />
+              <p className="mt-1 text-caption text-zinc-400 dark:text-zinc-500">
                 가계부 지출에 자동 반영 시 사용할 카테고리
               </p>
             </div>
@@ -480,7 +465,7 @@ export function SubscriptionFormModal() {
 
           {/* URL & Memo */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
               URL (선택)
             </label>
             <input
@@ -488,19 +473,19 @@ export function SubscriptionFormModal() {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://"
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="input-base"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
               메모 (선택)
             </label>
             <textarea
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+              className="textarea-base resize-none"
             />
           </div>
         </div>

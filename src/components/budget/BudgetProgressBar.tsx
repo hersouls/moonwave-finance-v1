@@ -31,7 +31,7 @@ export function BudgetProgressBar({ used, budget, showLabel = true, size = 'md' 
       {showLabel && (
         <div className="flex justify-between mt-1">
           <span className={clsx(
-            'text-xs tabular-nums',
+            'text-caption tabular-nums',
             overBudget ? 'text-red-500 font-medium' : 'text-zinc-500 dark:text-zinc-400'
           )}>
             {Math.round(percentage)}%

@@ -11,7 +11,7 @@ export function AccountTab() {
   return (
     <div className="space-y-8">
       <section>
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">프로필 설정</h3>
+        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">프로필 설정</h3>
         {user ? (
           <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
             <div className="flex items-center gap-4">
@@ -28,10 +28,10 @@ export function AccountTab() {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                <p className="text-body3 text-zinc-900 dark:text-zinc-100 truncate">
                   {user.displayName}
                 </p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                <p className="text-caption text-zinc-500 dark:text-zinc-400 truncate">
                   {user.email}
                 </p>
                 <span className="badge badge-sm badge-success mt-1.5">
@@ -59,7 +59,7 @@ export function AccountTab() {
             <Button onClick={login} disabled={isSigningIn}>
               {isSigningIn ? '로그인 중...' : 'Google 로그인'}
             </Button>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-3">
+            <p className="text-caption text-zinc-500 dark:text-zinc-400 mt-3">
               로그인 없이도 로컬에서 모든 기능을 사용할 수 있습니다
             </p>
           </div>

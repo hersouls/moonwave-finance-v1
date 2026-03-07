@@ -9,6 +9,7 @@ import { PAYMENT_METHOD_OPTIONS } from '@/utils/paymentMethod'
 import { formatKoreanUnit } from '@/utils/format'
 import { useToastStore } from '@/stores/toastStore'
 import { clsx } from 'clsx'
+import { Select } from '@/components/ui/Select'
 import type { Transaction, TransactionType, RepeatType, PaymentMethod } from '@/lib/types'
 
 interface TransactionFormModalProps {
@@ -191,7 +192,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
           {/* Templates */}
           {mode === 'create' && templates.length > 0 && (
             <div>
-              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">자주 쓰는 거래</label>
+              <label className="block text-caption text-zinc-500 dark:text-zinc-400 mb-1.5">자주 쓰는 거래</label>
               <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
                 {templates.map((tmpl, i) => {
                   const cat = tmpl.categoryId ? categories.find(c => c.id === tmpl.categoryId) : null
@@ -200,7 +201,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                       key={i}
                       type="button"
                       onClick={() => applyTemplate(tmpl)}
-                      className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                      className="flex-shrink-0 px-3 py-1.5 rounded-lg text-caption bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                     >
                       {cat?.name || '미분류'} {formatKoreanUnit(tmpl.amount)}
                     </button>
@@ -213,7 +214,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
           {/* Member - NOW AT TOP */}
           {members.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">구성원</label>
+              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-2">구성원</label>
               <div className="flex gap-2" role="group" aria-label="구성원 선택">
                 {members.length <= 4 ? (
                   <>
@@ -221,7 +222,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                       type="button"
                       onClick={() => setMemberId('')}
                       className={clsx(
-                        'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                        'px-3 py-2 rounded-lg text-body3 transition-colors',
                         memberId === ''
                           ? 'bg-zinc-200 text-zinc-800 dark:bg-zinc-600 dark:text-zinc-100 ring-1 ring-zinc-300 dark:ring-zinc-500'
                           : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
@@ -235,7 +236,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                         type="button"
                         onClick={() => setMemberId(m.id!)}
                         className={clsx(
-                          'flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors',
+                          'flex-1 py-2 px-4 rounded-lg text-body3 transition-colors',
                           memberId === m.id
                             ? 'text-white ring-1'
                             : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
@@ -247,16 +248,12 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                     ))}
                   </>
                 ) : (
-                  <select
-                    value={memberId}
-                    onChange={(e) => setMemberId(e.target.value ? Number(e.target.value) : '')}
-                    className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  >
-                    <option value="">미지정</option>
-                    {members.map(m => (
-                      <option key={m.id} value={m.id}>{m.name}</option>
-                    ))}
-                  </select>
+                  <Select
+                    value={String(memberId)}
+                    onChange={(v) => setMemberId(v ? Number(v) : '')}
+                    options={members.map(m => ({ value: String(m.id), label: m.name }))}
+                    placeholder="미지정"
+                  />
                 )}
               </div>
             </div>
@@ -264,12 +261,12 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
 
           {/* Type Toggle */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">유형</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-2">유형</label>
             <div className="flex gap-2" role="radiogroup" aria-label="거래 유형">
               <button
                 type="button"
                 onClick={() => setType('expense')}
-                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'expense'
                     ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                     : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
@@ -280,7 +277,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
               <button
                 type="button"
                 onClick={() => setType('income')}
-                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'income'
                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                     : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
@@ -293,7 +290,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
 
           {/* Amount */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">금액</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">금액</label>
             <div className="relative">
               <input
                 type="text"
@@ -301,7 +298,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                 value={amount}
                 onChange={handleAmountChange}
                 placeholder="0"
-                className="w-full px-3 py-2.5 pr-8 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400"
+                className="input-base !pr-8 tabular-nums"
                 autoFocus
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400">원</span>
@@ -310,23 +307,19 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">카테고리</label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              <option value="">카테고리 선택</option>
-              {currentCategories.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">카테고리</label>
+            <Select
+              value={String(categoryId)}
+              onChange={(v) => setCategoryId(v ? Number(v) : '')}
+              options={currentCategories.map(c => ({ value: String(c.id), label: c.name }))}
+              placeholder="카테고리 선택"
+            />
           </div>
 
           {/* Budget Warning */}
           {budgetWarning && (
             <div className={clsx(
-              'px-3 py-2 rounded-lg text-xs font-medium',
+              'px-3 py-2 rounded-lg text-caption',
               budgetWarning.percent > 100
                 ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
                 : budgetWarning.percent >= 80
@@ -342,18 +335,18 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
 
           {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">날짜</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">날짜</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="input-base"
             />
           </div>
 
           {/* Payment Method (거래수단) */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">거래수단 (선택)</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">거래수단 (선택)</label>
             <div className="grid grid-cols-3 gap-2">
               {PAYMENT_METHOD_OPTIONS.map(opt => (
                 <button
@@ -361,7 +354,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                   type="button"
                   onClick={() => setPaymentMethod(paymentMethod === opt.value ? '' : opt.value)}
                   className={clsx(
-                    'py-2 px-2 rounded-lg text-xs font-medium transition-colors text-center',
+                    'py-2 px-2 rounded-lg text-caption transition-colors text-center',
                     paymentMethod === opt.value
                       ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 ring-1 ring-primary-300 dark:ring-primary-700'
                       : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
@@ -383,7 +376,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                         type="button"
                         onClick={() => handleSelectPaymentMethodItem(item.id!, item.name)}
                         className={clsx(
-                          'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                          'px-3 py-1.5 rounded-lg text-caption transition-colors',
                           paymentMethodItemId === item.id
                             ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 ring-1 ring-blue-300 dark:ring-blue-700'
                             : 'bg-zinc-50 text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700'
@@ -396,7 +389,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                       type="button"
                       onClick={() => { setPaymentMethodItemId(''); setPaymentMethodDetail('') }}
                       className={clsx(
-                        'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                        'px-3 py-1.5 rounded-lg text-caption transition-colors',
                         paymentMethodItemId === ''
                           ? 'bg-zinc-200 text-zinc-700 dark:bg-zinc-600 dark:text-zinc-200'
                           : 'bg-zinc-50 text-zinc-500 dark:bg-zinc-800/80 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700'
@@ -412,7 +405,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                     value={paymentMethodDetail}
                     onChange={(e) => setPaymentMethodDetail(e.target.value)}
                     placeholder="카드/계좌명 입력 (예: 신한카드)"
-                    className="w-full px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400"
+                    className="input-base text-caption"
                   />
                 )}
               </div>
@@ -421,13 +414,13 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
 
           {/* Memo */}
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
+            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
             <input
               type="text"
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
               placeholder="메모를 입력하세요"
-              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+              className="input-base"
             />
           </div>
 
@@ -442,32 +435,32 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                     onChange={(e) => setIsRecurring(e.target.checked)}
                     className="check"
                   />
-                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">반복 거래</span>
+                  <span className="text-body3 text-zinc-700 dark:text-zinc-300">반복 거래</span>
                 </label>
               </div>
 
               {isRecurring && (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">반복 주기</label>
-                    <select
+                    <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">반복 주기</label>
+                    <Select
                       value={recurType}
-                      onChange={(e) => setRecurType(e.target.value as RepeatType)}
-                      className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    >
-                      <option value="monthly">매월</option>
-                      <option value="weekly">매주</option>
-                      <option value="daily">매일</option>
-                      <option value="yearly">매년</option>
-                    </select>
+                      onChange={(v) => setRecurType(v as RepeatType)}
+                      options={[
+                        { value: 'monthly', label: '매월' },
+                        { value: 'weekly', label: '매주' },
+                        { value: 'daily', label: '매일' },
+                        { value: 'yearly', label: '매년' },
+                      ]}
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">종료일 (선택)</label>
+                    <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">종료일 (선택)</label>
                     <input
                       type="date"
                       value={recurEndDate}
                       onChange={(e) => setRecurEndDate(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="input-base"
                     />
                   </div>
                 </div>
