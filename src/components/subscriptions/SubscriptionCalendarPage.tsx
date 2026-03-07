@@ -15,6 +15,7 @@ import { startOfMonth, endOfMonth } from 'date-fns'
 import { clsx } from 'clsx'
 import type { Subscription } from '@/lib/types'
 import { useSyncListener } from '@/hooks/useSyncListener'
+import { useSwipe } from '@/hooks/useSwipe'
 
 const SUB_SEGMENTS = [
   { id: 'domestic', label: '국내', path: '/subscriptions/domestic' },
@@ -54,6 +55,10 @@ export function SubscriptionCalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
   const { days, monthLabel, monthString, goToPreviousMonth, goToNextMonth, goToToday } = useCalendar()
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: goToNextMonth,
+    onSwipeRight: goToPreviousMonth,
+  })
 
   useEffect(() => {
     loadSubscriptions()
@@ -97,7 +102,7 @@ export function SubscriptionCalendarPage() {
   }
 
   return (
-    <div className="p-4 lg:p-6 space-y-4 pb-24">
+    <div className="p-4 lg:p-6 space-y-4 pb-24" {...swipeHandlers}>
       {/* Segment Control */}
       <PageSegmentControl segments={SUB_SEGMENTS} />
 

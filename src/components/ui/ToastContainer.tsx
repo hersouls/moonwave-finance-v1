@@ -30,7 +30,7 @@ export function ToastContainer() {
             <span className="text-sm flex-1">{toast.message}</span>
             <button
               onClick={() => removeToast(toast.id)}
-              className="text-white/60 hover:text-white/90 flex-shrink-0"
+              className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-white/60 hover:text-white/90 flex-shrink-0 -mr-2"
               aria-label="닫기"
             >
               <X className="w-4 h-4" />

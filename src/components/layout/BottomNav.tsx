@@ -44,7 +44,7 @@ export function BottomNav() {
               <button
                 onClick={() => handleNavigate(item.id)}
                 className={clsx(
-                  'w-full flex flex-col items-center justify-center gap-1 py-2 transition-colors min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500',
+                  'relative w-full flex flex-col items-center justify-center gap-1 py-2 transition-colors min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500',
                   isActive
                     ? 'text-primary-600 dark:text-primary-400'
                     : 'text-zinc-500 dark:text-zinc-400 hover:text-primary-600 dark:hover:text-primary-400'
@@ -55,6 +55,9 @@ export function BottomNav() {
               >
                 <Icon className="w-5 h-5 fold:w-4 fold:h-4" aria-hidden="true" />
                 <span className="text-[10px] font-medium bottom-nav-label fold:hidden">{item.label}</span>
+                {isActive && (
+                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-5 h-1 rounded-full bg-primary-500" aria-hidden="true" />
+                )}
               </button>
             </li>
           )

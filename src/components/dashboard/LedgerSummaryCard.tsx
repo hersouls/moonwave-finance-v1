@@ -4,6 +4,7 @@ import { ArrowRight, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { formatKoreanUnit } from '@/utils/format'
+import { useCountUp } from '@/hooks/useCountUp'
 import { clsx } from 'clsx'
 
 export function LedgerSummaryCard() {
@@ -26,6 +27,10 @@ export function LedgerSummaryCard() {
     return { income, expense, savings: income - expense }
   }, [transactions])
 
+  const animatedIncome = useCountUp(summary.income)
+  const animatedExpense = useCountUp(summary.expense)
+  const animatedSavings = useCountUp(summary.savings)
+
   return (
     <Card className="!p-5">
       <div className="flex items-center justify-between mb-4">
@@ -45,7 +50,7 @@ export function LedgerSummaryCard() {
             <span className="text-sm text-zinc-600 dark:text-zinc-400">수입</span>
           </div>
           <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
-            +{formatKoreanUnit(summary.income)}
+            +{formatKoreanUnit(animatedIncome)}
           </span>
         </div>
 
@@ -55,7 +60,7 @@ export function LedgerSummaryCard() {
             <span className="text-sm text-zinc-600 dark:text-zinc-400">지출</span>
           </div>
           <span className="text-sm font-semibold text-red-600 dark:text-red-400 tabular-nums">
-            -{formatKoreanUnit(summary.expense)}
+            -{formatKoreanUnit(animatedExpense)}
           </span>
         </div>
 
@@ -66,11 +71,11 @@ export function LedgerSummaryCard() {
           </div>
           <span className={clsx(
             'text-sm font-bold tabular-nums',
-            summary.savings >= 0
+            animatedSavings >= 0
               ? 'text-emerald-600 dark:text-emerald-400'
               : 'text-red-600 dark:text-red-400'
           )}>
-            {summary.savings >= 0 ? '+' : ''}{formatKoreanUnit(summary.savings)}
+            {animatedSavings >= 0 ? '+' : ''}{formatKoreanUnit(animatedSavings)}
           </span>
         </div>
       </div>

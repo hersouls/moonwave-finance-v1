@@ -16,6 +16,7 @@ import { getTodayString } from '@/lib/dateUtils'
 import * as db from '@/services/database'
 import type { Transaction } from '@/lib/types'
 import { useSyncListener } from '@/hooks/useSyncListener'
+import { useSwipe } from '@/hooks/useSwipe'
 
 export function CalendarPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -26,6 +27,10 @@ export function CalendarPage() {
   const loadCategories = useTransactionStore((s) => s.loadCategories)
   const loadMembers = useMemberStore((s) => s.loadMembers)
   const { days, monthLabel, monthString, goToPreviousMonth, goToNextMonth, goToToday } = useCalendar()
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: goToNextMonth,
+    onSwipeRight: goToPreviousMonth,
+  })
 
   // Create modal state
   const isCreateOpen = useUIStore((s) => s.isTransactionCreateModalOpen)
@@ -91,7 +96,7 @@ export function CalendarPage() {
   }
 
   return (
-    <div className="p-4 lg:p-6 space-y-4">
+    <div className="p-4 lg:p-6 space-y-4" {...swipeHandlers}>
       {/* Month Navigator */}
       <div className="flex items-center justify-between">
         <IconButton onClick={goToPreviousMonth} plain size="sm">

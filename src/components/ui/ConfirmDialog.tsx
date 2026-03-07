@@ -35,6 +35,11 @@ export function ConfirmDialog({
 
   const buttonVariant = variant === 'danger' ? 'danger' : 'primary'
 
+  const handleConfirm = () => {
+    if (variant === 'danger') navigator.vibrate?.(10)
+    onConfirm()
+  }
+
   return (
     <Dialog open={open} onClose={onClose} size="sm" role="alertdialog">
       <DialogHeader title={title} onClose={onClose} />
@@ -54,7 +59,7 @@ export function ConfirmDialog({
         <Button variant="ghost" onClick={onClose} disabled={isLoading}>
           {cancelText}
         </Button>
-        <Button variant={buttonVariant} onClick={onConfirm} disabled={isLoading}>
+        <Button variant={buttonVariant} onClick={handleConfirm} disabled={isLoading}>
           {isLoading ? '처리 중...' : confirmText}
         </Button>
       </DialogFooter>

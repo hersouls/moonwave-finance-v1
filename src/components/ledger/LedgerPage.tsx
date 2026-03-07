@@ -20,6 +20,7 @@ import { IconButton } from '@/components/ui/Button'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { formatMonthLabel, getPreviousMonth, getNextMonth } from '@/lib/dateUtils'
 import { ErrorEmptyState } from '@/components/ui/EmptyState'
+import { useSwipe } from '@/hooks/useSwipe'
 
 const LEDGER_SEGMENTS = [
   { id: 'expense', label: '지출', path: '/ledger/expense' },
@@ -57,6 +58,11 @@ export function LedgerPage() {
   // Budget
   const loadBudgets = useBudgetStore((s) => s.loadBudgets)
   const budgets = useBudgetStore((s) => s.budgets)
+
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: () => setSelectedMonth(getNextMonth(selectedMonth)),
+    onSwipeRight: () => setSelectedMonth(getPreviousMonth(selectedMonth)),
+  })
 
   const {
     filtered, summary, filters,
@@ -114,7 +120,7 @@ export function LedgerPage() {
   }
 
   return (
-    <div className="p-4 lg:p-6 space-y-4">
+    <div className="p-4 lg:p-6 space-y-4" {...swipeHandlers}>
       {/* Segment Control */}
       <PageSegmentControl segments={LEDGER_SEGMENTS} />
 

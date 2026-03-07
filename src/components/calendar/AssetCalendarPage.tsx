@@ -11,6 +11,7 @@ import { formatKRW, formatKoreanUnit } from '@/utils/format'
 import { eachDayOfInterval, startOfMonth, endOfMonth, format } from 'date-fns'
 import { clsx } from 'clsx'
 import { useSyncListener } from '@/hooks/useSyncListener'
+import { useSwipe } from '@/hooks/useSwipe'
 
 const ASSET_SEGMENTS = [
   { id: 'capital', label: '자본', path: '/assets' },
@@ -30,6 +31,10 @@ export function AssetCalendarPage() {
   const dailyValues = useDailyValueStore((s) => s.values)
 
   const { days, monthLabel, monthString, goToPreviousMonth, goToNextMonth, goToToday } = useCalendar()
+  const swipeHandlers = useSwipe({
+    onSwipeLeft: goToNextMonth,
+    onSwipeRight: goToPreviousMonth,
+  })
 
   const loadData = async () => {
     await Promise.all([loadAll(), loadValues()])
@@ -83,7 +88,7 @@ export function AssetCalendarPage() {
   }
 
   return (
-    <div className="p-4 lg:p-6 space-y-4">
+    <div className="p-4 lg:p-6 space-y-4" {...swipeHandlers}>
       {/* Segment Control */}
       <PageSegmentControl segments={ASSET_SEGMENTS} />
 

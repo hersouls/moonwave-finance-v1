@@ -1,6 +1,7 @@
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { clsx } from 'clsx'
 import { formatKoreanUnit, formatChangeUnit } from '@/utils/format'
+import { useCountUp } from '@/hooks/useCountUp'
 import type { AssetStats } from '@/lib/types'
 
 interface NetWorthCardProps {
@@ -9,6 +10,7 @@ interface NetWorthCardProps {
 
 export function NetWorthCard({ stats }: NetWorthCardProps) {
   const { netWorth, dailyChange, monthlyChange } = stats
+  const animatedNetWorth = useCountUp(netWorth)
   const isPositiveDaily = dailyChange > 0
   const isNegativeDaily = dailyChange < 0
   const isPositiveMonthly = monthlyChange > 0
@@ -20,7 +22,7 @@ export function NetWorthCard({ stats }: NetWorthCardProps) {
         <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">순자산</span>
       </div>
       <p className="text-3xl lg:text-4xl font-bold text-zinc-900 dark:text-zinc-100 tabular-nums tracking-tight">
-        {formatKoreanUnit(netWorth)}
+        {formatKoreanUnit(animatedNetWorth)}
         <span className="text-lg text-zinc-400 dark:text-zinc-500 ml-1">원</span>
       </p>
       <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1">
