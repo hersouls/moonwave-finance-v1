@@ -5,6 +5,8 @@ import { useUIStore } from '@/stores/uiStore'
 import { useAssetStore } from '@/stores/assetStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useToastStore } from '@/stores/toastStore'
+import { useDailyValueStore } from '@/stores/dailyValueStore'
+import { format } from 'date-fns'
 import type { AssetLiabilityType } from '@/lib/types'
 
 export function AssetCreateModal() {
@@ -13,10 +15,12 @@ export function AssetCreateModal() {
   const addItem = useAssetStore((s) => s.addItem)
   const categories = useAssetStore((s) => s.categories)
   const members = useMemberStore((s) => s.members)
+  const setValue = useDailyValueStore((s) => s.setValue)
 
   const [name, setName] = useState('')
   const [categoryId, setCategoryId] = useState<number | ''>('')
   const [memberId, setMemberId] = useState<number | ''>('')
+  const [initialAmount, setInitialAmount] = useState('')
   const [memo, setMemo] = useState('')
   const [type, setType] = useState<AssetLiabilityType>('asset')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -30,6 +34,7 @@ export function AssetCreateModal() {
       setName('')
       setCategoryId('')
       setMemberId(members[0]?.id || '')
+      setInitialAmount('')
       setMemo('')
       setType('asset')
     }
@@ -39,13 +44,17 @@ export function AssetCreateModal() {
     if (!name.trim() || categoryId === '' || memberId === '') return
     setIsSubmitting(true)
     try {
-      await addItem({
+      const id = await addItem({
         memberId: memberId as number,
         categoryId: categoryId as number,
         name: name.trim(),
         type,
         memo: memo.trim() || undefined,
       })
+      const amount = Number(initialAmount.replace(/,/g, ''))
+      if (amount > 0) {
+        await setValue(id, format(new Date(), 'yyyy-MM-dd'), amount)
+      }
       close()
     } catch {
       useToastStore.getState().addToast('항목 추가에 실패했습니다.', 'error')
@@ -114,6 +123,22 @@ export function AssetCreateModal() {
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
+          </div>
+
+          {/* Initial Amount */}
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">초기 금액 (선택)</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={initialAmount}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^0-9]/g, '')
+                setInitialAmount(raw ? Number(raw).toLocaleString('ko-KR') : '')
+              }}
+              placeholder="0"
+              className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-right tabular-nums"
+            />
           </div>
 
           {/* Member */}

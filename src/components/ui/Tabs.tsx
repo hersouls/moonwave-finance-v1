@@ -63,7 +63,7 @@ export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
             onClick={() => onChange(tab.id)}
             onKeyDown={(e) => handleKeyDown(e, index)}
             className={clsx(
-              'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all',
+              'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap flex-shrink-0',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
               isActive
                 ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm'
