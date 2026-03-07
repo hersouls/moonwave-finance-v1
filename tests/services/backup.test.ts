@@ -23,7 +23,7 @@ describe('backup service', () => {
         settings: {},
       },
     }
-    expect(backup.version).toBe('1.0.0')
+    expect(backup.version).toBe(BACKUP_CONFIG.CURRENT_VERSION)
     expect(backup.data.members).toEqual([])
     expect((BACKUP_CONFIG.SUPPORTED_VERSIONS as readonly string[]).includes(backup.version)).toBe(true)
   })

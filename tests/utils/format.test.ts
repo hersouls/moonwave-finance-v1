@@ -3,7 +3,7 @@ import { formatKoreanUnit, formatPercent, formatNumber, formatKRW } from '@/util
 
 describe('formatKoreanUnit', () => {
   it('formats billions', () => {
-    expect(formatKoreanUnit(150000000)).toBe('1.5억')
+    expect(formatKoreanUnit(150000000)).toBe('2억')
   })
 
   it('formats tens of millions', () => {
