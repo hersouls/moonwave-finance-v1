@@ -42,7 +42,7 @@ export function CategoryBreakdown({ transactions, type, budgets }: CategoryBreak
   if (breakdown.length === 0) return null
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
+    <div className="card-base">
       <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
         {type === 'income' ? '수입' : '지출'} 카테고리
       </h4>
@@ -51,7 +51,7 @@ export function CategoryBreakdown({ transactions, type, budgets }: CategoryBreak
           <div key={b.categoryId ?? 'uncategorized'}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: b.color }} />
+                <div className="badge-category-dot" style={{ backgroundColor: b.color }} />
                 <span className="text-sm text-zinc-700 dark:text-zinc-300">{b.name}</span>
               </div>
               <div className="flex items-center gap-2">

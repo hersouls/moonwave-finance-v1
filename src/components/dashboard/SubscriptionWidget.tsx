@@ -19,7 +19,7 @@ export function SubscriptionWidget() {
   if (active.length === 0) return null
 
   return (
-    <Card className="!p-5">
+    <Card className="card-pad-lg">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">구독 현황</h3>
         <button

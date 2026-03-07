@@ -287,13 +287,13 @@ export function Sidebar() {
           {renderStandaloneLink(standaloneTop)}
 
           {/* Divider */}
-          <li role="separator" className="!my-3 mx-3 border-t border-zinc-200 dark:border-zinc-700" aria-hidden="true" />
+          <li role="separator" className="nav-sidebar-divider" aria-hidden="true" />
 
           {/* Groups: 자산/가계부/구독 */}
           {navGroups.map(renderGroup)}
 
           {/* Divider */}
-          <li role="separator" className="!my-3 mx-3 border-t border-zinc-200 dark:border-zinc-700" aria-hidden="true" />
+          <li role="separator" className="nav-sidebar-divider" aria-hidden="true" />
 
           {/* Bottom standalone items */}
           {standaloneBottom.map(renderStandaloneLink)}

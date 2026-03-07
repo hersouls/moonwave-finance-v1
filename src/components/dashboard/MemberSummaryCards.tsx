@@ -17,7 +17,7 @@ export function MemberSummaryCards() {
           const assetPct = total > 0 ? (mb.totalAssets / total) * 100 : 50
 
           return (
-            <Card key={mb.memberId} className="!p-4">
+            <Card key={mb.memberId}>
               <div className="flex items-center gap-2 mb-3">
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"

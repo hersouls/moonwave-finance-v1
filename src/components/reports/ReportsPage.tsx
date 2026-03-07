@@ -90,25 +90,25 @@ export function ReportsPage() {
         <div className="space-y-6">
           {/* Summary Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <Card className="!p-4 text-center">
+            <Card className="text-center">
               <span className="text-xs text-zinc-500 dark:text-zinc-400">순자산</span>
               <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tabular-nums mt-1">
                 {formatKoreanUnit(stats.netWorth)}
               </p>
             </Card>
-            <Card className="!p-4 text-center">
+            <Card className="text-center">
               <span className="text-xs text-zinc-500 dark:text-zinc-400">총 자산</span>
               <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 tabular-nums mt-1">
                 {formatKoreanUnit(stats.totalAssets)}
               </p>
             </Card>
-            <Card className="!p-4 text-center">
+            <Card className="text-center">
               <span className="text-xs text-zinc-500 dark:text-zinc-400">총 부채</span>
               <p className="text-lg font-bold text-red-600 dark:text-red-400 tabular-nums mt-1">
                 {formatKoreanUnit(stats.totalLiabilities)}
               </p>
             </Card>
-            <Card className="!p-4 text-center">
+            <Card className="text-center">
               <span className="text-xs text-zinc-500 dark:text-zinc-400">부채비율</span>
               <p className={clsx(
                 'text-lg font-bold tabular-nums mt-1',

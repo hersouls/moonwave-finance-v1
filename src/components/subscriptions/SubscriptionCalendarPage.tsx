@@ -124,16 +124,16 @@ export function SubscriptionCalendarPage() {
 
       {/* Monthly Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card className="!p-3">
+        <Card className="card-pad-sm">
           <p className="text-xs text-zinc-500 dark:text-zinc-400">결제 예정</p>
           <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{monthlyBillingCount}건</p>
         </Card>
-        <Card className="!p-3">
+        <Card className="card-pad-sm">
           <p className="text-xs text-zinc-500 dark:text-zinc-400">결제일 수</p>
           <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{billingMap.size}일</p>
         </Card>
         {monthlyTotalAmount.krw > 0 && (
-          <Card className="!p-3">
+          <Card className="card-pad-sm">
             <p className="text-xs text-zinc-500 dark:text-zinc-400">KRW 합계</p>
             <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
               {monthlyTotalAmount.krw.toLocaleString('ko-KR')}원
@@ -141,7 +141,7 @@ export function SubscriptionCalendarPage() {
           </Card>
         )}
         {monthlyTotalAmount.usd > 0 && (
-          <Card className="!p-3">
+          <Card className="card-pad-sm">
             <p className="text-xs text-zinc-500 dark:text-zinc-400">USD 합계</p>
             <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
               ${monthlyTotalAmount.usd.toFixed(2)}
@@ -183,7 +183,7 @@ export function SubscriptionCalendarPage() {
 
       {/* Selected Day Detail */}
       {selectedDate && (
-        <Card className="!p-4">
+        <Card>
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
             {parseInt(selectedDate.split('-')[1])}월 {parseInt(selectedDate.split('-')[2])}일 결제 예정
           </h3>

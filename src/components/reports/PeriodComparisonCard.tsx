@@ -10,7 +10,7 @@ export function PeriodComparisonCard() {
 
   if (isLoading) {
     return (
-      <Card className="!p-5">
+      <Card className="card-pad-lg">
         <div className="h-40 flex items-center justify-center">
           <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
         </div>
@@ -23,7 +23,7 @@ export function PeriodComparisonCard() {
   }
 
   return (
-    <Card className="!p-5">
+    <Card className="card-pad-lg">
       <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
         전월 대비 비교
       </h3>

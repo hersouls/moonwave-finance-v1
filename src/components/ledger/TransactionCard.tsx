@@ -29,7 +29,7 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
   const isIncome = transaction.type === 'income'
 
   return (
-    <Card className="!p-4">
+    <Card>
       <div className="flex items-center gap-3">
         {/* Category color indicator */}
         <div
@@ -53,7 +53,7 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
               {category?.name || '미분류'}
             </span>
             {member && (
-              <span className="text-xs px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
+              <span className="badge badge-sm badge-default">
                 {member.name}
               </span>
             )}

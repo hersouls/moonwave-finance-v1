@@ -153,7 +153,7 @@ export function AssetDetailPage() {
       </div>
 
       {/* Current Value Summary */}
-      <Card className="!p-5">
+      <Card className="card-pad-lg">
         <span className="text-sm text-zinc-500 dark:text-zinc-400">현재 가치</span>
         <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 tabular-nums mt-1">
           {formatKRW(latestValue)}
@@ -185,7 +185,7 @@ export function AssetDetailPage() {
           </IconButton>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+        <div className="card-base card-pad-none overflow-hidden">
           <div className="grid grid-cols-1 divide-y divide-zinc-100 dark:divide-zinc-800">
             {dates.map((date, idx) => {
               const val = values.find(v => v.assetItemId === itemId && v.date === date)

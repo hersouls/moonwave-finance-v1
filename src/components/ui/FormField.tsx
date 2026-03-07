@@ -15,7 +15,7 @@ export function FormField({ label, required, error, children, className }: FormF
       </label>
       {children}
       {error && (
-        <p className="mt-1 text-xs text-red-500">{error}</p>
+        <p className="input-error-text">{error}</p>
       )}
     </div>
   )

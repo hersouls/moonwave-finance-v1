@@ -34,7 +34,7 @@ export function AccountTab() {
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
                   {user.email}
                 </p>
-                <span className="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                <span className="badge badge-sm badge-success mt-1.5">
                   Google 계정 연동됨
                 </span>
               </div>

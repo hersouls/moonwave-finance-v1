@@ -31,10 +31,10 @@ export function BottomNav() {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-[var(--z-nav)] bg-white/80 dark:bg-zinc-950/80 backdrop-blur-lg border-t border-zinc-200 dark:border-zinc-800 pb-safe"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-[var(--z-nav)] bg-white/80 dark:bg-zinc-950/80 backdrop-blur-lg border-t border-zinc-200 dark:border-zinc-800 pb-safe nav-bottom"
       aria-label="하단 메인 네비게이션"
     >
-      <ul className="flex items-center justify-around h-16 fold:h-14" role="menubar">
+      <ul className="flex items-center justify-around nav-bottom fold:h-14" role="menubar">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = currentView === item.id
@@ -44,7 +44,7 @@ export function BottomNav() {
               <button
                 onClick={() => handleNavigate(item.id)}
                 className={clsx(
-                  'relative w-full flex flex-col items-center justify-center gap-1 py-2 transition-colors min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500',
+                  'nav-bottom-item relative w-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500',
                   isActive
                     ? 'text-primary-600 dark:text-primary-400'
                     : 'text-zinc-500 dark:text-zinc-400 hover:text-primary-600 dark:hover:text-primary-400'
@@ -54,7 +54,7 @@ export function BottomNav() {
                 aria-label={`${item.label}${isActive ? ' (현재 페이지)' : ''}`}
               >
                 <Icon className="w-5 h-5 fold:w-4 fold:h-4" aria-hidden="true" />
-                <span className="text-[10px] font-medium bottom-nav-label fold:hidden">{item.label}</span>
+                <span className="nav-bottom-label bottom-nav-label fold:hidden">{item.label}</span>
                 {isActive && (
                   <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-5 h-1 rounded-full bg-primary-500" aria-hidden="true" />
                 )}

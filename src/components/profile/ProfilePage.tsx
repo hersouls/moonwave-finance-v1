@@ -127,7 +127,7 @@ export function ProfilePage() {
           <User className="w-5 h-5" />
           프로필
         </h2>
-        <Card className="!p-5">
+        <Card className="card-pad-lg">
           {user ? (
             <div className="flex items-center gap-4">
               {user.photoURL ? (
@@ -156,7 +156,7 @@ export function ProfilePage() {
             클라우드 동기화
           </h2>
           <div className="space-y-3">
-            <Card className="!p-4">
+            <Card>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <SyncStatusIndicator status={syncStatus} />
@@ -177,7 +177,7 @@ export function ProfilePage() {
               </div>
             </Card>
             <div className="grid grid-cols-2 gap-3">
-              <Card className="!p-4">
+              <Card>
                 <div className="flex flex-col items-center gap-2">
                   <Upload className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center">로컬 → 클라우드</p>
@@ -198,7 +198,7 @@ export function ProfilePage() {
                   </Button>
                 </div>
               </Card>
-              <Card className="!p-4">
+              <Card>
                 <div className="flex flex-col items-center gap-2">
                   <Download className="w-5 h-5 text-primary-600 dark:text-primary-400" />
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 text-center">클라우드 → 로컬</p>
@@ -238,7 +238,7 @@ export function ProfilePage() {
         </div>
         <div className="space-y-2">
           {members.map(m => (
-            <Card key={m.id} className="!p-4">
+            <Card key={m.id}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
@@ -277,7 +277,7 @@ export function ProfilePage() {
           데이터 관리
         </h2>
         <div className="space-y-3">
-          <Card className="!p-4">
+          <Card>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">백업 내보내기</p>
@@ -293,7 +293,7 @@ export function ProfilePage() {
               </Button>
             </div>
           </Card>
-          <Card className="!p-4">
+          <Card>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">백업 복원</p>
@@ -304,7 +304,7 @@ export function ProfilePage() {
               </Button>
             </div>
           </Card>
-          <Card className="!p-4">
+          <Card>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">CSV 내보내기</p>
@@ -321,7 +321,7 @@ export function ProfilePage() {
             </div>
           </Card>
           {user && (
-            <Card className="!p-4 border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
+            <Card className="border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-amber-700 dark:text-amber-400">테스트 데이터 생성</p>
@@ -352,7 +352,7 @@ export function ProfilePage() {
               </div>
             </Card>
           )}
-          <Card className="!p-4">
+          <Card>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-red-600 dark:text-red-400">데이터 초기화</p>

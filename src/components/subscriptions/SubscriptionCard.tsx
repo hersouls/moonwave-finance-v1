@@ -67,7 +67,7 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
   const pauseDays = getPauseDays(subscription)
 
   return (
-    <Card className={clsx('!p-4', !isActive && 'opacity-60')}>
+    <Card className={clsx(!isActive && 'opacity-60')}>
       <div className="flex items-center gap-3">
         {/* Color circle */}
         <div

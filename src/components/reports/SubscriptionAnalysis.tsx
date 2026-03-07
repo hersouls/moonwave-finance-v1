@@ -75,25 +75,25 @@ export function SubscriptionAnalysis() {
     <div className="space-y-6">
       {/* Summary Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Card className="!p-4 text-center">
+        <Card className="text-center">
           <span className="text-xs text-zinc-500 dark:text-zinc-400">활성 구독</span>
           <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mt-1">
             {active.length}개
           </p>
         </Card>
-        <Card className="!p-4 text-center">
+        <Card className="text-center">
           <span className="text-xs text-zinc-500 dark:text-zinc-400">월간 총액</span>
           <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tabular-nums mt-1">
             {formatKoreanUnit(monthlyCombined)}
           </p>
         </Card>
-        <Card className="!p-4 text-center">
+        <Card className="text-center">
           <span className="text-xs text-zinc-500 dark:text-zinc-400">연간 총액</span>
           <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tabular-nums mt-1">
             {formatKoreanUnit(yearlyCombined)}
           </p>
         </Card>
-        <Card className="!p-4 text-center">
+        <Card className="text-center">
           <span className="text-xs text-zinc-500 dark:text-zinc-400">평균 구독료</span>
           <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tabular-nums mt-1">
             {formatKoreanUnit(Math.round(monthlyCombined / active.length))}
@@ -104,7 +104,7 @@ export function SubscriptionAnalysis() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Category Distribution */}
-        <Card className="!p-5">
+        <Card className="card-pad-lg">
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4">카테고리별 구독</h3>
           {categoryData.data.length > 0 ? (
             <div className="h-64 flex items-center justify-center">
@@ -136,7 +136,7 @@ export function SubscriptionAnalysis() {
         </Card>
 
         {/* Currency Split */}
-        <Card className="!p-5">
+        <Card className="card-pad-lg">
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4">통화별 월간 구독료</h3>
           <div className="h-64">
             <Bar
@@ -160,7 +160,7 @@ export function SubscriptionAnalysis() {
       </div>
 
       {/* Subscription List */}
-      <Card className="!p-5">
+      <Card className="card-pad-lg">
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4">구독 목록</h3>
         <div className="space-y-2">
           {active

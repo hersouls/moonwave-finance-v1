@@ -82,7 +82,7 @@ export function SkeletonCard({ className }: SkeletonCardProps) {
   return (
     <div
       className={clsx(
-        'p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900',
+        'card-base',
         className
       )}
     >

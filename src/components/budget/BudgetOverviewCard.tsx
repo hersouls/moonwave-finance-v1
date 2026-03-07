@@ -13,7 +13,7 @@ export function BudgetOverviewCard() {
   const remaining = totalBudget - totalUsed
 
   return (
-    <Card className="!p-5">
+    <Card className="card-pad-lg">
       <div className="flex items-center gap-2 mb-3">
         <PiggyBank className="w-4 h-4 text-primary-600 dark:text-primary-400" />
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">이번 달 예산</h3>

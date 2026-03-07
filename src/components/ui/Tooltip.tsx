@@ -46,9 +46,7 @@ export function Tooltip({
           id={tooltipId}
           role="tooltip"
           className={clsx(
-            'absolute z-50 px-2.5 py-1.5 text-xs font-medium rounded-lg shadow-lg whitespace-nowrap',
-            'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900',
-            'border border-zinc-700 dark:border-zinc-300',
+            'tooltip-dark',
             'animate-in fade-in-0 zoom-in-95 duration-150',
             placementStyles[placement],
             className

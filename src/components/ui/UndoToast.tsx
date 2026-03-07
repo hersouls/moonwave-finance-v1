@@ -25,19 +25,18 @@ export function UndoToast() {
       role="status"
       aria-live="polite"
       className={clsx(
-        'fixed bottom-24 lg:bottom-8 left-1/2 -translate-x-1/2',
-        'z-[var(--z-toast)] pb-[env(safe-area-inset-bottom)]',
+        'toast-container-center',
         isExiting ? 'animate-slide-out-bottom' : 'animate-[slideInFromBottom_0.3s_ease-out]'
       )}
     >
-      <div className="flex items-center gap-3 px-4 py-3 bg-zinc-800 dark:bg-zinc-700 text-white rounded-xl shadow-2xl border border-zinc-700 dark:border-zinc-600">
+      <div className="toast-base">
         <span className="text-sm">{currentToast.label}</span>
         <button
           type="button"
           onClick={async () => {
             await undo()
           }}
-          className="flex items-center gap-1.5 px-3 py-1 text-sm font-medium text-primary-400 hover:text-primary-300 bg-zinc-700 dark:bg-zinc-600 hover:bg-zinc-600 dark:hover:bg-zinc-500 rounded-lg transition-colors"
+          className="toast-action"
         >
           <Undo2 className="w-3.5 h-3.5" />
           실행 취소

@@ -111,25 +111,25 @@ export function AssetCalendarPage() {
       {/* Monthly Summary */}
       {monthSummary && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Card className="!p-3">
+          <Card className="card-pad-sm">
             <p className="text-xs text-zinc-500 dark:text-zinc-400">순자산</p>
             <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
               {formatKoreanUnit(monthSummary.netWorth)}
             </p>
           </Card>
-          <Card className="!p-3">
+          <Card className="card-pad-sm">
             <p className="text-xs text-zinc-500 dark:text-zinc-400">총 자산</p>
             <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
               {formatKoreanUnit(monthSummary.totalAssets)}
             </p>
           </Card>
-          <Card className="!p-3">
+          <Card className="card-pad-sm">
             <p className="text-xs text-zinc-500 dark:text-zinc-400">총 부채</p>
             <p className="text-sm font-bold text-red-600 dark:text-red-400 tabular-nums">
               {formatKoreanUnit(monthSummary.totalLiabilities)}
             </p>
           </Card>
-          <Card className="!p-3">
+          <Card className="card-pad-sm">
             <p className="text-xs text-zinc-500 dark:text-zinc-400">월간 변동</p>
             <p className={clsx(
               'text-sm font-bold tabular-nums',
@@ -176,7 +176,7 @@ export function AssetCalendarPage() {
 
       {/* Selected Day Detail */}
       {selectedDate && selectedData && (
-        <Card className="!p-4">
+        <Card>
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
             {parseInt(selectedDate.split('-')[2])}일 자산 현황
           </h3>

@@ -30,7 +30,6 @@ export function LiabilityItemCard({ itemId, name, categoryId }: LiabilityItemCar
     <Card
       variant="interactive"
       onClick={() => navigate(`/liabilities/${itemId}`)}
-      className="!p-4"
     >
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">

@@ -37,7 +37,6 @@ function AssetItemCardInner({ itemId, name, categoryId, type }: AssetItemCardPro
     <Card
       variant="interactive"
       onClick={() => navigate(`${basePath}/${itemId}`)}
-      className="!p-4"
     >
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">

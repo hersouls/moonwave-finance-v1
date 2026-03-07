@@ -40,7 +40,7 @@ export function FinancialGoals() {
       </div>
 
       {goals.length === 0 ? (
-        <Card className="!p-5">
+        <Card className="card-pad-lg">
           <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center">
             재정 목표를 설정하고 진행률을 추적해보세요.
           </p>

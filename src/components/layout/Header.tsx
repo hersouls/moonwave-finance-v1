@@ -59,14 +59,14 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-[var(--z-header)] bg-white/80 dark:bg-zinc-950/80 backdrop-blur-lg border-b border-zinc-200 dark:border-zinc-800">
-      <nav className="flex items-center justify-between h-16 px-4 lg:px-6">
+      <nav className="flex items-center justify-between nav-header nav-header-inset">
         <div className="flex items-center gap-3">
           {isDetailPage ? (
-            <button onClick={() => navigate(-1)} className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="뒤로 가기">
+            <button onClick={() => navigate(-1)} className="lg:hidden touch-target-icon -ml-2" aria-label="뒤로 가기">
               <ArrowLeft className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
             </button>
           ) : (
-            <button onClick={openMobileMenu} className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" aria-label="메뉴 열기">
+            <button onClick={openMobileMenu} className="lg:hidden touch-target-icon -ml-2" aria-label="메뉴 열기">
               <Menu className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
             </button>
           )}
@@ -77,7 +77,7 @@ export function Header() {
           <h2 className="hidden lg:block text-lg font-semibold text-zinc-900 dark:text-zinc-100">{getPageTitle()}</h2>
         </div>
         <div className="flex-1" />
-        <div className="flex items-center gap-1">
+        <div className="nav-header-actions">
           {user && (
             <Tooltip content={user.displayName || user.email} placement="bottom">
               <button type="button" onClick={() => navigate('/profile')} className="mr-1 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500" aria-label="프로필 보기">

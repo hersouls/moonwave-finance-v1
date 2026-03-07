@@ -17,7 +17,7 @@ export function NetWorthCard({ stats }: NetWorthCardProps) {
   const isNegativeMonthly = monthlyChange < 0
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
+    <div className="card-base card-pad-xl">
       <div className="flex items-center justify-between mb-1">
         <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">순자산</span>
       </div>

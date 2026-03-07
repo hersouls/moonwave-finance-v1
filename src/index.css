@@ -136,6 +136,117 @@
   --padding-input-y: 16px;
   --gap-input-label: 4px;
   --gap-form-field: 16px;
+
+  /* Navigation Tokens (04_Navigation Reference) */
+  --header-padding-x: 16px;
+  --header-padding-x-lg: 24px;
+  --header-title-min-width: 130px;
+  --header-action-gap: 4px;
+  --bottom-nav-icon-size: 24px;
+  --bottom-nav-label-size: 11px;
+  --bottom-nav-item-gap: 4px;
+  --bottom-nav-padding-bottom: 24px;
+
+  /* Card Tokens (05_Card Reference) */
+  --padding-card: 16px;
+  --padding-card-lg: 20px;
+  --padding-card-sm: 12px;
+  --padding-card-xl: 24px;
+  --gap-card-list: 8px;
+  --gap-card-grid: 12px;
+  --gap-card-content: 8px;
+  --height-cell: 48px;
+  --padding-cell-x: 20px;
+  --size-list-image: 48px;
+  --size-list-image-lg: 56px;
+  --gap-list-item: 12px;
+  --size-file-icon: 40px;
+
+  /* Dialog Tokens (06_Dialog Reference) */
+  --dialog-padding: 24px;
+  --dialog-padding-desktop: 24px;
+  --dialog-radius: 16px;
+  --dialog-title-size: 18px;
+  --dialog-title-weight: 700;
+  --dialog-body-size: 15px;
+  --dialog-footer-gap: 8px;
+  --dialog-margin-x: 40px;
+  --dialog-backdrop: 0.4;
+
+  /* BottomSheet Tokens (07_BottomSheet Reference) */
+  --height-sheet-handle: 4px;
+  --width-sheet-handle: 40px;
+  --sheet-top-offset: 64px;
+  --sheet-radius-top: var(--radius-2xl);
+  --sheet-header-height: 56px;
+  --sheet-padding-x: 20px;
+  --sheet-padding-y: 16px;
+  --sheet-item-height: 48px;
+
+  /* Toast/Snackbar Tokens (08_Toast_Snackbar Reference) */
+  --toast-min-width: 228px;
+  --toast-max-height: 66px;
+  --toast-padding-x: 20px;
+  --toast-padding-y: 12px;
+  --toast-gap: 8px;
+  --toast-radius: var(--radius-full);
+  --toast-bottom-offset: 24px;
+  --snackbar-padding-x-icon: 16px;
+  --snackbar-icon-gap: 4px;
+  --snackbar-min-text-width: 212px;
+
+  /* Line Tab Tokens (09_Tab Reference) */
+  --tab-line-height: 48px;
+  --tab-line-indicator: 3px;
+  --tab-line-label-size: 15px;
+  --tab-line-label-weight: 500;
+  --tab-line-label-weight-active: 700;
+  --tab-line-label-padding-x: 4px;
+  --tab-line-scroll-padding: 20px;
+  --tab-line-scroll-gap: 16px;
+  --tab-line-border: 1px;
+
+  /* Checkbox & Radio Tokens (10_Checkbox_Radio Reference) */
+  --size-check: 24px;
+  --size-check-inner: 12px;
+  --size-check-icon: 14px;
+  --gap-check-label: 4px;
+  --height-check-cell: 48px;
+  --padding-check-cell-x: 20px;
+  --size-toggle-w: 44px;
+  --size-toggle-h: 24px;
+  --size-toggle-thumb: 20px;
+
+  /* Chip/Badge Tokens (11_Chip_Badge Reference) */
+  --chip-height: 36px;
+  --chip-padding-x: 16px;
+  --chip-padding-y: 8px;
+  --chip-gap: 8px;
+  --chip-avatar-size: 24px;
+  --chip-font-size: 14px;
+  --badge-height-sm: 20px;
+  --badge-height-md: 24px;
+  --badge-padding-x-sm: 8px;
+  --badge-padding-x-md: 10px;
+  --badge-dot-size: 6px;
+
+  /* Misc Tokens (12_기타 Reference) */
+  --divider-color: oklch(0.88 0 0);
+  --divider-thickness: 1px;
+  --divider-section-height: 8px;
+  --divider-inset: 20px;
+  --toast-max-width: 360px;
+  --tooltip-light-bg: white;
+  --tooltip-light-border: oklch(0.88 0 0);
+  --tooltip-light-radius: 12px;
+  --tooltip-arrow-size: 6px;
+  --radio-size: 20px;
+  --radio-border-width: 2px;
+  --radio-inner-size: 8px;
+  --context-menu-radius: 12px;
+  --context-menu-padding: 8px;
+  --context-menu-item-height: 44px;
+  --touch-target-min: 44px;
 }
 
 /* Base styles */
@@ -983,6 +1094,2862 @@ input[type="range"].slider:disabled::-moz-range-thumb {
   display: flex;
   flex-direction: column;
   gap: var(--gap-form-field, 16px);
+}
+
+/* ========================================
+   Navigation System (04_Navigation Reference)
+   ======================================== */
+
+/* --- Step 1: Header --- */
+
+.nav-header {
+  height: var(--height-header, 52px);
+  min-height: var(--height-header, 52px);
+}
+
+.nav-header-title {
+  flex: 1;
+  min-width: var(--header-title-min-width, 130px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--header-action-gap, 4px);
+  flex-shrink: 0;
+}
+
+.nav-header-inset {
+  padding-left: var(--header-padding-x, 16px);
+  padding-right: var(--header-padding-x, 16px);
+}
+
+@media (min-width: 1024px) {
+  .nav-header-inset {
+    padding-left: var(--header-padding-x-lg, 24px);
+    padding-right: var(--header-padding-x-lg, 24px);
+  }
+}
+
+/* --- Step 2: Bottom Nav --- */
+
+.nav-bottom {
+  height: var(--height-bottom-nav, 56px);
+}
+
+.nav-bottom-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--bottom-nav-item-gap, 4px);
+  min-width: 56px;
+  min-height: 44px;
+}
+
+@media (min-width: 360px) {
+  .nav-bottom-item {
+    min-width: 64px;
+  }
+}
+
+@media (min-width: 430px) {
+  .nav-bottom-item {
+    min-width: 78px;
+  }
+}
+
+.nav-bottom-icon {
+  width: var(--bottom-nav-icon-size, 24px);
+  height: var(--bottom-nav-icon-size, 24px);
+}
+
+.nav-bottom-label {
+  font-size: var(--bottom-nav-label-size, 11px);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.nav-bottom-item[aria-current="page"] .nav-bottom-label,
+.nav-bottom-item.is-active .nav-bottom-label {
+  font-weight: 700;
+}
+
+.nav-bottom-item:not([aria-current="page"]):not(.is-active) .nav-bottom-icon {
+  opacity: 0.6;
+}
+
+.nav-bottom-item[aria-disabled="true"],
+.nav-bottom-item.is-disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.nav-badge {
+  position: absolute;
+  top: 2px;
+  right: 50%;
+  transform: translateX(calc(50% + 8px));
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-danger-500);
+}
+
+.nav-badge-count {
+  position: absolute;
+  top: 0;
+  right: 50%;
+  transform: translateX(calc(50% + 10px));
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--color-danger-500);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* --- Step 3: Sidebar --- */
+
+.nav-sidebar-item {
+  height: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  border-radius: var(--radius-lg, 8px);
+  transition: background-color var(--duration-fast, 150ms) ease;
+  cursor: pointer;
+}
+
+.nav-sidebar-item:hover {
+  background-color: oklch(0.95 0 0);
+}
+
+.dark .nav-sidebar-item:hover {
+  background-color: oklch(0.25 0 0);
+}
+
+.nav-sidebar-item:active {
+  background-color: oklch(0.92 0 0);
+}
+
+.dark .nav-sidebar-item:active {
+  background-color: oklch(0.22 0 0);
+}
+
+.nav-sidebar-item[aria-current="page"],
+.nav-sidebar-item.is-selected {
+  background-color: oklch(0.95 0 0);
+  font-weight: 600;
+}
+
+.dark .nav-sidebar-item[aria-current="page"],
+.dark .nav-sidebar-item.is-selected {
+  background-color: oklch(0.22 0 0);
+}
+
+.nav-sidebar-group-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: oklch(0.55 0 0);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 12px 4px;
+}
+
+.dark .nav-sidebar-group-label {
+  color: oklch(0.5 0 0);
+}
+
+.nav-sidebar-divider {
+  margin: 8px 12px;
+  border-top: 1px solid oklch(0.9 0 0);
+}
+
+.dark .nav-sidebar-divider {
+  border-top-color: oklch(0.25 0 0);
+}
+
+/* --- Step 4: Mobile Nav --- */
+
+.nav-mobile-item {
+  height: 48px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  border-radius: var(--radius-lg, 8px);
+  font-size: 15px;
+  font-weight: 500;
+  transition: background-color var(--duration-fast, 150ms);
+}
+
+.nav-mobile-item:active {
+  background-color: oklch(0.95 0 0);
+}
+
+.dark .nav-mobile-item:active {
+  background-color: oklch(0.2 0 0);
+}
+
+.nav-mobile-item.is-selected::after {
+  content: '';
+  margin-left: auto;
+  width: 20px;
+  height: 20px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center/contain no-repeat;
+  flex-shrink: 0;
+}
+
+.dark .nav-mobile-item.is-selected::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+}
+
+.nav-mobile-section {
+  font-size: 12px;
+  font-weight: 600;
+  color: oklch(0.55 0 0);
+  padding: 16px 16px 4px;
+}
+
+.dark .nav-mobile-section {
+  color: oklch(0.5 0 0);
+}
+
+.nav-mobile-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  height: var(--height-header, 52px);
+  flex-shrink: 0;
+}
+
+/* --- Step 5: Tabs/Segment --- */
+
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-lg, 8px);
+  background: oklch(0.95 0 0);
+}
+
+.dark .nav-tabs {
+  background: oklch(0.22 0 0);
+}
+
+.nav-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md, 6px);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all var(--duration-fast, 150ms);
+  color: oklch(0.45 0 0);
+}
+
+.dark .nav-tab {
+  color: oklch(0.6 0 0);
+}
+
+.nav-tab[aria-selected="true"],
+.nav-tab.is-active {
+  background: white;
+  color: oklch(0.15 0 0);
+  font-weight: 600;
+  box-shadow: var(--shadow-1);
+}
+
+.dark .nav-tab[aria-selected="true"],
+.dark .nav-tab.is-active {
+  background: oklch(0.3 0 0);
+  color: oklch(0.95 0 0);
+}
+
+.nav-tab:not([aria-selected="true"]):hover {
+  color: oklch(0.2 0 0);
+}
+
+.dark .nav-tab:not([aria-selected="true"]):hover {
+  color: oklch(0.85 0 0);
+}
+
+.nav-tabs-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.nav-tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* --- Step 6: Tooltip --- */
+
+.tooltip-dark {
+  position: absolute;
+  z-index: var(--z-tooltip, 60);
+  padding: 8px 12px;
+  border-radius: var(--radius-lg, 8px);
+  background: oklch(0.2 0 0);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.48;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: fadeIn var(--duration-fast, 150ms) ease-out;
+}
+
+.dark .tooltip-dark {
+  background: oklch(0.85 0 0);
+  color: oklch(0.15 0 0);
+}
+
+.tooltip-dark::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: oklch(0.2 0 0);
+}
+
+.dark .tooltip-dark::after {
+  border-top-color: oklch(0.85 0 0);
+}
+
+.tooltip-dark.tooltip-bottom::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: oklch(0.2 0 0);
+}
+
+.dark .tooltip-dark.tooltip-bottom::after {
+  border-bottom-color: oklch(0.85 0 0);
+}
+
+/* ========================================
+   Card System (05_Card Reference)
+   ======================================== */
+
+/* --- Step 2: Card Base --- */
+
+.card-base {
+  background: white;
+  border-radius: var(--radius-xl, 12px);
+  border: 1px solid oklch(0.85 0 0);
+  padding: var(--padding-card);
+}
+.dark .card-base {
+  background: oklch(0.14 0 0);
+  border-color: oklch(0.28 0 0);
+}
+
+.card-interactive {
+  cursor: pointer;
+  transition: border-color var(--duration-fast, 150ms),
+              box-shadow var(--duration-fast, 150ms),
+              transform var(--duration-fast, 150ms);
+}
+.card-interactive:hover {
+  border-color: var(--color-primary-300);
+  box-shadow: var(--shadow-2);
+}
+.dark .card-interactive:hover {
+  border-color: var(--color-primary-700);
+}
+.card-interactive:active {
+  transform: scale(0.98);
+}
+
+.card-pad-sm { padding: var(--padding-card-sm); }
+.card-pad-lg { padding: var(--padding-card-lg); }
+.card-pad-xl { padding: var(--padding-card-xl); }
+.card-pad-none { padding: 0; }
+
+/* --- Step 3: Card Layout --- */
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-card-list);
+}
+
+.card-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--gap-card-grid);
+}
+
+.card-scroll {
+  display: flex;
+  gap: var(--gap-card-grid);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.card-scroll::-webkit-scrollbar { display: none; }
+.card-scroll > * {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+/* --- Step 4: Image Cards --- */
+
+.card-image {
+  overflow: hidden;
+  padding: 0;
+}
+.card-image-area {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+.card-image-area > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.card-image-body {
+  padding: 12px var(--padding-card) var(--padding-card);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-full-image {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  aspect-ratio: 1 / 1;
+}
+.card-full-image > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.card-full-image-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: var(--padding-card);
+  background: linear-gradient(
+    to top,
+    oklch(0 0 0 / 0.6) 0%,
+    oklch(0 0 0 / 0) 60%
+  );
+  color: white;
+}
+
+.card-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: var(--padding-card);
+  overflow: hidden;
+}
+.card-banner-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.card-banner-thumb {
+  flex: 0 0 auto;
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-lg, 8px);
+  overflow: hidden;
+}
+.card-banner-thumb > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* --- Step 5: Cell / List Item --- */
+
+.cell {
+  display: flex;
+  align-items: center;
+  min-height: var(--height-cell);
+  padding-left: var(--padding-cell-x);
+  padding-right: var(--padding-cell-x);
+}
+
+.cell-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--height-cell);
+  padding-left: var(--padding-cell-x);
+  padding-right: var(--padding-cell-x);
+}
+
+.cell-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--height-cell);
+  padding-left: var(--padding-cell-x);
+  padding-right: var(--padding-cell-x);
+  cursor: pointer;
+  transition: background-color var(--duration-fast, 150ms);
+}
+.cell-nav:hover {
+  background: oklch(0.96 0 0);
+}
+.dark .cell-nav:hover {
+  background: oklch(0.22 0 0);
+}
+.cell-nav:active {
+  background: oklch(0.93 0 0);
+}
+.dark .cell-nav:active {
+  background: oklch(0.25 0 0);
+}
+
+.cell-section-header {
+  padding: 24px var(--padding-cell-x) 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: oklch(0.55 0 0);
+  line-height: 1.48;
+}
+.dark .cell-section-header {
+  color: oklch(0.55 0 0);
+}
+
+.cell-divider {
+  height: 1px;
+  margin-left: var(--padding-cell-x);
+  margin-right: var(--padding-cell-x);
+  background: oklch(0.92 0 0);
+}
+.dark .cell-divider {
+  background: oklch(0.25 0 0);
+}
+
+.cell-image {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-list-item);
+  padding: 12px var(--padding-cell-x);
+}
+.cell-image-avatar {
+  flex: 0 0 auto;
+  width: var(--size-list-image);
+  height: var(--size-list-image);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  background: oklch(0.95 0 0);
+}
+.dark .cell-image-avatar {
+  background: oklch(0.25 0 0);
+}
+.cell-image-avatar > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cell-image-avatar-lg {
+  width: var(--size-list-image-lg);
+  height: var(--size-list-image-lg);
+}
+.cell-image-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* --- Step 6: Info Card / File Card --- */
+
+.card-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+}
+.card-info-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  min-height: 40px;
+  padding: 8px 0;
+}
+.card-info-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: oklch(0.55 0 0);
+}
+.dark .card-info-label {
+  color: oklch(0.55 0 0);
+}
+.card-info-value {
+  font-size: 15px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.card-file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px var(--padding-card);
+}
+.card-file-icon {
+  flex: 0 0 auto;
+  width: var(--size-file-icon);
+  height: var(--size-file-icon);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: oklch(0.95 0 0);
+  border-radius: var(--radius-lg);
+}
+.dark .card-file-icon {
+  background: oklch(0.25 0 0);
+}
+.card-file-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.card-file-meta {
+  font-size: 13px;
+  font-weight: 500;
+  color: oklch(0.55 0 0);
+}
+.dark .card-file-meta {
+  color: oklch(0.55 0 0);
+}
+.card-file-action {
+  flex: 0 0 auto;
+}
+
+/* --- Step 7: Slider Popover & Product Card --- */
+
+.slider-popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  background: oklch(0.2 0 0);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-lg);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.slider-popover::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: oklch(0.2 0 0);
+}
+
+.card-product {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.card-product-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-lg, 8px);
+  overflow: hidden;
+  background: oklch(0.95 0 0);
+}
+.dark .card-product-image {
+  background: oklch(0.22 0 0);
+}
+.card-product-image > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.card-product-favorite {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+}
+.card-product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.card-product-category {
+  font-size: 13px;
+  font-weight: 500;
+  color: oklch(0.55 0 0);
+}
+.dark .card-product-category {
+  color: oklch(0.55 0 0);
+}
+.card-product-price-original {
+  font-size: 13px;
+  font-weight: 500;
+  color: oklch(0.6 0 0);
+  text-decoration: line-through;
+}
+.card-product-price {
+  font-size: 16px;
+  font-weight: 700;
+}
+.card-product-discount {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-danger-500);
+}
+
+/* ========================================
+   Dialog System (06_Dialog Reference)
+   ======================================== */
+
+/* --- Step 2: Dialog Panel --- */
+
+.dialog-panel {
+  background: white;
+  border-radius: var(--dialog-radius, 16px);
+  padding: var(--dialog-padding, 24px);
+  box-shadow: var(--shadow-3);
+  max-width: calc(100% - var(--dialog-margin-x, 40px) * 2);
+  width: 100%;
+}
+
+.dark .dialog-panel {
+  background: oklch(0.16 0 0);
+}
+
+/* Mobile: bottom-sheet 스타일 */
+@media (max-width: 639px) {
+  .dialog-panel-mobile {
+    border-radius: var(--dialog-radius, 16px) var(--dialog-radius, 16px) 0 0;
+    max-width: 100%;
+    padding: var(--dialog-padding, 24px);
+    padding-bottom: calc(var(--dialog-padding, 24px) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Responsive Dialog Width (430→350, 360→280, 320→240) */
+@media (max-width: 430px) {
+  .dialog-panel-responsive {
+    max-width: calc(100vw - 80px);
+  }
+}
+
+/* --- Step 3: Dialog Title & Body --- */
+
+.dialog-title {
+  font-size: var(--dialog-title-size, 18px);
+  font-weight: var(--dialog-title-weight, 700);
+  line-height: 1.48;
+  color: oklch(0.15 0 0);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.dark .dialog-title {
+  color: oklch(0.95 0 0);
+}
+
+.dialog-title-center {
+  text-align: center;
+}
+
+.dialog-body {
+  margin-top: 16px;
+  font-size: var(--dialog-body-size, 15px);
+  line-height: 1.70;
+  color: oklch(0.4 0 0);
+}
+
+.dark .dialog-body {
+  color: oklch(0.65 0 0);
+}
+
+/* --- Step 4: Dialog Footer --- */
+
+.dialog-footer {
+  display: flex;
+  gap: var(--dialog-footer-gap, 8px);
+  margin-top: 24px;
+  width: 100%;
+}
+
+.dialog-footer > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.dialog-footer-single {
+  display: flex;
+  margin-top: 24px;
+  width: 100%;
+}
+
+.dialog-footer-single > * {
+  flex: 1;
+}
+
+/* --- Step 5: Dialog Button Variants (4종 × 4상태) --- */
+
+.dialog-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--height-btn-lg, 48px);
+  min-height: var(--height-btn-lg, 48px);
+  padding: 0 var(--padding-btn-x, 16px);
+  font-size: 15px;
+}
+
+/* Accent (Red) — 삭제, 위험 동작 */
+.dialog-btn-accent {
+  background: oklch(0.55 0.24 25);
+  color: white;
+  border: none;
+  border-radius: var(--radius-xl, 12px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--duration-fast, 150ms);
+}
+.dialog-btn-accent:hover {
+  background: oklch(0.48 0.22 25);
+}
+.dialog-btn-accent:active {
+  background: oklch(0.40 0.20 25);
+}
+.dialog-btn-accent:disabled {
+  background: oklch(0.9 0 0);
+  color: oklch(0.65 0 0);
+  cursor: not-allowed;
+}
+
+/* Primary (Black) — 확인, 주요 동작 */
+.dialog-btn-primary {
+  background: oklch(0.15 0 0);
+  color: white;
+  border: none;
+  border-radius: var(--radius-xl, 12px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--duration-fast, 150ms);
+}
+.dialog-btn-primary:hover {
+  background: oklch(0.25 0 0);
+}
+.dialog-btn-primary:active {
+  background: oklch(0.35 0 0);
+}
+.dialog-btn-primary:disabled {
+  background: oklch(0.9 0 0);
+  color: oklch(0.65 0 0);
+  cursor: not-allowed;
+}
+
+.dark .dialog-btn-primary {
+  background: oklch(0.9 0 0);
+  color: oklch(0.15 0 0);
+}
+.dark .dialog-btn-primary:hover {
+  background: oklch(0.82 0 0);
+}
+.dark .dialog-btn-primary:active {
+  background: oklch(0.75 0 0);
+}
+.dark .dialog-btn-primary:disabled {
+  background: oklch(0.25 0 0);
+  color: oklch(0.45 0 0);
+}
+
+/* Secondary (Gray Fill) — 취소, 보조 동작 */
+.dialog-btn-secondary {
+  background: oklch(0.92 0 0);
+  color: oklch(0.25 0 0);
+  border: none;
+  border-radius: var(--radius-xl, 12px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--duration-fast, 150ms);
+}
+.dialog-btn-secondary:hover {
+  background: oklch(0.88 0 0);
+}
+.dialog-btn-secondary:active {
+  background: oklch(0.82 0 0);
+}
+.dialog-btn-secondary:disabled {
+  background: oklch(0.94 0 0);
+  color: oklch(0.65 0 0);
+  cursor: not-allowed;
+}
+
+.dark .dialog-btn-secondary {
+  background: oklch(0.28 0 0);
+  color: oklch(0.85 0 0);
+}
+.dark .dialog-btn-secondary:hover {
+  background: oklch(0.32 0 0);
+}
+.dark .dialog-btn-secondary:active {
+  background: oklch(0.36 0 0);
+}
+.dark .dialog-btn-secondary:disabled {
+  background: oklch(0.22 0 0);
+  color: oklch(0.45 0 0);
+}
+
+/* Tertiary (Outline) — 약한 보조 동작 */
+.dialog-btn-tertiary {
+  background: transparent;
+  color: oklch(0.35 0 0);
+  border: 1px solid oklch(0.82 0 0);
+  border-radius: var(--radius-xl, 12px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast, 150ms);
+}
+.dialog-btn-tertiary:hover {
+  background: oklch(0.96 0 0);
+  border-color: oklch(0.75 0 0);
+}
+.dialog-btn-tertiary:active {
+  background: oklch(0.92 0 0);
+  border-color: oklch(0.7 0 0);
+}
+.dialog-btn-tertiary:disabled {
+  background: transparent;
+  border-color: oklch(0.9 0 0);
+  color: oklch(0.7 0 0);
+  cursor: not-allowed;
+}
+
+.dark .dialog-btn-tertiary {
+  color: oklch(0.7 0 0);
+  border-color: oklch(0.35 0 0);
+}
+.dark .dialog-btn-tertiary:hover {
+  background: oklch(0.22 0 0);
+  border-color: oklch(0.4 0 0);
+}
+.dark .dialog-btn-tertiary:active {
+  background: oklch(0.26 0 0);
+}
+.dark .dialog-btn-tertiary:disabled {
+  border-color: oklch(0.25 0 0);
+  color: oklch(0.4 0 0);
+}
+
+/* ========================================
+   BottomSheet System (07_BottomSheet Reference)
+   ======================================== */
+
+/* --- Step 2: Container --- */
+
+.sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: var(--sheet-radius-top) var(--sheet-radius-top) 0 0;
+  box-shadow: var(--shadow-3);
+  z-index: var(--z-overlay, 50);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - var(--sheet-top-offset));
+  max-height: calc(100dvh - var(--sheet-top-offset));
+}
+
+.dark .sheet {
+  background: oklch(0.18 0 0);
+}
+
+.sheet-auto {
+  max-height: calc(100vh - var(--sheet-top-offset));
+  max-height: calc(100dvh - var(--sheet-top-offset));
+}
+
+.sheet-half {
+  height: 50vh;
+  height: 50dvh;
+}
+
+.sheet-full {
+  height: calc(100vh - var(--sheet-top-offset));
+  height: calc(100dvh - var(--sheet-top-offset));
+}
+
+/* --- Step 3: Handle / Header / Body / Footer --- */
+
+.sheet-handle {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 4px;
+  flex-shrink: 0;
+}
+
+.sheet-handle::after {
+  content: '';
+  width: var(--width-sheet-handle);
+  height: var(--height-sheet-handle);
+  border-radius: var(--radius-full);
+  background: oklch(0.75 0 0);
+}
+
+.dark .sheet-handle::after {
+  background: oklch(0.4 0 0);
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--sheet-header-height);
+  padding: var(--sheet-padding-y) var(--sheet-padding-x);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  background: inherit;
+  z-index: 1;
+}
+
+.sheet-header-title {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.48;
+  color: oklch(0.15 0 0);
+}
+
+.dark .sheet-header-title {
+  color: oklch(0.95 0 0);
+}
+
+.sheet-header-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-lg);
+  color: oklch(0.4 0 0);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background-color var(--duration-fast, 150ms);
+}
+
+.sheet-header-close:hover {
+  background-color: oklch(0.95 0 0);
+}
+
+.dark .sheet-header-close {
+  color: oklch(0.65 0 0);
+}
+
+.dark .sheet-header-close:hover {
+  background-color: oklch(0.25 0 0);
+}
+
+.sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 var(--sheet-padding-x);
+  overscroll-behavior: contain;
+}
+
+.sheet-footer {
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  padding: 12px var(--sheet-padding-x);
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  background: inherit;
+  z-index: 1;
+}
+
+.sheet-footer > button,
+.sheet-footer > .btn-group {
+  width: 100%;
+}
+
+.sheet-footer-fade {
+  background: linear-gradient(to top,
+    white 70%,
+    oklch(1 0 0 / 0) 100%
+  );
+}
+
+.dark .sheet-footer-fade {
+  background: linear-gradient(to top,
+    oklch(0.18 0 0) 70%,
+    oklch(0.18 0 0 / 0) 100%
+  );
+}
+
+.sheet-footer-with-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.sheet-text-button {
+  font-size: 14px;
+  font-weight: 500;
+  color: oklch(0.45 0 0);
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.dark .sheet-text-button {
+  color: oklch(0.6 0 0);
+}
+
+/* --- Step 4: List Items --- */
+
+.sheet-list-item {
+  display: flex;
+  align-items: center;
+  min-height: var(--sheet-item-height);
+  padding: 12px 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: oklch(0.15 0 0);
+  cursor: pointer;
+  transition: background-color var(--duration-fast, 150ms);
+}
+
+.dark .sheet-list-item {
+  color: oklch(0.9 0 0);
+}
+
+.sheet-list-item:active {
+  background-color: oklch(0.96 0 0);
+}
+
+.dark .sheet-list-item:active {
+  background-color: oklch(0.22 0 0);
+}
+
+.sheet-list-item.is-selected {
+  font-weight: 700;
+}
+
+.sheet-list-item.is-selected::after {
+  content: '';
+  margin-left: auto;
+  width: 20px;
+  height: 20px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center/contain no-repeat;
+  flex-shrink: 0;
+}
+
+.dark .sheet-list-item.is-selected::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+}
+
+.sheet-list-divider {
+  border-top: 1px solid oklch(0.92 0 0);
+  margin: 0;
+}
+
+.dark .sheet-list-divider {
+  border-top-color: oklch(0.25 0 0);
+}
+
+/* --- Step 5: Scrim / Animation / Variants --- */
+
+.sheet-scrim {
+  position: fixed;
+  inset: 0;
+  background: oklch(0 0 0 / 0.4);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: calc(var(--z-overlay, 50) - 1);
+}
+
+.dark .sheet-scrim {
+  background: oklch(0 0 0 / 0.6);
+}
+
+@keyframes sheetSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes sheetSlideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes sheetFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sheetFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.sheet-enter {
+  animation: sheetSlideUp 300ms ease-out both;
+}
+
+.sheet-exit {
+  animation: sheetSlideDown 200ms ease-in both;
+}
+
+.sheet-scrim-enter {
+  animation: sheetFadeIn 300ms ease-out both;
+}
+
+.sheet-scrim-exit {
+  animation: sheetFadeOut 200ms ease-in both;
+}
+
+/* Action Sheet Grid */
+.sheet-action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 0 0 12px;
+}
+
+.sheet-action-grid-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 8px;
+  border-radius: var(--radius-xl, 12px);
+  background: oklch(0.96 0 0);
+  font-size: 13px;
+  font-weight: 500;
+  color: oklch(0.25 0 0);
+  cursor: pointer;
+  transition: background-color var(--duration-fast, 150ms);
+}
+
+.dark .sheet-action-grid-item {
+  background: oklch(0.22 0 0);
+  color: oklch(0.85 0 0);
+}
+
+.sheet-action-grid-item:active {
+  background: oklch(0.92 0 0);
+}
+
+.dark .sheet-action-grid-item:active {
+  background: oklch(0.28 0 0);
+}
+
+/* Promotion Sheet */
+.sheet-promo {
+  padding: 0;
+  overflow: hidden;
+}
+
+.sheet-promo-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.sheet-promo-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
+}
+
+/* ========================================
+   Toast / Snackbar System (08_Toast_Snackbar Reference)
+   ======================================== */
+
+/* --- Step 2: Toast Base --- */
+
+.toast {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--toast-min-width);
+  max-height: var(--toast-max-height);
+  padding: var(--toast-padding-y) var(--toast-padding-x);
+  border-radius: var(--toast-radius);
+  background: oklch(0.25 0 0);
+  color: white;
+  font-size: 14px;
+  line-height: 1.48;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  text-align: center;
+}
+
+.dark .toast {
+  background: oklch(0.3 0 0);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* --- Step 3: Snackbar Variants --- */
+
+.snackbar-success .snackbar-icon {
+  color: white;
+}
+
+.snackbar-info .snackbar-icon {
+  color: oklch(0.72 0.14 190);
+}
+
+.snackbar-critical .snackbar-icon {
+  color: oklch(0.65 0.20 25);
+}
+
+/* --- Step 4: Positioning & Responsive --- */
+
+.toast-container {
+  position: fixed;
+  bottom: var(--toast-bottom-offset);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-toast, 50);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  pointer-events: none;
+}
+
+.toast-container > * {
+  pointer-events: auto;
+}
+
+.toast-container-above-cta {
+  bottom: calc(var(--height-btn-lg) + var(--toast-bottom-offset) + 12px);
+}
+
+.toast-container-above-nav {
+  bottom: calc(var(--height-bottom-nav) + var(--toast-bottom-offset));
+}
+
+.snackbar-responsive {
+  max-width: calc(100vw - 40px);
+}
+
+@media (min-width: 360px) {
+  .snackbar-responsive {
+    max-width: calc(100vw - 48px);
+  }
+}
+
+.snackbar-with-icon {
+  padding-left: var(--snackbar-padding-x-icon);
+  gap: var(--snackbar-icon-gap);
+}
+
+.snackbar-with-icon .snackbar-text {
+  min-width: var(--snackbar-min-text-width);
+}
+
+/* --- Step 5: Animations --- */
+
+@keyframes toastSlideUp {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastSlideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+}
+
+.toast-enter {
+  animation: toastSlideUp 300ms ease-out both;
+}
+
+.toast-exit {
+  animation: toastSlideDown 200ms ease-in both;
+}
+
+.snackbar-enter {
+  animation: toastSlideUp 300ms ease-out both;
+}
+
+.snackbar-exit {
+  animation: toastSlideDown 200ms ease-in both;
+}
+
+/* ========================================
+   Line Tab System (09_Tab Reference)
+   ======================================== */
+
+/* --- Step 2: Fixed Line Tab Container (1/N 균등배분) --- */
+.tab-line {
+  display: flex;
+  width: 100%;
+  border-bottom: var(--tab-line-border, 1px) solid oklch(0.9 0 0);
+  background: white;
+}
+
+.dark .tab-line {
+  border-bottom-color: oklch(0.25 0 0);
+  background: oklch(0.13 0 0);
+}
+
+/* 각 탭 아이템 — 1/N 균등 배분 */
+.tab-line > * {
+  flex: 1;
+  min-width: 0;
+}
+
+/* --- Scrollable Line Tab Container --- */
+.tab-line-scroll {
+  display: flex;
+  width: 100%;
+  border-bottom: var(--tab-line-border, 1px) solid oklch(0.9 0 0);
+  background: white;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-left: var(--tab-line-scroll-padding, 20px);
+  gap: var(--tab-line-scroll-gap, 16px);
+}
+
+.tab-line-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.dark .tab-line-scroll {
+  border-bottom-color: oklch(0.25 0 0);
+  background: oklch(0.13 0 0);
+}
+
+/* Scrollable 탭은 flex-shrink 허용하지 않음 */
+.tab-line-scroll > * {
+  flex-shrink: 0;
+}
+
+/* --- Step 3: Line Tab Item --- */
+.tab-line-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--tab-line-height, 48px);
+  min-height: var(--tab-line-height, 48px);
+  padding: 0 var(--tab-line-label-padding-x, 4px);
+  font-size: var(--tab-line-label-size, 15px);
+  font-weight: var(--tab-line-label-weight, 500);
+  color: oklch(0.45 0 0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color var(--duration-fast, 150ms),
+              background-color var(--duration-fast, 150ms);
+  border: none;
+  background: transparent;
+}
+
+.dark .tab-line-item {
+  color: oklch(0.55 0 0);
+}
+
+/* Hover */
+.tab-line-item:hover:not(.is-active):not(.is-disabled):not([aria-selected="true"]):not([aria-disabled="true"]) {
+  color: oklch(0.25 0 0);
+  background: oklch(0.97 0 0);
+}
+
+.dark .tab-line-item:hover:not(.is-active):not(.is-disabled):not([aria-selected="true"]):not([aria-disabled="true"]) {
+  color: oklch(0.8 0 0);
+  background: oklch(0.18 0 0);
+}
+
+/* Selected / Active — bold + 인디케이터 + 배경 tint */
+.tab-line-item[aria-selected="true"],
+.tab-line-item.is-active {
+  font-weight: var(--tab-line-label-weight-active, 700);
+  color: oklch(0.15 0 0);
+  background: oklch(0.97 0 0);
+}
+
+.dark .tab-line-item[aria-selected="true"],
+.dark .tab-line-item.is-active {
+  color: oklch(0.95 0 0);
+  background: oklch(0.2 0 0);
+}
+
+/* 하단 인디케이터 (::after pseudo-element) */
+.tab-line-item[aria-selected="true"]::after,
+.tab-line-item.is-active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--tab-line-indicator, 3px);
+  background: oklch(0.15 0 0);
+  border-radius: var(--tab-line-indicator, 3px) var(--tab-line-indicator, 3px) 0 0;
+}
+
+.dark .tab-line-item[aria-selected="true"]::after,
+.dark .tab-line-item.is-active::after {
+  background: oklch(0.95 0 0);
+}
+
+/* Disabled */
+.tab-line-item[aria-disabled="true"],
+.tab-line-item.is-disabled {
+  color: oklch(0.75 0 0);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.dark .tab-line-item[aria-disabled="true"],
+.dark .tab-line-item.is-disabled {
+  color: oklch(0.35 0 0);
+}
+
+/* Focus Visible */
+.tab-line-item:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm, 4px);
+}
+
+/* --- Step 4: Fixed Column Variants (명시적 그리드) --- */
+.tab-line-2col { display: grid; grid-template-columns: repeat(2, 1fr); }
+.tab-line-3col { display: grid; grid-template-columns: repeat(3, 1fr); }
+.tab-line-4col { display: grid; grid-template-columns: repeat(4, 1fr); }
+.tab-line-5col { display: grid; grid-template-columns: repeat(5, 1fr); }
+
+/* 그리드 컨테이너 공통 스타일 */
+.tab-line-2col,
+.tab-line-3col,
+.tab-line-4col,
+.tab-line-5col {
+  width: 100%;
+  border-bottom: var(--tab-line-border, 1px) solid oklch(0.9 0 0);
+  background: white;
+}
+
+.dark .tab-line-2col,
+.dark .tab-line-3col,
+.dark .tab-line-4col,
+.dark .tab-line-5col {
+  border-bottom-color: oklch(0.25 0 0);
+  background: oklch(0.13 0 0);
+}
+
+/* 그리드 내 아이템 정렬 */
+.tab-line-2col > *,
+.tab-line-3col > *,
+.tab-line-4col > *,
+.tab-line-5col > * {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- Step 5: 반응형 라벨 너비 제한 --- */
+
+/* 430px 이하: 라벨 최대 207px */
+@media (max-width: 430px) {
+  .tab-line-item {
+    max-width: 207px;
+  }
+}
+
+/* 360px 이하: 라벨 최대 112px */
+@media (max-width: 360px) {
+  .tab-line-item {
+    max-width: 112px;
+  }
+}
+
+/* 320px 이하: 라벨 최대 48px */
+@media (max-width: 320px) {
+  .tab-line-item {
+    max-width: 48px;
+  }
+}
+
+/* 라벨 텍스트 truncate */
+.tab-line-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* ========================================
+   Checkbox System (10_Checkbox_Radio Reference)
+   ======================================== */
+
+/* --- Step 2: Checkbox — 원형 커스텀 --- */
+.check {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--size-check);
+  height: var(--size-check);
+  min-width: var(--size-check);
+  border-radius: var(--radius-full);
+  border: 2px solid oklch(0.7 0 0);
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: background-color var(--duration-fast, 150ms),
+              border-color var(--duration-fast, 150ms);
+}
+
+.dark .check {
+  border-color: oklch(0.45 0 0);
+}
+
+/* Checkbox 체크마크 (::after) */
+.check::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--size-check-icon);
+  height: var(--size-check-icon);
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform var(--duration-fast, 150ms);
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 14 14' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11.5 4L5.5 10L2.5 7' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+/* Hover */
+.check:hover:not(:disabled) {
+  border-color: oklch(0.5 0 0);
+}
+
+.dark .check:hover:not(:disabled) {
+  border-color: oklch(0.6 0 0);
+}
+
+/* Selected */
+.check:checked {
+  background: oklch(0.15 0 0);
+  border-color: oklch(0.15 0 0);
+}
+
+.dark .check:checked {
+  background: oklch(0.9 0 0);
+  border-color: oklch(0.9 0 0);
+}
+
+.dark .check:checked::after {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 14 14' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11.5 4L5.5 10L2.5 7' stroke='%23161616' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.check:checked::after {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Selected Hover */
+.check:checked:hover:not(:disabled) {
+  background: oklch(0.3 0 0);
+  border-color: oklch(0.3 0 0);
+}
+
+.dark .check:checked:hover:not(:disabled) {
+  background: oklch(0.75 0 0);
+  border-color: oklch(0.75 0 0);
+}
+
+/* Disabled */
+.check:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Focus */
+.check:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+/* ========================================
+   Radio Button System (10_Checkbox_Radio Reference)
+   ======================================== */
+
+/* --- Step 3: Radio — 원형 커스텀 --- */
+.radio {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--size-check);
+  height: var(--size-check);
+  min-width: var(--size-check);
+  border-radius: var(--radius-full);
+  border: 2px solid oklch(0.7 0 0);
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: border-color var(--duration-fast, 150ms);
+}
+
+.dark .radio {
+  border-color: oklch(0.45 0 0);
+}
+
+/* Radio 내부 점 (::after) */
+.radio::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--size-check-inner);
+  height: var(--size-check-inner);
+  border-radius: var(--radius-full);
+  background: transparent;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform var(--duration-fast, 150ms),
+              background-color var(--duration-fast, 150ms);
+}
+
+/* Hover */
+.radio:hover:not(:disabled) {
+  border-color: oklch(0.5 0 0);
+}
+
+.dark .radio:hover:not(:disabled) {
+  border-color: oklch(0.6 0 0);
+}
+
+/* Selected */
+.radio:checked {
+  border-color: oklch(0.15 0 0);
+}
+
+.dark .radio:checked {
+  border-color: oklch(0.9 0 0);
+}
+
+.radio:checked::after {
+  background: oklch(0.15 0 0);
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.dark .radio:checked::after {
+  background: oklch(0.9 0 0);
+}
+
+/* Selected Hover */
+.radio:checked:hover:not(:disabled) {
+  border-color: oklch(0.3 0 0);
+}
+
+.radio:checked:hover:not(:disabled)::after {
+  background: oklch(0.3 0 0);
+}
+
+.dark .radio:checked:hover:not(:disabled) {
+  border-color: oklch(0.75 0 0);
+}
+
+.dark .radio:checked:hover:not(:disabled)::after {
+  background: oklch(0.75 0 0);
+}
+
+/* Disabled */
+.radio:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Focus */
+.radio:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+/* ========================================
+   Checkbox / Radio Cell Layout (10_Checkbox_Radio Reference)
+   ======================================== */
+
+/* --- Step 4: Cell 레이아웃 --- */
+
+/* 기본 Cell (아이콘+레이블, 48px 높이) */
+.check-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-check-label);
+  min-height: var(--height-check-cell);
+  padding-left: var(--padding-check-cell-x);
+  padding-right: var(--padding-check-cell-x);
+  cursor: pointer;
+  transition: background-color var(--duration-fast, 150ms);
+}
+
+.check-cell:hover {
+  background: oklch(0.96 0 0);
+}
+
+.dark .check-cell:hover {
+  background: oklch(0.22 0 0);
+}
+
+.check-cell:active {
+  background: oklch(0.93 0 0);
+}
+
+.dark .check-cell:active {
+  background: oklch(0.25 0 0);
+}
+
+/* Cell with chevron (약관 동의 등) */
+.check-cell-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-check-label);
+  min-height: var(--height-check-cell);
+  padding-left: var(--padding-check-cell-x);
+  padding-right: var(--padding-check-cell-x);
+  cursor: pointer;
+}
+
+.check-cell-nav > *:last-child {
+  margin-left: auto;
+}
+
+/* Radio Group (세로 배열) */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Checkbox Group (세로 배열) */
+.check-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 하위 항목 들여쓰기 (약관 동의 계층) */
+.check-group-nested {
+  padding-left: calc(var(--padding-check-cell-x) + var(--size-check) + var(--gap-check-label));
+}
+
+/* ========================================
+   Toggle Switch (10_Checkbox_Radio Reference)
+   ======================================== */
+
+/* --- Step 5: Toggle Switch CSS 토큰화 --- */
+
+/* 토글 트랙 */
+.toggle-track {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: var(--size-toggle-w);
+  height: var(--size-toggle-h);
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  background: oklch(0.78 0 0);
+  cursor: pointer;
+  transition: background-color var(--duration-normal, 200ms);
+}
+
+.dark .toggle-track {
+  background: oklch(0.38 0 0);
+}
+
+/* 토글 On 상태 */
+.toggle-track[aria-checked="true"],
+.toggle-track.toggle-on {
+  background: var(--color-primary-500);
+}
+
+/* 토글 썸 */
+.toggle-thumb {
+  pointer-events: none;
+  display: inline-block;
+  width: var(--size-toggle-thumb);
+  height: var(--size-toggle-thumb);
+  border-radius: var(--radius-full);
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.1);
+  transition: transform var(--duration-normal, 200ms) ease;
+}
+
+/* 토글 썸 이동 */
+.toggle-track[aria-checked="true"] .toggle-thumb,
+.toggle-track.toggle-on .toggle-thumb {
+  transform: translateX(calc(var(--size-toggle-w) - var(--size-toggle-thumb) - 4px));
+}
+
+/* Disabled */
+.toggle-track:disabled,
+.toggle-track[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Focus */
+.toggle-track:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+/* 토글 Cell (라벨+설명+토글) */
+.toggle-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: var(--height-check-cell);
+  padding-left: var(--padding-check-cell-x);
+  padding-right: var(--padding-check-cell-x);
+}
+
+.toggle-cell-label {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ========================================
+   Agreement / Consent Pattern (10_Checkbox_Radio Reference)
+   ======================================== */
+
+/* --- Step 6: 약관 동의 패턴 --- */
+
+/* 전체 동의 헤더 */
+.agreement-all {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-check-label);
+  min-height: var(--height-check-cell);
+  padding: 0 var(--padding-check-cell-x);
+  font-weight: 700;
+}
+
+/* 전체 동의 구분선 */
+.agreement-divider {
+  height: 1px;
+  margin: 0 var(--padding-check-cell-x);
+  background: oklch(0.88 0 0);
+}
+
+.dark .agreement-divider {
+  background: oklch(0.3 0 0);
+}
+
+/* 개별 약관 항목 (체크마크 아이콘 + 라벨 + chevron) */
+.agreement-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--height-check-cell);
+  padding: 0 var(--padding-check-cell-x);
+  cursor: pointer;
+}
+
+.agreement-item > *:last-child {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* 하위 약관 (들여쓰기) */
+.agreement-item-sub {
+  padding-left: calc(var(--padding-check-cell-x) + 16px);
+}
+
+/* 체크마크 아이콘 (하위 항목용, 원형 아닌 체크만) */
+.check-icon {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: oklch(0.7 0 0);
+  transition: color var(--duration-fast, 150ms);
+}
+
+.check-icon.is-checked {
+  color: oklch(0.15 0 0);
+}
+
+.dark .check-icon.is-checked {
+  color: oklch(0.9 0 0);
+}
+
+/* ========================================
+   Chip / Badge System (11_Chip_Badge Reference)
+   ======================================== */
+
+/* --- Step 2: Chip Base --- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--chip-gap);
+  height: var(--chip-height);
+  padding: var(--chip-padding-y) var(--chip-padding-x);
+  border-radius: var(--radius-full);
+  border: 1px solid oklch(0.85 0 0);
+  background: white;
+  color: oklch(0.25 0 0);
+  font-size: var(--chip-font-size);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--duration-fast, 150ms);
+}
+
+.dark .chip {
+  border-color: oklch(0.35 0 0);
+  background: oklch(0.18 0 0);
+  color: oklch(0.85 0 0);
+}
+
+/* Chip Hover */
+.chip:hover {
+  background: oklch(0.96 0 0);
+}
+
+.dark .chip:hover {
+  background: oklch(0.22 0 0);
+}
+
+/* Chip Active */
+.chip:active {
+  background: oklch(0.92 0 0);
+}
+
+.dark .chip:active {
+  background: oklch(0.26 0 0);
+}
+
+/* Chip Selected/Pressed */
+.chip.is-selected,
+.chip[aria-pressed="true"] {
+  background: oklch(0.6 0 0);
+  border-color: transparent;
+  color: white;
+}
+
+.dark .chip.is-selected,
+.dark .chip[aria-pressed="true"] {
+  background: oklch(0.45 0 0);
+  color: oklch(0.95 0 0);
+}
+
+/* Chip Disabled */
+.chip:disabled,
+.chip[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* --- Chip with Avatar --- */
+
+.chip-avatar {
+  padding-left: 4px;
+}
+
+.chip-avatar-image {
+  width: var(--chip-avatar-size);
+  height: var(--chip-avatar-size);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: oklch(0.9 0 0);
+}
+
+.dark .chip-avatar-image {
+  background: oklch(0.3 0 0);
+}
+
+.chip-avatar-image > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* --- Chip with Close (removable) --- */
+
+.chip-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: none;
+  border: none;
+  padding: 0;
+  color: oklch(0.5 0 0);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.chip.is-selected .chip-close,
+.chip[aria-pressed="true"] .chip-close {
+  color: oklch(1 0 0 / 0.7);
+}
+
+.chip-close > svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* --- Chip Group --- */
+
+.chip-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip-group-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  flex-wrap: nowrap;
+}
+
+.chip-group-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* --- Step 3: Badge Base --- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  border-radius: var(--radius-full);
+}
+
+/* Badge Sizes */
+.badge-sm {
+  height: var(--badge-height-sm);
+  min-width: var(--badge-height-sm);
+  padding: 0 var(--badge-padding-x-sm);
+  font-size: 12px;
+}
+
+.badge-md {
+  height: var(--badge-height-md);
+  min-width: var(--badge-height-md);
+  padding: 0 var(--badge-padding-x-md);
+  font-size: 13px;
+}
+
+/* Badge Variants */
+.badge-default {
+  background: oklch(0.93 0 0);
+  color: oklch(0.35 0 0);
+}
+
+.dark .badge-default {
+  background: oklch(0.25 0 0);
+  color: oklch(0.75 0 0);
+}
+
+.badge-primary {
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+}
+
+.dark .badge-primary {
+  background: oklch(0.2 0.05 250);
+  color: var(--color-primary-300);
+}
+
+.badge-success {
+  background: var(--color-success-50);
+  color: var(--color-success-700);
+}
+
+.dark .badge-success {
+  background: oklch(0.2 0.04 145);
+  color: var(--color-success-300);
+}
+
+.badge-warning {
+  background: var(--color-warning-50);
+  color: var(--color-warning-700);
+}
+
+.dark .badge-warning {
+  background: oklch(0.2 0.04 70);
+  color: var(--color-warning-300);
+}
+
+.badge-danger {
+  background: var(--color-danger-50);
+  color: var(--color-danger-700);
+}
+
+.dark .badge-danger {
+  background: oklch(0.2 0.04 25);
+  color: var(--color-danger-300);
+}
+
+/* --- Badge Dot (notification indicator) --- */
+
+.badge-dot {
+  width: var(--badge-dot-size);
+  height: var(--badge-dot-size);
+  min-width: var(--badge-dot-size);
+  padding: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-danger-500);
+}
+
+/* --- Badge Count (number indicator) --- */
+
+.badge-count {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--color-danger-500);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* --- Step 4: Category Badge --- */
+
+.badge-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge-category-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+/* ========================================
+   Miscellaneous (12_기타 Reference)
+   ======================================== */
+
+/* --- Step 2: Divider --- */
+
+/* Inset Divider — 좌우 20px 여백 */
+.divider-inset {
+  height: var(--divider-thickness);
+  background: var(--divider-color);
+  margin-left: var(--divider-inset);
+  margin-right: var(--divider-inset);
+}
+
+.dark .divider-inset {
+  background: oklch(0.28 0 0);
+}
+
+/* Full Width Divider — 전체폭 1px */
+.divider-full {
+  height: var(--divider-thickness);
+  background: var(--divider-color);
+  width: 100%;
+}
+
+.dark .divider-full {
+  background: oklch(0.28 0 0);
+}
+
+/* Section Divider — 8px 두꺼운 영역 구분 */
+.divider-section {
+  height: var(--divider-section-height);
+  background: oklch(0.95 0 0);
+  width: 100%;
+}
+
+.dark .divider-section {
+  background: oklch(0.12 0 0);
+}
+
+/* --- Step 3: Toast 확장 --- */
+
+.toast-base {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: var(--toast-min-width, 280px);
+  max-width: var(--toast-max-width);
+  padding: var(--toast-padding-y, 14px) var(--toast-padding-x, 20px);
+  border-radius: 16px;
+  background: oklch(0.22 0 0);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.48;
+  box-shadow: var(--shadow-3);
+}
+
+.dark .toast-base {
+  background: oklch(0.32 0 0);
+}
+
+/* Toast Variants */
+.toast-success {
+  background: oklch(0.55 0.15 155);
+  border-color: oklch(0.60 0.15 155);
+}
+.dark .toast-success {
+  background: oklch(0.50 0.13 155);
+}
+
+.toast-error {
+  background: oklch(0.55 0.2 25);
+  border-color: oklch(0.60 0.2 25);
+}
+.dark .toast-error {
+  background: oklch(0.50 0.18 25);
+}
+
+.toast-info {
+  /* toast-base 기본값 사용 */
+}
+
+/* Toast with check icon */
+.toast-base .toast-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Toast action button (e.g., "보기") */
+.toast-action {
+  margin-left: auto;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.toast-action:hover {
+  text-decoration: underline;
+}
+
+/* Toast container — bottom center positioning */
+.toast-container-center {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-toast, 50);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (min-width: 1024px) {
+  .toast-container-center {
+    bottom: 32px;
+  }
+}
+
+/* --- Step 4: Tooltip Light (말풍선) --- */
+
+.tooltip-light {
+  position: absolute;
+  z-index: var(--z-tooltip, 60);
+  padding: 12px 16px;
+  border-radius: var(--tooltip-light-radius);
+  background: var(--tooltip-light-bg);
+  border: 1px solid var(--tooltip-light-border);
+  box-shadow: var(--shadow-2);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: oklch(0.25 0 0);
+  animation: fadeIn var(--duration-fast, 150ms) ease-out;
+}
+
+.dark .tooltip-light {
+  background: oklch(0.18 0 0);
+  border-color: oklch(0.32 0 0);
+  color: oklch(0.85 0 0);
+}
+
+/* Close button inside tooltip */
+.tooltip-light .tooltip-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  padding: 10px;
+  margin: -10px;
+  cursor: pointer;
+  color: oklch(0.5 0 0);
+}
+
+.tooltip-light .tooltip-close:hover {
+  color: oklch(0.25 0 0);
+}
+
+.dark .tooltip-light .tooltip-close {
+  color: oklch(0.6 0 0);
+}
+
+.dark .tooltip-light .tooltip-close:hover {
+  color: oklch(0.85 0 0);
+}
+
+/* Arrow (tail) — bottom direction */
+.tooltip-light::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: var(--tooltip-arrow-size) solid transparent;
+  border-top-color: var(--tooltip-light-bg);
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.06));
+}
+
+.dark .tooltip-light::after {
+  border-top-color: oklch(0.18 0 0);
+}
+
+.tooltip-light.tooltip-bottom::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: var(--tooltip-light-bg);
+}
+
+.dark .tooltip-light.tooltip-bottom::after {
+  border-bottom-color: oklch(0.18 0 0);
+}
+
+/* --- Step 5: Radio Custom (20px, ring hover) --- */
+
+.radio-custom {
+  appearance: none;
+  width: var(--radio-size);
+  height: var(--radio-size);
+  border: var(--radio-border-width) solid oklch(0.7 0 0);
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  transition: border-color var(--duration-fast, 150ms),
+              background var(--duration-fast, 150ms),
+              box-shadow var(--duration-fast, 150ms);
+  position: relative;
+}
+
+/* Hover */
+.radio-custom:hover:not(:disabled) {
+  border-color: oklch(0.55 0 0);
+  box-shadow: 0 0 0 4px oklch(0.9 0 0);
+}
+
+/* Selected */
+.radio-custom:checked {
+  border-color: oklch(0.15 0 0);
+  background: oklch(0.15 0 0);
+}
+
+.radio-custom:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--radio-inner-size);
+  height: var(--radio-inner-size);
+  border-radius: 50%;
+  background: white;
+}
+
+/* Selected Hover */
+.radio-custom:checked:hover:not(:disabled) {
+  border-color: oklch(0.25 0 0);
+  background: oklch(0.25 0 0);
+  box-shadow: 0 0 0 4px oklch(0.9 0 0);
+}
+
+/* Disabled */
+.radio-custom:disabled {
+  border-color: oklch(0.85 0 0);
+  background: oklch(0.95 0 0);
+  cursor: not-allowed;
+}
+
+/* Selected Disabled */
+.radio-custom:checked:disabled {
+  border-color: oklch(0.8 0 0);
+  background: oklch(0.8 0 0);
+}
+
+.radio-custom:checked:disabled::after {
+  background: oklch(0.95 0 0);
+}
+
+/* Dark mode */
+.dark .radio-custom {
+  background: oklch(0.18 0 0);
+  border-color: oklch(0.45 0 0);
+}
+
+.dark .radio-custom:hover:not(:disabled) {
+  border-color: oklch(0.6 0 0);
+  box-shadow: 0 0 0 4px oklch(0.22 0 0);
+}
+
+.dark .radio-custom:checked {
+  border-color: oklch(0.9 0 0);
+  background: oklch(0.9 0 0);
+}
+
+.dark .radio-custom:checked::after {
+  background: oklch(0.15 0 0);
+}
+
+.dark .radio-custom:checked:hover:not(:disabled) {
+  border-color: oklch(0.8 0 0);
+  background: oklch(0.8 0 0);
+}
+
+.dark .radio-custom:disabled {
+  border-color: oklch(0.3 0 0);
+  background: oklch(0.2 0 0);
+}
+
+.dark .radio-custom:checked:disabled {
+  border-color: oklch(0.35 0 0);
+  background: oklch(0.35 0 0);
+}
+
+.dark .radio-custom:checked:disabled::after {
+  background: oklch(0.22 0 0);
+}
+
+/* --- Step 6: Context Menu --- */
+
+.context-menu {
+  background: white;
+  border-radius: var(--context-menu-radius);
+  padding: var(--context-menu-padding);
+  box-shadow: var(--shadow-3);
+  border: 1px solid oklch(0.92 0 0);
+  min-width: 160px;
+}
+
+.dark .context-menu {
+  background: oklch(0.18 0 0);
+  border-color: oklch(0.28 0 0);
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--context-menu-item-height);
+  padding: 12px 16px;
+  border-radius: var(--radius-lg, 8px);
+  font-size: 15px;
+  font-weight: 500;
+  color: oklch(0.15 0 0);
+  cursor: pointer;
+  transition: background var(--duration-fast, 150ms);
+}
+
+.dark .context-menu-item {
+  color: oklch(0.9 0 0);
+}
+
+/* Hover */
+.context-menu-item:hover {
+  background: oklch(0.96 0 0);
+}
+
+.dark .context-menu-item:hover {
+  background: oklch(0.24 0 0);
+}
+
+/* Focused */
+.context-menu-item:focus-visible {
+  background: oklch(0.94 0 0);
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: -2px;
+}
+
+.dark .context-menu-item:focus-visible {
+  background: oklch(0.26 0 0);
+}
+
+/* Pressed */
+.context-menu-item:active {
+  background: oklch(0.92 0 0);
+}
+
+.dark .context-menu-item:active {
+  background: oklch(0.2 0 0);
+}
+
+.context-menu-item .context-menu-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: oklch(0.4 0 0);
+}
+
+.dark .context-menu-item .context-menu-icon {
+  color: oklch(0.6 0 0);
+}
+
+/* --- Selection Button Grid --- */
+
+.selection-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.selection-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  border: 1.5px solid oklch(0.85 0 0);
+  border-radius: var(--radius-xl, 12px);
+  background: white;
+  font-size: 15px;
+  font-weight: 500;
+  color: oklch(0.3 0 0);
+  cursor: pointer;
+  transition: border-color var(--duration-fast, 150ms),
+              background var(--duration-fast, 150ms);
+}
+
+.selection-btn:hover {
+  border-color: oklch(0.7 0 0);
+  background: oklch(0.97 0 0);
+}
+
+.selection-btn[aria-selected="true"],
+.selection-btn.is-selected {
+  border-color: oklch(0.15 0 0);
+  border-width: 2px;
+  color: oklch(0.15 0 0);
+  font-weight: 600;
+}
+
+.dark .selection-btn {
+  background: oklch(0.15 0 0);
+  border-color: oklch(0.35 0 0);
+  color: oklch(0.8 0 0);
+}
+
+.dark .selection-btn:hover {
+  border-color: oklch(0.5 0 0);
+  background: oklch(0.2 0 0);
+}
+
+.dark .selection-btn[aria-selected="true"],
+.dark .selection-btn.is-selected {
+  border-color: oklch(0.9 0 0);
+  color: oklch(0.95 0 0);
+}
+
+/* --- Step 7: Touch Target --- */
+
+/* 44px 최소 터치 영역 보장 래퍼 */
+.touch-target {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+}
+
+/* 24px 아이콘 + 44px 터치 영역 패턴 */
+.touch-target-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  padding: 10px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background var(--duration-fast, 150ms);
+}
+
+.touch-target-icon:hover {
+  background: oklch(0.95 0 0);
+}
+
+.touch-target-icon:active {
+  background: oklch(0.9 0 0);
+}
+
+.dark .touch-target-icon:hover {
+  background: oklch(0.22 0 0);
+}
+
+.dark .touch-target-icon:active {
+  background: oklch(0.18 0 0);
+}
+
+.touch-target-icon > svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* --- Completion Page --- */
+
+.completion-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 0 var(--inset-x, 20px);
+  padding-top: clamp(0px, 8vh, 80px);
+  text-align: center;
+}
+
+.completion-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+}
+
+.completion-title {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.48;
+  color: oklch(0.15 0 0);
+  margin-bottom: 8px;
+}
+
+.dark .completion-title {
+  color: oklch(0.95 0 0);
+}
+
+.completion-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: auto;
+  margin-bottom: 16px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.completion-detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  line-height: 1.48;
+  color: oklch(0.45 0 0);
+}
+
+.dark .completion-detail-row {
+  color: oklch(0.6 0 0);
+}
+
+.completion-detail-row > span:last-child {
+  font-weight: 600;
+  color: oklch(0.2 0 0);
+}
+
+.dark .completion-detail-row > span:last-child {
+  color: oklch(0.85 0 0);
 }
 
 /* ========================================

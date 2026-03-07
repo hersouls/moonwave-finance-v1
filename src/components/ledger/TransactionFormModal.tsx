@@ -440,7 +440,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                     type="checkbox"
                     checked={isRecurring}
                     onChange={(e) => setIsRecurring(e.target.checked)}
-                    className="w-4 h-4 rounded border-zinc-300 dark:border-zinc-600 text-primary-600 focus:ring-primary-500"
+                    className="check"
                   />
                   <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">반복 거래</span>
                 </label>

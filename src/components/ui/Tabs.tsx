@@ -47,7 +47,7 @@ export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
   return (
     <div
       role="tablist"
-      className={clsx('flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg', className)}
+      className={clsx('nav-tabs', className)}
     >
       {tabs.map((tab, index) => {
         const isActive = activeTab === tab.id
@@ -63,11 +63,8 @@ export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
             onClick={() => onChange(tab.id)}
             onKeyDown={(e) => handleKeyDown(e, index)}
             className={clsx(
-              'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap flex-shrink-0',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
-              isActive
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+              'nav-tab',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500'
             )}
           >
             {tab.icon}

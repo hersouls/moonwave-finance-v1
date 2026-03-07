@@ -21,7 +21,7 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
   const daysLeft = Math.max(0, Math.ceil((new Date(goal.targetDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
 
   return (
-    <Card className="!p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={onEdit}>
+    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={onEdit}>
       <div className="flex items-center gap-4">
         {/* Progress Ring */}
         <div className="relative flex-shrink-0">

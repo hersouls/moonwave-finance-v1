@@ -172,7 +172,7 @@ export function MobileNav() {
               </div>
               <button
                 onClick={closeMobileMenu}
-                className="p-2 -mr-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                className="touch-target-icon -mr-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                 aria-label="메뉴 닫기"
               >
                 <X className="w-5 h-5 text-zinc-600 dark:text-zinc-400" aria-hidden="true" />
@@ -254,7 +254,7 @@ export function MobileNav() {
                   })}
 
                   {/* Divider */}
-                  <li role="separator" className="!my-3 mx-3 border-t border-zinc-200 dark:border-zinc-700" aria-hidden="true" />
+                  <li role="separator" className="nav-sidebar-divider" aria-hidden="true" />
 
                   {/* Reports */}
                   <li role="none">

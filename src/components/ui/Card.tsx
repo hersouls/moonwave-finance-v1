@@ -19,8 +19,8 @@ export function Card({ children, className, onClick, variant = 'default' }: Card
   return (
     <div
       className={clsx(
-        'bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4',
-        variant === 'interactive' && 'cursor-pointer hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-md active:scale-[0.98] transition-all duration-200',
+        'card-base',
+        variant === 'interactive' && 'card-interactive',
         onClick && 'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 active:scale-[0.98]',
         className
       )}

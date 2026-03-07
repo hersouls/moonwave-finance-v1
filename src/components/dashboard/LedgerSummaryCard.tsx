@@ -32,7 +32,7 @@ export function LedgerSummaryCard() {
   const animatedSavings = useCountUp(summary.savings)
 
   return (
-    <Card className="!p-5">
+    <Card className="card-pad-lg">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">이번 달 가계부</h3>
         <button

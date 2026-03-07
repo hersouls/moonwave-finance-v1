@@ -27,7 +27,7 @@ export function SpendingByCategoryChart({ breakdown, title = '지출 카테고�
   if (!chartData) return null
 
   return (
-    <Card className="!p-5">
+    <Card className="card-pad-lg">
       <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4">{title}</h3>
       <div className="flex items-center gap-6">
         <div className="w-36 h-36 flex-shrink-0">

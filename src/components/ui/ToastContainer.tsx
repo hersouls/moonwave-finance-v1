@@ -9,7 +9,7 @@ export function ToastContainer() {
   if (toasts.length === 0) return null
 
   return (
-    <div className="fixed bottom-24 lg:bottom-8 right-4 z-[var(--z-toast)] flex flex-col gap-2 pb-[env(safe-area-inset-bottom)]">
+    <div className="toast-container">
       {toasts.map((toast) => {
         const Icon = toast.type === 'success' ? CheckCircle2
           : toast.type === 'error' ? AlertCircle
@@ -20,17 +20,17 @@ export function ToastContainer() {
             role="status"
             aria-live="polite"
             className={clsx(
-              'flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border min-w-[280px] max-w-[360px] animate-[slideInFromBottom_0.3s_ease-out]',
-              toast.type === 'success' && 'bg-emerald-600 border-emerald-500 text-white',
-              toast.type === 'error' && 'bg-red-600 border-red-500 text-white',
-              toast.type === 'info' && 'bg-zinc-800 dark:bg-zinc-700 border-zinc-700 dark:border-zinc-600 text-white',
+              'toast-base',
+              toast.type === 'success' && 'toast-success',
+              toast.type === 'error' && 'toast-error',
+              toast.type === 'info' && 'toast-info',
             )}
           >
             <Icon className="w-4 h-4 flex-shrink-0" />
             <span className="text-sm flex-1">{toast.message}</span>
             <button
               onClick={() => removeToast(toast.id)}
-              className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-white/60 hover:text-white/90 flex-shrink-0 -mr-2"
+              className="touch-target-icon text-white/60 hover:text-white/90 -mr-2 flex-shrink-0"
               aria-label="닫기"
             >
               <X className="w-4 h-4" />

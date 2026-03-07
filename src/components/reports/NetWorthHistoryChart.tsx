@@ -55,7 +55,7 @@ export function NetWorthHistoryChart({ snapshots }: NetWorthHistoryChartProps) {
   if (!chartData) return null
 
   return (
-    <Card className="!p-5">
+    <Card className="card-pad-lg">
       <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4">순자산 추이</h3>
       <div className="h-64">
         <Line

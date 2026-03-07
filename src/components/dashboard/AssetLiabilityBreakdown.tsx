@@ -13,7 +13,7 @@ export function AssetLiabilityBreakdown({ stats }: AssetLiabilityBreakdownProps)
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {/* Total Assets Card */}
-      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-5">
+      <div className="card-base card-pad-lg">
         <div className="flex items-center gap-3 mb-3">
           <div className="p-2.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
             <Landmark className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
@@ -27,7 +27,7 @@ export function AssetLiabilityBreakdown({ stats }: AssetLiabilityBreakdownProps)
       </div>
 
       {/* Total Liabilities Card */}
-      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-5">
+      <div className="card-base card-pad-lg">
         <div className="flex items-center gap-3 mb-3">
           <div className="p-2.5 rounded-lg bg-red-100 dark:bg-red-900/30">
             <CreditCard className="w-5 h-5 text-red-600 dark:text-red-400" />

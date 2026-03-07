@@ -127,7 +127,7 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Asset Categories */}
         {assetBreakdown.length > 0 && (
-          <Card className="!p-5">
+          <Card className="card-pad-lg">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">자산 구성</h3>
               <button
@@ -156,7 +156,7 @@ export function DashboardPage() {
 
         {/* Liability Categories */}
         {liabilityBreakdown.length > 0 && (
-          <Card className="!p-5">
+          <Card className="card-pad-lg">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">부채 구성</h3>
               <button
