@@ -58,7 +58,9 @@ export function useSettingsModal(isOpen: boolean) {
     draft.notifications.budgetAlert !== snapshot.notifications.budgetAlert ||
     draft.notifications.budgetThreshold !== snapshot.notifications.budgetThreshold ||
     draft.notifications.transactionReminder !== snapshot.notifications.transactionReminder ||
-    draft.notifications.reminderTime !== snapshot.notifications.reminderTime
+    draft.notifications.reminderTime !== snapshot.notifications.reminderTime ||
+    draft.notifications.subscriptionBillingAlert !== snapshot.notifications.subscriptionBillingAlert ||
+    JSON.stringify(draft.notifications.subscriptionAlertDaysBefore) !== JSON.stringify(snapshot.notifications.subscriptionAlertDaysBefore)
 
   return { draft, updateDraft, save, cancel, isDirty }
 }

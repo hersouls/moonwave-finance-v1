@@ -10,6 +10,7 @@ import { fullUpload, pauseRealtimeSync, resumeRealtimeSync, getIsSyncWriting } f
 export function useAutoSync() {
   const user = useAuthStore((s) => s.user)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const syncInProgressRef = useRef(false)
 
   useEffect(() => {
     if (!user) return
@@ -19,6 +20,8 @@ export function useAutoSync() {
     const scheduleSync = () => {
       if (timerRef.current) clearTimeout(timerRef.current)
       timerRef.current = setTimeout(async () => {
+        if (syncInProgressRef.current) return
+        syncInProgressRef.current = true
         try {
           // Pause real-time listeners to avoid echo loop
           pauseRealtimeSync()
@@ -26,6 +29,7 @@ export function useAutoSync() {
         } catch (err) {
           console.error('[auto-sync] upload failed:', err)
         } finally {
+          syncInProgressRef.current = false
           resumeRealtimeSync()
         }
       }, DEBOUNCE_MS)

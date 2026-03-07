@@ -137,7 +137,6 @@ export async function processSubscriptionTransactions(): Promise<number> {
         categoryId: sub.linkedTransactionCategoryId ?? null,
         date: dateStr,
         memo: `${sub.name} 구독`,
-        paymentMethod: undefined,
         paymentMethodItemId: sub.paymentMethodItemId,
         isRecurring: false,
         subscriptionId: sub.id,
