@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Trash2, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import { useAssetStore } from '@/stores/assetStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useMemberStore } from '@/stores/memberStore'
@@ -10,8 +10,11 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { formatKRW, formatChange } from '@/utils/format'
 import { getMonthDates, formatMonthLabel, getPreviousMonth, getNextMonth } from '@/lib/dateUtils'
 import { clsx } from 'clsx'
+import { format } from 'date-fns'
 import { UI_DELAYS } from '@/utils/constants'
 import { useSyncListener } from '@/hooks/useSyncListener'
+import { useToastStore } from '@/stores/toastStore'
+import { calculateSeverancePay, generateSeverancePayValues } from '@/services/assetAnalytics'
 
 export function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -23,6 +26,12 @@ export function AssetDetailPage() {
   const [editingCell, setEditingCell] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Severance pay recalculation state
+  const [sevJoinDate, setSevJoinDate] = useState('')
+  const [sevWageStr, setSevWageStr] = useState('')
+  const [sevEstimated, setSevEstimated] = useState(0)
+  const [sevRecalculating, setSevRecalculating] = useState(false)
 
   const loadAll = useAssetStore((s) => s.loadAll)
   const loadMembers = useMemberStore((s) => s.loadMembers)
@@ -41,6 +50,7 @@ export function AssetDetailPage() {
   const category = item ? categories.find(c => c.id === item.categoryId) : null
   const member = item ? members.find(m => m.id === item.memberId) : null
   const dates = getMonthDates(selectedMonth)
+  const isSeverancePay = !!category && category.name.includes('퇴직금')
 
   const loadData = async () => {
     await Promise.all([loadAll(), loadValues(), loadMembers()])
@@ -49,6 +59,38 @@ export function AssetDetailPage() {
 
   useEffect(() => { loadData() }, [])
   useSyncListener(loadData, ['assetCategories', 'assetItems', 'dailyValues', 'members'])
+
+  // Live preview of severance pay amount
+  useEffect(() => {
+    if (!isSeverancePay) return
+    const wage = Number(sevWageStr.replace(/[^0-9]/g, ''))
+    if (sevJoinDate && wage > 0) {
+      setSevEstimated(calculateSeverancePay(sevJoinDate, wage, format(new Date(), 'yyyy-MM-dd')))
+    } else {
+      setSevEstimated(0)
+    }
+  }, [sevJoinDate, sevWageStr, isSeverancePay])
+
+  const handleSeveranceRecalc = async () => {
+    const wage = Number(sevWageStr.replace(/[^0-9]/g, ''))
+    if (!sevJoinDate || wage <= 0) return
+    setSevRecalculating(true)
+    try {
+      const today = format(new Date(), 'yyyy-MM-dd')
+      const newValues = generateSeverancePayValues(itemId, sevJoinDate, wage, today)
+      if (newValues.length > 0) {
+        await useDailyValueStore.getState().bulkSetValues(
+          newValues.map(v => ({ ...v, assetItemId: itemId }))
+        )
+        await loadValues()
+      }
+      useToastStore.getState().addToast('퇴직금이 재계산되었습니다.', 'success')
+    } catch {
+      useToastStore.getState().addToast('재계산에 실패했습니다.', 'error')
+    } finally {
+      setSevRecalculating(false)
+    }
+  }
 
   const handleCellClick = useCallback((date: string) => {
     const key = `${itemId}-${date}`
@@ -170,6 +212,64 @@ export function AssetDetailPage() {
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">{item.memo}</p>
         )}
       </Card>
+
+      {/* Severance Pay Recalculation */}
+      {isSeverancePay && (
+        <Card className="card-pad-lg space-y-4">
+          <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+            <RefreshCw className="w-4 h-4 text-zinc-500" />
+            퇴직금 재계산
+          </h3>
+          <p className="text-caption text-zinc-500 dark:text-zinc-400 leading-relaxed">
+            입사일과 평균임금을 입력하면 입사일부터 오늘까지 일별 퇴직금을 다시 계산합니다.
+          </p>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-[13px] text-zinc-600 dark:text-zinc-400 mb-1.5">입사일</label>
+              <input
+                type="date"
+                value={sevJoinDate}
+                onChange={(e) => setSevJoinDate(e.target.value)}
+                className="input-base"
+              />
+            </div>
+            <div>
+              <label className="block text-[13px] text-zinc-600 dark:text-zinc-400 mb-1.5">최근 3개월 1일 평균임금</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={sevWageStr}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^0-9]/g, '')
+                    setSevWageStr(raw ? Number(raw).toLocaleString('ko-KR') : '')
+                  }}
+                  placeholder="0"
+                  className="input-base text-right pr-8 tabular-nums"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400">원</span>
+              </div>
+            </div>
+            {sevEstimated > 0 && (
+              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700 flex justify-between items-center">
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">현재 예상 퇴직금</span>
+                <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                  {sevEstimated.toLocaleString('ko-KR')} <span className="text-sm font-normal">원</span>
+                </span>
+              </div>
+            )}
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSeveranceRecalc}
+              disabled={sevRecalculating || !sevJoinDate || !sevWageStr}
+              className="w-full"
+            >
+              {sevRecalculating ? '재계산 중...' : '퇴직금 재계산'}
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {/* Monthly Value Grid */}
       <div>
