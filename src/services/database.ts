@@ -261,6 +261,28 @@ function installChangeTracking() {
 
 installChangeTracking()
 
+// Ensure 부동산 category exists on every app start (survives cloud sync overwrites)
+db.on('ready', async () => {
+  const cats = await db.assetCategories.toArray()
+  const hasRealEstate = cats.some((c) => c.name === '부동산')
+  if (!hasRealEstate) {
+    const now = new Date().toISOString()
+    const maxSort = cats
+      .filter((c) => c.type === 'asset')
+      .reduce((max, c) => Math.max(max, c.sortOrder), -1)
+    await db.assetCategories.add({
+      name: '부동산',
+      type: 'asset',
+      color: '#D97706',
+      icon: 'Home',
+      sortOrder: maxSort + 1,
+      syncId: crypto.randomUUID(),
+      createdAt: now,
+      updatedAt: now,
+    } as AssetCategory)
+  }
+})
+
 db.on('populate', () => {
   const now = new Date().toISOString()
 
