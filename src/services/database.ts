@@ -159,6 +159,28 @@ class FinanceDatabase extends Dexie {
       syncChangeLog: '++id, tableName, syncId, processed, timestamp, [tableName+syncId]',
       syncTombstones: '++id, tableName, syncId, deletedAt, [tableName+syncId]',
     })
+
+    // v9: add 부동산 asset category for existing users
+    this.version(9).stores({}).upgrade(async (tx) => {
+      const cats = await tx.table('assetCategories').toArray()
+      const hasRealEstate = cats.some((c: AssetCategory) => c.name === '부동산')
+      if (!hasRealEstate) {
+        const now = new Date().toISOString()
+        const maxSort = cats
+          .filter((c: AssetCategory) => c.type === 'asset')
+          .reduce((max: number, c: AssetCategory) => Math.max(max, c.sortOrder), -1)
+        await tx.table('assetCategories').add({
+          name: '부동산',
+          type: 'asset',
+          color: '#D97706',
+          icon: 'Home',
+          sortOrder: maxSort + 1,
+          syncId: crypto.randomUUID(),
+          createdAt: now,
+          updatedAt: now,
+        })
+      }
+    })
   }
 }
 
@@ -255,7 +277,8 @@ db.on('populate', () => {
     { name: '거래소 현금', type: 'asset', color: '#10B981', icon: 'Banknote', sortOrder: 3, createdAt: now, updatedAt: now },
     { name: '금', type: 'asset', color: '#EAB308', icon: 'Gem', sortOrder: 4, createdAt: now, updatedAt: now },
     { name: '은행계좌', type: 'asset', color: '#06B6D4', icon: 'Building2', sortOrder: 5, createdAt: now, updatedAt: now },
-    { name: '기타자산', type: 'asset', color: '#8B5CF6', icon: 'Package', sortOrder: 6, createdAt: now, updatedAt: now },
+    { name: '부동산', type: 'asset', color: '#D97706', icon: 'Home', sortOrder: 6, createdAt: now, updatedAt: now },
+    { name: '기타자산', type: 'asset', color: '#8B5CF6', icon: 'Package', sortOrder: 7, createdAt: now, updatedAt: now },
     { name: '주택대출', type: 'liability', color: '#EF4444', icon: 'Home', sortOrder: 0, createdAt: now, updatedAt: now },
     { name: '신용대출', type: 'liability', color: '#F97316', icon: 'CreditCard', sortOrder: 1, createdAt: now, updatedAt: now },
     { name: '마이너스 대출', type: 'liability', color: '#DC2626', icon: 'MinusCircle', sortOrder: 2, createdAt: now, updatedAt: now },
