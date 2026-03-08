@@ -9,7 +9,7 @@ import {
   type User,
 } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
-import { syncOnLogin, startRealtimeSync, stopRealtimeSync } from '@/services/firestoreSync'
+import { mergeOnLogin, startRealtimeSync, stopRealtimeSync, getPendingChangesCount } from '@/services/firestoreSync'
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
 
@@ -26,6 +26,7 @@ interface AuthState {
   isSigningIn: boolean
   syncStatus: SyncStatus
   lastSyncTime: string | null
+  pendingChangesCount: number
   error: string | null
   initialize: () => void
   login: () => Promise<void>
@@ -34,6 +35,7 @@ interface AuthState {
   manualDownload: () => Promise<void>
   setSyncStatus: (status: SyncStatus) => void
   setLastSyncTime: (time: string) => void
+  updatePendingCount: () => Promise<void>
 }
 
 function toAuthUser(u: User): AuthUser {
@@ -74,6 +76,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   isSigningIn: false,
   syncStatus: 'idle',
   lastSyncTime: null,
+  pendingChangesCount: 0,
   error: null,
 
   initialize: () => {
@@ -95,9 +98,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         if (!hasSyncedOnLogin) {
           hasSyncedOnLogin = true
           try {
-            await syncOnLogin(authUser.uid)
+            await mergeOnLogin(authUser.uid)
             await reloadStoresAfterSync()
             startRealtimeSync(authUser.uid)
+            get().updatePendingCount()
           } catch (err) {
             console.error('Sync on login failed:', err)
             set({ syncStatus: 'error' })
@@ -166,4 +170,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   setSyncStatus: (status) => set({ syncStatus: status }),
   setLastSyncTime: (time) => set({ lastSyncTime: time }),
+  updatePendingCount: async () => {
+    try {
+      const count = await getPendingChangesCount()
+      set({ pendingChangesCount: count })
+    } catch {
+      // Ignore — table may not be ready yet
+    }
+  },
 }))

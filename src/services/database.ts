@@ -11,6 +11,8 @@ import type {
   FinancialGoal,
   PaymentMethodItem,
   Subscription,
+  SyncChangeLogEntry,
+  SyncTombstone,
 } from '@/lib/types'
 
 class FinanceDatabase extends Dexie {
@@ -24,6 +26,8 @@ class FinanceDatabase extends Dexie {
   goals!: Table<FinancialGoal>
   paymentMethodItems!: Table<PaymentMethodItem>
   subscriptions!: Table<Subscription>
+  syncChangeLog!: Table<SyncChangeLogEntry>
+  syncTombstones!: Table<SyncTombstone>
 
   constructor() {
     super('MoonwaveFinance')
@@ -139,10 +143,101 @@ class FinanceDatabase extends Dexie {
       paymentMethodItems: '++id, syncId, type, name, sortOrder, linkedAssetItemId',
       subscriptions: '++id, syncId, currency, category, status, billingDay, cycle, sortOrder, paymentMethodItemId',
     })
+
+    // v8: syncChangeLog + syncTombstones for incremental multi-device sync
+    this.version(8).stores({
+      members: '++id, syncId, name, sortOrder',
+      assetCategories: '++id, syncId, name, type, sortOrder',
+      assetItems: '++id, syncId, memberId, categoryId, type, isActive, sortOrder',
+      dailyValues: '++id, syncId, assetItemId, date, [assetItemId+date]',
+      transactionCategories: '++id, syncId, name, type, sortOrder',
+      transactions: '++id, syncId, memberId, type, categoryId, date, isRecurring, recurSourceId, paymentMethod, paymentMethodItemId, subscriptionId',
+      budgets: '++id, syncId, categoryId, month',
+      goals: '++id, syncId, targetDate',
+      paymentMethodItems: '++id, syncId, type, name, sortOrder, linkedAssetItemId',
+      subscriptions: '++id, syncId, currency, category, status, billingDay, cycle, sortOrder, paymentMethodItemId',
+      syncChangeLog: '++id, tableName, syncId, processed, timestamp, [tableName+syncId]',
+      syncTombstones: '++id, tableName, syncId, deletedAt, [tableName+syncId]',
+    })
   }
 }
 
 const db = new FinanceDatabase()
+
+// ─── Change Tracking for Incremental Sync ────────────
+// Tracks all local mutations to syncChangeLog for incremental upload.
+// Uses a module-level flag to skip logging writes that come from the sync system itself.
+let _syncWritingFlag = false
+export function setSyncWritingFlag(v: boolean) { _syncWritingFlag = v }
+export function getSyncWritingFlag() { return _syncWritingFlag }
+
+type SyncableTableName = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions'
+
+function installChangeTracking() {
+  const tables: { table: Table; name: SyncableTableName }[] = [
+    { table: db.members, name: 'members' },
+    { table: db.assetCategories, name: 'assetCategories' },
+    { table: db.assetItems, name: 'assetItems' },
+    { table: db.dailyValues, name: 'dailyValues' },
+    { table: db.transactionCategories, name: 'transactionCategories' },
+    { table: db.transactions, name: 'transactions' },
+    { table: db.budgets, name: 'budgets' },
+    { table: db.goals, name: 'goals' },
+    { table: db.paymentMethodItems, name: 'paymentMethodItems' },
+    { table: db.subscriptions, name: 'subscriptions' },
+  ]
+
+  for (const { table, name } of tables) {
+    table.hook('creating', function (_primKey, obj) {
+      if (_syncWritingFlag) return
+      const syncId = obj?.syncId as string | undefined
+      if (syncId) {
+        db.syncChangeLog.add({
+          tableName: name,
+          syncId,
+          operation: 'create',
+          timestamp: new Date().toISOString(),
+          processed: 0,
+        })
+      }
+    })
+
+    table.hook('updating', function (_mods, _primKey, obj) {
+      if (_syncWritingFlag) return
+      const syncId = obj?.syncId as string | undefined
+      if (syncId) {
+        db.syncChangeLog.add({
+          tableName: name,
+          syncId,
+          operation: 'update',
+          timestamp: new Date().toISOString(),
+          processed: 0,
+        })
+      }
+    })
+
+    table.hook('deleting', function (_primKey, obj) {
+      if (_syncWritingFlag) return
+      const syncId = obj?.syncId as string | undefined
+      if (syncId) {
+        db.syncChangeLog.add({
+          tableName: name,
+          syncId,
+          operation: 'delete',
+          timestamp: new Date().toISOString(),
+          processed: 0,
+        })
+        db.syncTombstones.add({
+          tableName: name,
+          syncId,
+          deletedAt: new Date().toISOString(),
+        })
+      }
+    })
+  }
+}
+
+installChangeTracking()
 
 db.on('populate', () => {
   const now = new Date().toISOString()
@@ -280,6 +375,10 @@ export async function deleteAssetItem(id: number): Promise<void> {
 }
 
 // ─── DailyValue CRUD ──────────────────────────────
+export async function getAllDailyValues(): Promise<DailyValue[]> {
+  return db.dailyValues.toArray()
+}
+
 export async function getDailyValuesByMonth(month: string): Promise<DailyValue[]> {
   return db.dailyValues
     .where('date')

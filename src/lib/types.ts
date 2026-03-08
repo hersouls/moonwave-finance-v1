@@ -272,6 +272,22 @@ export interface AuthUser {
   photoURL: string
 }
 
+export interface SyncChangeLogEntry {
+  id?: number
+  tableName: string
+  syncId: string
+  operation: 'create' | 'update' | 'delete'
+  timestamp: string
+  processed: number       // 0 = pending, 1 = synced
+}
+
+export interface SyncTombstone {
+  id?: number
+  tableName: string
+  syncId: string
+  deletedAt: string
+}
+
 // ─── Backup Types ──────────────────────────────────
 export interface BackupFile {
   version: string

@@ -9,6 +9,9 @@ import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { format } from 'date-fns'
 import { Select } from '@/components/ui/Select'
 import type { AssetLiabilityType } from '@/lib/types'
+import { SeverancePayInputArea } from './SeverancePayInputArea'
+import { RealEstateInputArea } from './RealEstateInputArea'
+import { generateSeverancePayValues } from '@/services/assetAnalytics'
 
 export function AssetCreateModal() {
   const isOpen = useUIStore((s) => s.isAssetCreateModalOpen)
@@ -25,10 +28,16 @@ export function AssetCreateModal() {
   const [memo, setMemo] = useState('')
   const [type, setType] = useState<AssetLiabilityType>('asset')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [severanceData, setSeveranceData] = useState<{ joinDate: string; averageDailyWage: number; estimatedAmount: number } | null>(null)
+  const [realEstateAmount, setRealEstateAmount] = useState<number>(0)
 
   const assetCategories = categories.filter(c => c.type === 'asset')
   const liabilityCategories = categories.filter(c => c.type === 'liability')
   const currentCategories = type === 'asset' ? assetCategories : liabilityCategories
+
+  const selectedCategory = categories.find(c => c.id === categoryId)
+  const isSeverancePay = !!selectedCategory && selectedCategory.name.includes('퇴직금')
+  const isRealEstate = !!selectedCategory && selectedCategory.name.includes('부동산')
 
   useEffect(() => {
     if (isOpen) {
@@ -38,6 +47,8 @@ export function AssetCreateModal() {
       setInitialAmount('')
       setMemo('')
       setType('asset')
+      setSeveranceData(null)
+      setRealEstateAmount(0)
     }
   }, [isOpen, members])
 
@@ -52,9 +63,22 @@ export function AssetCreateModal() {
         type,
         memo: memo.trim() || undefined,
       })
-      const amount = Number(initialAmount.replace(/,/g, ''))
-      if (amount > 0) {
-        await setValue(id, format(new Date(), 'yyyy-MM-dd'), amount)
+
+      if (isSeverancePay && severanceData && severanceData.estimatedAmount > 0) {
+        // 일별 초기 데이터 자동 생성 및 저장
+        const targetEndDate = format(new Date(), 'yyyy-MM-dd')
+        const values = generateSeverancePayValues(id, severanceData.joinDate, severanceData.averageDailyWage, targetEndDate)
+        if (values.length > 0) {
+          await useDailyValueStore.getState().bulkSetValues(values.map(v => ({ ...v, assetItemId: id })))
+        }
+      } else if (isRealEstate && realEstateAmount > 0) {
+        // 부동산 금액 저장 (현재일 기준 단건, 이후 가격 수정 전까지 유지됨)
+        await setValue(id, format(new Date(), 'yyyy-MM-dd'), realEstateAmount)
+      } else {
+        const amount = Number(initialAmount.replace(/,/g, ''))
+        if (amount > 0) {
+          await setValue(id, format(new Date(), 'yyyy-MM-dd'), amount)
+        }
       }
       close()
     } catch {
@@ -122,21 +146,27 @@ export function AssetCreateModal() {
             />
           </div>
 
-          {/* Initial Amount */}
-          <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">초기 금액 (선택)</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={initialAmount}
-              onChange={(e) => {
-                const raw = e.target.value.replace(/[^0-9]/g, '')
-                setInitialAmount(raw ? Number(raw).toLocaleString('ko-KR') : '')
-              }}
-              placeholder="0"
-              className="input-base text-right tabular-nums"
-            />
-          </div>
+          {/* Specialized Input Forms or Default Initial Amount */}
+          {isSeverancePay ? (
+            <SeverancePayInputArea onValuesChange={setSeveranceData} />
+          ) : isRealEstate ? (
+            <RealEstateInputArea onValuesChange={(v) => setRealEstateAmount(v.initialAmount)} />
+          ) : (
+            <div>
+              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">초기 금액 (선택)</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={initialAmount}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^0-9]/g, '')
+                  setInitialAmount(raw ? Number(raw).toLocaleString('ko-KR') : '')
+                }}
+                placeholder="0"
+                className="input-base text-right tabular-nums"
+              />
+            </div>
+          )}
 
           {/* Member */}
           <div>

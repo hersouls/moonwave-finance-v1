@@ -8,7 +8,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { firestore } from '@/lib/firebase'
-import { db } from '@/services/database'
+import { db, setSyncWritingFlag } from '@/services/database'
 import { useAuthStore } from '@/stores/authStore'
 import type {
   Member,
@@ -21,11 +21,13 @@ import type {
   FinancialGoal,
   PaymentMethodItem,
   Subscription,
+  SyncChangeLogEntry,
 } from '@/lib/types'
 
 export type SyncableTable = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions'
 
 const BATCH_LIMIT = 499
+const ALL_TABLES: SyncableTable[] = ['members', 'assetCategories', 'assetItems', 'dailyValues', 'transactionCategories', 'transactions', 'budgets', 'goals', 'paymentMethodItems', 'subscriptions']
 
 /** Strip undefined values from an object — Firestore rejects undefined fields */
 function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
@@ -36,11 +38,11 @@ function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
   return result as T
 }
 
-function getUserCollectionPath(uid: string, tableName: SyncableTable): string {
+function getUserCollectionPath(uid: string, tableName: string): string {
   return `users/${uid}/${tableName}`
 }
 
-function getUserDocPath(uid: string, tableName: SyncableTable, syncId: string): string {
+function getUserDocPath(uid: string, tableName: string, syncId: string): string {
   return `users/${uid}/${tableName}/${syncId}`
 }
 
@@ -146,6 +148,7 @@ async function ensureAndPersistSyncIds() {
   }
 }
 
+// ─── Full Upload (preserved for manual sync) ─────────────
 export async function fullUpload(uid: string, options?: { reconcile?: boolean }): Promise<void> {
   useAuthStore.getState().setSyncStatus('syncing')
   try {
@@ -207,6 +210,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
   }
 }
 
+// ─── Full Download (preserved for manual sync) ───────────
 export async function fullDownload(uid: string): Promise<void> {
   useAuthStore.getState().setSyncStatus('syncing')
   try {
@@ -224,6 +228,7 @@ export async function fullDownload(uid: string): Promise<void> {
     ]))
 
     syncWritingCount++
+    setSyncWritingFlag(true)
     try {
       await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions], async () => {
         await db.members.clear()
@@ -250,6 +255,7 @@ export async function fullDownload(uid: string): Promise<void> {
       })
     } finally {
       syncWritingCount = Math.max(0, syncWritingCount - 1)
+      setSyncWritingFlag(false)
     }
 
     useAuthStore.getState().setSyncStatus('synced')
@@ -260,15 +266,268 @@ export async function fullDownload(uid: string): Promise<void> {
   }
 }
 
-export async function syncOnLogin(uid: string): Promise<void> {
-  const colRef = collection(firestore, getUserCollectionPath(uid, 'members'))
-  const snapshot = await getDocs(colRef)
+// ─── Incremental Upload ──────────────────────────────────
+// Only uploads records that changed since last sync (via syncChangeLog)
 
-  if (snapshot.empty) {
-    await fullUpload(uid, { reconcile: true })
-  } else {
-    await fullDownload(uid)
+function deduplicateChanges(changes: SyncChangeLogEntry[]): SyncChangeLogEntry[] {
+  const map = new Map<string, SyncChangeLogEntry>()
+  changes.sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+  for (const change of changes) {
+    const key = `${change.tableName}:${change.syncId}`
+    map.set(key, change)
   }
+  return Array.from(map.values())
+}
+
+async function uploadTombstone(
+  uid: string,
+  tableName: string,
+  syncId: string,
+  deletedAt: string
+): Promise<void> {
+  const tombstoneId = `${tableName}_${syncId}`
+  const ref = doc(firestore, `users/${uid}/syncTombstones/${tombstoneId}`)
+  const batch = writeBatch(firestore)
+  batch.set(ref, { tableName, syncId, deletedAt })
+  await batch.commit()
+}
+
+export async function incrementalUpload(uid: string): Promise<void> {
+  useAuthStore.getState().setSyncStatus('syncing')
+  try {
+    await ensureAndPersistSyncIds()
+
+    const pendingChanges = await db.syncChangeLog
+      .where('processed').equals(0)
+      .toArray()
+
+    if (pendingChanges.length === 0) {
+      useAuthStore.getState().setSyncStatus('synced')
+      return
+    }
+
+    const deduped = deduplicateChanges(pendingChanges)
+    console.log(`[sync] incremental upload: ${deduped.length} change(s) (from ${pendingChanges.length} log entries)`)
+
+    for (const change of deduped) {
+      try {
+        if (change.operation === 'delete') {
+          await deleteFromCloud(uid, change.tableName as SyncableTable, change.syncId)
+          await uploadTombstone(uid, change.tableName, change.syncId, change.timestamp)
+        } else {
+          const localTable = getLocalTable(change.tableName as SyncableTable)
+          const record = await (localTable as typeof db.members)
+            .where('syncId').equals(change.syncId).first()
+          if (record) {
+            await uploadSingleRecord(uid, change.tableName as SyncableTable, record)
+          }
+        }
+      } catch (err) {
+        console.error(`[sync] incremental upload ${change.tableName}/${change.syncId} failed:`, err)
+      }
+    }
+
+    // Mark all original pending entries as processed
+    const processedIds = pendingChanges.map(c => c.id!).filter(Boolean)
+    if (processedIds.length > 0) {
+      await db.syncChangeLog.where('id').anyOf(processedIds).modify({ processed: 1 })
+    }
+
+    // GC: remove processed entries older than 7 days
+    const gcCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    await db.syncChangeLog
+      .where('processed').equals(1)
+      .filter(c => c.timestamp < gcCutoff)
+      .delete()
+
+    useAuthStore.getState().setSyncStatus('synced')
+    useAuthStore.getState().setLastSyncTime(new Date().toISOString())
+  } catch (err) {
+    console.error('[sync] incremental upload failed:', err)
+    useAuthStore.getState().setSyncStatus('error')
+  }
+}
+
+// ─── Merge On Login (replaces syncOnLogin) ────────────────
+// Bidirectional merge: compares local vs cloud record-by-record using updatedAt
+
+async function mergeTable(uid: string, tableName: SyncableTable): Promise<void> {
+  const localTable = getLocalTable(tableName)
+  const cloudRecords = await downloadTable<Record<string, unknown>>(uid, tableName)
+  const localRecords = await (localTable as typeof db.members).toArray()
+
+  const cloudMap = new Map<string, Record<string, unknown>>()
+  for (const rec of cloudRecords) {
+    const syncId = rec.syncId as string | undefined
+    if (syncId) cloudMap.set(syncId, rec)
+  }
+
+  const localMap = new Map<string, { record: Record<string, unknown>; id: number }>()
+  for (const rec of localRecords) {
+    if (rec.syncId) localMap.set(rec.syncId, { record: rec as unknown as Record<string, unknown>, id: rec.id! })
+  }
+
+  setSyncWritingFlag(true)
+  syncWritingCount++
+  try {
+    // Case 1: Cloud-only records → download if not locally deleted
+    for (const [syncId, cloudRec] of cloudMap) {
+      if (!localMap.has(syncId)) {
+        const tombstone = await db.syncTombstones
+          .where('[tableName+syncId]').equals([tableName, syncId]).first()
+        if (!tombstone) {
+          await (localTable as typeof db.members).add(cloudRec as unknown as Member)
+        }
+      }
+    }
+
+    // Case 2: Both exist → LWW by updatedAt
+    for (const [syncId, local] of localMap) {
+      const cloudRec = cloudMap.get(syncId)
+      if (cloudRec) {
+        const cloudUpdatedAt = (cloudRec.updatedAt as string) || ''
+        const localUpdatedAt = (local.record.updatedAt as string) || ''
+        if (cloudUpdatedAt > localUpdatedAt) {
+          const { ...updates } = cloudRec
+          await (localTable as typeof db.members).update(local.id, updates)
+        }
+        // If local is newer, incrementalUpload will handle it
+      }
+      // Case 3: Local-only records → incrementalUpload handles upload
+    }
+  } finally {
+    syncWritingCount = Math.max(0, syncWritingCount - 1)
+    setSyncWritingFlag(false)
+  }
+}
+
+async function applyCloudTombstones(uid: string): Promise<void> {
+  const tombstoneRef = collection(firestore, `users/${uid}/syncTombstones`)
+  let snapshot
+  try {
+    snapshot = await getDocs(tombstoneRef)
+  } catch {
+    // Collection may not exist yet
+    return
+  }
+  if (snapshot.empty) return
+
+  setSyncWritingFlag(true)
+  syncWritingCount++
+  try {
+    for (const docSnap of snapshot.docs) {
+      const data = docSnap.data() as { tableName: string; syncId: string; deletedAt: string }
+      if (!ALL_TABLES.includes(data.tableName as SyncableTable)) continue
+
+      const localTable = getLocalTable(data.tableName as SyncableTable)
+      const existing = await (localTable as typeof db.members)
+        .where('syncId').equals(data.syncId).first()
+
+      if (existing) {
+        const localUpdatedAt = (existing as unknown as Record<string, unknown>).updatedAt as string || ''
+        if (data.deletedAt > localUpdatedAt) {
+          await (localTable as typeof db.members).delete(existing.id!)
+        }
+      }
+    }
+  } finally {
+    syncWritingCount = Math.max(0, syncWritingCount - 1)
+    setSyncWritingFlag(false)
+  }
+}
+
+async function uploadLocalTombstones(uid: string): Promise<void> {
+  const localTombstones = await db.syncTombstones.toArray()
+  for (const tombstone of localTombstones) {
+    try {
+      await uploadTombstone(uid, tombstone.tableName, tombstone.syncId, tombstone.deletedAt)
+      if (ALL_TABLES.includes(tombstone.tableName as SyncableTable)) {
+        await deleteFromCloud(uid, tombstone.tableName as SyncableTable, tombstone.syncId)
+      }
+    } catch (err) {
+      console.error(`[sync] upload tombstone ${tombstone.tableName}/${tombstone.syncId} failed:`, err)
+    }
+  }
+}
+
+async function garbageCollectTombstones(uid: string): Promise<void> {
+  const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+
+  // Clean local tombstones
+  await db.syncTombstones.where('deletedAt').below(cutoff).delete()
+
+  // Clean Firestore tombstones
+  try {
+    const tombstoneRef = collection(firestore, `users/${uid}/syncTombstones`)
+    const snapshot = await getDocs(tombstoneRef)
+    const toDelete: string[] = []
+    for (const docSnap of snapshot.docs) {
+      const data = docSnap.data()
+      if (data.deletedAt && data.deletedAt < cutoff) {
+        toDelete.push(docSnap.ref.path)
+      }
+    }
+    for (let i = 0; i < toDelete.length; i += BATCH_LIMIT) {
+      const chunk = toDelete.slice(i, i + BATCH_LIMIT)
+      const batch = writeBatch(firestore)
+      for (const path of chunk) {
+        batch.delete(doc(firestore, path))
+      }
+      await batch.commit()
+    }
+  } catch (err) {
+    console.error('[sync] tombstone GC failed:', err)
+  }
+}
+
+export async function mergeOnLogin(uid: string): Promise<void> {
+  useAuthStore.getState().setSyncStatus('syncing')
+  try {
+    // Check if cloud has any data
+    const colRef = collection(firestore, getUserCollectionPath(uid, 'members'))
+    const snapshot = await getDocs(colRef)
+
+    if (snapshot.empty) {
+      // First time: upload everything
+      await fullUpload(uid, { reconcile: true })
+      return
+    }
+
+    // Bidirectional merge for each table
+    for (const tableName of ALL_TABLES) {
+      await mergeTable(uid, tableName)
+    }
+
+    // Process tombstones
+    await applyCloudTombstones(uid)
+    await uploadLocalTombstones(uid)
+
+    // Upload any remaining local-only changes
+    await incrementalUpload(uid)
+
+    // Tombstone garbage collection
+    try {
+      await garbageCollectTombstones(uid)
+    } catch (err) {
+      console.error('[sync] tombstone GC on login failed:', err)
+    }
+
+    useAuthStore.getState().setSyncStatus('synced')
+    useAuthStore.getState().setLastSyncTime(new Date().toISOString())
+  } catch (err) {
+    console.error('[sync] merge on login failed:', err)
+    useAuthStore.getState().setSyncStatus('error')
+  }
+}
+
+/** @deprecated Use mergeOnLogin instead */
+export async function syncOnLogin(uid: string): Promise<void> {
+  await mergeOnLogin(uid)
+}
+
+// ─── Pending Changes Count ───────────────────────────────
+export async function getPendingChangesCount(): Promise<number> {
+  return db.syncChangeLog.where('processed').equals(0).count()
 }
 
 // Delete a single document from Firestore
@@ -358,6 +617,7 @@ function subscribeTable(uid: string, tableName: SyncableTable, retryCount = 0): 
     const localTable = getLocalTable(tableName)
 
     syncWritingCount++
+    setSyncWritingFlag(true)
     try {
       for (const change of snapshot.docChanges()) {
         const cloudData = change.doc.data()
@@ -389,6 +649,7 @@ function subscribeTable(uid: string, tableName: SyncableTable, retryCount = 0): 
       }
     } finally {
       syncWritingCount = Math.max(0, syncWritingCount - 1)
+      setSyncWritingFlag(false)
     }
 
     if (snapshot.docChanges().length > 0) {
@@ -410,15 +671,55 @@ function subscribeTable(uid: string, tableName: SyncableTable, retryCount = 0): 
   unsubscribers.push(unsub)
 }
 
+function subscribeTombstones(uid: string): void {
+  const colRef = collection(firestore, `users/${uid}/syncTombstones`)
+  const unsub = onSnapshot(colRef, async (snapshot) => {
+    if (realtimeSyncPaused) return
+
+    syncWritingCount++
+    setSyncWritingFlag(true)
+    try {
+      for (const change of snapshot.docChanges()) {
+        if (change.type !== 'added') continue
+
+        const data = change.doc.data() as { tableName: string; syncId: string; deletedAt: string }
+        if (!ALL_TABLES.includes(data.tableName as SyncableTable)) continue
+
+        try {
+          const localTable = getLocalTable(data.tableName as SyncableTable)
+          const existing = await (localTable as typeof db.members)
+            .where('syncId').equals(data.syncId).first()
+          if (existing) {
+            await (localTable as typeof db.members).delete(existing.id!)
+          }
+        } catch (err) {
+          console.error(`[sync] tombstone apply ${data.tableName}/${data.syncId} error:`, err)
+        }
+      }
+    } finally {
+      syncWritingCount = Math.max(0, syncWritingCount - 1)
+      setSyncWritingFlag(false)
+    }
+
+    if (snapshot.docChanges().length > 0) {
+      window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: 'tombstones' } }))
+    }
+  }, (err) => {
+    console.error('[sync] tombstones listener error:', err)
+  })
+  unsubscribers.push(unsub)
+}
+
 export function startRealtimeSync(uid: string): void {
   stopRealtimeSync()
   currentSyncUid = uid
 
-  const tables: SyncableTable[] = ['members', 'assetCategories', 'assetItems', 'dailyValues', 'transactionCategories', 'transactions', 'budgets', 'goals', 'paymentMethodItems', 'subscriptions']
-
-  for (const tableName of tables) {
+  for (const tableName of ALL_TABLES) {
     subscribeTable(uid, tableName)
   }
+
+  // Also subscribe to tombstones for cross-device delete propagation
+  subscribeTombstones(uid)
 }
 
 export function stopRealtimeSync(): void {

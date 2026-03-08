@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { db } from '@/services/database'
-import { fullUpload, pauseRealtimeSync, resumeRealtimeSync, getIsSyncWriting } from '@/services/firestoreSync'
+import { incrementalUpload, pauseRealtimeSync, resumeRealtimeSync, getIsSyncWriting } from '@/services/firestoreSync'
 
 /**
  * Watches Dexie for changes and debounce-uploads to Firestore when user is logged in.
- * Uses Dexie's built-in observable hooks to detect any table mutation.
+ * Uses incremental sync: only changed records are uploaded (via syncChangeLog).
  */
 export function useAutoSync() {
   const user = useAuthStore((s) => s.user)
@@ -25,7 +25,7 @@ export function useAutoSync() {
         try {
           // Pause real-time listeners to avoid echo loop
           pauseRealtimeSync()
-          await fullUpload(user.uid)
+          await incrementalUpload(user.uid)
         } catch (err) {
           console.error('[auto-sync] upload failed:', err)
         } finally {
@@ -36,8 +36,18 @@ export function useAutoSync() {
     }
 
     // Sync when coming back online (uploads offline changes)
-    const handleOnline = () => {
-      scheduleSync()
+    const handleOnline = async () => {
+      try {
+        const pendingCount = await db.syncChangeLog
+          .where('processed').equals(0)
+          .count()
+        if (pendingCount > 0) {
+          console.log(`[auto-sync] online: ${pendingCount} pending change(s), scheduling sync`)
+          scheduleSync()
+        }
+      } catch {
+        scheduleSync()
+      }
     }
     window.addEventListener('online', handleOnline)
 

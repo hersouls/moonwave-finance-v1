@@ -30,6 +30,7 @@ export function DataTab() {
   const user = useAuthStore((s) => s.user)
   const syncStatus = useAuthStore((s) => s.syncStatus)
   const lastSyncTime = useAuthStore((s) => s.lastSyncTime)
+  const pendingChangesCount = useAuthStore((s) => s.pendingChangesCount)
   const manualUpload = useAuthStore((s) => s.manualUpload)
   const manualDownload = useAuthStore((s) => s.manualDownload)
   const settings = useSettingsStore((s) => s.settings)
@@ -118,6 +119,11 @@ export function DataTab() {
                 <div>
                   <p className="text-body3 text-zinc-900 dark:text-zinc-100">
                     {SYNC_LABELS[syncStatus]}
+                    {pendingChangesCount > 0 && syncStatus !== 'syncing' && (
+                      <span className="text-caption text-amber-500 dark:text-amber-400 ml-2">
+                        ({pendingChangesCount}건 대기 중)
+                      </span>
+                    )}
                   </p>
                   {lastSyncTime && (
                     <p className="text-caption text-zinc-500 dark:text-zinc-400">

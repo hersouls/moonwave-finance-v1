@@ -13,6 +13,7 @@ import { MemberSummaryCards } from '@/components/dashboard/MemberSummaryCards'
 import { IncomeExpenseTrendChart } from './IncomeExpenseTrendChart'
 import { SavingsRateChart } from './SavingsRateChart'
 import { PeriodComparisonCard } from './PeriodComparisonCard'
+import { DailyNetWorthChart } from './DailyNetWorthChart'
 import { SubscriptionAnalysis } from './SubscriptionAnalysis'
 import { ReportsSkeleton } from './ReportsSkeleton'
 import { EmptyState, ErrorEmptyState } from '@/components/ui/EmptyState'
@@ -35,6 +36,7 @@ export function ReportsPage() {
 
   const loadAll = useAssetStore((s) => s.loadAll)
   const loadValues = useDailyValueStore((s) => s.loadValues)
+  const loadAllValues = useDailyValueStore((s) => s.loadAllValues)
   const loadMembers = useMemberStore((s) => s.loadMembers)
   const loadSubscriptions = useSubscriptionStore((s) => s.loadSubscriptions)
   const loadTransactions = useTransactionStore((s) => s.loadAll)
@@ -46,7 +48,7 @@ export function ReportsPage() {
     setError(null)
     setIsLoading(true)
     try {
-      await Promise.all([loadAll(), loadValues(), loadMembers(), loadSubscriptions(), loadTransactions()])
+      await Promise.all([loadAll(), loadValues(), loadAllValues(), loadMembers(), loadSubscriptions(), loadTransactions()])
     } catch {
       setError('데이터를 불러오는데 실패했습니다.')
     } finally {
@@ -120,6 +122,9 @@ export function ReportsPage() {
               </p>
             </Card>
           </div>
+
+          {/* Daily Net Worth Chart (Forward Fill) */}
+          <DailyNetWorthChart />
 
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
