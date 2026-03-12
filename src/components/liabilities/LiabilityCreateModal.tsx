@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { useUIStore } from '@/stores/uiStore'
@@ -18,9 +18,10 @@ export function LiabilityCreateModal() {
   const categories = useAssetStore((s) => s.categories)
   const members = useMemberStore((s) => s.members)
   const setValue = useDailyValueStore((s) => s.setValue)
-  const activeLoans = useLoanStore((s) => s.getActiveLoans())
+  const loans = useLoanStore((s) => s.loans)
   const updateLoan = useLoanStore((s) => s.updateLoan)
   const loadLoans = useLoanStore((s) => s.loadLoans)
+  const activeLoans = useMemo(() => loans.filter(l => l.isActive), [loans])
 
   const liabilityCategories = categories.filter(c => c.type === 'liability')
 

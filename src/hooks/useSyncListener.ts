@@ -11,15 +11,19 @@ export function useSyncListener(callback: () => void, tables?: SyncableTable[]) 
   const callbackRef = useRef(callback)
   callbackRef.current = callback
 
+  // Serialize tables to a stable string to avoid re-registering on every render
+  const tablesKey = tables ? tables.join(',') : ''
+
   useEffect(() => {
+    const tableList = tablesKey ? tablesKey.split(',') : null
     const handler = (event: Event) => {
-      if (tables && tables.length > 0) {
+      if (tableList && tableList.length > 0) {
         const detail = (event as CustomEvent).detail
-        if (!tables.includes(detail?.table)) return
+        if (!tableList.includes(detail?.table)) return
       }
       callbackRef.current()
     }
     window.addEventListener('fin-sync-update', handler)
     return () => window.removeEventListener('fin-sync-update', handler)
-  }, [tables])
+  }, [tablesKey])
 }

@@ -30,9 +30,10 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
   const members = useMemberStore((s) => s.members)
   const budgets = useBudgetStore((s) => s.budgets)
   const transactions = useTransactionStore((s) => s.transactions)
-  const activeLoans = useLoanStore((s) => s.getActiveLoans())
+  const loans = useLoanStore((s) => s.loans)
   const getMonthlyInterest = useLoanStore((s) => s.getMonthlyInterest)
   const loadLoans = useLoanStore((s) => s.loadLoans)
+  const activeLoans = useMemo(() => loans.filter(l => l.isActive), [loans])
 
   const [type, setType] = useState<TransactionType>('expense')
   const [amount, setAmount] = useState('')

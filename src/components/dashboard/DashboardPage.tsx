@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, ArrowRight } from 'lucide-react'
 import { useAssetStore } from '@/stores/assetStore'
@@ -40,7 +40,8 @@ export function DashboardPage() {
   const loadSubscriptions = useSubscriptionStore((s) => s.loadSubscriptions)
   const loadTransactions = useTransactionStore((s) => s.loadAll)
   const items = useAssetStore((s) => s.items)
-  const activeGoals = useGoalStore((s) => s.getActiveGoals)()
+  const goals = useGoalStore((s) => s.goals)
+  const activeGoals = useMemo(() => goals.filter(g => !g.isCompleted), [goals])
 
   const stats = useAssetStats()
   const assetBreakdown = useCategoryBreakdown('asset')
