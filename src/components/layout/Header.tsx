@@ -5,6 +5,8 @@ import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
 import { IconButton } from '@/components/ui/Button'
 import { Tooltip } from '@/components/ui/Tooltip'
+import { SyncIndicator } from '@/components/ui/SyncIndicator'
+import { NotificationCenter } from '@/components/ui/NotificationCenter'
 import type { ThemeMode } from '@/lib/types'
 
 export function Header() {
@@ -91,8 +93,10 @@ export function Header() {
               </button>
             </Tooltip>
           )}
+          <span data-coach="sync"><SyncIndicator /></span>
+          <NotificationCenter />
           <Tooltip content="검색 (Cmd+K)" placement="bottom">
-            <IconButton plain color="secondary" onClick={openSearchModal} aria-label="검색">
+            <IconButton plain color="secondary" onClick={openSearchModal} aria-label="검색" data-coach="search">
               <Search className="w-5 h-5" />
             </IconButton>
           </Tooltip>

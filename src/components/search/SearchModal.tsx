@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Search, X } from 'lucide-react'
+import { Search, X, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useSearch } from '@/hooks/useSearch'
 import { SearchResultItem } from './SearchResultItem'
@@ -57,7 +57,11 @@ export function SearchModal() {
       >
         {/* Search Input */}
         <div className="flex items-center gap-3 px-4 border-b border-zinc-200 dark:border-zinc-700">
-          <Search className="w-5 h-5 text-zinc-400 flex-shrink-0" />
+          {isSearching ? (
+            <Loader2 className="w-5 h-5 text-primary-500 animate-spin flex-shrink-0" />
+          ) : (
+            <Search className="w-5 h-5 text-zinc-400 flex-shrink-0" />
+          )}
           <input
             ref={inputRef}
             type="text"

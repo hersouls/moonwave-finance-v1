@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { useTransactionStore } from '@/stores/transactionStore'
@@ -12,6 +12,7 @@ import { useToastStore } from '@/stores/toastStore'
 import { clsx } from 'clsx'
 import { Select } from '@/components/ui/Select'
 import { Landmark } from 'lucide-react'
+import { suggestCategories } from '@/services/categoryPredictor'
 import type { Transaction, TransactionType, RepeatType, PaymentMethod } from '@/lib/types'
 
 interface TransactionFormModalProps {
@@ -47,6 +48,21 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
   const [recurType, setRecurType] = useState<RepeatType>('monthly')
   const [recurEndDate, setRecurEndDate] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const [suggestedCategoryIds, setSuggestedCategoryIds] = useState<number[]>([])
+
+  // Smart category suggestions based on memo
+  const loadSuggestions = useCallback(async (memoText: string, txnType: TransactionType) => {
+    const ids = await suggestCategories(memoText, txnType)
+    setSuggestedCategoryIds(ids)
+  }, [])
+
+  useEffect(() => {
+    if (open && mode === 'create') {
+      const timer = setTimeout(() => loadSuggestions(memo, type), 300)
+      return () => clearTimeout(timer)
+    }
+  }, [memo, type, open, mode, loadSuggestions])
 
   const currentCategories = categories.filter(c => c.type === type)
 
@@ -351,6 +367,31 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
           {/* Category */}
           <div>
             <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">카테고리</label>
+            {/* Smart suggestions */}
+            {mode === 'create' && suggestedCategoryIds.length > 0 && (
+              <div className="flex gap-1.5 mb-2 flex-wrap">
+                <span className="text-caption text-zinc-400 dark:text-zinc-500 self-center">추천</span>
+                {suggestedCategoryIds.map(id => {
+                  const cat = currentCategories.find(c => c.id === id)
+                  if (!cat) return null
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setCategoryId(id)}
+                      className={clsx(
+                        'px-2.5 py-1 rounded-md text-caption transition-colors',
+                        categoryId === id
+                          ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 ring-1 ring-primary-300 dark:ring-primary-700'
+                          : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                      )}
+                    >
+                      {cat.name}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
             <Select
               value={String(categoryId)}
               onChange={(v) => setCategoryId(v ? Number(v) : '')}

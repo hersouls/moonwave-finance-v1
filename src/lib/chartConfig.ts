@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
+import zoomPlugin from 'chartjs-plugin-zoom'
 import { KOREAN_UNIT_EUK, KOREAN_UNIT_MAN } from '@/utils/format'
 
 ChartJS.register(
@@ -21,7 +22,8 @@ ChartJS.register(
   ArcElement,
   Filler,
   Tooltip,
-  Legend
+  Legend,
+  zoomPlugin
 )
 
 function isDark(): boolean {
@@ -48,6 +50,21 @@ export function getTooltipText(): string {
   return isDark() ? '#fafafa' : '#18181b'
 }
 
+export const zoomOptions = {
+  zoom: {
+    wheel: { enabled: true },
+    pinch: { enabled: true },
+    mode: 'x' as const,
+  },
+  pan: {
+    enabled: true,
+    mode: 'x' as const,
+  },
+  limits: {
+    x: { minRange: 3 },
+  },
+}
+
 export const commonLineOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -69,6 +86,7 @@ export const commonLineOptions = {
       padding: 12,
       displayColors: false,
     },
+    zoom: zoomOptions,
   },
   scales: {
     x: {

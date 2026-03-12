@@ -1,6 +1,6 @@
 import { useMemberBreakdown } from '@/hooks/useAssetStats'
 import { Card } from '@/components/ui/Card'
-import { formatKoreanUnit } from '@/utils/format'
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
 import { clsx } from 'clsx'
 
 export function MemberSummaryCards() {
@@ -34,7 +34,7 @@ export function MemberSummaryCards() {
                   ? 'text-zinc-900 dark:text-zinc-100'
                   : 'text-red-600 dark:text-red-400'
               )}>
-                {formatKoreanUnit(mb.netWorth)}
+                <AnimatedNumber value={mb.netWorth} />
                 <span className="text-caption text-zinc-400 ml-1">원</span>
               </p>
 
@@ -51,8 +51,8 @@ export function MemberSummaryCards() {
                   />
                 </div>
                 <div className="mt-1.5 flex justify-between text-caption text-zinc-500 dark:text-zinc-400">
-                  <span>자산 <span className="text-emerald-600 dark:text-emerald-400 font-medium tabular-nums">{formatKoreanUnit(mb.totalAssets)}</span></span>
-                  <span>부채 <span className="text-red-600 dark:text-red-400 font-medium tabular-nums">{formatKoreanUnit(mb.totalLiabilities)}</span></span>
+                  <span>자산 <AnimatedNumber value={mb.totalAssets} className="text-emerald-600 dark:text-emerald-400 font-medium tabular-nums" /></span>
+                  <span>부채 <AnimatedNumber value={mb.totalLiabilities} className="text-red-600 dark:text-red-400 font-medium tabular-nums" /></span>
                 </div>
               </div>
             </Card>

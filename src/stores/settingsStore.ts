@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ThemeMode, ColorPalette, Settings, NotificationSettings } from '@/lib/types'
+import type { ThemeMode, ColorPalette, Settings, NotificationSettings, DashboardWidget } from '@/lib/types'
 
 interface SettingsState {
   settings: Settings
@@ -18,6 +18,7 @@ interface SettingsState {
   toggleHighContrast: () => void
   updateNotificationSettings: (updates: Partial<NotificationSettings>) => void
   setExchangeRate: (rate: number) => void
+  setDashboardWidgets: (widgets: DashboardWidget[]) => void
 }
 
 let themeListenerAdded = false
@@ -195,6 +196,10 @@ export const useSettingsStore = create<SettingsState>()(
             },
           },
         }))
+      },
+
+      setDashboardWidgets: (widgets) => {
+        set((state) => ({ settings: { ...state.settings, dashboardWidgets: widgets } }))
       },
     }),
     {

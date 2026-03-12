@@ -11,6 +11,7 @@ import { AssetListSkeleton } from './AssetListSkeleton'
 import { FAB } from '@/components/ui/FAB'
 import { Tabs } from '@/components/ui/Tabs'
 import { ErrorEmptyState } from '@/components/ui/EmptyState'
+import { ContentTransition } from '@/components/ui/ContentTransition'
 import { useSyncListener } from '@/hooks/useSyncListener'
 
 export function AssetListPage() {
@@ -57,8 +58,6 @@ export function AssetListPage() {
     return result
   }, [items, activeMember, activeCategory])
 
-  if (isLoading) return <AssetListSkeleton />
-
   if (error) {
     return (
       <div className="p-4 lg:p-6">
@@ -68,43 +67,45 @@ export function AssetListPage() {
   }
 
   return (
-    <div className="p-4 lg:p-6">
-      <div className="space-y-4">
-        {/* Member Filter */}
-        <Tabs
-          tabs={memberTabs}
-          activeTab={activeMember === null ? 'all' : String(activeMember)}
-          onChange={(id) => setActiveMember(id === 'all' ? null : Number(id))}
-        />
+    <ContentTransition isLoading={isLoading} skeleton={<AssetListSkeleton />}>
+      <div className="p-4 lg:p-6">
+        <div className="space-y-4">
+          {/* Member Filter */}
+          <Tabs
+            tabs={memberTabs}
+            activeTab={activeMember === null ? 'all' : String(activeMember)}
+            onChange={(id) => setActiveMember(id === 'all' ? null : Number(id))}
+          />
 
-        {/* Category Filter */}
-        <AssetCategoryTabs
-          activeCategory={activeCategory}
-          onChange={setActiveCategory}
-          type="asset"
-        />
+          {/* Category Filter */}
+          <AssetCategoryTabs
+            activeCategory={activeCategory}
+            onChange={setActiveCategory}
+            type="asset"
+          />
 
-        {/* Item List */}
-        {filteredItems.length === 0 ? (
-          <AssetEmptyState />
-        ) : (
-          <div className="space-y-3">
-            {filteredItems.map(item => (
-              <AssetItemCard
-                key={item.id}
-                itemId={item.id!}
-                name={item.name}
-                categoryId={item.categoryId}
+          {/* Item List */}
+          {filteredItems.length === 0 ? (
+            <AssetEmptyState />
+          ) : (
+            <div className="space-y-3">
+              {filteredItems.map((item, i) => (
+                <div key={item.id} className={i < 10 ? 'stagger-item' : undefined}>
+                  <AssetItemCard
+                    itemId={item.id!}
+                    name={item.name}
+                    categoryId={item.categoryId}
+                    type="asset"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-                type="asset"
-              />
-            ))}
-          </div>
-        )}
+        <FAB onClick={openAssetCreateModal} label="새 자산 추가" />
+        <AssetCreateModal />
       </div>
-
-      <FAB onClick={openAssetCreateModal} label="새 자산 추가" />
-      <AssetCreateModal />
-    </div>
+    </ContentTransition>
   )
 }

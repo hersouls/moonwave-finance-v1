@@ -13,9 +13,11 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
+    "@tanstack/react-virtual": "^3.13.21",
     "canvas-confetti": "^1.9.4",
     "chart.js": "^4.5.0",
     "chartjs-adapter-date-fns": "^3.0.0",
+    "chartjs-plugin-zoom": "^2.2.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dexie": "^4.0.11",

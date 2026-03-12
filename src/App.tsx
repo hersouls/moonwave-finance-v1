@@ -1,5 +1,5 @@
-import { Outlet, useLocation } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { Sidebar } from './components/layout/Sidebar'
 import { Header } from './components/layout/Header'
 import { Footer } from './components/layout/Footer'
@@ -16,6 +16,9 @@ import { OfflineBanner } from './components/ui/OfflineBanner'
 import { AppLoadingScreen } from './components/ui/AppLoadingScreen'
 import { SearchModal } from './components/search/SearchModal'
 import { OnboardingWizard } from './components/onboarding/OnboardingWizard'
+import { PageTransition } from './components/ui/PageTransition'
+import { PullToRefreshIndicator } from './components/ui/PullToRefresh'
+import { ShortcutHelp } from './components/ui/ShortcutHelp'
 import { useSettingsStore } from './stores/settingsStore'
 import { useUIStore } from './stores/uiStore'
 import { useAuthStore } from './stores/authStore'
@@ -24,14 +27,18 @@ import { useSubscriptionStore } from './stores/subscriptionStore'
 import { showBillingNotifications } from './services/notificationService'
 import { useOnlineStatus } from './hooks/useOnlineStatus'
 import { useAutoSync } from './hooks/useAutoSync'
+import { useKeySequence } from './hooks/useKeySequence'
+import { ensureDefaultCategories } from './services/database'
 
 export default function App() {
   const [isInitialized, setIsInitialized] = useState(false)
+  const [showShortcutHelp, setShowShortcutHelp] = useState(false)
   const initSettings = useSettingsStore((s) => s.initialize)
   const isSidebarOpen = useUIStore((s) => s.isSidebarOpen)
   const hasCompletedOnboarding = useSettingsStore((s) => s.settings.hasCompletedOnboarding)
   const setHasCompletedOnboarding = useSettingsStore((s) => s.setHasCompletedOnboarding)
   const isOnline = useOnlineStatus()
+  const navigate = useNavigate()
   useAutoSync()
 
   useEffect(() => {
@@ -39,6 +46,7 @@ export default function App() {
       try {
         initSettings()
         useAuthStore.getState().initialize()
+        await ensureDefaultCategories()
 
         // Check subscription billing notifications
         const settings = useSettingsStore.getState().settings
@@ -54,7 +62,7 @@ export default function App() {
     initApp()
   }, [])
 
-  // Global keyboard shortcuts
+  // Global keyboard shortcuts (Ctrl combos)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
@@ -74,6 +82,19 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
+  // Key sequence shortcuts (G+D, G+A, etc.)
+  const keySequences = useMemo(() => [
+    { keys: ['g', 'd'], callback: () => navigate('/') },
+    { keys: ['g', 'a'], callback: () => navigate('/assets') },
+    { keys: ['g', 'l'], callback: () => navigate('/ledger/expense') },
+    { keys: ['g', 'r'], callback: () => navigate('/reports') },
+    { keys: ['g', 's'], callback: () => navigate('/subscriptions') },
+    { keys: ['?'], callback: () => setShowShortcutHelp(true) },
+    { keys: ['n'], callback: () => useUIStore.getState().openTransactionCreateModal() },
+  ], [navigate])
+
+  useKeySequence(keySequences)
+
   const location = useLocation()
   const setCurrentView = useUIStore((s) => s.setCurrentView)
 
@@ -87,16 +108,24 @@ export default function App() {
     else if (path === '/profile') setCurrentView('profile')
   }, [location.pathname, setCurrentView])
 
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    window.location.reload()
+  }, [])
+
   if (!isInitialized) return <AppLoadingScreen />
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex flex-col">
       {!isOnline && <OfflineBanner />}
+      <PullToRefreshIndicator onRefresh={handleRefresh} />
       <Sidebar />
       <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'}`}>
         <Header />
         <main id="main-content" className="flex-1 pb-20 lg:pb-6">
-          <Outlet />
+          <PageTransition>
+            <Outlet />
+          </PageTransition>
         </main>
         <Footer />
       </div>
@@ -110,6 +139,7 @@ export default function App() {
       <UpdateBanner />
       <IOSInstallBanner />
       <SearchModal />
+      <ShortcutHelp open={showShortcutHelp} onClose={() => setShowShortcutHelp(false)} />
       {!hasCompletedOnboarding && (
         <OnboardingWizard onComplete={() => setHasCompletedOnboarding(true)} />
       )}

@@ -88,8 +88,11 @@ export async function importBackup(file: File): Promise<void> {
   })
 }
 
-export async function exportTransactionsCSV(): Promise<void> {
-  const transactions = await db.transactions.toArray()
+export async function exportTransactionsCSV(startDate?: string, endDate?: string): Promise<void> {
+  let transactions = await db.transactions.toArray()
+  if (startDate && endDate) {
+    transactions = transactions.filter(t => t.date >= startDate && t.date <= endDate)
+  }
   const categories = await db.transactionCategories.toArray()
   const members = await db.members.toArray()
 
