@@ -100,13 +100,15 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           try {
             await mergeOnLogin(authUser.uid)
             await reloadStoresAfterSync()
-            startRealtimeSync(authUser.uid)
             get().updatePendingCount()
           } catch (err) {
             console.error('Sync on login failed:', err)
             set({ syncStatus: 'error' })
           }
         }
+
+        // 항상 리스너 (재)시작 — 토큰 갱신, 네트워크 복구 시 리스너 복원
+        startRealtimeSync(authUser.uid)
       } else {
         hasSyncedOnLogin = false
         stopRealtimeSync()

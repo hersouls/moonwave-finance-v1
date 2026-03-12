@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { db } from '@/services/database'
-import { incrementalUpload, pauseRealtimeSync, resumeRealtimeSync, getIsSyncWriting } from '@/services/firestoreSync'
+import { incrementalUpload, pauseRealtimeSync, resumeRealtimeSync, getIsSyncWriting, startRealtimeSync } from '@/services/firestoreSync'
 
 /**
  * Watches Dexie for changes and debounce-uploads to Firestore when user is logged in.
@@ -35,8 +35,10 @@ export function useAutoSync() {
       }, DEBOUNCE_MS)
     }
 
-    // Sync when coming back online (uploads offline changes)
+    // Sync when coming back online (uploads offline changes + restart listeners)
     const handleOnline = async () => {
+      startRealtimeSync(user.uid)
+
       try {
         const pendingCount = await db.syncChangeLog
           .where('processed').equals(0)
@@ -50,6 +52,14 @@ export function useAutoSync() {
       }
     }
     window.addEventListener('online', handleOnline)
+
+    // Restart listeners when tab becomes visible (may have died while hidden)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        startRealtimeSync(user.uid)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
 
     // Dexie hooks: listen to creates, updates, deletes on all tables
     const tables = [
@@ -79,6 +89,7 @@ export function useAutoSync() {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
       window.removeEventListener('online', handleOnline)
+      document.removeEventListener('visibilitychange', handleVisibility)
       for (const remove of hookRemovers) {
         remove()
       }

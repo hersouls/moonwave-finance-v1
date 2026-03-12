@@ -21,13 +21,14 @@ import type {
   FinancialGoal,
   PaymentMethodItem,
   Subscription,
+  Loan,
   SyncChangeLogEntry,
 } from '@/lib/types'
 
-export type SyncableTable = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions'
+export type SyncableTable = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions' | 'loans'
 
 const BATCH_LIMIT = 499
-const ALL_TABLES: SyncableTable[] = ['members', 'assetCategories', 'assetItems', 'dailyValues', 'transactionCategories', 'transactions', 'budgets', 'goals', 'paymentMethodItems', 'subscriptions']
+const ALL_TABLES: SyncableTable[] = ['members', 'assetCategories', 'assetItems', 'dailyValues', 'transactionCategories', 'transactions', 'budgets', 'goals', 'paymentMethodItems', 'subscriptions', 'loans']
 
 /** Strip undefined values from an object — Firestore rejects undefined fields */
 function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
@@ -135,6 +136,7 @@ async function ensureAndPersistSyncIds() {
     { table: db.goals, name: 'goals' },
     { table: db.paymentMethodItems, name: 'paymentMethodItems' },
     { table: db.subscriptions, name: 'subscriptions' },
+    { table: db.loans, name: 'loans' },
   ] as const
 
   for (const { table } of tables) {
@@ -153,7 +155,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
   try {
     await ensureAndPersistSyncIds()
 
-    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions] = await Promise.all([
+    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans] = await Promise.all([
       db.members.toArray(),
       db.assetCategories.toArray(),
       db.assetItems.toArray(),
@@ -164,6 +166,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       db.goals.toArray(),
       db.paymentMethodItems.toArray(),
       db.subscriptions.toArray(),
+      db.loans.toArray(),
     ])
 
     await withRetry(() => Promise.all([
@@ -177,6 +180,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       uploadTable(uid, 'goals', goals.map(ensureSyncId)),
       uploadTable(uid, 'paymentMethodItems', paymentMethodItems.map(ensureSyncId)),
       uploadTable(uid, 'subscriptions', subscriptions.map(ensureSyncId)),
+      uploadTable(uid, 'loans', loans.map(ensureSyncId)),
     ]))
 
     // Reconcile: delete Firestore documents that no longer exist locally
@@ -191,6 +195,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       goals: new Set(goals.map(r => r.syncId).filter(Boolean) as string[]),
       paymentMethodItems: new Set(paymentMethodItems.map(r => r.syncId).filter(Boolean) as string[]),
       subscriptions: new Set(subscriptions.map(r => r.syncId).filter(Boolean) as string[]),
+      loans: new Set(loans.map(r => r.syncId).filter(Boolean) as string[]),
     }
 
     if (options?.reconcile) {
@@ -213,7 +218,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
 export async function fullDownload(uid: string): Promise<void> {
   useAuthStore.getState().setSyncStatus('syncing')
   try {
-    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions] = await withRetry(() => Promise.all([
+    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans] = await withRetry(() => Promise.all([
       downloadTable<Record<string, unknown>>(uid, 'members'),
       downloadTable<Record<string, unknown>>(uid, 'assetCategories'),
       downloadTable<Record<string, unknown>>(uid, 'assetItems'),
@@ -224,12 +229,13 @@ export async function fullDownload(uid: string): Promise<void> {
       downloadTable<Record<string, unknown>>(uid, 'goals'),
       downloadTable<Record<string, unknown>>(uid, 'paymentMethodItems'),
       downloadTable<Record<string, unknown>>(uid, 'subscriptions'),
+      downloadTable<Record<string, unknown>>(uid, 'loans'),
     ]))
 
     syncWritingCount++
     setSyncWritingFlag(true)
     try {
-      await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions], async () => {
+      await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions, db.loans], async () => {
         // Clear all tables
         await db.members.clear()
         await db.assetCategories.clear()
@@ -241,6 +247,7 @@ export async function fullDownload(uid: string): Promise<void> {
         await db.goals.clear()
         await db.paymentMethodItems.clear()
         await db.subscriptions.clear()
+        await db.loans.clear()
 
         // ── Layer 0: Insert independent tables, build ID mappings ──
         const memberIdMap = new Map<number, number>()
@@ -324,6 +331,13 @@ export async function fullDownload(uid: string): Promise<void> {
           remapFkField(rec, 'paymentMethodItemId', payMethodIdMap)
           remapFkField(rec, 'subscriptionId', subscriptionIdMap)
           await db.transactions.add(rec as unknown as Transaction)
+        }
+
+        // ── Loans (depends on assetItems) ──
+        for (const rec of loans) {
+          delete rec.id
+          remapFkField(rec, 'linkedAssetItemId', assetItemIdMap)
+          await db.loans.add(rec as unknown as Loan)
         }
       })
     } finally {
@@ -623,7 +637,7 @@ export async function mergeOnLogin(uid: string): Promise<void> {
     const [
       cloudMembers, cloudAssetCategories, cloudAssetItems, cloudDailyValues,
       cloudTransactionCategories, cloudTransactions, cloudBudgets, cloudGoals,
-      cloudPaymentMethodItems, cloudSubscriptions,
+      cloudPaymentMethodItems, cloudSubscriptions, cloudLoans,
     ] = await Promise.all([
       downloadTable<Record<string, unknown>>(uid, 'members'),
       downloadTable<Record<string, unknown>>(uid, 'assetCategories'),
@@ -635,6 +649,7 @@ export async function mergeOnLogin(uid: string): Promise<void> {
       downloadTable<Record<string, unknown>>(uid, 'goals'),
       downloadTable<Record<string, unknown>>(uid, 'paymentMethodItems'),
       downloadTable<Record<string, unknown>>(uid, 'subscriptions'),
+      downloadTable<Record<string, unknown>>(uid, 'loans'),
     ])
 
     // ── Layer 0: Independent tables (no FK dependencies) ──
@@ -698,6 +713,11 @@ export async function mergeOnLogin(uid: string): Promise<void> {
       remapFkField(rec, 'categoryId', txnCatMap)
       remapFkField(rec, 'paymentMethodItemId', payMethodMap)
       remapFkField(rec, 'subscriptionId', subscriptionMap)
+    })
+
+    // ── Loans (depends on assetItems) ──
+    await mergeTableWithRemap('loans', cloudLoans, (rec) => {
+      remapFkField(rec, 'linkedAssetItemId', assetItemMap)
     })
 
     // Process tombstones
@@ -831,6 +851,9 @@ const TABLE_FK_DEFS: Partial<Record<SyncableTable, Array<{ field: string; refTab
     { field: 'paymentMethodItemId', refTable: 'paymentMethodItems' },
     { field: 'linkedTransactionCategoryId', refTable: 'transactionCategories' },
   ],
+  loans: [
+    { field: 'linkedAssetItemId', refTable: 'assetItems' },
+  ],
 }
 
 function remapCloudFks(tableName: SyncableTable, record: Record<string, unknown>): void {
@@ -844,7 +867,8 @@ function remapCloudFks(tableName: SyncableTable, record: Record<string, unknown>
 
 type DexieTable = typeof db.members | typeof db.assetCategories | typeof db.assetItems |
   typeof db.dailyValues | typeof db.transactionCategories | typeof db.transactions |
-  typeof db.budgets | typeof db.goals | typeof db.paymentMethodItems | typeof db.subscriptions
+  typeof db.budgets | typeof db.goals | typeof db.paymentMethodItems | typeof db.subscriptions |
+  typeof db.loans
 
 function getLocalTable(tableName: SyncableTable): DexieTable {
   const map: Record<SyncableTable, DexieTable> = {
@@ -858,13 +882,14 @@ function getLocalTable(tableName: SyncableTable): DexieTable {
     goals: db.goals,
     paymentMethodItems: db.paymentMethodItems,
     subscriptions: db.subscriptions,
+    loans: db.loans,
   }
   return map[tableName]
 }
 
-let currentSyncUid: string | null = null
+let syncGeneration = 0
 
-function subscribeTable(uid: string, tableName: SyncableTable, retryCount = 0): void {
+function subscribeTable(uid: string, tableName: SyncableTable, generation: number, retryCount = 0): void {
   const colRef = collection(firestore, getUserCollectionPath(uid, tableName))
   const unsub = onSnapshot(colRef, async (snapshot) => {
     if (realtimeSyncPaused) return
@@ -922,12 +947,12 @@ function subscribeTable(uid: string, tableName: SyncableTable, retryCount = 0): 
   }, (err) => {
     console.error(`[sync] ${tableName} listener error:`, err)
     // Auto-reconnect with exponential backoff (max 30s)
-    if (currentSyncUid === uid && retryCount < 5) {
+    if (syncGeneration === generation && retryCount < 5) {
       const delay = Math.min(Math.pow(2, retryCount) * 1000, 30000)
       console.log(`[sync] retrying ${tableName} listener in ${delay}ms (attempt ${retryCount + 1})`)
       setTimeout(() => {
-        if (currentSyncUid === uid) {
-          subscribeTable(uid, tableName, retryCount + 1)
+        if (syncGeneration === generation) {
+          subscribeTable(uid, tableName, generation, retryCount + 1)
         }
       }, delay)
     }
@@ -935,7 +960,7 @@ function subscribeTable(uid: string, tableName: SyncableTable, retryCount = 0): 
   unsubscribers.push(unsub)
 }
 
-function subscribeTombstones(uid: string): void {
+function subscribeTombstones(uid: string, generation: number): void {
   const colRef = collection(firestore, `users/${uid}/syncTombstones`)
   const unsub = onSnapshot(colRef, async (snapshot) => {
     if (realtimeSyncPaused) return
@@ -970,24 +995,35 @@ function subscribeTombstones(uid: string): void {
     }
   }, (err) => {
     console.error('[sync] tombstones listener error:', err)
+    if (syncGeneration === generation) {
+      const delay = 2000
+      console.log(`[sync] retrying tombstones listener in ${delay}ms`)
+      setTimeout(() => {
+        if (syncGeneration === generation) {
+          subscribeTombstones(uid, generation)
+        }
+      }, delay)
+    }
   })
   unsubscribers.push(unsub)
 }
 
 export function startRealtimeSync(uid: string): void {
   stopRealtimeSync()
-  currentSyncUid = uid
+  syncGeneration++
+  realtimeSyncPaused = false
+  const gen = syncGeneration
 
   for (const tableName of ALL_TABLES) {
-    subscribeTable(uid, tableName)
+    subscribeTable(uid, tableName, gen)
   }
 
   // Also subscribe to tombstones for cross-device delete propagation
-  subscribeTombstones(uid)
+  subscribeTombstones(uid, gen)
 }
 
 export function stopRealtimeSync(): void {
-  currentSyncUid = null
+  syncGeneration++
   for (const unsub of unsubscribers) {
     unsub()
   }
