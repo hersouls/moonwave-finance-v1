@@ -10,7 +10,6 @@ import { AssetCategoryTabs } from '@/components/assets/AssetCategoryTabs'
 import { FAB } from '@/components/ui/FAB'
 import { Tabs } from '@/components/ui/Tabs'
 import { SkeletonCard } from '@/components/ui/Skeleton'
-import { ContentTransition } from '@/components/ui/ContentTransition'
 import { useSyncListener } from '@/hooks/useSyncListener'
 
 export function LiabilityListPage() {
@@ -49,55 +48,54 @@ export function LiabilityListPage() {
     return result
   }, [items, activeMember, activeCategory])
 
-  const skeleton = (
-    <div className="p-4 lg:p-6 space-y-4">
-      <div className="flex gap-2 mb-4">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="h-9 w-20 bg-zinc-200 dark:bg-zinc-700 rounded-md animate-pulse" />
+  if (isLoading) {
+    return (
+      <div className="p-4 lg:p-6 space-y-4">
+        <div className="flex gap-2 mb-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-9 w-20 bg-zinc-200 dark:bg-zinc-700 rounded-md animate-pulse" />
+          ))}
+        </div>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <SkeletonCard key={i} />
         ))}
       </div>
-      {Array.from({ length: 4 }).map((_, i) => (
-        <SkeletonCard key={i} />
-      ))}
-    </div>
-  )
+    )
+  }
 
   return (
-    <ContentTransition isLoading={isLoading} skeleton={skeleton}>
-      <div className="p-4 lg:p-6">
-        <div className="space-y-4">
-          <Tabs
-            tabs={memberTabs}
-            activeTab={activeMember === null ? 'all' : String(activeMember)}
-            onChange={(id) => setActiveMember(id === 'all' ? null : Number(id))}
-          />
+    <div className="p-4 lg:p-6">
+      <div className="space-y-4">
+        <Tabs
+          tabs={memberTabs}
+          activeTab={activeMember === null ? 'all' : String(activeMember)}
+          onChange={(id) => setActiveMember(id === 'all' ? null : Number(id))}
+        />
 
-          <AssetCategoryTabs
-            activeCategory={activeCategory}
-            onChange={setActiveCategory}
-            type="liability"
-          />
+        <AssetCategoryTabs
+          activeCategory={activeCategory}
+          onChange={setActiveCategory}
+          type="liability"
+        />
 
-          {filteredItems.length === 0 ? (
-            <LiabilityEmptyState />
-          ) : (
-            <div className="space-y-3">
-              {filteredItems.map((item, i) => (
-                <div key={item.id} className={i < 10 ? 'stagger-item' : undefined}>
-                  <LiabilityItemCard
-                    itemId={item.id!}
-                    name={item.name}
-                    categoryId={item.categoryId}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <FAB onClick={openLiabilityCreateModal} label="새 부채 추가" />
-        <LiabilityCreateModal />
+        {filteredItems.length === 0 ? (
+          <LiabilityEmptyState />
+        ) : (
+          <div className="space-y-3">
+            {filteredItems.map(item => (
+              <LiabilityItemCard
+                key={item.id}
+                itemId={item.id!}
+                name={item.name}
+                categoryId={item.categoryId}
+              />
+            ))}
+          </div>
+        )}
       </div>
-    </ContentTransition>
+
+      <FAB onClick={openLiabilityCreateModal} label="새 부채 추가" />
+      <LiabilityCreateModal />
+    </div>
   )
 }

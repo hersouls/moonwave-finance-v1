@@ -4028,40 +4028,6 @@ input[type="range"].slider:disabled::-moz-range-thumb {
   animation: countUp 400ms ease-out both;
 }
 
-/* Page enter transition */
-@keyframes pageEnter {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.page-enter {
-  animation: pageEnter var(--duration-slow) ease-out;
-}
-
-/* Stagger animation for list items */
-.stagger-item {
-  animation: pageEnter var(--duration-slow) ease-out both;
-}
-.stagger-item:nth-child(1) { animation-delay: 0ms; }
-.stagger-item:nth-child(2) { animation-delay: 30ms; }
-.stagger-item:nth-child(3) { animation-delay: 60ms; }
-.stagger-item:nth-child(4) { animation-delay: 90ms; }
-.stagger-item:nth-child(5) { animation-delay: 120ms; }
-.stagger-item:nth-child(6) { animation-delay: 150ms; }
-.stagger-item:nth-child(7) { animation-delay: 180ms; }
-.stagger-item:nth-child(8) { animation-delay: 210ms; }
-.stagger-item:nth-child(9) { animation-delay: 240ms; }
-.stagger-item:nth-child(10) { animation-delay: 270ms; }
-
-/* Pull-to-refresh indicator */
-@keyframes spinRefresh {
-  to { transform: rotate(360deg); }
-}
-
-.animate-spin-refresh {
-  animation: spinRefresh 0.8s linear infinite;
-}
-
 /* ========================================
    High Contrast Mode
    ======================================== */

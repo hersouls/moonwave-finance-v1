@@ -241,13 +241,6 @@ export interface Settings {
     usdToKrw: number
     lastUpdated?: string
   }
-  dashboardWidgets?: DashboardWidget[]
-}
-
-export interface DashboardWidget {
-  id: string
-  visible: boolean
-  order: number
 }
 
 // ─── Computed Types ────────────────────────────────

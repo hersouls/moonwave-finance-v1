@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
-import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
 import { useSubscriptionStore } from '@/stores/subscriptionStore'
 import { formatKRW, formatUSD, formatSubscriptionAmount } from '@/utils/format'
 import { getDaysUntilBilling } from '@/lib/dateUtils'
@@ -33,7 +32,7 @@ export function SubscriptionWidget() {
 
       <div className="mb-3">
         <p className="text-title2 text-zinc-900 dark:text-zinc-100 tabular-nums">
-          월 <AnimatedNumber value={monthlyCombined} format={formatKRW} />
+          월 {formatKRW(monthlyCombined)}
         </p>
         <p className="text-caption text-zinc-500 dark:text-zinc-400">
           (원화 {formatKRW(monthlyKRW)}

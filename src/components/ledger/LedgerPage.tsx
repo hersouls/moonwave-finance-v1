@@ -18,9 +18,6 @@ import { PageSegmentControl } from '@/components/layout/PageSegmentControl'
 import { FAB } from '@/components/ui/FAB'
 import { IconButton } from '@/components/ui/Button'
 import { SkeletonCard } from '@/components/ui/Skeleton'
-import { ContentTransition } from '@/components/ui/ContentTransition'
-import { SwipeableRow } from '@/components/ui/SwipeableRow'
-import { VirtualList } from '@/components/ui/VirtualList'
 import { formatMonthLabel, getPreviousMonth, getNextMonth } from '@/lib/dateUtils'
 import { ErrorEmptyState } from '@/components/ui/EmptyState'
 import { useSwipe } from '@/hooks/useSwipe'
@@ -99,6 +96,21 @@ export function LedgerPage() {
     loadBudgets(selectedMonth)
   }, [selectedMonth, loadBudgets])
 
+  if (isLoading) {
+    return (
+      <div className="p-4 lg:p-6 space-y-4">
+        <div className="grid grid-cols-3 gap-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-24 bg-zinc-200 dark:bg-zinc-700 rounded-xl animate-pulse" />
+          ))}
+        </div>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <SkeletonCard key={i} />
+        ))}
+      </div>
+    )
+  }
+
   if (error) {
     return (
       <div className="p-4 lg:p-6">
@@ -107,128 +119,89 @@ export function LedgerPage() {
     )
   }
 
-  const skeleton = (
-    <div className="p-4 lg:p-6 space-y-4">
-      <div className="grid grid-cols-3 gap-3">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="h-24 bg-zinc-200 dark:bg-zinc-700 rounded-xl animate-pulse" />
-        ))}
-      </div>
-      {Array.from({ length: 5 }).map((_, i) => (
-        <SkeletonCard key={i} />
-      ))}
-    </div>
-  )
-
   return (
-    <ContentTransition isLoading={isLoading} skeleton={skeleton}>
-      <div className="p-4 lg:p-6 space-y-4" {...swipeHandlers}>
-        {/* Segment Control */}
-        <PageSegmentControl segments={LEDGER_SEGMENTS} />
+    <div className="p-4 lg:p-6 space-y-4" {...swipeHandlers}>
+      {/* Segment Control */}
+      <PageSegmentControl segments={LEDGER_SEGMENTS} />
 
-        {/* Month Navigator */}
-        <div className="flex items-center justify-between">
-          <IconButton onClick={() => setSelectedMonth(getPreviousMonth(selectedMonth))} plain size="sm">
-            <ChevronLeft className="w-5 h-5" />
-          </IconButton>
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-            {formatMonthLabel(selectedMonth)}
-          </h2>
-          <IconButton onClick={() => setSelectedMonth(getNextMonth(selectedMonth))} plain size="sm">
-            <ChevronRight className="w-5 h-5" />
-          </IconButton>
-        </div>
-
-        {/* Monthly Summary */}
-        <MonthlySummary
-          totalIncome={summary.totalIncome}
-          totalExpense={summary.totalExpense}
-          netSavings={summary.netSavings}
-        />
-
-        {/* Budget Overview (expense view only) */}
-        {defaultType === 'expense' && budgets.length > 0 && <BudgetOverviewCard />}
-
-        {/* Type Filter + Advanced Filters */}
-        <TransactionFilters
-          activeType={filters.type}
-          onTypeChange={setTypeFilter}
-          searchQuery={filters.searchQuery}
-          onSearchChange={setSearchQuery}
-          members={members}
-          categories={categories}
-          memberFilter={filters.memberId}
-          onMemberChange={setMemberFilter}
-          paymentMethodFilter={filters.paymentMethod}
-          onPaymentMethodChange={setPaymentMethodFilter}
-          minAmount={filters.minAmount}
-          maxAmount={filters.maxAmount}
-          onAmountRangeChange={(min, max) => { setMinAmount(min); setMaxAmount(max) }}
-          activeFilterCount={activeFilterCount}
-          onReset={resetFilters}
-        />
-
-        {/* Category Breakdown */}
-        {transactions.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <CategoryBreakdown transactions={transactions} type="expense" budgets={budgets} />
-            <CategoryBreakdown transactions={transactions} type="income" />
-          </div>
-        )}
-
-        {/* Transaction List */}
-        {filtered.length === 0 ? (
-          <LedgerEmptyState />
-        ) : filtered.length > 50 ? (
-          <VirtualList
-            items={filtered}
-            estimateSize={72}
-            maxHeight="60vh"
-            renderItem={(t, i) => (
-              <div className="pb-2">
-                <SwipeableRow
-                  onDelete={() => useUIStore.getState().openTransactionEditModal(t.id!)}
-                  className={i < 10 ? 'stagger-item' : undefined}
-                  disabled={typeof window !== 'undefined' && window.innerWidth >= 1024}
-                >
-                  <TransactionCard transaction={t} />
-                </SwipeableRow>
-              </div>
-            )}
-          />
-        ) : (
-          <div className="space-y-2">
-            {filtered.map((t, i) => (
-              <SwipeableRow
-                key={t.id}
-                onDelete={() => useUIStore.getState().openTransactionEditModal(t.id!)}
-                className={i < 10 ? 'stagger-item' : undefined}
-                disabled={typeof window !== 'undefined' && window.innerWidth >= 1024}
-              >
-                <TransactionCard transaction={t} />
-              </SwipeableRow>
-            ))}
-          </div>
-        )}
-
-        <FAB onClick={openTransactionCreateModal} label="거래 기록" />
-
-        {/* Create Modal */}
-        <TransactionFormModal
-          mode="create"
-          open={isCreateOpen}
-          onClose={closeCreate}
-          initialDate={prefillDate}
-        />
-
-        {/* Edit Modal */}
-        <TransactionFormModal
-          mode="edit"
-          open={isEditOpen}
-          onClose={closeEdit}
-          initialData={editingTransaction}
-        />
+      {/* Month Navigator */}
+      <div className="flex items-center justify-between">
+        <IconButton onClick={() => setSelectedMonth(getPreviousMonth(selectedMonth))} plain size="sm">
+          <ChevronLeft className="w-5 h-5" />
+        </IconButton>
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+          {formatMonthLabel(selectedMonth)}
+        </h2>
+        <IconButton onClick={() => setSelectedMonth(getNextMonth(selectedMonth))} plain size="sm">
+          <ChevronRight className="w-5 h-5" />
+        </IconButton>
       </div>
-    </ContentTransition>
+
+      {/* Monthly Summary */}
+      <MonthlySummary
+        totalIncome={summary.totalIncome}
+        totalExpense={summary.totalExpense}
+        netSavings={summary.netSavings}
+      />
+
+      {/* Budget Overview (expense view only) */}
+      {defaultType === 'expense' && budgets.length > 0 && <BudgetOverviewCard />}
+
+      {/* Type Filter + Advanced Filters */}
+      <TransactionFilters
+        activeType={filters.type}
+        onTypeChange={setTypeFilter}
+        searchQuery={filters.searchQuery}
+        onSearchChange={setSearchQuery}
+        members={members}
+        categories={categories}
+        memberFilter={filters.memberId}
+        onMemberChange={setMemberFilter}
+        paymentMethodFilter={filters.paymentMethod}
+        onPaymentMethodChange={setPaymentMethodFilter}
+        minAmount={filters.minAmount}
+        maxAmount={filters.maxAmount}
+        onAmountRangeChange={(min, max) => { setMinAmount(min); setMaxAmount(max) }}
+        activeFilterCount={activeFilterCount}
+        onReset={resetFilters}
+      />
+
+      {/* Category Breakdown */}
+      {transactions.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <CategoryBreakdown transactions={transactions} type="expense" budgets={budgets} />
+          <CategoryBreakdown transactions={transactions} type="income" />
+        </div>
+      )}
+
+      {/* Transaction List */}
+      {filtered.length === 0 ? (
+        <LedgerEmptyState />
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(t => (
+            <TransactionCard key={t.id} transaction={t} />
+          ))}
+        </div>
+      )}
+
+      <FAB onClick={openTransactionCreateModal} label="거래 기록" />
+
+      {/* Create Modal */}
+      <TransactionFormModal
+        mode="create"
+        open={isCreateOpen}
+        onClose={closeCreate}
+        initialDate={prefillDate}
+      />
+
+      {/* Edit Modal */}
+      <TransactionFormModal
+        mode="edit"
+        open={isEditOpen}
+        onClose={closeEdit}
+        initialData={editingTransaction}
+      />
+    </div>
   )
 }

@@ -7,8 +7,7 @@ import {
 } from '@headlessui/react'
 import { clsx } from 'clsx'
 import { X } from 'lucide-react'
-import { useRef, useCallback, type ReactNode } from 'react'
-import { haptic } from '@/utils/haptic'
+import type { ReactNode } from 'react'
 
 interface DialogProps {
   open: boolean
@@ -32,43 +31,6 @@ const sizeStyles = {
 }
 
 export function Dialog({ open, onClose, children, size = 'lg', noPadding = false, role }: DialogProps) {
-  const panelRef = useRef<HTMLDivElement>(null)
-  const dragStartY = useRef(0)
-  const isDragging = useRef(false)
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const panel = panelRef.current
-    if (!panel) return
-    const rect = panel.getBoundingClientRect()
-    const touchY = e.touches[0].clientY - rect.top
-    // Only allow drag from top 40px (handle area)
-    if (touchY > 40) return
-    isDragging.current = true
-    dragStartY.current = e.touches[0].clientY
-    panel.style.transition = 'none'
-  }, [])
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging.current || !panelRef.current) return
-    const diff = Math.max(0, e.touches[0].clientY - dragStartY.current)
-    panelRef.current.style.transform = `translateY(${diff}px)`
-  }, [])
-
-  const handleTouchEnd = useCallback(() => {
-    if (!isDragging.current || !panelRef.current) return
-    isDragging.current = false
-    const panel = panelRef.current
-    const currentTranslate = parseFloat(panel.style.transform.replace(/[^\d.-]/g, '') || '0')
-    panel.style.transition = 'transform 200ms ease-out'
-    if (currentTranslate > 100) {
-      panel.style.transform = 'translateY(100%)'
-      haptic('light')
-      setTimeout(onClose, 200)
-    } else {
-      panel.style.transform = 'translateY(0)'
-    }
-  }, [onClose])
-
   return (
     <HeadlessDialog open={open} onClose={onClose} className="relative z-[var(--z-overlay)]" role={role}>
       <DialogBackdrop
@@ -82,7 +44,6 @@ export function Dialog({ open, onClose, children, size = 'lg', noPadding = false
       <div className="fixed inset-0 overflow-y-auto pt-6 sm:pt-0">
         <div className="grid min-h-full grid-rows-[1fr_auto] justify-items-center sm:grid-rows-[1fr_auto_3fr] sm:p-4">
           <DialogPanel
-            ref={panelRef}
             transition
             className={clsx(
               'row-start-2 w-full min-w-0 rounded-t-2xl bg-white elevation-4 ring-1 ring-zinc-200',
@@ -95,12 +56,9 @@ export function Dialog({ open, onClose, children, size = 'lg', noPadding = false
               'transition duration-300 data-[closed]:translate-y-12 data-[closed]:opacity-0 data-[enter]:ease-out data-[leave]:ease-in',
               'sm:data-[closed]:translate-y-0 sm:data-[closed]:scale-95 sm:data-[closed]:data-[enter]:duration-300 sm:data-[closed]:data-[leave]:duration-200'
             )}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
           >
             {/* Mobile drag handle indicator */}
-            <div className="sm:hidden sheet-handle cursor-grab active:cursor-grabbing" aria-hidden="true" />
+            <div className="sm:hidden sheet-handle" aria-hidden="true" />
             {children}
           </DialogPanel>
         </div>

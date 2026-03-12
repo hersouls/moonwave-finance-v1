@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Cloud, CloudOff, Upload, Download, FileSpreadsheet,
-  Loader2, CheckCircle2, AlertCircle, Database, FileUp, Eye,
+  Loader2, CheckCircle2, AlertCircle, Database, FileUp,
 } from 'lucide-react'
 import { UI_DELAYS } from '@/utils/constants'
 import { useAuthStore, type SyncStatus } from '@/stores/authStore'
@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/Button'
 import { exportBackup, importBackup, exportTransactionsCSV, exportAssetValuesCSV } from '@/services/backup'
 import { formatRelativeTime } from '@/utils/format'
 import { EasyLedgerImportDialog } from './EasyLedgerImportDialog'
-import { ExportPreview } from './ExportPreview'
 
 function SyncStatusIndicator({ status }: { status: SyncStatus }) {
   if (status === 'syncing') return <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
@@ -42,7 +41,6 @@ export function DataTab() {
   const [isRestoring, setIsRestoring] = useState(false)
   const [showEasyLedgerImport, setShowEasyLedgerImport] = useState(false)
   const [easyLedgerFile, setEasyLedgerFile] = useState<File | null>(null)
-  const [showExportPreview, setShowExportPreview] = useState<'transactions' | 'assets' | null>(null)
 
   const handleExportBackup = async () => {
     setIsBackingUp(true)
@@ -249,22 +247,14 @@ export function DataTab() {
           <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-3">
             Excel 호환 CSV 파일로 데이터를 내보냅니다
           </p>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setShowExportPreview('transactions')}
-              leftIcon={<Eye className="w-4 h-4" />}
-            >
-              거래내역 미리보기
-            </Button>
+          <div className="flex gap-2">
             <Button
               variant="secondary"
               size="sm"
               onClick={() => handleExportCSV('transactions')}
               leftIcon={<FileSpreadsheet className="w-4 h-4" />}
             >
-              거래내역 전체
+              거래내역
             </Button>
             <Button
               variant="secondary"
@@ -287,15 +277,6 @@ export function DataTab() {
           setEasyLedgerFile(null)
         }}
       />
-
-      {/* Export Preview Dialog */}
-      {showExportPreview && (
-        <ExportPreview
-          open={true}
-          type={showExportPreview}
-          onClose={() => setShowExportPreview(null)}
-        />
-      )}
     </div>
   )
 }

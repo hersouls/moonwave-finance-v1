@@ -1,7 +1,6 @@
 import { Landmark, CreditCard } from 'lucide-react'
 import { clsx } from 'clsx'
-import { formatPercent } from '@/utils/format'
-import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
+import { formatKoreanUnit, formatPercent } from '@/utils/format'
 import type { AssetStats } from '@/lib/types'
 
 interface AssetLiabilityBreakdownProps {
@@ -22,7 +21,7 @@ export function AssetLiabilityBreakdown({ stats }: AssetLiabilityBreakdownProps)
           <span className="text-body3 text-zinc-500 dark:text-zinc-400">총 자산</span>
         </div>
         <p className="text-heading2 text-emerald-600 dark:text-emerald-400 tabular-nums">
-          <AnimatedNumber value={totalAssets} />
+          {formatKoreanUnit(totalAssets)}
           <span className="text-sm text-zinc-400 dark:text-zinc-500 ml-1">원</span>
         </p>
       </div>
@@ -48,7 +47,7 @@ export function AssetLiabilityBreakdown({ stats }: AssetLiabilityBreakdownProps)
           </div>
         </div>
         <p className="text-heading2 text-red-600 dark:text-red-400 tabular-nums">
-          <AnimatedNumber value={totalLiabilities} />
+          {formatKoreanUnit(totalLiabilities)}
           <span className="text-sm text-zinc-400 dark:text-zinc-500 ml-1">원</span>
         </p>
       </div>
