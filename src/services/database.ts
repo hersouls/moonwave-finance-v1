@@ -189,9 +189,12 @@ const db = new FinanceDatabase()
 // ─── Change Tracking for Incremental Sync ────────────
 // Tracks all local mutations to syncChangeLog for incremental upload.
 // Uses a module-level flag to skip logging writes that come from the sync system itself.
-let _syncWritingFlag = false
-export function setSyncWritingFlag(v: boolean) { _syncWritingFlag = v }
-export function getSyncWritingFlag() { return _syncWritingFlag }
+let _syncWritingCount = 0
+export function setSyncWritingFlag(v: boolean) {
+  if (v) _syncWritingCount++
+  else _syncWritingCount = Math.max(0, _syncWritingCount - 1)
+}
+export function getSyncWritingFlag() { return _syncWritingCount > 0 }
 
 type SyncableTableName = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions'
 
@@ -211,7 +214,7 @@ function installChangeTracking() {
 
   for (const { table, name } of tables) {
     table.hook('creating', function (_primKey, obj) {
-      if (_syncWritingFlag) return
+      if (_syncWritingCount > 0) return
       const syncId = obj?.syncId as string | undefined
       if (syncId) {
         db.syncChangeLog.add({
@@ -225,7 +228,7 @@ function installChangeTracking() {
     })
 
     table.hook('updating', function (_mods, _primKey, obj) {
-      if (_syncWritingFlag) return
+      if (_syncWritingCount > 0) return
       const syncId = obj?.syncId as string | undefined
       if (syncId) {
         db.syncChangeLog.add({
@@ -239,7 +242,7 @@ function installChangeTracking() {
     })
 
     table.hook('deleting', function (_primKey, obj) {
-      if (_syncWritingFlag) return
+      if (_syncWritingCount > 0) return
       const syncId = obj?.syncId as string | undefined
       if (syncId) {
         db.syncChangeLog.add({
@@ -266,20 +269,25 @@ db.on('ready', async () => {
   const cats = await db.assetCategories.toArray()
   const hasRealEstate = cats.some((c) => c.name === '부동산')
   if (!hasRealEstate) {
-    const now = new Date().toISOString()
-    const maxSort = cats
-      .filter((c) => c.type === 'asset')
-      .reduce((max, c) => Math.max(max, c.sortOrder), -1)
-    await db.assetCategories.add({
-      name: '부동산',
-      type: 'asset',
-      color: '#D97706',
-      icon: 'Home',
-      sortOrder: maxSort + 1,
-      syncId: crypto.randomUUID(),
-      createdAt: now,
-      updatedAt: now,
-    } as AssetCategory)
+    setSyncWritingFlag(true)
+    try {
+      const now = new Date().toISOString()
+      const maxSort = cats
+        .filter((c) => c.type === 'asset')
+        .reduce((max, c) => Math.max(max, c.sortOrder), -1)
+      await db.assetCategories.add({
+        name: '부동산',
+        type: 'asset',
+        color: '#D97706',
+        icon: 'Home',
+        sortOrder: maxSort + 1,
+        syncId: crypto.randomUUID(),
+        createdAt: now,
+        updatedAt: now,
+      } as AssetCategory)
+    } finally {
+      setSyncWritingFlag(false)
+    }
   }
 })
 
@@ -561,7 +569,11 @@ export async function deleteTransaction(id: number): Promise<void> {
 }
 
 export async function bulkDeleteTransactions(ids: number[]): Promise<void> {
-  await db.transactions.bulkDelete(ids)
+  await db.transaction('rw', db.transactions, async () => {
+    for (const id of ids) {
+      await db.transactions.delete(id)
+    }
+  })
 }
 
 // ─── Sync Helpers ─────────────────────────────────
@@ -674,6 +686,8 @@ export async function clearAllData(): Promise<void> {
   await db.goals.clear()
   await db.paymentMethodItems.clear()
   await db.subscriptions.clear()
+  await db.syncChangeLog.clear()
+  await db.syncTombstones.clear()
 
   const now = new Date().toISOString()
   await db.members.bulkAdd(

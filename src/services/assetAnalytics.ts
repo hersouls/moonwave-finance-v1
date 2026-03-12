@@ -1,63 +1,149 @@
 import { differenceInDays, addDays, parseISO, isBefore, isEqual, getDaysInMonth, format } from 'date-fns'
 import type { AssetItem, DailyValue, NetWorthSnapshot } from '@/lib/types'
 
+/* ──────────────────────────────────────────────
+ * 퇴직금 계산
+ * 공식: 퇴직금 = 월 평균임금(30일분) × 지급률(재직일수 / 365)
+ * ────────────────────────────────────────────── */
+
 /**
- * 대한민국 퇴직금 공식:
- * 퇴직금 = 1일 평균임금 x 30일 x (재직일수 / 365일)
- *
  * @param joinDate 입사일 (YYYY-MM-DD)
- * @param averageDailyWage 1일 평균임금 (예상 금액)
+ * @param monthlyAvgWage 월 평균임금 — 30일분 (= 1일 평균임금 × 30)
  * @param targetDate 퇴직금을 계산할 기준일 (YYYY-MM-DD)
  * @returns 해당 일자 기준 예상 퇴직금
  */
-export function calculateSeverancePay(joinDate: string, averageDailyWage: number, targetDate: string): number {
+export function calculateSeverancePay(joinDate: string, monthlyAvgWage: number, targetDate: string): number {
   const join = parseISO(joinDate)
   const target = parseISO(targetDate)
-  
-  if (isBefore(target, join)) {
-    return 0
-  }
 
-  // 재직일수 계산 (입사일은 포함되어야 하므로 +1)
+  if (isBefore(target, join)) return 0
+
   const daysOfService = differenceInDays(target, join) + 1
-  
-  const severancePay = averageDailyWage * 30 * (daysOfService / 365)
-  return Math.floor(severancePay)
+  const paymentRate = daysOfService / 365
+  return Math.floor(monthlyAvgWage * paymentRate)
 }
 
 /**
- * 입사일부터 현재(또는 특정 기간)까지의 각 날짜별 예상 퇴직금을 DailyValue 형태로 배열 생성
- * 초기 등록 시 또는 기간 내 값 생성을 위해 사용할 수 있습니다.
+ * 입사일~기준일 사이의 근속년수 (올림, 세금 계산용)
+ */
+export function getServiceYears(joinDate: string, targetDate: string): number {
+  const join = parseISO(joinDate)
+  const target = parseISO(targetDate)
+  if (isBefore(target, join)) return 0
+  const daysOfService = differenceInDays(target, join) + 1
+  return Math.ceil(daysOfService / 365)
+}
+
+/* ──────────────────────────────────────────────
+ * 퇴직세액 계산 (퇴직소득세 + 퇴직주민세)
+ * 2024 세법 기준
+ * ────────────────────────────────────────────── */
+export interface SeveranceTaxResult {
+  incomeTax: number    // 퇴직소득세
+  residentTax: number  // 퇴직주민세 (소득세의 10%)
+  totalTax: number
+  netSeverance: number // 세후 퇴직금
+}
+
+export function calculateSeveranceTax(severancePay: number, serviceYears: number): SeveranceTaxResult {
+  const zero: SeveranceTaxResult = { incomeTax: 0, residentTax: 0, totalTax: 0, netSeverance: severancePay }
+  if (severancePay <= 0 || serviceYears <= 0) return zero
+
+  // 1) 근속년수공제
+  let serviceDeduction: number
+  if (serviceYears <= 5) {
+    serviceDeduction = 1_000_000 * serviceYears
+  } else if (serviceYears <= 10) {
+    serviceDeduction = 5_000_000 + 2_000_000 * (serviceYears - 5)
+  } else if (serviceYears <= 20) {
+    serviceDeduction = 15_000_000 + 2_500_000 * (serviceYears - 10)
+  } else {
+    serviceDeduction = 40_000_000 + 3_000_000 * (serviceYears - 20)
+  }
+
+  // 2) 환산급여 = (퇴직급여 - 근속년수공제) × 12 / 근속년수
+  const taxableBase = Math.max(severancePay - serviceDeduction, 0)
+  if (taxableBase === 0) return zero
+  const convertedPay = Math.floor(taxableBase * 12 / serviceYears)
+
+  // 3) 환산급여공제
+  let convertedDeduction: number
+  if (convertedPay <= 8_000_000) {
+    convertedDeduction = convertedPay
+  } else if (convertedPay <= 70_000_000) {
+    convertedDeduction = 8_000_000 + Math.floor((convertedPay - 8_000_000) * 0.6)
+  } else if (convertedPay <= 100_000_000) {
+    convertedDeduction = 45_200_000 + Math.floor((convertedPay - 70_000_000) * 0.55)
+  } else {
+    convertedDeduction = 61_700_000 + Math.floor((convertedPay - 100_000_000) * 0.45)
+  }
+
+  // 4) 퇴직소득과세표준
+  const taxBase = Math.max(convertedPay - convertedDeduction, 0)
+  if (taxBase === 0) return zero
+
+  // 5) 환산산출세액 (기본세율)
+  let convertedTax: number
+  if (taxBase <= 14_000_000) {
+    convertedTax = Math.floor(taxBase * 0.06)
+  } else if (taxBase <= 50_000_000) {
+    convertedTax = 840_000 + Math.floor((taxBase - 14_000_000) * 0.15)
+  } else if (taxBase <= 88_000_000) {
+    convertedTax = 6_240_000 + Math.floor((taxBase - 50_000_000) * 0.24)
+  } else if (taxBase <= 150_000_000) {
+    convertedTax = 15_360_000 + Math.floor((taxBase - 88_000_000) * 0.35)
+  } else if (taxBase <= 300_000_000) {
+    convertedTax = 37_060_000 + Math.floor((taxBase - 150_000_000) * 0.38)
+  } else if (taxBase <= 500_000_000) {
+    convertedTax = 94_060_000 + Math.floor((taxBase - 300_000_000) * 0.40)
+  } else if (taxBase <= 1_000_000_000) {
+    convertedTax = 174_060_000 + Math.floor((taxBase - 500_000_000) * 0.42)
+  } else {
+    convertedTax = 384_060_000 + Math.floor((taxBase - 1_000_000_000) * 0.45)
+  }
+
+  // 6) 퇴직소득세 = 환산산출세액 × 근속년수 / 12, 10원 단위 절사
+  const incomeTax = Math.floor(convertedTax * serviceYears / 12 / 10) * 10
+
+  // 7) 퇴직주민세 = 퇴직소득세 × 10%, 10원 단위 절사
+  const residentTax = Math.floor(incomeTax * 0.1 / 10) * 10
+
+  const totalTax = incomeTax + residentTax
+  return { incomeTax, residentTax, totalTax, netSeverance: severancePay - totalTax }
+}
+
+/**
+ * 입사일부터 특정 일자까지의 각 날짜별 예상 퇴직금을 DailyValue 형태로 생성
  *
  * @param assetItemId 연결된 자산 아이템 ID
  * @param joinDate 입사일
- * @param averageDailyWage 1일 평균임금
+ * @param monthlyAvgWage 월 평균임금 (30일분)
  * @param targetEndDate 값을 채울 마지막 일자 (보통 오늘)
  */
 export function generateSeverancePayValues(
   assetItemId: number,
   joinDate: string,
-  averageDailyWage: number,
+  monthlyAvgWage: number,
   targetEndDate: string
 ): Omit<DailyValue, 'id' | 'syncId' | 'createdAt' | 'updatedAt'>[] {
   const join = parseISO(joinDate)
   const end = parseISO(targetEndDate)
-  
+
   if (isBefore(end, join)) return []
 
   const values: Omit<DailyValue, 'id' | 'syncId' | 'createdAt' | 'updatedAt'>[] = []
-  
+
   let current = join
   while (isBefore(current, end) || isEqual(current, end)) {
     const curDateStr = format(current, 'yyyy-MM-dd')
     values.push({
       assetItemId,
       date: curDateStr,
-      value: calculateSeverancePay(joinDate, averageDailyWage, curDateStr)
+      value: calculateSeverancePay(joinDate, monthlyAvgWage, curDateStr)
     })
     current = addDays(current, 1)
   }
-  
+
   return values
 }
 

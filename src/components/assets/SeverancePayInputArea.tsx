@@ -1,27 +1,31 @@
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
-import { calculateSeverancePay } from '@/services/assetAnalytics'
+import { calculateSeverancePay, calculateSeveranceTax, getServiceYears } from '@/services/assetAnalytics'
 
 interface SeverancePayInputAreaProps {
-  onValuesChange: (values: { joinDate: string; averageDailyWage: number; estimatedAmount: number }) => void
+  onValuesChange: (values: { joinDate: string; monthlyAvgWage: number; estimatedAmount: number }) => void
 }
 
 export function SeverancePayInputArea({ onValuesChange }: SeverancePayInputAreaProps) {
   const [joinDate, setJoinDate] = useState(format(new Date(), 'yyyy-MM-dd'))
-  const [averageDailyWageStr, setAverageDailyWageStr] = useState('')
+  const [wageStr, setWageStr] = useState('')
   const [estimatedAmount, setEstimatedAmount] = useState(0)
 
+  const today = format(new Date(), 'yyyy-MM-dd')
+  const wage = Number(wageStr.replace(/[^0-9]/g, ''))
+  const serviceYears = joinDate && wage > 0 ? getServiceYears(joinDate, today) : 0
+  const tax = estimatedAmount > 0 ? calculateSeveranceTax(estimatedAmount, serviceYears) : null
+
   useEffect(() => {
-    const wage = Number(averageDailyWageStr.replace(/[^0-9]/g, ''))
     if (joinDate && wage > 0) {
-      const amount = calculateSeverancePay(joinDate, wage, format(new Date(), 'yyyy-MM-dd'))
+      const amount = calculateSeverancePay(joinDate, wage, today)
       setEstimatedAmount(amount)
-      onValuesChange({ joinDate, averageDailyWage: wage, estimatedAmount: amount })
+      onValuesChange({ joinDate, monthlyAvgWage: wage, estimatedAmount: amount })
     } else {
       setEstimatedAmount(0)
-      onValuesChange({ joinDate: '', averageDailyWage: 0, estimatedAmount: 0 })
+      onValuesChange({ joinDate: '', monthlyAvgWage: 0, estimatedAmount: 0 })
     }
-  }, [joinDate, averageDailyWageStr, onValuesChange])
+  }, [joinDate, wageStr, onValuesChange])
 
   return (
     <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl space-y-4 border border-zinc-200 dark:border-zinc-700">
@@ -44,30 +48,56 @@ export function SeverancePayInputArea({ onValuesChange }: SeverancePayInputAreaP
           />
         </div>
         <div>
-          <label className="block text-[13px] text-zinc-600 dark:text-zinc-400 mb-1.5">최근 3개월 1일 평균임금 (예상)</label>
+          <label className="block text-[13px] text-zinc-600 dark:text-zinc-400 mb-1.5">월 평균임금 (30일분)</label>
           <div className="relative">
             <input
               type="text"
               inputMode="numeric"
-              value={averageDailyWageStr}
+              value={wageStr}
               onChange={(e) => {
                 const raw = e.target.value.replace(/[^0-9]/g, '')
-                setAverageDailyWageStr(raw ? Number(raw).toLocaleString('ko-KR') : '')
+                setWageStr(raw ? Number(raw).toLocaleString('ko-KR') : '')
               }}
               placeholder="0"
               className="input-base text-right pr-8 tabular-nums"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400">원</span>
           </div>
-          <p className="text-[12px] text-zinc-500 mt-1">예: (최근 3개월 임금총액) ÷ (그 기간의 총 일수)</p>
+          <p className="text-[12px] text-zinc-500 mt-1">최근 3개월 급여총액 / 해당 기간 총일수 x 30</p>
         </div>
-        
-        <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700 mt-4 flex justify-between items-center">
-          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">현재 누적 예상액</span>
-          <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-            {estimatedAmount > 0 ? estimatedAmount.toLocaleString('ko-KR') : 0} <span className="text-sm font-normal">원</span>
-          </span>
-        </div>
+
+        {estimatedAmount > 0 && (
+          <div className="pt-3 border-t border-zinc-200 dark:border-zinc-700 space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">퇴직금 예상액</span>
+              <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                {estimatedAmount.toLocaleString('ko-KR')} <span className="text-sm font-normal">원</span>
+              </span>
+            </div>
+            {tax && tax.totalTax > 0 && (
+              <>
+                <div className="flex justify-between items-center text-[13px]">
+                  <span className="text-zinc-500 dark:text-zinc-400">퇴직소득세</span>
+                  <span className="text-zinc-600 dark:text-zinc-300 tabular-nums">
+                    -{tax.incomeTax.toLocaleString('ko-KR')}원
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-[13px]">
+                  <span className="text-zinc-500 dark:text-zinc-400">퇴직주민세</span>
+                  <span className="text-zinc-600 dark:text-zinc-300 tabular-nums">
+                    -{tax.residentTax.toLocaleString('ko-KR')}원
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">세후 예상 수령액</span>
+                  <span className="text-base font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                    {tax.netSeverance.toLocaleString('ko-KR')} <span className="text-sm font-normal">원</span>
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

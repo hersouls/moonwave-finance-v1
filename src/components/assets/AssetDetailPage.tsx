@@ -14,7 +14,7 @@ import { format } from 'date-fns'
 import { UI_DELAYS } from '@/utils/constants'
 import { useSyncListener } from '@/hooks/useSyncListener'
 import { useToastStore } from '@/stores/toastStore'
-import { calculateSeverancePay, generateSeverancePayValues } from '@/services/assetAnalytics'
+import { calculateSeverancePay, generateSeverancePayValues, calculateSeveranceTax, getServiceYears } from '@/services/assetAnalytics'
 
 export function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -214,62 +214,92 @@ export function AssetDetailPage() {
       </Card>
 
       {/* Severance Pay Recalculation */}
-      {isSeverancePay && (
-        <Card className="card-pad-lg space-y-4">
-          <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <RefreshCw className="w-4 h-4 text-zinc-500" />
-            퇴직금 재계산
-          </h3>
-          <p className="text-caption text-zinc-500 dark:text-zinc-400 leading-relaxed">
-            입사일과 평균임금을 입력하면 입사일부터 오늘까지 일별 퇴직금을 다시 계산합니다.
-          </p>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-[13px] text-zinc-600 dark:text-zinc-400 mb-1.5">입사일</label>
-              <input
-                type="date"
-                value={sevJoinDate}
-                onChange={(e) => setSevJoinDate(e.target.value)}
-                className="input-base"
-              />
-            </div>
-            <div>
-              <label className="block text-[13px] text-zinc-600 dark:text-zinc-400 mb-1.5">최근 3개월 1일 평균임금</label>
-              <div className="relative">
+      {isSeverancePay && (() => {
+        const sevWage = Number(sevWageStr.replace(/[^0-9]/g, ''))
+        const sevServiceYears = sevJoinDate && sevWage > 0 ? getServiceYears(sevJoinDate, format(new Date(), 'yyyy-MM-dd')) : 0
+        const sevTax = sevEstimated > 0 ? calculateSeveranceTax(sevEstimated, sevServiceYears) : null
+        return (
+          <Card className="card-pad-lg space-y-4">
+            <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <RefreshCw className="w-4 h-4 text-zinc-500" />
+              퇴직금 재계산
+            </h3>
+            <p className="text-caption text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              입사일과 월 평균임금을 입력하면 입사일부터 오늘까지 일별 퇴직금을 다시 계산합니다.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[13px] text-zinc-600 dark:text-zinc-400 mb-1.5">입사일</label>
                 <input
-                  type="text"
-                  inputMode="numeric"
-                  value={sevWageStr}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/[^0-9]/g, '')
-                    setSevWageStr(raw ? Number(raw).toLocaleString('ko-KR') : '')
-                  }}
-                  placeholder="0"
-                  className="input-base text-right pr-8 tabular-nums"
+                  type="date"
+                  value={sevJoinDate}
+                  onChange={(e) => setSevJoinDate(e.target.value)}
+                  className="input-base"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400">원</span>
               </div>
+              <div>
+                <label className="block text-[13px] text-zinc-600 dark:text-zinc-400 mb-1.5">월 평균임금 (30일분)</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={sevWageStr}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^0-9]/g, '')
+                      setSevWageStr(raw ? Number(raw).toLocaleString('ko-KR') : '')
+                    }}
+                    placeholder="0"
+                    className="input-base text-right pr-8 tabular-nums"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400">원</span>
+                </div>
+                <p className="text-[12px] text-zinc-500 mt-1">최근 3개월 급여총액 / 해당 기간 총일수 x 30</p>
+              </div>
+              {sevEstimated > 0 && (
+                <div className="pt-3 border-t border-zinc-200 dark:border-zinc-700 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">퇴직금 예상액</span>
+                    <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                      {sevEstimated.toLocaleString('ko-KR')} <span className="text-sm font-normal">원</span>
+                    </span>
+                  </div>
+                  {sevTax && sevTax.totalTax > 0 && (
+                    <>
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-zinc-500 dark:text-zinc-400">퇴직소득세</span>
+                        <span className="text-zinc-600 dark:text-zinc-300 tabular-nums">
+                          -{sevTax.incomeTax.toLocaleString('ko-KR')}원
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-zinc-500 dark:text-zinc-400">퇴직주민세</span>
+                        <span className="text-zinc-600 dark:text-zinc-300 tabular-nums">
+                          -{sevTax.residentTax.toLocaleString('ko-KR')}원
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">세후 예상 수령액</span>
+                        <span className="text-base font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                          {sevTax.netSeverance.toLocaleString('ko-KR')} <span className="text-sm font-normal">원</span>
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleSeveranceRecalc}
+                disabled={sevRecalculating || !sevJoinDate || !sevWageStr}
+                className="w-full"
+              >
+                {sevRecalculating ? '재계산 중...' : '퇴직금 재계산'}
+              </Button>
             </div>
-            {sevEstimated > 0 && (
-              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700 flex justify-between items-center">
-                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">현재 예상 퇴직금</span>
-                <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                  {sevEstimated.toLocaleString('ko-KR')} <span className="text-sm font-normal">원</span>
-                </span>
-              </div>
-            )}
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleSeveranceRecalc}
-              disabled={sevRecalculating || !sevJoinDate || !sevWageStr}
-              className="w-full"
-            >
-              {sevRecalculating ? '재계산 중...' : '퇴직금 재계산'}
-            </Button>
-          </div>
-        </Card>
-      )}
+          </Card>
+        )
+      })()}
 
       {/* Monthly Value Grid */}
       <div>

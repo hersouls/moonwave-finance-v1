@@ -59,7 +59,6 @@ async function uploadTable<T extends { syncId?: string }>(
     for (const record of chunk) {
       const ref = doc(firestore, getUserDocPath(uid, tableName, record.syncId!))
       const data = stripUndefined({ ...record } as Record<string, unknown>)
-      delete data.id
       batch.set(ref, data, { merge: true })
     }
     await batch.commit()
@@ -215,22 +214,23 @@ export async function fullDownload(uid: string): Promise<void> {
   useAuthStore.getState().setSyncStatus('syncing')
   try {
     const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions] = await withRetry(() => Promise.all([
-      downloadTable<Member>(uid, 'members'),
-      downloadTable<AssetCategory>(uid, 'assetCategories'),
-      downloadTable<AssetItem>(uid, 'assetItems'),
-      downloadTable<DailyValue>(uid, 'dailyValues'),
-      downloadTable<TransactionCategory>(uid, 'transactionCategories'),
-      downloadTable<Transaction>(uid, 'transactions'),
-      downloadTable<Budget>(uid, 'budgets'),
-      downloadTable<FinancialGoal>(uid, 'goals'),
-      downloadTable<PaymentMethodItem>(uid, 'paymentMethodItems'),
-      downloadTable<Subscription>(uid, 'subscriptions'),
+      downloadTable<Record<string, unknown>>(uid, 'members'),
+      downloadTable<Record<string, unknown>>(uid, 'assetCategories'),
+      downloadTable<Record<string, unknown>>(uid, 'assetItems'),
+      downloadTable<Record<string, unknown>>(uid, 'dailyValues'),
+      downloadTable<Record<string, unknown>>(uid, 'transactionCategories'),
+      downloadTable<Record<string, unknown>>(uid, 'transactions'),
+      downloadTable<Record<string, unknown>>(uid, 'budgets'),
+      downloadTable<Record<string, unknown>>(uid, 'goals'),
+      downloadTable<Record<string, unknown>>(uid, 'paymentMethodItems'),
+      downloadTable<Record<string, unknown>>(uid, 'subscriptions'),
     ]))
 
     syncWritingCount++
     setSyncWritingFlag(true)
     try {
       await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions], async () => {
+        // Clear all tables
         await db.members.clear()
         await db.assetCategories.clear()
         await db.assetItems.clear()
@@ -242,16 +242,89 @@ export async function fullDownload(uid: string): Promise<void> {
         await db.paymentMethodItems.clear()
         await db.subscriptions.clear()
 
-        if (members.length > 0) await db.members.bulkPut(members)
-        if (assetCategories.length > 0) await db.assetCategories.bulkPut(assetCategories)
-        if (assetItems.length > 0) await db.assetItems.bulkPut(assetItems)
-        if (dailyValues.length > 0) await db.dailyValues.bulkPut(dailyValues)
-        if (transactionCategories.length > 0) await db.transactionCategories.bulkPut(transactionCategories)
-        if (transactions.length > 0) await db.transactions.bulkPut(transactions)
-        if (budgets.length > 0) await db.budgets.bulkPut(budgets)
-        if (goals.length > 0) await db.goals.bulkPut(goals)
-        if (paymentMethodItems.length > 0) await db.paymentMethodItems.bulkPut(paymentMethodItems)
-        if (subscriptions.length > 0) await db.subscriptions.bulkPut(subscriptions)
+        // ── Layer 0: Insert independent tables, build ID mappings ──
+        const memberIdMap = new Map<number, number>()
+        for (const rec of members) {
+          const cloudId = rec.id as number | undefined
+          delete rec.id
+          const newId = await db.members.add(rec as unknown as Member) as number
+          if (cloudId != null) memberIdMap.set(cloudId, newId)
+        }
+
+        const assetCatIdMap = new Map<number, number>()
+        for (const rec of assetCategories) {
+          const cloudId = rec.id as number | undefined
+          delete rec.id
+          const newId = await db.assetCategories.add(rec as unknown as AssetCategory) as number
+          if (cloudId != null) assetCatIdMap.set(cloudId, newId)
+        }
+
+        const txnCatIdMap = new Map<number, number>()
+        for (const rec of transactionCategories) {
+          const cloudId = rec.id as number | undefined
+          delete rec.id
+          const newId = await db.transactionCategories.add(rec as unknown as TransactionCategory) as number
+          if (cloudId != null) txnCatIdMap.set(cloudId, newId)
+        }
+
+        for (const rec of goals) {
+          delete rec.id
+          await db.goals.add(rec as unknown as FinancialGoal)
+        }
+
+        // ── Layer 1: Remap FKs and insert ──
+        const assetItemIdMap = new Map<number, number>()
+        for (const rec of assetItems) {
+          const cloudId = rec.id as number | undefined
+          delete rec.id
+          remapFkField(rec, 'memberId', memberIdMap)
+          remapFkField(rec, 'categoryId', assetCatIdMap)
+          const newId = await db.assetItems.add(rec as unknown as AssetItem) as number
+          if (cloudId != null) assetItemIdMap.set(cloudId, newId)
+        }
+
+        for (const rec of budgets) {
+          delete rec.id
+          remapFkField(rec, 'categoryId', txnCatIdMap)
+          await db.budgets.add(rec as unknown as Budget)
+        }
+
+        // ── Layer 2: Second-level dependents ──
+        for (const rec of dailyValues) {
+          delete rec.id
+          remapFkField(rec, 'assetItemId', assetItemIdMap)
+          await db.dailyValues.add(rec as unknown as DailyValue)
+        }
+
+        const payMethodIdMap = new Map<number, number>()
+        for (const rec of paymentMethodItems) {
+          const cloudId = rec.id as number | undefined
+          delete rec.id
+          remapFkField(rec, 'linkedAssetItemId', assetItemIdMap)
+          const newId = await db.paymentMethodItems.add(rec as unknown as PaymentMethodItem) as number
+          if (cloudId != null) payMethodIdMap.set(cloudId, newId)
+        }
+
+        // ── Layer 3: Subscriptions ──
+        const subscriptionIdMap = new Map<number, number>()
+        for (const rec of subscriptions) {
+          const cloudId = rec.id as number | undefined
+          delete rec.id
+          remapFkField(rec, 'paymentMethodItemId', payMethodIdMap)
+          remapFkField(rec, 'linkedTransactionCategoryId', txnCatIdMap)
+          const newId = await db.subscriptions.add(rec as unknown as Subscription) as number
+          if (cloudId != null) subscriptionIdMap.set(cloudId, newId)
+        }
+
+        // ── Layer 4: Transactions ──
+        for (const rec of transactions) {
+          delete rec.id
+          remapFkField(rec, 'memberId', memberIdMap)
+          remapFkField(rec, 'categoryId', txnCatIdMap)
+          remapFkField(rec, 'paymentMethodItemId', payMethodIdMap)
+          remapFkField(rec, 'subscriptionId', subscriptionIdMap)
+          await db.transactions.add(rec as unknown as Transaction)
+        }
       })
     } finally {
       syncWritingCount = Math.max(0, syncWritingCount - 1)
@@ -309,6 +382,8 @@ export async function incrementalUpload(uid: string): Promise<void> {
     const deduped = deduplicateChanges(pendingChanges)
     console.log(`[sync] incremental upload: ${deduped.length} change(s) (from ${pendingChanges.length} log entries)`)
 
+    const successKeys = new Set<string>()
+
     for (const change of deduped) {
       try {
         if (change.operation === 'delete') {
@@ -322,15 +397,19 @@ export async function incrementalUpload(uid: string): Promise<void> {
             await uploadSingleRecord(uid, change.tableName as SyncableTable, record)
           }
         }
+        successKeys.add(`${change.tableName}:${change.syncId}`)
       } catch (err) {
         console.error(`[sync] incremental upload ${change.tableName}/${change.syncId} failed:`, err)
       }
     }
 
-    // Mark all original pending entries as processed
-    const processedIds = pendingChanges.map(c => c.id!).filter(Boolean)
-    if (processedIds.length > 0) {
-      await db.syncChangeLog.where('id').anyOf(processedIds).modify({ processed: 1 })
+    // Mark only successfully synced entries as processed
+    const successIds = pendingChanges
+      .filter(c => successKeys.has(`${c.tableName}:${c.syncId}`))
+      .map(c => c.id!)
+      .filter(Boolean)
+    if (successIds.length > 0) {
+      await db.syncChangeLog.where('id').anyOf(successIds).modify({ processed: 1 })
     }
 
     // GC: remove processed entries older than 7 days
@@ -348,12 +427,54 @@ export async function incrementalUpload(uid: string): Promise<void> {
   }
 }
 
-// ─── Merge On Login (replaces syncOnLogin) ────────────────
-// Bidirectional merge: compares local vs cloud record-by-record using updatedAt
+// ─── FK Remapping Utilities ──────────────────────────────
+// Build a mapping from cloud record IDs to local IDs via syncId chain:
+// cloudId → cloudSyncId → localSyncId → localId
 
-async function mergeTable(uid: string, tableName: SyncableTable): Promise<void> {
+function buildIdMapping(
+  cloudRecords: Record<string, unknown>[],
+  localRecords: Array<{ id?: number; syncId?: string }>
+): Map<number, number> {
+  const cloudIdToSyncId = new Map<number, string>()
+  for (const r of cloudRecords) {
+    const id = r.id as number | undefined
+    const syncId = r.syncId as string | undefined
+    if (id != null && syncId) cloudIdToSyncId.set(id, syncId)
+  }
+
+  const syncIdToLocalId = new Map<string, number>()
+  for (const r of localRecords) {
+    if (r.syncId && r.id != null) syncIdToLocalId.set(r.syncId, r.id)
+  }
+
+  const mapping = new Map<number, number>()
+  for (const [cloudId, syncId] of cloudIdToSyncId) {
+    const localId = syncIdToLocalId.get(syncId)
+    if (localId != null) mapping.set(cloudId, localId)
+  }
+  return mapping
+}
+
+function remapFkField(
+  record: Record<string, unknown>,
+  field: string,
+  mapping: Map<number, number>
+): void {
+  const value = record[field]
+  if (typeof value === 'number' && mapping.has(value)) {
+    record[field] = mapping.get(value)!
+  }
+}
+
+// ─── Merge On Login (replaces syncOnLogin) ────────────────
+// Bidirectional merge with FK remapping for cross-device sync
+
+async function mergeTableWithRemap(
+  tableName: SyncableTable,
+  cloudRecords: Record<string, unknown>[],
+  remapFks?: (record: Record<string, unknown>) => void
+): Promise<void> {
   const localTable = getLocalTable(tableName)
-  const cloudRecords = await downloadTable<Record<string, unknown>>(uid, tableName)
   const localRecords = await (localTable as typeof db.members).toArray()
 
   const cloudMap = new Map<string, Record<string, unknown>>()
@@ -376,7 +497,10 @@ async function mergeTable(uid: string, tableName: SyncableTable): Promise<void> 
         const tombstone = await db.syncTombstones
           .where('[tableName+syncId]').equals([tableName, syncId]).first()
         if (!tombstone) {
-          await (localTable as typeof db.members).add(cloudRec as unknown as Member)
+          const toInsert = { ...cloudRec }
+          delete toInsert.id // Remove cloud id, let Dexie auto-assign
+          if (remapFks) remapFks(toInsert)
+          await (localTable as typeof db.members).add(toInsert as unknown as Member)
         }
       }
     }
@@ -388,7 +512,9 @@ async function mergeTable(uid: string, tableName: SyncableTable): Promise<void> 
         const cloudUpdatedAt = (cloudRec.updatedAt as string) || ''
         const localUpdatedAt = (local.record.updatedAt as string) || ''
         if (cloudUpdatedAt > localUpdatedAt) {
-          const { ...updates } = cloudRec
+          const updates = { ...cloudRec }
+          delete updates.id // Don't overwrite local primary key
+          if (remapFks) remapFks(updates)
           await (localTable as typeof db.members).update(local.id, updates)
         }
         // If local is newer, incrementalUpload will handle it
@@ -493,10 +619,86 @@ export async function mergeOnLogin(uid: string): Promise<void> {
       return
     }
 
-    // Bidirectional merge for each table
-    for (const tableName of ALL_TABLES) {
-      await mergeTable(uid, tableName)
-    }
+    // Download ALL cloud data in parallel
+    const [
+      cloudMembers, cloudAssetCategories, cloudAssetItems, cloudDailyValues,
+      cloudTransactionCategories, cloudTransactions, cloudBudgets, cloudGoals,
+      cloudPaymentMethodItems, cloudSubscriptions,
+    ] = await Promise.all([
+      downloadTable<Record<string, unknown>>(uid, 'members'),
+      downloadTable<Record<string, unknown>>(uid, 'assetCategories'),
+      downloadTable<Record<string, unknown>>(uid, 'assetItems'),
+      downloadTable<Record<string, unknown>>(uid, 'dailyValues'),
+      downloadTable<Record<string, unknown>>(uid, 'transactionCategories'),
+      downloadTable<Record<string, unknown>>(uid, 'transactions'),
+      downloadTable<Record<string, unknown>>(uid, 'budgets'),
+      downloadTable<Record<string, unknown>>(uid, 'goals'),
+      downloadTable<Record<string, unknown>>(uid, 'paymentMethodItems'),
+      downloadTable<Record<string, unknown>>(uid, 'subscriptions'),
+    ])
+
+    // ── Layer 0: Independent tables (no FK dependencies) ──
+    await mergeTableWithRemap('members', cloudMembers)
+    await mergeTableWithRemap('assetCategories', cloudAssetCategories)
+    await mergeTableWithRemap('transactionCategories', cloudTransactionCategories)
+    await mergeTableWithRemap('goals', cloudGoals)
+
+    // Build ID mappings: cloudId → localId (via syncId chain)
+    // Also populate module-level fkMappings for real-time sync use
+    const localMembers = await db.members.toArray()
+    const memberMap = buildIdMapping(cloudMembers, localMembers)
+    fkMappings['members'] = memberMap
+
+    const localAssetCats = await db.assetCategories.toArray()
+    const assetCatMap = buildIdMapping(cloudAssetCategories, localAssetCats)
+    fkMappings['assetCategories'] = assetCatMap
+
+    const localTxnCats = await db.transactionCategories.toArray()
+    const txnCatMap = buildIdMapping(cloudTransactionCategories, localTxnCats)
+    fkMappings['transactionCategories'] = txnCatMap
+
+    // ── Layer 1: First-level dependents ──
+    await mergeTableWithRemap('assetItems', cloudAssetItems, (rec) => {
+      remapFkField(rec, 'memberId', memberMap)
+      remapFkField(rec, 'categoryId', assetCatMap)
+    })
+    await mergeTableWithRemap('budgets', cloudBudgets, (rec) => {
+      remapFkField(rec, 'categoryId', txnCatMap)
+    })
+
+    // Build assetItem mapping for layer 2
+    const assetItemMap = buildIdMapping(cloudAssetItems, await db.assetItems.toArray())
+    fkMappings['assetItems'] = assetItemMap
+
+    // ── Layer 2: Second-level dependents ──
+    await mergeTableWithRemap('dailyValues', cloudDailyValues, (rec) => {
+      remapFkField(rec, 'assetItemId', assetItemMap)
+    })
+    await mergeTableWithRemap('paymentMethodItems', cloudPaymentMethodItems, (rec) => {
+      remapFkField(rec, 'linkedAssetItemId', assetItemMap)
+    })
+
+    // Build paymentMethodItem mapping for layer 3
+    const payMethodMap = buildIdMapping(cloudPaymentMethodItems, await db.paymentMethodItems.toArray())
+    fkMappings['paymentMethodItems'] = payMethodMap
+
+    // ── Layer 3: Third-level dependents ──
+    await mergeTableWithRemap('subscriptions', cloudSubscriptions, (rec) => {
+      remapFkField(rec, 'paymentMethodItemId', payMethodMap)
+      remapFkField(rec, 'linkedTransactionCategoryId', txnCatMap)
+    })
+
+    // Build subscription mapping for layer 4
+    const subscriptionMap = buildIdMapping(cloudSubscriptions, await db.subscriptions.toArray())
+    fkMappings['subscriptions'] = subscriptionMap
+
+    // ── Layer 4: Transactions (depends on members, txnCategories, payMethods, subscriptions) ──
+    await mergeTableWithRemap('transactions', cloudTransactions, (rec) => {
+      remapFkField(rec, 'memberId', memberMap)
+      remapFkField(rec, 'categoryId', txnCatMap)
+      remapFkField(rec, 'paymentMethodItemId', payMethodMap)
+      remapFkField(rec, 'subscriptionId', subscriptionMap)
+    })
 
     // Process tombstones
     await applyCloudTombstones(uid)
@@ -567,7 +769,6 @@ export async function uploadSingleRecord<T extends { syncId?: string }>(
     const batch = writeBatch(firestore)
     const ref = doc(firestore, getUserDocPath(uid, tableName, record.syncId))
     const data = stripUndefined({ ...record } as Record<string, unknown>)
-    delete data.id
     batch.set(ref, data, { merge: true })
     await batch.commit()
   } catch (err) {
@@ -586,6 +787,60 @@ export function resumeRealtimeSync() { realtimeSyncPaused = false }
 export function getIsSyncWriting() { return syncWritingCount > 0 }
 export function beginSyncWriting() { syncWritingCount++ }
 export function endSyncWriting() { syncWritingCount = Math.max(0, syncWritingCount - 1) }
+
+// ─── FK Mapping for Real-time Sync ──────────────────────
+// Maps cloudId → localId per table, updated during merge and real-time sync
+
+const fkMappings: Record<string, Map<number, number>> = {}
+for (const t of ALL_TABLES) fkMappings[t] = new Map()
+
+export function populateFkMappings(
+  tableName: SyncableTable,
+  cloudRecords: Record<string, unknown>[],
+  localRecords: Array<{ id?: number; syncId?: string }>
+): void {
+  const mapping = buildIdMapping(cloudRecords, localRecords)
+  fkMappings[tableName] = mapping
+}
+
+function updateFkMapping(tableName: SyncableTable, cloudId: number | undefined, localId: number): void {
+  if (cloudId != null) fkMappings[tableName].set(cloudId, localId)
+}
+
+const TABLE_FK_DEFS: Partial<Record<SyncableTable, Array<{ field: string; refTable: SyncableTable }>>> = {
+  assetItems: [
+    { field: 'memberId', refTable: 'members' },
+    { field: 'categoryId', refTable: 'assetCategories' },
+  ],
+  dailyValues: [
+    { field: 'assetItemId', refTable: 'assetItems' },
+  ],
+  transactions: [
+    { field: 'memberId', refTable: 'members' },
+    { field: 'categoryId', refTable: 'transactionCategories' },
+    { field: 'paymentMethodItemId', refTable: 'paymentMethodItems' },
+    { field: 'subscriptionId', refTable: 'subscriptions' },
+  ],
+  budgets: [
+    { field: 'categoryId', refTable: 'transactionCategories' },
+  ],
+  paymentMethodItems: [
+    { field: 'linkedAssetItemId', refTable: 'assetItems' },
+  ],
+  subscriptions: [
+    { field: 'paymentMethodItemId', refTable: 'paymentMethodItems' },
+    { field: 'linkedTransactionCategoryId', refTable: 'transactionCategories' },
+  ],
+}
+
+function remapCloudFks(tableName: SyncableTable, record: Record<string, unknown>): void {
+  const defs = TABLE_FK_DEFS[tableName]
+  if (!defs) return
+  for (const { field, refTable } of defs) {
+    const mapping = fkMappings[refTable]
+    if (mapping) remapFkField(record, field, mapping)
+  }
+}
 
 type DexieTable = typeof db.members | typeof db.assetCategories | typeof db.assetItems |
   typeof db.dailyValues | typeof db.transactionCategories | typeof db.transactions |
@@ -631,11 +886,20 @@ function subscribeTable(uid: string, tableName: SyncableTable, retryCount = 0): 
             if (existing) {
               const cloudUpdatedAt = cloudData.updatedAt as string
               if (cloudUpdatedAt && cloudUpdatedAt > (existing.updatedAt || '')) {
-                const { ...updates } = cloudData
+                const updates = { ...cloudData }
+                const cloudId = updates.id as number | undefined
+                delete updates.id // Don't overwrite local primary key
+                remapCloudFks(tableName, updates)
                 await (localTable as typeof db.members).update(existing.id!, updates)
+                updateFkMapping(tableName, cloudId, existing.id!)
               }
             } else {
-              await (localTable as typeof db.members).add(cloudData as Member)
+              const toInsert = { ...cloudData }
+              const cloudId = toInsert.id as number | undefined
+              delete toInsert.id // Let Dexie auto-assign local id
+              remapCloudFks(tableName, toInsert)
+              const newId = await (localTable as typeof db.members).add(toInsert as Member) as number
+              updateFkMapping(tableName, cloudId, newId)
             }
           } else if (change.type === 'removed') {
             const existing = await (localTable as typeof db.members).where('syncId').equals(syncId).first()

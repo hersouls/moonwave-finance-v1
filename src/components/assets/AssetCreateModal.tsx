@@ -28,7 +28,7 @@ export function AssetCreateModal() {
   const [memo, setMemo] = useState('')
   const [type, setType] = useState<AssetLiabilityType>('asset')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [severanceData, setSeveranceData] = useState<{ joinDate: string; averageDailyWage: number; estimatedAmount: number } | null>(null)
+  const [severanceData, setSeveranceData] = useState<{ joinDate: string; monthlyAvgWage: number; estimatedAmount: number } | null>(null)
   const [realEstateAmount, setRealEstateAmount] = useState<number>(0)
 
   const assetCategories = categories.filter(c => c.type === 'asset')
@@ -67,7 +67,7 @@ export function AssetCreateModal() {
       if (isSeverancePay && severanceData && severanceData.estimatedAmount > 0) {
         // 일별 초기 데이터 자동 생성 및 저장
         const targetEndDate = format(new Date(), 'yyyy-MM-dd')
-        const values = generateSeverancePayValues(id, severanceData.joinDate, severanceData.averageDailyWage, targetEndDate)
+        const values = generateSeverancePayValues(id, severanceData.joinDate, severanceData.monthlyAvgWage, targetEndDate)
         if (values.length > 0) {
           await useDailyValueStore.getState().bulkSetValues(values.map(v => ({ ...v, assetItemId: id })))
         }
