@@ -24,6 +24,7 @@ import { useSubscriptionStore } from './stores/subscriptionStore'
 import { showBillingNotifications } from './services/notificationService'
 import { useOnlineStatus } from './hooks/useOnlineStatus'
 import { useAutoSync } from './hooks/useAutoSync'
+import { ensureDefaultCategories } from './services/database'
 
 export default function App() {
   const [isInitialized, setIsInitialized] = useState(false)
@@ -39,6 +40,7 @@ export default function App() {
       try {
         initSettings()
         useAuthStore.getState().initialize()
+        await ensureDefaultCategories()
 
         // Check subscription billing notifications
         const settings = useSettingsStore.getState().settings

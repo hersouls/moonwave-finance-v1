@@ -303,15 +303,15 @@ function installChangeTracking() {
 
 installChangeTracking()
 
-// Ensure 부동산 category exists on every app start (survives cloud sync overwrites)
-db.on('ready', async () => {
-  const cats = await db.assetCategories.toArray()
-  const hasRealEstate = cats.some((c) => c.name === '부동산')
-  if (!hasRealEstate) {
+// Ensure default categories exist — called from App.tsx init, NOT from db.on('ready')
+// because async db.on('ready') callbacks cause Dexie deadlock (queries hang forever)
+export async function ensureDefaultCategories(): Promise<void> {
+  const assetCats = await db.assetCategories.toArray()
+  if (!assetCats.some((c) => c.name === '부동산')) {
     setSyncWritingFlag(true)
     try {
       const now = new Date().toISOString()
-      const maxSort = cats
+      const maxSort = assetCats
         .filter((c) => c.type === 'asset')
         .reduce((max, c) => Math.max(max, c.sortOrder), -1)
       await db.assetCategories.add({
@@ -328,17 +328,13 @@ db.on('ready', async () => {
       setSyncWritingFlag(false)
     }
   }
-})
 
-// Ensure 대출이자 category exists on every app start (survives cloud sync overwrites)
-db.on('ready', async () => {
-  const cats = await db.transactionCategories.toArray()
-  const hasLoanInterest = cats.some((c) => c.name === '대출이자')
-  if (!hasLoanInterest) {
+  const txnCats = await db.transactionCategories.toArray()
+  if (!txnCats.some((c) => c.name === '대출이자')) {
     setSyncWritingFlag(true)
     try {
       const now = new Date().toISOString()
-      const expenseCats = cats.filter((c) => c.type === 'expense')
+      const expenseCats = txnCats.filter((c) => c.type === 'expense')
       const maxSort = expenseCats.reduce((max, c) => Math.max(max, c.sortOrder), -1)
       await db.transactionCategories.add({
         name: '대출이자',
@@ -355,7 +351,7 @@ db.on('ready', async () => {
       setSyncWritingFlag(false)
     }
   }
-})
+}
 
 db.on('populate', () => {
   const now = new Date().toISOString()
