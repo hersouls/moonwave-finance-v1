@@ -6,8 +6,10 @@ import { useAssetStore } from '@/stores/assetStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
+import { useLoanStore } from '@/stores/loanStore'
 import { Select } from '@/components/ui/Select'
 import { format } from 'date-fns'
+import { Landmark } from 'lucide-react'
 
 export function LiabilityCreateModal() {
   const isOpen = useUIStore((s) => s.isLiabilityCreateModalOpen)
@@ -16,6 +18,9 @@ export function LiabilityCreateModal() {
   const categories = useAssetStore((s) => s.categories)
   const members = useMemberStore((s) => s.members)
   const setValue = useDailyValueStore((s) => s.setValue)
+  const activeLoans = useLoanStore((s) => s.getActiveLoans())
+  const updateLoan = useLoanStore((s) => s.updateLoan)
+  const loadLoans = useLoanStore((s) => s.loadLoans)
 
   const liabilityCategories = categories.filter(c => c.type === 'liability')
 
@@ -25,6 +30,7 @@ export function LiabilityCreateModal() {
   const [initialAmount, setInitialAmount] = useState('')
   const [memo, setMemo] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedLoanId, setSelectedLoanId] = useState<number | null>(null)
 
   useEffect(() => {
     if (isOpen) {
@@ -33,8 +39,32 @@ export function LiabilityCreateModal() {
       setMemberId(members[0]?.id || '')
       setInitialAmount('')
       setMemo('')
+      setSelectedLoanId(null)
+      loadLoans()
     }
-  }, [isOpen, members])
+  }, [isOpen, members, loadLoans])
+
+  const handleLoanSelect = (loanId: string) => {
+    const loan = activeLoans.find(l => l.id === Number(loanId))
+    if (!loan) return
+    setSelectedLoanId(loan.id!)
+    setName(loan.name)
+    setInitialAmount(loan.currentBalance.toLocaleString('ko-KR'))
+    // Try to match category by name
+    const matchedCat = liabilityCategories.find(c =>
+      c.name.includes('주택') && loan.name.includes('주택') ||
+      c.name.includes('신용') && loan.name.includes('신용') ||
+      c.name.includes('마이너스') && loan.name.includes('마이너스') ||
+      c.name.includes('회사') && loan.name.includes('회사')
+    )
+    if (matchedCat?.id) setCategoryId(matchedCat.id)
+    const memoStr = [
+      loan.lender || '',
+      `연 ${loan.annualRate}%`,
+      `납입일 ${loan.paymentDay}일`,
+    ].filter(Boolean).join(' | ')
+    setMemo(memoStr)
+  }
 
   const handleSubmit = async () => {
     if (!name.trim() || categoryId === '' || memberId === '') return
@@ -51,6 +81,10 @@ export function LiabilityCreateModal() {
       if (amount > 0) {
         await setValue(id, format(new Date(), 'yyyy-MM-dd'), amount)
       }
+      // Link loan to this liability item
+      if (selectedLoanId) {
+        await updateLoan(selectedLoanId, { linkedAssetItemId: id })
+      }
       close()
     } catch {
       useToastStore.getState().addToast('부채 항목 추가에 실패했습니다.', 'error')
@@ -64,6 +98,25 @@ export function LiabilityCreateModal() {
       <DialogHeader title="새 부채 항목 추가" onClose={close} />
       <DialogBody>
         <div className="space-y-4">
+          {/* Loan Import */}
+          {activeLoans.length > 0 && (
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Landmark className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-body3-semi text-blue-700 dark:text-blue-300">대출정보 불러오기</span>
+              </div>
+              <Select
+                value={String(selectedLoanId ?? '')}
+                onChange={handleLoanSelect}
+                options={activeLoans.map(l => ({
+                  value: String(l.id),
+                  label: `${l.name} (잔액 ${l.currentBalance.toLocaleString('ko-KR')}원)`,
+                }))}
+                placeholder="등록된 대출을 선택하세요"
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">항목명</label>
             <input

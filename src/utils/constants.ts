@@ -86,6 +86,7 @@ export const DEFAULT_TRANSACTION_CATEGORIES = {
     { name: '건강', color: '#EF4444', icon: 'HeartPulse' },
     { name: '경조사/회비', color: '#A855F7', icon: 'Gift' },
     { name: '대출상환', color: '#DC2626', icon: 'Landmark' },
+    { name: '대출이자', color: '#B91C1C', icon: 'Percent' },
     { name: '마트/편의점', color: '#FB923C', icon: 'ShoppingCart' },
     { name: '보험', color: '#0EA5E9', icon: 'Shield' },
     { name: '부모님', color: '#EC4899', icon: 'Heart' },
@@ -139,8 +140,8 @@ export const SUBSCRIPTION_PRESETS = {
 } as const
 
 export const BACKUP_CONFIG = {
-  CURRENT_VERSION: '1.3.0',
-  SUPPORTED_VERSIONS: ['1.0.0', '1.1.0', '1.2.0', '1.3.0'],
+  CURRENT_VERSION: '1.4.0',
+  SUPPORTED_VERSIONS: ['1.0.0', '1.1.0', '1.2.0', '1.3.0', '1.4.0'],
   APP_NAME: 'Moonwave Finance',
   FILE_PREFIX: 'Finance_Backup',
 } as const

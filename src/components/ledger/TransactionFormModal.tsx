@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/Button'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useBudgetStore } from '@/stores/budgetStore'
+import { useLoanStore } from '@/stores/loanStore'
 import { getTodayString } from '@/lib/dateUtils'
 import { PAYMENT_METHOD_OPTIONS } from '@/utils/paymentMethod'
 import { formatKoreanUnit } from '@/utils/format'
 import { useToastStore } from '@/stores/toastStore'
 import { clsx } from 'clsx'
 import { Select } from '@/components/ui/Select'
+import { Landmark } from 'lucide-react'
 import type { Transaction, TransactionType, RepeatType, PaymentMethod } from '@/lib/types'
 
 interface TransactionFormModalProps {
@@ -28,6 +30,9 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
   const members = useMemberStore((s) => s.members)
   const budgets = useBudgetStore((s) => s.budgets)
   const transactions = useTransactionStore((s) => s.transactions)
+  const activeLoans = useLoanStore((s) => s.getActiveLoans())
+  const getMonthlyInterest = useLoanStore((s) => s.getMonthlyInterest)
+  const loadLoans = useLoanStore((s) => s.loadLoans)
 
   const [type, setType] = useState<TransactionType>('expense')
   const [amount, setAmount] = useState('')
@@ -83,6 +88,22 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
     const percent = budget.amount > 0 ? (used / budget.amount) * 100 : 0
     return { budgetAmount: budget.amount, used, remaining, percent }
   }, [type, categoryId, budgets, transactions])
+
+  useEffect(() => {
+    if (open) loadLoans()
+  }, [open, loadLoans])
+
+  const applyLoanInterest = (loanId: number) => {
+    const loan = activeLoans.find(l => l.id === loanId)
+    if (!loan) return
+    const interest = getMonthlyInterest(loan)
+    setType('expense')
+    setAmount(interest.toLocaleString('ko-KR'))
+    // Find "대출이자" category
+    const interestCat = categories.find(c => c.type === 'expense' && c.name.includes('대출이자'))
+    if (interestCat?.id) setCategoryId(interestCat.id)
+    setMemo(`${loan.name} 이자 (잔액 ${loan.currentBalance.toLocaleString('ko-KR')}원 × 연 ${loan.annualRate}%)`)
+  }
 
   useEffect(() => {
     if (!open) return
@@ -207,6 +228,28 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                     </button>
                   )
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Loan Interest Shortcut */}
+          {mode === 'create' && activeLoans.length > 0 && (
+            <div>
+              <label className="block text-caption text-zinc-500 dark:text-zinc-400 mb-1.5 flex items-center gap-1">
+                <Landmark className="w-3.5 h-3.5" />
+                대출이자 불러오기
+              </label>
+              <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+                {activeLoans.map(loan => (
+                  <button
+                    key={loan.id}
+                    type="button"
+                    onClick={() => applyLoanInterest(loan.id!)}
+                    className="flex-shrink-0 px-3 py-1.5 rounded-lg text-caption bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                  >
+                    {loan.name} ({formatKoreanUnit(getMonthlyInterest(loan))}원/월)
+                  </button>
+                ))}
               </div>
             </div>
           )}

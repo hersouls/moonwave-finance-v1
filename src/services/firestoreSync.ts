@@ -484,6 +484,7 @@ function remapFkField(
 // Bidirectional merge with FK remapping for cross-device sync
 
 async function mergeTableWithRemap(
+  uid: string,
   tableName: SyncableTable,
   cloudRecords: Record<string, unknown>[],
   remapFks?: (record: Record<string, unknown>) => void
@@ -501,6 +502,9 @@ async function mergeTableWithRemap(
   for (const rec of localRecords) {
     if (rec.syncId) localMap.set(rec.syncId, { record: rec as unknown as Record<string, unknown>, id: rec.id! })
   }
+
+  // Collect local-only records for upload (before sync-writing flag)
+  const localOnlyRecords: Record<string, unknown>[] = []
 
   setSyncWritingFlag(true)
   syncWritingCount++
@@ -520,6 +524,7 @@ async function mergeTableWithRemap(
     }
 
     // Case 2: Both exist → LWW by updatedAt
+    // Case 3: Local-only records → collect for upload
     for (const [syncId, local] of localMap) {
       const cloudRec = cloudMap.get(syncId)
       if (cloudRec) {
@@ -531,13 +536,40 @@ async function mergeTableWithRemap(
           if (remapFks) remapFks(updates)
           await (localTable as typeof db.members).update(local.id, updates)
         }
-        // If local is newer, incrementalUpload will handle it
+        // If local is newer → will be uploaded below
+      } else {
+        // Case 3: Local-only record — upload to cloud
+        localOnlyRecords.push(local.record)
       }
-      // Case 3: Local-only records → incrementalUpload handles upload
     }
   } finally {
     syncWritingCount = Math.max(0, syncWritingCount - 1)
     setSyncWritingFlag(false)
+  }
+
+  // Upload local-only records to Firestore (outside sync-writing context)
+  for (const record of localOnlyRecords) {
+    try {
+      await uploadSingleRecord(uid, tableName, record as { syncId?: string })
+    } catch (err) {
+      console.error(`[sync] upload local-only ${tableName}/${(record as { syncId?: string }).syncId} failed:`, err)
+    }
+  }
+
+  // Also upload local records that are newer than cloud
+  for (const [syncId, local] of localMap) {
+    const cloudRec = cloudMap.get(syncId)
+    if (cloudRec) {
+      const cloudUpdatedAt = (cloudRec.updatedAt as string) || ''
+      const localUpdatedAt = (local.record.updatedAt as string) || ''
+      if (localUpdatedAt > cloudUpdatedAt) {
+        try {
+          await uploadSingleRecord(uid, tableName, local.record as { syncId?: string })
+        } catch (err) {
+          console.error(`[sync] upload newer-local ${tableName}/${syncId} failed:`, err)
+        }
+      }
+    }
   }
 }
 

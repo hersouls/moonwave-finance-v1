@@ -6,8 +6,10 @@ import { useAssetStore } from '@/stores/assetStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
+import { useLoanStore } from '@/stores/loanStore'
 import { format } from 'date-fns'
 import { Select } from '@/components/ui/Select'
+import { Landmark } from 'lucide-react'
 import type { AssetLiabilityType } from '@/lib/types'
 import { SeverancePayInputArea } from './SeverancePayInputArea'
 import { RealEstateInputArea } from './RealEstateInputArea'
@@ -20,6 +22,9 @@ export function AssetCreateModal() {
   const categories = useAssetStore((s) => s.categories)
   const members = useMemberStore((s) => s.members)
   const setValue = useDailyValueStore((s) => s.setValue)
+  const activeLoans = useLoanStore((s) => s.getActiveLoans())
+  const updateLoan = useLoanStore((s) => s.updateLoan)
+  const loadLoans = useLoanStore((s) => s.loadLoans)
 
   const [name, setName] = useState('')
   const [categoryId, setCategoryId] = useState<number | ''>('')
@@ -30,6 +35,7 @@ export function AssetCreateModal() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [severanceData, setSeveranceData] = useState<{ joinDate: string; monthlyAvgWage: number; estimatedAmount: number } | null>(null)
   const [realEstateAmount, setRealEstateAmount] = useState<number>(0)
+  const [selectedLoanId, setSelectedLoanId] = useState<number | null>(null)
 
   const assetCategories = categories.filter(c => c.type === 'asset')
   const liabilityCategories = categories.filter(c => c.type === 'liability')
@@ -49,8 +55,33 @@ export function AssetCreateModal() {
       setType('asset')
       setSeveranceData(null)
       setRealEstateAmount(0)
+      setSelectedLoanId(null)
+      loadLoans()
     }
-  }, [isOpen, members])
+  }, [isOpen, members, loadLoans])
+
+  const handleLoanSelect = (loanId: string) => {
+    const loan = activeLoans.find(l => l.id === Number(loanId))
+    if (!loan) return
+    setSelectedLoanId(loan.id!)
+    setName(loan.name)
+    setInitialAmount(loan.currentBalance.toLocaleString('ko-KR'))
+    // Try to match a liability category
+    const liabCats = categories.filter(c => c.type === 'liability')
+    const matchedCat = liabCats.find(c =>
+      c.name.includes('주택') && loan.name.includes('주택') ||
+      c.name.includes('신용') && loan.name.includes('신용') ||
+      c.name.includes('마이너스') && loan.name.includes('마이너스') ||
+      c.name.includes('회사') && loan.name.includes('회사')
+    )
+    if (matchedCat?.id) setCategoryId(matchedCat.id)
+    const memoStr = [
+      loan.lender || '',
+      `연 ${loan.annualRate}%`,
+      `납입일 ${loan.paymentDay}일`,
+    ].filter(Boolean).join(' | ')
+    setMemo(memoStr)
+  }
 
   const handleSubmit = async () => {
     if (!name.trim() || categoryId === '' || memberId === '') return
@@ -79,6 +110,10 @@ export function AssetCreateModal() {
         if (amount > 0) {
           await setValue(id, format(new Date(), 'yyyy-MM-dd'), amount)
         }
+      }
+      // Link loan to this liability item
+      if (selectedLoanId && type === 'liability') {
+        await updateLoan(selectedLoanId, { linkedAssetItemId: id })
       }
       close()
     } catch {
@@ -121,6 +156,25 @@ export function AssetCreateModal() {
               </button>
             </div>
           </div>
+
+          {/* Loan Import (liability only) */}
+          {type === 'liability' && activeLoans.length > 0 && (
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Landmark className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-body3-semi text-blue-700 dark:text-blue-300">대출정보 불러오기</span>
+              </div>
+              <Select
+                value={String(selectedLoanId ?? '')}
+                onChange={handleLoanSelect}
+                options={activeLoans.map(l => ({
+                  value: String(l.id),
+                  label: `${l.name} (잔액 ${l.currentBalance.toLocaleString('ko-KR')}원)`,
+                }))}
+                placeholder="등록된 대출을 선택하세요"
+              />
+            </div>
+          )}
 
           {/* Name */}
           <div>

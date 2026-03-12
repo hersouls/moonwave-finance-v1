@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { Settings, User, Database, Bell, Cog, Receipt, X } from 'lucide-react'
+import { Settings, User, Database, Bell, Cog, Receipt, Landmark, X } from 'lucide-react'
 import { Dialog } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { useUIStore } from '@/stores/uiStore'
@@ -11,12 +11,14 @@ import { DataTab } from './DataTab'
 import { NotificationsTab } from './NotificationsTab'
 import { SystemTab } from './SystemTab'
 import { LedgerTab } from './LedgerTab'
+import { LoanTab } from './LoanTab'
 
-type SettingsTabId = 'general' | 'ledger' | 'account' | 'data' | 'notifications' | 'system'
+type SettingsTabId = 'general' | 'ledger' | 'loans' | 'account' | 'data' | 'notifications' | 'system'
 
 const TABS: { id: SettingsTabId; label: string; Icon: typeof Settings }[] = [
   { id: 'general', label: '일반', Icon: Settings },
   { id: 'ledger', label: '가계부', Icon: Receipt },
+  { id: 'loans', label: '대출', Icon: Landmark },
   { id: 'account', label: '계정', Icon: User },
   { id: 'data', label: '데이터', Icon: Database },
   { id: 'notifications', label: '알림', Icon: Bell },
@@ -125,6 +127,7 @@ export function SettingsModal() {
           <div className="max-w-2xl">
             {activeTab === 'general' && <GeneralTab draft={draft} onChange={updateDraft} />}
             {activeTab === 'ledger' && <LedgerTab />}
+            {activeTab === 'loans' && <LoanTab />}
             {activeTab === 'account' && <AccountTab />}
             {activeTab === 'data' && <DataTab />}
             {activeTab === 'notifications' && <NotificationsTab draft={draft} onChange={updateDraft} />}

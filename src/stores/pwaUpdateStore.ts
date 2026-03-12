@@ -38,7 +38,7 @@ export const usePwaUpdateStore = create<PwaUpdateState & PwaUpdateActions>((set,
   acceptUpdate: () => {
     const { waitingWorker } = get()
     if (waitingWorker) {
-      waitingWorker.postMessage('skipWaiting')
+      waitingWorker.postMessage('SKIP_WAITING')
     }
     set({ isUpdateAvailable: false, waitingWorker: null, dismissedAt: null })
   },

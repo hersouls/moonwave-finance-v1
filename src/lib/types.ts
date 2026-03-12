@@ -181,6 +181,30 @@ export interface Subscription {
   updatedAt: string
 }
 
+// ─── Loan Types ───────────────────────────────────
+export type LoanRepaymentType = 'equal_principal' | 'equal_installment' | 'bullet' | 'custom'
+
+export interface Loan {
+  id?: number
+  syncId?: string
+  name: string
+  lender?: string
+  loanDate: string
+  maturityDate: string
+  principalAmount: number
+  currentBalance: number
+  annualRate: number
+  repaymentType: LoanRepaymentType
+  paymentDay: number
+  paymentAccount?: string
+  linkedAssetItemId?: number
+  memo?: string
+  isActive: boolean
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+}
+
 // ─── Settings Types ────────────────────────────────
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type ColorPalette = 'default' | 'ocean' | 'rose' | 'purple' | 'forest'
@@ -304,6 +328,7 @@ export interface BackupFile {
     goals?: FinancialGoal[]
     paymentMethodItems?: PaymentMethodItem[]
     subscriptions?: Subscription[]
+    loans?: Loan[]
     settings: Partial<Settings>
   }
 }

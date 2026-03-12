@@ -11,6 +11,7 @@ import type {
   FinancialGoal,
   PaymentMethodItem,
   Subscription,
+  Loan,
   SyncChangeLogEntry,
   SyncTombstone,
 } from '@/lib/types'
@@ -26,6 +27,7 @@ class FinanceDatabase extends Dexie {
   goals!: Table<FinancialGoal>
   paymentMethodItems!: Table<PaymentMethodItem>
   subscriptions!: Table<Subscription>
+  loans!: Table<Loan>
   syncChangeLog!: Table<SyncChangeLogEntry>
   syncTombstones!: Table<SyncTombstone>
 
@@ -161,7 +163,7 @@ class FinanceDatabase extends Dexie {
     })
 
     // v9: add 부동산 asset category for existing users
-    this.version(9).stores({}).upgrade(async (tx) => {
+    this.version(9).stores({}).upgrade(async (tx: any) => {
       const cats = await tx.table('assetCategories').toArray()
       const hasRealEstate = cats.some((c: AssetCategory) => c.name === '부동산')
       if (!hasRealEstate) {
@@ -174,6 +176,42 @@ class FinanceDatabase extends Dexie {
           type: 'asset',
           color: '#D97706',
           icon: 'Home',
+          sortOrder: maxSort + 1,
+          syncId: crypto.randomUUID(),
+          createdAt: now,
+          updatedAt: now,
+        })
+      }
+    })
+
+    // v10: add loans table + "대출이자" expense category for existing users
+    this.version(10).stores({
+      members: '++id, syncId, name, sortOrder',
+      assetCategories: '++id, syncId, name, type, sortOrder',
+      assetItems: '++id, syncId, memberId, categoryId, type, isActive, sortOrder',
+      dailyValues: '++id, syncId, assetItemId, date, [assetItemId+date]',
+      transactionCategories: '++id, syncId, name, type, sortOrder',
+      transactions: '++id, syncId, memberId, type, categoryId, date, isRecurring, recurSourceId, paymentMethod, paymentMethodItemId, subscriptionId',
+      budgets: '++id, syncId, categoryId, month',
+      goals: '++id, syncId, targetDate',
+      paymentMethodItems: '++id, syncId, type, name, sortOrder, linkedAssetItemId',
+      subscriptions: '++id, syncId, currency, category, status, billingDay, cycle, sortOrder, paymentMethodItemId',
+      loans: '++id, syncId, isActive, sortOrder',
+      syncChangeLog: '++id, tableName, syncId, processed, timestamp, [tableName+syncId]',
+      syncTombstones: '++id, tableName, syncId, deletedAt, [tableName+syncId]',
+    }).upgrade(async (tx: any) => {
+      const cats = await tx.table('transactionCategories').toArray()
+      const hasLoanInterest = cats.some((c: TransactionCategory) => c.name === '대출이자')
+      if (!hasLoanInterest) {
+        const now = new Date().toISOString()
+        const expenseCats = cats.filter((c: TransactionCategory) => c.type === 'expense')
+        const maxSort = expenseCats.reduce((max: number, c: TransactionCategory) => Math.max(max, c.sortOrder), -1)
+        await tx.table('transactionCategories').add({
+          name: '대출이자',
+          type: 'expense',
+          color: '#B91C1C',
+          icon: 'Percent',
+          isDefault: true,
           sortOrder: maxSort + 1,
           syncId: crypto.randomUUID(),
           createdAt: now,
@@ -196,7 +234,7 @@ export function setSyncWritingFlag(v: boolean) {
 }
 export function getSyncWritingFlag() { return _syncWritingCount > 0 }
 
-type SyncableTableName = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions'
+type SyncableTableName = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions' | 'loans'
 
 function installChangeTracking() {
   const tables: { table: Table; name: SyncableTableName }[] = [
@@ -210,6 +248,7 @@ function installChangeTracking() {
     { table: db.goals, name: 'goals' },
     { table: db.paymentMethodItems, name: 'paymentMethodItems' },
     { table: db.subscriptions, name: 'subscriptions' },
+    { table: db.loans, name: 'loans' },
   ]
 
   for (const { table, name } of tables) {
@@ -291,6 +330,33 @@ db.on('ready', async () => {
   }
 })
 
+// Ensure 대출이자 category exists on every app start (survives cloud sync overwrites)
+db.on('ready', async () => {
+  const cats = await db.transactionCategories.toArray()
+  const hasLoanInterest = cats.some((c) => c.name === '대출이자')
+  if (!hasLoanInterest) {
+    setSyncWritingFlag(true)
+    try {
+      const now = new Date().toISOString()
+      const expenseCats = cats.filter((c) => c.type === 'expense')
+      const maxSort = expenseCats.reduce((max, c) => Math.max(max, c.sortOrder), -1)
+      await db.transactionCategories.add({
+        name: '대출이자',
+        type: 'expense',
+        color: '#B91C1C',
+        icon: 'Percent',
+        isDefault: true,
+        sortOrder: maxSort + 1,
+        syncId: crypto.randomUUID(),
+        createdAt: now,
+        updatedAt: now,
+      } as TransactionCategory)
+    } finally {
+      setSyncWritingFlag(false)
+    }
+  }
+})
+
 db.on('populate', () => {
   const now = new Date().toISOString()
 
@@ -336,15 +402,16 @@ db.on('populate', () => {
     { name: '건강', type: 'expense', color: '#EF4444', icon: 'HeartPulse', isDefault: true, sortOrder: 6, createdAt: now, updatedAt: now },
     { name: '경조사/회비', type: 'expense', color: '#A855F7', icon: 'Gift', isDefault: true, sortOrder: 7, createdAt: now, updatedAt: now },
     { name: '대출상환', type: 'expense', color: '#DC2626', icon: 'Landmark', isDefault: true, sortOrder: 8, createdAt: now, updatedAt: now },
-    { name: '마트/편의점', type: 'expense', color: '#FB923C', icon: 'ShoppingCart', isDefault: true, sortOrder: 9, createdAt: now, updatedAt: now },
-    { name: '보험', type: 'expense', color: '#0EA5E9', icon: 'Shield', isDefault: true, sortOrder: 10, createdAt: now, updatedAt: now },
-    { name: '부모님', type: 'expense', color: '#EC4899', icon: 'Heart', isDefault: true, sortOrder: 11, createdAt: now, updatedAt: now },
-    { name: '생활용품', type: 'expense', color: '#84CC16', icon: 'Package', isDefault: true, sortOrder: 12, createdAt: now, updatedAt: now },
-    { name: '여행', type: 'expense', color: '#06B6D4', icon: 'Map', isDefault: true, sortOrder: 13, createdAt: now, updatedAt: now },
-    { name: '카드대금', type: 'expense', color: '#F43F5E', icon: 'CreditCard', isDefault: true, sortOrder: 14, createdAt: now, updatedAt: now },
-    { name: '투자', type: 'expense', color: '#6366F1', icon: 'TrendingUp', isDefault: true, sortOrder: 15, createdAt: now, updatedAt: now },
-    { name: '패션/미용', type: 'expense', color: '#E879F9', icon: 'Shirt', isDefault: true, sortOrder: 16, createdAt: now, updatedAt: now },
-    { name: '기타', type: 'expense', color: '#71717A', icon: 'MoreHorizontal', isDefault: true, sortOrder: 17, createdAt: now, updatedAt: now },
+    { name: '대출이자', type: 'expense', color: '#B91C1C', icon: 'Percent', isDefault: true, sortOrder: 9, createdAt: now, updatedAt: now },
+    { name: '마트/편의점', type: 'expense', color: '#FB923C', icon: 'ShoppingCart', isDefault: true, sortOrder: 10, createdAt: now, updatedAt: now },
+    { name: '보험', type: 'expense', color: '#0EA5E9', icon: 'Shield', isDefault: true, sortOrder: 11, createdAt: now, updatedAt: now },
+    { name: '부모님', type: 'expense', color: '#EC4899', icon: 'Heart', isDefault: true, sortOrder: 12, createdAt: now, updatedAt: now },
+    { name: '생활용품', type: 'expense', color: '#84CC16', icon: 'Package', isDefault: true, sortOrder: 13, createdAt: now, updatedAt: now },
+    { name: '여행', type: 'expense', color: '#06B6D4', icon: 'Map', isDefault: true, sortOrder: 14, createdAt: now, updatedAt: now },
+    { name: '카드대금', type: 'expense', color: '#F43F5E', icon: 'CreditCard', isDefault: true, sortOrder: 15, createdAt: now, updatedAt: now },
+    { name: '투자', type: 'expense', color: '#6366F1', icon: 'TrendingUp', isDefault: true, sortOrder: 16, createdAt: now, updatedAt: now },
+    { name: '패션/미용', type: 'expense', color: '#E879F9', icon: 'Shirt', isDefault: true, sortOrder: 17, createdAt: now, updatedAt: now },
+    { name: '기타', type: 'expense', color: '#71717A', icon: 'MoreHorizontal', isDefault: true, sortOrder: 18, createdAt: now, updatedAt: now },
   ])
 })
 
@@ -665,6 +732,27 @@ export async function deleteSubscription(id: number): Promise<void> {
   await db.subscriptions.delete(id)
 }
 
+// ─── Loan CRUD ──────────────────────────────────
+export async function getAllLoans(): Promise<Loan[]> {
+  return db.loans.orderBy('sortOrder').toArray()
+}
+
+export async function getActiveLoans(): Promise<Loan[]> {
+  return db.loans.where('isActive').equals(1).sortBy('sortOrder')
+}
+
+export async function addLoan(loan: Omit<Loan, 'id'>): Promise<number> {
+  return db.loans.add(loan as Loan) as Promise<number>
+}
+
+export async function updateLoan(id: number, updates: Partial<Loan>): Promise<void> {
+  await db.loans.update(id, { ...updates, updatedAt: new Date().toISOString() })
+}
+
+export async function deleteLoan(id: number): Promise<void> {
+  await db.loans.delete(id)
+}
+
 // ─── Recurring Transaction Helpers ───────────────
 export async function getRecurringTransactions(): Promise<Transaction[]> {
   return db.transactions.where('isRecurring').equals(1).toArray()
@@ -686,6 +774,7 @@ export async function clearAllData(): Promise<void> {
   await db.goals.clear()
   await db.paymentMethodItems.clear()
   await db.subscriptions.clear()
+  await db.loans.clear()
   await db.syncChangeLog.clear()
   await db.syncTombstones.clear()
 
