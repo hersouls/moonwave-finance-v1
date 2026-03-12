@@ -484,7 +484,6 @@ function remapFkField(
 // Bidirectional merge with FK remapping for cross-device sync
 
 async function mergeTableWithRemap(
-  _uid: string,
   tableName: SyncableTable,
   cloudRecords: Record<string, unknown>[],
   remapFks?: (record: Record<string, unknown>) => void
@@ -539,29 +538,31 @@ async function mergeTableWithRemap(
     setSyncWritingFlag(false)
   }
 
-  // Case 3: Ensure local-only and newer-local records have syncChangeLog entries
-  // so incrementalUpload will pick them up (non-blocking — no Firestore writes here)
-  const now = new Date().toISOString()
+  // Case 3: Ensure local-only / newer-local records have syncChangeLog entries (BULK)
+  const toUploadEntries = new Map<string, 'create' | 'update'>()
   for (const [syncId, local] of localMap) {
     const cloudRec = cloudMap.get(syncId)
-    const needsUpload = !cloudRec || // local-only
-      ((local.record.updatedAt as string || '') > ((cloudRec?.updatedAt as string) || '')) // local is newer
-
+    const needsUpload = !cloudRec ||
+      ((local.record.updatedAt as string || '') > ((cloudRec?.updatedAt as string) || ''))
     if (needsUpload && syncId) {
-      // Check if there's already an unprocessed entry for this record
-      const existing = await db.syncChangeLog
-        .where('[tableName+syncId]').equals([tableName, syncId])
-        .filter(e => e.processed === 0)
-        .first()
-      if (!existing) {
-        await db.syncChangeLog.add({
-          tableName,
-          syncId,
-          operation: cloudRec ? 'update' : 'create',
-          timestamp: now,
-          processed: 0,
-        })
-      }
+      toUploadEntries.set(syncId, cloudRec ? 'update' : 'create')
+    }
+  }
+  if (toUploadEntries.size > 0) {
+    const existingEntries = await db.syncChangeLog
+      .where('tableName').equals(tableName)
+      .filter(e => e.processed === 0)
+      .toArray()
+    const existingSyncIds = new Set(existingEntries.map(e => e.syncId))
+
+    const now = new Date().toISOString()
+    const toAdd = [...toUploadEntries]
+      .filter(([syncId]) => !existingSyncIds.has(syncId))
+      .map(([syncId, operation]) => ({
+        tableName, syncId, operation, timestamp: now, processed: 0,
+      }))
+    if (toAdd.length > 0) {
+      await db.syncChangeLog.bulkAdd(toAdd as SyncChangeLogEntry[])
     }
   }
 }
@@ -678,10 +679,10 @@ export async function mergeOnLogin(uid: string): Promise<void> {
     ])
 
     // ── Layer 0: Independent tables (no FK dependencies) ──
-    await mergeTableWithRemap(uid, 'members', cloudMembers)
-    await mergeTableWithRemap(uid, 'assetCategories', cloudAssetCategories)
-    await mergeTableWithRemap(uid, 'transactionCategories', cloudTransactionCategories)
-    await mergeTableWithRemap(uid, 'goals', cloudGoals)
+    await mergeTableWithRemap('members', cloudMembers)
+    await mergeTableWithRemap('assetCategories', cloudAssetCategories)
+    await mergeTableWithRemap('transactionCategories', cloudTransactionCategories)
+    await mergeTableWithRemap('goals', cloudGoals)
 
     // Build ID mappings: cloudId → localId (via syncId chain)
     // Also populate module-level fkMappings for real-time sync use
@@ -698,11 +699,11 @@ export async function mergeOnLogin(uid: string): Promise<void> {
     fkMappings['transactionCategories'] = txnCatMap
 
     // ── Layer 1: First-level dependents ──
-    await mergeTableWithRemap(uid, 'assetItems', cloudAssetItems, (rec) => {
+    await mergeTableWithRemap('assetItems', cloudAssetItems, (rec) => {
       remapFkField(rec, 'memberId', memberMap)
       remapFkField(rec, 'categoryId', assetCatMap)
     })
-    await mergeTableWithRemap(uid, 'budgets', cloudBudgets, (rec) => {
+    await mergeTableWithRemap('budgets', cloudBudgets, (rec) => {
       remapFkField(rec, 'categoryId', txnCatMap)
     })
 
@@ -711,10 +712,10 @@ export async function mergeOnLogin(uid: string): Promise<void> {
     fkMappings['assetItems'] = assetItemMap
 
     // ── Layer 2: Second-level dependents ──
-    await mergeTableWithRemap(uid, 'dailyValues', cloudDailyValues, (rec) => {
+    await mergeTableWithRemap('dailyValues', cloudDailyValues, (rec) => {
       remapFkField(rec, 'assetItemId', assetItemMap)
     })
-    await mergeTableWithRemap(uid, 'paymentMethodItems', cloudPaymentMethodItems, (rec) => {
+    await mergeTableWithRemap('paymentMethodItems', cloudPaymentMethodItems, (rec) => {
       remapFkField(rec, 'linkedAssetItemId', assetItemMap)
     })
 
@@ -723,7 +724,7 @@ export async function mergeOnLogin(uid: string): Promise<void> {
     fkMappings['paymentMethodItems'] = payMethodMap
 
     // ── Layer 3: Third-level dependents ──
-    await mergeTableWithRemap(uid, 'subscriptions', cloudSubscriptions, (rec) => {
+    await mergeTableWithRemap('subscriptions', cloudSubscriptions, (rec) => {
       remapFkField(rec, 'paymentMethodItemId', payMethodMap)
       remapFkField(rec, 'linkedTransactionCategoryId', txnCatMap)
     })
@@ -733,7 +734,7 @@ export async function mergeOnLogin(uid: string): Promise<void> {
     fkMappings['subscriptions'] = subscriptionMap
 
     // ── Layer 4: Transactions (depends on members, txnCategories, payMethods, subscriptions) ──
-    await mergeTableWithRemap(uid, 'transactions', cloudTransactions, (rec) => {
+    await mergeTableWithRemap('transactions', cloudTransactions, (rec) => {
       remapFkField(rec, 'memberId', memberMap)
       remapFkField(rec, 'categoryId', txnCatMap)
       remapFkField(rec, 'paymentMethodItemId', payMethodMap)
@@ -741,7 +742,7 @@ export async function mergeOnLogin(uid: string): Promise<void> {
     })
 
     // ── Loans (depends on assetItems) ──
-    await mergeTableWithRemap(uid, 'loans', cloudLoans, (rec) => {
+    await mergeTableWithRemap('loans', cloudLoans, (rec) => {
       remapFkField(rec, 'linkedAssetItemId', assetItemMap)
     })
 
