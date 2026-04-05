@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { useUIStore } from '@/stores/uiStore'
@@ -7,6 +7,7 @@ import { useMemberStore } from '@/stores/memberStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useLoanStore } from '@/stores/loanStore'
+import { useSyncListener } from '@/hooks/useSyncListener'
 import { Select } from '@/components/ui/Select'
 import { format } from 'date-fns'
 import { Landmark } from 'lucide-react'
@@ -22,6 +23,9 @@ export function LiabilityCreateModal() {
   const updateLoan = useLoanStore((s) => s.updateLoan)
   const loadLoans = useLoanStore((s) => s.loadLoans)
   const activeLoans = useMemo(() => loans.filter(l => l.isActive), [loans])
+
+  const reloadLoans = useCallback(() => { loadLoans() }, [loadLoans])
+  useSyncListener(reloadLoans, ['loans'])
 
   const liabilityCategories = categories.filter(c => c.type === 'liability')
 

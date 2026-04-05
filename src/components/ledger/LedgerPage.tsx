@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { staggerContainer, staggerItem, reducedStaggerContainer, reducedStaggerItem, motionVariants } from '@/lib/motionConfig'
 import { useLocation } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTransactionStore } from '@/stores/transactionStore'
@@ -9,6 +11,7 @@ import { useTransactionFilters } from '@/hooks/useTransactionFilters'
 import { useSyncListener } from '@/hooks/useSyncListener'
 import { TransactionCard } from './TransactionCard'
 import { TransactionFormModal } from './TransactionFormModal'
+import { TransactionWizard } from './TransactionWizard'
 import { TransactionFilters } from './TransactionFilters'
 import { MonthlySummary } from './MonthlySummary'
 import { CategoryBreakdown } from './CategoryBreakdown'
@@ -58,6 +61,10 @@ export function LedgerPage() {
   // Budget
   const loadBudgets = useBudgetStore((s) => s.loadBudgets)
   const budgets = useBudgetStore((s) => s.budgets)
+
+  const shouldReduceMotion = useReducedMotion()
+  const containerV = motionVariants(shouldReduceMotion, staggerContainer, reducedStaggerContainer)
+  const itemV = motionVariants(shouldReduceMotion, staggerItem, reducedStaggerItem)
 
   const swipeHandlers = useSwipe({
     onSwipeLeft: () => setSelectedMonth(getNextMonth(selectedMonth)),
@@ -178,18 +185,25 @@ export function LedgerPage() {
       {filtered.length === 0 ? (
         <LedgerEmptyState />
       ) : (
-        <div className="space-y-2">
+        <motion.div
+          className="space-y-2"
+          variants={containerV}
+          initial="hidden"
+          animate="visible"
+          key={`${selectedMonth}-${defaultType}`}
+        >
           {filtered.map(t => (
-            <TransactionCard key={t.id} transaction={t} />
+            <motion.div key={t.id} variants={itemV}>
+              <TransactionCard transaction={t} />
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
 
       <FAB onClick={openTransactionCreateModal} label="거래 기록" />
 
-      {/* Create Modal */}
-      <TransactionFormModal
-        mode="create"
+      {/* Create Wizard */}
+      <TransactionWizard
         open={isCreateOpen}
         onClose={closeCreate}
         initialDate={prefillDate}

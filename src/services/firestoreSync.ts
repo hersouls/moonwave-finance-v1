@@ -882,13 +882,28 @@ const TABLE_FK_DEFS: Partial<Record<SyncableTable, Array<{ field: string; refTab
   ],
 }
 
-function remapCloudFks(tableName: SyncableTable, record: Record<string, unknown>): void {
+interface UnmappedFK {
+  field: string
+  refTable: SyncableTable
+  cloudValue: number
+}
+
+function remapCloudFks(tableName: SyncableTable, record: Record<string, unknown>): UnmappedFK[] {
   const defs = TABLE_FK_DEFS[tableName]
-  if (!defs) return
+  if (!defs) return []
+  const unmapped: UnmappedFK[] = []
   for (const { field, refTable } of defs) {
     const mapping = fkMappings[refTable]
-    if (mapping) remapFkField(record, field, mapping)
+    const value = record[field]
+    if (typeof value === 'number' && mapping) {
+      if (mapping.has(value)) {
+        record[field] = mapping.get(value)!
+      } else if (value !== 0) {
+        unmapped.push({ field, refTable, cloudValue: value })
+      }
+    }
   }
+  return unmapped
 }
 
 type DexieTable = typeof db.members | typeof db.assetCategories | typeof db.assetItems |
@@ -915,6 +930,57 @@ function getLocalTable(tableName: SyncableTable): DexieTable {
 
 let syncGeneration = 0
 
+/**
+ * Deferred FK retry: when a child record arrives before its parent via real-time sync,
+ * FK remapping fails. This schedules a retry after a short delay to allow the parent
+ * snapshot to process and populate fkMappings.
+ */
+function scheduleFkRetry(
+  tableName: SyncableTable,
+  localId: number,
+  unmapped: UnmappedFK[],
+  localTable: DexieTable,
+  attempt = 0
+): void {
+  const MAX_RETRIES = 3
+  const DELAY_MS = 2000
+  if (attempt >= MAX_RETRIES) return
+
+  setTimeout(async () => {
+    const updates: Record<string, unknown> = {}
+    const stillUnmapped: UnmappedFK[] = []
+
+    for (const { field, refTable, cloudValue } of unmapped) {
+      const mapping = fkMappings[refTable]
+      if (mapping?.has(cloudValue)) {
+        updates[field] = mapping.get(cloudValue)!
+      } else {
+        stillUnmapped.push({ field, refTable, cloudValue })
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      syncWritingCount++
+      setSyncWritingFlag(true)
+      try {
+        await (localTable as typeof db.members).update(localId, updates)
+      } catch (err) {
+        console.error(`[sync] FK retry ${tableName}#${localId} failed:`, err)
+      } finally {
+        syncWritingCount = Math.max(0, syncWritingCount - 1)
+        setSyncWritingFlag(false)
+      }
+      if (stillUnmapped.length === 0) {
+        window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: tableName } }))
+      }
+    }
+
+    if (stillUnmapped.length > 0) {
+      scheduleFkRetry(tableName, localId, stillUnmapped, localTable, attempt + 1)
+    }
+  }, DELAY_MS)
+}
+
 function subscribeTable(uid: string, tableName: SyncableTable, generation: number, retryCount = 0): void {
   const colRef = collection(firestore, getUserCollectionPath(uid, tableName))
   const unsub = onSnapshot(colRef, async (snapshot) => {
@@ -940,17 +1006,23 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
                 const updates = { ...cloudData }
                 const cloudId = updates.id as number | undefined
                 delete updates.id // Don't overwrite local primary key
-                remapCloudFks(tableName, updates)
+                const unmapped = remapCloudFks(tableName, updates)
                 await (localTable as typeof db.members).update(existing.id!, updates)
                 updateFkMapping(tableName, cloudId, existing.id!)
+                if (unmapped.length > 0) {
+                  scheduleFkRetry(tableName, existing.id!, unmapped, localTable)
+                }
               }
             } else {
               const toInsert = { ...cloudData }
               const cloudId = toInsert.id as number | undefined
               delete toInsert.id // Let Dexie auto-assign local id
-              remapCloudFks(tableName, toInsert)
+              const unmapped = remapCloudFks(tableName, toInsert)
               const newId = await (localTable as typeof db.members).add(toInsert as Member) as number
               updateFkMapping(tableName, cloudId, newId)
+              if (unmapped.length > 0) {
+                scheduleFkRetry(tableName, newId, unmapped, localTable)
+              }
             }
           } else if (change.type === 'removed') {
             const existing = await (localTable as typeof db.members).where('syncId').equals(syncId).first()
@@ -1034,8 +1106,14 @@ function subscribeTombstones(uid: string, generation: number): void {
   unsubscribers.push(unsub)
 }
 
+let activeListenerUid: string | null = null
+
 export function startRealtimeSync(uid: string): void {
+  // Skip if listeners are already active for this user
+  if (activeListenerUid === uid && unsubscribers.length > 0) return
+
   stopRealtimeSync()
+  activeListenerUid = uid
   syncGeneration++
   realtimeSyncPaused = false
   const gen = syncGeneration
@@ -1049,6 +1127,7 @@ export function startRealtimeSync(uid: string): void {
 }
 
 export function stopRealtimeSync(): void {
+  activeListenerUid = null
   syncGeneration++
   for (const unsub of unsubscribers) {
     unsub()

@@ -1,7 +1,8 @@
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { Sparkline } from '@/components/ui/Sparkline'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useAssetStore } from '@/stores/assetStore'
 import { formatKoreanUnit, formatChange } from '@/utils/format'
@@ -21,16 +22,25 @@ function AssetItemCardInner({ itemId, name, categoryId, type }: AssetItemCardPro
 
   const category = categories.find(c => c.id === categoryId)
 
-  // Get latest value for this item
-  const itemValues = values
-    .filter(v => v.assetItemId === itemId)
-    .sort((a, b) => b.date.localeCompare(a.date))
-  const latestValue = itemValues[0]?.value || 0
+  // Get sorted values for this item (newest first)
+  const itemValues = useMemo(() =>
+    values
+      .filter(v => v.assetItemId === itemId)
+      .sort((a, b) => b.date.localeCompare(a.date)),
+    [values, itemId]
+  )
 
-  // Get previous day value for change
+  const latestValue = itemValues[0]?.value || 0
   const prevValue = itemValues[1]?.value || latestValue
   const change = latestValue - prevValue
 
+  // Sparkline data: last 14 days, chronological order
+  const sparklineData = useMemo(() => {
+    const recent = itemValues.slice(0, 14).reverse()
+    return recent.map(v => v.value)
+  }, [itemValues])
+
+  const sparklineColor = change >= 0 ? '#10b981' : '#ef4444'
   const basePath = type === 'asset' ? '/assets' : '/liabilities'
 
   return (
@@ -64,7 +74,18 @@ function AssetItemCardInner({ itemId, name, categoryId, type }: AssetItemCardPro
             </p>
           )}
         </div>
-        <ChevronRight className="w-5 h-5 text-zinc-400 flex-shrink-0" />
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {sparklineData.length >= 3 && (
+            <Sparkline
+              data={sparklineData}
+              width={64}
+              height={24}
+              color={sparklineColor}
+              strokeWidth={1.5}
+            />
+          )}
+          <ChevronRight className="w-5 h-5 text-zinc-400" />
+        </div>
       </div>
     </Card>
   )

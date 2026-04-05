@@ -58,7 +58,7 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-[var(--z-header)] bg-white/80 dark:bg-zinc-950/80 backdrop-blur-lg border-b border-zinc-200 dark:border-zinc-800">
+    <header className="sticky top-0 z-[var(--z-header)] bg-white/80 dark:bg-zinc-950/80 glass-heavy border-b border-zinc-200/60 dark:border-zinc-800/60">
       <nav className="flex items-center justify-between nav-header nav-header-inset">
         <div className="flex items-center gap-3">
           {isDetailPage ? (

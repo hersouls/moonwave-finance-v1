@@ -10,15 +10,7 @@ export function formatKRW(value: number): string {
 
 export function formatKoreanUnit(value: number): string {
   if (!Number.isFinite(value)) return '0'
-  const abs = Math.abs(value)
-  const sign = value < 0 ? '-' : ''
-  if (abs >= KOREAN_UNIT_EUK) {
-    return sign + Math.round(abs / KOREAN_UNIT_EUK) + '억'
-  }
-  if (abs >= KOREAN_UNIT_MAN) {
-    return sign + Math.round(abs / KOREAN_UNIT_MAN).toLocaleString('ko-KR') + '만'
-  }
-  return value.toLocaleString('ko-KR')
+  return Math.round(value).toLocaleString('ko-KR')
 }
 
 export function formatChange(value: number): string {
@@ -59,6 +51,7 @@ export function formatSubscriptionAmount(value: number, currency: 'KRW' | 'USD')
 
 export function formatRelativeTime(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date
+  if (isNaN(d.getTime())) return ''
   const now = new Date()
   const diffMs = now.getTime() - d.getTime()
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))

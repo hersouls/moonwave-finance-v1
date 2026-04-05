@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { staggerContainer, staggerItem, reducedStaggerContainer, reducedStaggerItem, motionVariants } from '@/lib/motionConfig'
 import { useAssetStore } from '@/stores/assetStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useMemberStore } from '@/stores/memberStore'
@@ -18,6 +20,10 @@ export function AssetListPage() {
   const [error, setError] = useState<string | null>(null)
   const [activeMember, setActiveMember] = useState<number | null>(null)
   const [activeCategory, setActiveCategory] = useState<number | null>(null)
+
+  const shouldReduceMotion = useReducedMotion()
+  const containerV = motionVariants(shouldReduceMotion, staggerContainer, reducedStaggerContainer)
+  const itemV = motionVariants(shouldReduceMotion, staggerItem, reducedStaggerItem)
 
   const loadAll = useAssetStore((s) => s.loadAll)
   const loadValues = useDailyValueStore((s) => s.loadValues)
@@ -88,18 +94,24 @@ export function AssetListPage() {
         {filteredItems.length === 0 ? (
           <AssetEmptyState />
         ) : (
-          <div className="space-y-3">
+          <motion.div
+            className="space-y-3"
+            variants={containerV}
+            initial="hidden"
+            animate="visible"
+            key={`${activeMember}-${activeCategory}`}
+          >
             {filteredItems.map(item => (
-              <AssetItemCard
-                key={item.id}
-                itemId={item.id!}
-                name={item.name}
-                categoryId={item.categoryId}
-
-                type="asset"
-              />
+              <motion.div key={item.id} variants={itemV}>
+                <AssetItemCard
+                  itemId={item.id!}
+                  name={item.name}
+                  categoryId={item.categoryId}
+                  type="asset"
+                />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
 

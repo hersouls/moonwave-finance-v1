@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { staggerContainer, staggerItem, reducedStaggerContainer, reducedStaggerItem, motionVariants } from '@/lib/motionConfig'
 import { useLocation } from 'react-router-dom'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useSubscriptionStore } from '@/stores/subscriptionStore'
@@ -27,6 +29,10 @@ export function SubscriptionPage() {
   const isLoading = useSubscriptionStore((s) => s.isLoading)
   const loadSubscriptions = useSubscriptionStore((s) => s.loadSubscriptions)
   const openCreate = useUIStore((s) => s.openSubscriptionCreateModal)
+
+  const shouldReduceMotion = useReducedMotion()
+  const containerV = motionVariants(shouldReduceMotion, staggerContainer, reducedStaggerContainer)
+  const itemV = motionVariants(shouldReduceMotion, staggerItem, reducedStaggerItem)
 
   const [categoryFilter, setCategoryFilter] = useState<SubscriptionCategoryType | null>(null)
   const [showInactive, setShowInactive] = useState(false)
@@ -109,11 +115,19 @@ export function SubscriptionPage() {
         </p>
       ) : (
         <>
-          <div className="space-y-2">
+          <motion.div
+            className="space-y-2"
+            variants={containerV}
+            initial="hidden"
+            animate="visible"
+            key={`${currencyFilter}-${categoryFilter}`}
+          >
             {active.map((sub) => (
-              <SubscriptionCard key={sub.id} subscription={sub} />
+              <motion.div key={sub.id} variants={itemV}>
+                <SubscriptionCard subscription={sub} />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           {/* Inactive section */}
           {inactive.length > 0 && (

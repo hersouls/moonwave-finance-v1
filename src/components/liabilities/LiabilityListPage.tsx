@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { staggerContainer, staggerItem, reducedStaggerContainer, reducedStaggerItem, motionVariants } from '@/lib/motionConfig'
 import { useAssetStore } from '@/stores/assetStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useMemberStore } from '@/stores/memberStore'
@@ -17,6 +19,10 @@ export function LiabilityListPage() {
   const [activeMember, setActiveMember] = useState<number | null>(null)
   const [activeCategory, setActiveCategory] = useState<number | null>(null)
 
+  const shouldReduceMotion = useReducedMotion()
+  const containerV = motionVariants(shouldReduceMotion, staggerContainer, reducedStaggerContainer)
+  const itemV = motionVariants(shouldReduceMotion, staggerItem, reducedStaggerItem)
+
   const loadAll = useAssetStore((s) => s.loadAll)
   const loadValues = useDailyValueStore((s) => s.loadValues)
   const loadMembers = useMemberStore((s) => s.loadMembers)
@@ -30,7 +36,7 @@ export function LiabilityListPage() {
   }
 
   useEffect(() => { loadData() }, [])
-  useSyncListener(loadData, ['assetCategories', 'assetItems', 'dailyValues', 'members'])
+  useSyncListener(loadData, ['assetCategories', 'assetItems', 'dailyValues', 'members', 'loans'])
 
   const memberTabs = useMemo(() => [
     { id: 'all', label: '전체' },
@@ -81,16 +87,23 @@ export function LiabilityListPage() {
         {filteredItems.length === 0 ? (
           <LiabilityEmptyState />
         ) : (
-          <div className="space-y-3">
+          <motion.div
+            className="space-y-3"
+            variants={containerV}
+            initial="hidden"
+            animate="visible"
+            key={`${activeMember}-${activeCategory}`}
+          >
             {filteredItems.map(item => (
-              <LiabilityItemCard
-                key={item.id}
-                itemId={item.id!}
-                name={item.name}
-                categoryId={item.categoryId}
-              />
+              <motion.div key={item.id} variants={itemV}>
+                <LiabilityItemCard
+                  itemId={item.id!}
+                  name={item.name}
+                  categoryId={item.categoryId}
+                />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
 

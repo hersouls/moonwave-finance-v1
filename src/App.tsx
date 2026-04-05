@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Sidebar } from './components/layout/Sidebar'
 import { Header } from './components/layout/Header'
@@ -15,6 +15,7 @@ import { IOSInstallBanner } from './components/ui/IOSInstallBanner'
 import { OfflineBanner } from './components/ui/OfflineBanner'
 import { AppLoadingScreen } from './components/ui/AppLoadingScreen'
 import { SearchModal } from './components/search/SearchModal'
+import { AnimatedOutlet } from './components/ui/AnimatedOutlet'
 import { OnboardingWizard } from './components/onboarding/OnboardingWizard'
 import { useSettingsStore } from './stores/settingsStore'
 import { useUIStore } from './stores/uiStore'
@@ -98,7 +99,7 @@ export default function App() {
       <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'}`}>
         <Header />
         <main id="main-content" className="flex-1 pb-20 lg:pb-6">
-          <Outlet />
+          <AnimatedOutlet />
         </main>
         <Footer />
       </div>

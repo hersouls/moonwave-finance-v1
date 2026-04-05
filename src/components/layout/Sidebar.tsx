@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -226,30 +227,45 @@ export function Sidebar() {
             aria-hidden="true"
           />
         </button>
-        {isExpanded && (
-          <ul className="mt-1 space-y-0.5 ml-4 pl-4 border-l border-zinc-200 dark:border-zinc-700" role="menu">
-            {group.children.map((child) => {
-              const childActive = isPathActive(child.path)
-              return (
-                <li key={child.id} role="none">
-                  <Link
-                    to={child.path}
-                    className={clsx(
-                      'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
-                      childActive
-                        ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
-                        : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300'
-                    )}
-                    role="menuitem"
-                    aria-current={childActive ? 'page' : undefined}
+        <AnimatePresence initial={false}>
+          {isExpanded && (
+            <motion.ul
+              className="mt-1 space-y-0.5 ml-4 pl-4 border-l border-zinc-200 dark:border-zinc-700 overflow-hidden"
+              role="menu"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            >
+              {group.children.map((child, i) => {
+                const childActive = isPathActive(child.path)
+                return (
+                  <motion.li
+                    key={child.id}
+                    role="none"
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.04, type: 'spring', stiffness: 300, damping: 25 }}
                   >
-                    {child.label}
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-        )}
+                    <Link
+                      to={child.path}
+                      className={clsx(
+                        'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+                        childActive
+                          ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+                          : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300'
+                      )}
+                      role="menuitem"
+                      aria-current={childActive ? 'page' : undefined}
+                    >
+                      {child.label}
+                    </Link>
+                  </motion.li>
+                )
+              })}
+            </motion.ul>
+          )}
+        </AnimatePresence>
       </li>
     )
   }
@@ -272,11 +288,19 @@ export function Sidebar() {
           aria-label="대시보드로 이동"
         >
           <img src="/icons/icon-192.png" alt="FIN" className="w-8 h-8 rounded-lg flex-shrink-0" />
-          {isSidebarOpen && (
-            <div className="flex flex-col min-w-0">
-              <span className="font-bold text-zinc-900 dark:text-zinc-100 truncate">FIN</span>
-            </div>
-          )}
+          <AnimatePresence>
+            {isSidebarOpen && (
+              <motion.div
+                className="flex flex-col min-w-0"
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <span className="font-bold text-zinc-900 dark:text-zinc-100 truncate">FIN</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Link>
       </div>
 

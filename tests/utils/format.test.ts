@@ -2,16 +2,16 @@ import { describe, it, expect } from 'vitest'
 import { formatKoreanUnit, formatPercent, formatNumber, formatKRW } from '@/utils/format'
 
 describe('formatKoreanUnit', () => {
-  it('formats billions', () => {
-    expect(formatKoreanUnit(150000000)).toBe('2억')
+  it('formats hundreds of millions exactly', () => {
+    expect(formatKoreanUnit(178154775)).toBe('178,154,775')
   })
 
-  it('formats tens of millions', () => {
-    expect(formatKoreanUnit(53000000)).toBe('5,300만')
+  it('formats tens of millions exactly', () => {
+    expect(formatKoreanUnit(53000000)).toBe('53,000,000')
   })
 
-  it('formats millions', () => {
-    expect(formatKoreanUnit(1234567)).toBe('123만')
+  it('formats millions exactly', () => {
+    expect(formatKoreanUnit(1234567)).toBe('1,234,567')
   })
 
   it('formats small numbers', () => {
@@ -23,8 +23,7 @@ describe('formatKoreanUnit', () => {
   })
 
   it('handles negative', () => {
-    const result = formatKoreanUnit(-53000000)
-    expect(result).toContain('5,300만')
+    expect(formatKoreanUnit(-53000000)).toBe('-53,000,000')
   })
 })
 

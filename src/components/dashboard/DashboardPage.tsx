@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { staggerContainer, staggerItem, reducedStaggerContainer, reducedStaggerItem, motionVariants } from '@/lib/motionConfig'
 import { useNavigate } from 'react-router-dom'
 import { Plus, ArrowRight } from 'lucide-react'
 import { useAssetStore } from '@/stores/assetStore'
@@ -63,7 +65,19 @@ export function DashboardPage() {
   useEffect(() => { loadData() }, [])
   useSyncListener(loadData)
 
-  if (isLoading) return <DashboardSkeleton />
+  if (isLoading) return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key="skeleton"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        <DashboardSkeleton />
+      </motion.div>
+    </AnimatePresence>
+  )
 
   if (error) {
     return (
@@ -99,33 +113,42 @@ export function DashboardPage() {
     )
   }
 
+  const shouldReduceMotion = useReducedMotion()
+  const containerV = motionVariants(shouldReduceMotion, staggerContainer, reducedStaggerContainer)
+  const itemV = motionVariants(shouldReduceMotion, staggerItem, reducedStaggerItem)
+
   return (
-    <div className="p-4 lg:p-6 space-y-6">
+    <motion.div
+      className="p-4 lg:p-6 space-y-6"
+      variants={containerV}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Net Worth Hero */}
-      <NetWorthCard stats={stats} />
+      <motion.div variants={itemV}><NetWorthCard stats={stats} /></motion.div>
 
       {/* 3-Pillar Summary: Asset + Ledger */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <motion.div variants={itemV} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <AssetLiabilityBreakdown stats={stats} />
         <LedgerSummaryCard />
-      </div>
+      </motion.div>
 
       {/* Subscription Widget (KRW/USD split) */}
-      <SubscriptionWidget />
+      <motion.div variants={itemV}><SubscriptionWidget /></motion.div>
 
       {/* Budget Overview */}
-      <BudgetOverviewCard />
+      <motion.div variants={itemV}><BudgetOverviewCard /></motion.div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <motion.div variants={itemV} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <NetWorthTrendChart />
         <AssetAllocationChart />
-      </div>
+      </motion.div>
 
-      <DailyChangeChart />
+      <motion.div variants={itemV}><DailyChangeChart /></motion.div>
 
       {/* Category Breakdown Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <motion.div variants={itemV} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Asset Categories */}
         {assetBreakdown.length > 0 && (
           <Card className="card-pad-lg">
@@ -183,11 +206,11 @@ export function DashboardPage() {
             </div>
           </Card>
         )}
-      </div>
+      </motion.div>
 
       {/* Active Goals */}
       {activeGoals.length > 0 && (
-        <div>
+        <motion.div variants={itemV}>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100">진행 중인 목표</h3>
             <button
@@ -202,11 +225,11 @@ export function DashboardPage() {
               <GoalCard key={goal.id} goal={goal} />
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Member Breakdown */}
-      <MemberSummaryCards />
-    </div>
+      <motion.div variants={itemV}><MemberSummaryCards /></motion.div>
+    </motion.div>
   )
 }

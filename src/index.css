@@ -54,6 +54,19 @@
   /* Easing */
   --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
   --easing-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --easing-spring-bouncy: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Blur Scale */
+  --blur-sm: 4px;
+  --blur-md: 8px;
+  --blur-lg: 16px;
+  --blur-xl: 24px;
+
+  /* Spring Duration */
+  --duration-spring: 500ms;
+
+  /* Noise */
+  --noise-opacity: 0.03;
 
   /* Fonts */
   --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
@@ -177,6 +190,17 @@
   --height-sheet-handle: 4px;
   --width-sheet-handle: 40px;
   --sheet-top-offset: 64px;
+
+  /* Hero Gradient Tokens */
+  --gradient-hero-start: var(--color-primary-600);
+  --gradient-hero-end: var(--color-primary-800);
+  --gradient-hero-angle: 135deg;
+
+  /* Glow Tokens */
+  --glow-primary: oklch(0.55 0.20 250 / 0.15);
+  --glow-success: oklch(0.62 0.18 145 / 0.15);
+  --glow-danger: oklch(0.58 0.22 25 / 0.15);
+  --glow-spread: 20px;
   --sheet-radius-top: var(--radius-2xl);
   --sheet-header-height: 56px;
   --sheet-padding-x: 20px;
@@ -416,6 +440,57 @@ html.dark[data-palette="forest"] {
   --color-primary-700: oklch(0.75 0.12 160);
   --color-primary-800: oklch(0.82 0.08 160);
   --color-primary-900: oklch(0.90 0.04 160);
+}
+
+/* ========================================
+   Hero Gradient Overrides per Palette
+   ======================================== */
+html:not(.dark)[data-palette="ocean"] {
+  --gradient-hero-start: #2563eb;
+  --gradient-hero-end: #1e40af;
+  --glow-primary: rgba(37, 99, 235, 0.2);
+}
+html:not(.dark)[data-palette="rose"] {
+  --gradient-hero-start: #db2777;
+  --gradient-hero-end: #9d174d;
+  --glow-primary: rgba(219, 39, 119, 0.2);
+}
+html:not(.dark)[data-palette="purple"] {
+  --gradient-hero-start: #9333ea;
+  --gradient-hero-end: #6b21a8;
+  --glow-primary: rgba(147, 51, 234, 0.2);
+}
+html:not(.dark)[data-palette="forest"] {
+  --gradient-hero-start: #059669;
+  --gradient-hero-end: #065f46;
+  --glow-primary: rgba(5, 150, 105, 0.2);
+}
+
+html.dark[data-palette="ocean"] {
+  --gradient-hero-start: oklch(0.35 0.12 250);
+  --gradient-hero-end: oklch(0.22 0.08 250);
+  --glow-primary: oklch(0.50 0.16 250 / 0.2);
+}
+html.dark[data-palette="rose"] {
+  --gradient-hero-start: oklch(0.35 0.14 350);
+  --gradient-hero-end: oklch(0.22 0.08 350);
+  --glow-primary: oklch(0.50 0.18 350 / 0.2);
+}
+html.dark[data-palette="purple"] {
+  --gradient-hero-start: oklch(0.35 0.14 300);
+  --gradient-hero-end: oklch(0.22 0.08 300);
+  --glow-primary: oklch(0.50 0.18 300 / 0.2);
+}
+html.dark[data-palette="forest"] {
+  --gradient-hero-start: oklch(0.35 0.14 160);
+  --gradient-hero-end: oklch(0.22 0.08 160);
+  --glow-primary: oklch(0.50 0.16 160 / 0.2);
+}
+
+/* Dark mode default hero gradient */
+.dark {
+  --gradient-hero-start: oklch(0.33 0.12 250);
+  --gradient-hero-end: oklch(0.20 0.08 250);
 }
 
 /* ========================================
@@ -725,20 +800,36 @@ input[type="range"].slider:disabled::-moz-range-thumb {
 /* Focused — 2px black border */
 .input-base:focus,
 .input-base:focus-within {
-  border-color: oklch(0.15 0 0);
+  border-color: var(--color-primary-500);
   border-width: 2px;
   padding: calc(var(--padding-input-y) - 1px) calc(var(--padding-input-x) - 1px);
   outline: none;
-  box-shadow: none;
+  box-shadow: 0 0 0 3px var(--glow-primary);
 }
 .dark .input-base:focus,
 .dark .input-base:focus-within {
-  border-color: oklch(0.9 0 0);
+  border-color: var(--color-primary-400);
+  box-shadow: 0 0 0 3px var(--glow-primary);
 }
 
 /* Error */
 .input-error {
   border-color: var(--color-danger-500) !important;
+  box-shadow: 0 0 0 3px var(--glow-danger) !important;
+}
+
+.input-error-shake {
+  animation: inputShake 0.4s ease-in-out;
+}
+
+@keyframes inputShake {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-4px); }
+  30% { transform: translateX(4px); }
+  45% { transform: translateX(-3px); }
+  60% { transform: translateX(3px); }
+  75% { transform: translateX(-1px); }
+  90% { transform: translateX(1px); }
 }
 
 /* Disabled */
@@ -1376,15 +1467,12 @@ input[type="range"].slider:disabled::-moz-range-thumb {
 
 .nav-tab[aria-selected="true"],
 .nav-tab.is-active {
-  background: white;
   color: oklch(0.15 0 0);
   font-weight: 600;
-  box-shadow: var(--shadow-1);
 }
 
 .dark .nav-tab[aria-selected="true"],
 .dark .nav-tab.is-active {
-  background: oklch(0.3 0 0);
   color: oklch(0.95 0 0);
 }
 
@@ -4054,14 +4142,89 @@ input[type="range"].slider:disabled::-moz-range-thumb {
 /* ========================================
    Reduced Motion Support
    ======================================== */
+/* ========================================
+   Glassmorphism & Glow Utilities
+   ======================================== */
+.glass {
+  backdrop-filter: blur(var(--blur-lg)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--blur-lg)) saturate(1.5);
+}
+
+.glass-heavy {
+  backdrop-filter: blur(var(--blur-xl)) saturate(1.8);
+  -webkit-backdrop-filter: blur(var(--blur-xl)) saturate(1.8);
+}
+
+.glow-primary {
+  box-shadow: 0 0 var(--glow-spread) var(--glow-primary);
+}
+
+.glow-success {
+  box-shadow: 0 0 var(--glow-spread) var(--glow-success);
+}
+
+.glow-danger {
+  box-shadow: 0 0 var(--glow-spread) var(--glow-danger);
+}
+
+/* Hero card gradient */
+.hero-gradient {
+  background: linear-gradient(var(--gradient-hero-angle), var(--gradient-hero-start), var(--gradient-hero-end));
+}
+
+/* Noise texture overlay */
+.noise-overlay {
+  position: relative;
+  overflow: hidden;
+}
+
+.noise-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: var(--noise-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 1;
+}
+
+/* Animated shimmer for hero cards */
+@keyframes heroShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.hero-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  animation: heroShimmer 3s ease-in-out infinite;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 2;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Allow opacity transitions (non-motion) but kill transform/movement */
+  *:not(.allow-opacity-transition),
+  *:not(.allow-opacity-transition)::before,
+  *:not(.allow-opacity-transition)::after {
+    transition-duration: 0.01ms !important;
+  }
+
+  .hero-shimmer::after {
+    animation: none !important;
   }
 }
 
@@ -4175,4 +4338,51 @@ input[type="range"].slider:disabled::-moz-range-thumb {
   left: 0;
   z-index: 10;
   background: inherit;
+}
+
+/* ========================================
+   Wizard Step Transitions
+   ======================================== */
+@keyframes wizard-slide-right {
+  from { transform: translateX(40px); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+@keyframes wizard-slide-left {
+  from { transform: translateX(-40px); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+.wizard-step-forward {
+  animation: wizard-slide-right 250ms var(--easing-default) both;
+}
+.wizard-step-backward {
+  animation: wizard-slide-left 250ms var(--easing-default) both;
+}
+
+/* Wizard Amount Edge Glow */
+.wizard-amount-glow {
+  box-shadow:
+    0 0 20px -4px oklch(0.55 0.20 250 / 0.18),
+    0 0 8px 0 oklch(0.55 0.20 250 / 0.08);
+}
+.dark .wizard-amount-glow {
+  box-shadow:
+    0 0 24px -4px oklch(0.55 0.20 250 / 0.28),
+    0 0 12px 0 oklch(0.55 0.20 250 / 0.12);
+}
+
+/* Wizard fadeIn for budget warning */
+@keyframes wizard-fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: wizard-fadeIn 200ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wizard-step-forward,
+  .wizard-step-backward,
+  .animate-fadeIn {
+    animation: none;
+  }
 }

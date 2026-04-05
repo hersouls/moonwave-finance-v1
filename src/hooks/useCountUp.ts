@@ -4,6 +4,10 @@ function easeOutExpo(t: number): number {
   return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t)
 }
 
+/**
+ * Animates a number from its previous value to the target with easeOutExpo.
+ * Falls back to instant update when prefers-reduced-motion is enabled.
+ */
 export function useCountUp(target: number, duration = 800): number {
   const [value, setValue] = useState(target)
   const prevTarget = useRef(target)
@@ -14,6 +18,13 @@ export function useCountUp(target: number, duration = 800): number {
     prevTarget.current = target
 
     if (from === target) return
+
+    // Respect reduced motion preference
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReducedMotion) {
+      setValue(target)
+      return
+    }
 
     const start = performance.now()
 

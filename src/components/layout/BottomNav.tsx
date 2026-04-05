@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Landmark, Receipt, Repeat, BarChart3 } from 'lucide-react'
 import { clsx } from 'clsx'
+import { motion } from 'framer-motion'
 import { useUIStore, type CurrentView } from '@/stores/uiStore'
 
 const NAV_TARGETS: Record<string, string> = {
@@ -31,7 +32,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-[var(--z-nav)] bg-white/80 dark:bg-zinc-950/80 backdrop-blur-lg border-t border-zinc-200 dark:border-zinc-800 pb-safe nav-bottom"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-[var(--z-nav)] bg-white/80 dark:bg-zinc-950/80 glass-heavy border-t border-zinc-200/60 dark:border-zinc-800/60 pb-safe nav-bottom"
       aria-label="하단 메인 네비게이션"
     >
       <ul className="flex items-center justify-around nav-bottom fold:h-14" role="menubar">
@@ -56,7 +57,12 @@ export function BottomNav() {
                 <Icon className="w-5 h-5 fold:w-4 fold:h-4" aria-hidden="true" />
                 <span className="nav-bottom-label bottom-nav-label fold:hidden">{item.label}</span>
                 {isActive && (
-                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-5 h-1 rounded-full bg-primary-500" aria-hidden="true" />
+                  <motion.span
+                    layoutId="bottomNavIndicator"
+                    className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-5 h-1 rounded-full bg-primary-500"
+                    aria-hidden="true"
+                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                  />
                 )}
               </button>
             </li>

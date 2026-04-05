@@ -8,6 +8,8 @@ function getNextDates(lastDate: string, pattern: RepeatPattern, upToDate: string
   const end = pattern.endDate ? new Date(pattern.endDate) : new Date(upToDate)
   const limit = new Date(upToDate)
 
+  if (pattern.interval <= 0) return dates
+
   while (true) {
     switch (pattern.type) {
       case 'daily': current = addDays(current, pattern.interval); break

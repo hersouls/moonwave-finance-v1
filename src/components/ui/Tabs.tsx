@@ -1,4 +1,5 @@
 import { clsx } from 'clsx'
+import { motion } from 'framer-motion'
 import { useId, useRef, type ReactNode, type KeyboardEvent } from 'react'
 
 interface Tab {
@@ -16,6 +17,7 @@ interface TabsProps {
 
 export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
   const baseId = useId()
+  const layoutGroupId = useId()
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   const handleKeyDown = (e: KeyboardEvent, index: number) => {
@@ -63,12 +65,21 @@ export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
             onClick={() => onChange(tab.id)}
             onKeyDown={(e) => handleKeyDown(e, index)}
             className={clsx(
-              'nav-tab',
+              'nav-tab relative',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500'
             )}
           >
-            {tab.icon}
-            {tab.label}
+            {isActive && (
+              <motion.span
+                layoutId={`tabIndicator-${layoutGroupId}`}
+                className="absolute inset-0 rounded-md bg-white dark:bg-[oklch(0.3_0_0)] shadow-sm z-0"
+                transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-1.5">
+              {tab.icon}
+              {tab.label}
+            </span>
           </button>
         )
       })}

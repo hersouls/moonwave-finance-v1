@@ -28,6 +28,9 @@ interface UIState {
   isSubscriptionEditModalOpen: boolean
   editingSubscriptionId: number | null
 
+  isAssetEditModalOpen: boolean
+  editingAssetItemId: number | null
+
   isSelectionMode: boolean
   selectedItemIds: Set<number>
 
@@ -52,6 +55,9 @@ interface UIState {
   closeSubscriptionCreateModal: () => void
   openSubscriptionEditModal: (id: number) => void
   closeSubscriptionEditModal: () => void
+
+  openAssetEditModal: (id: number) => void
+  closeAssetEditModal: () => void
 
   openAssetCreateModal: () => void
   closeAssetCreateModal: () => void
@@ -85,6 +91,8 @@ export const useUIStore = create<UIState>()(
       isSubscriptionCreateModalOpen: false,
       isSubscriptionEditModalOpen: false,
       editingSubscriptionId: null,
+      isAssetEditModalOpen: false,
+      editingAssetItemId: null,
       isAssetCreateModalOpen: false,
       isLiabilityCreateModalOpen: false,
       isTransactionCreateModalOpen: false,
@@ -120,6 +128,9 @@ export const useUIStore = create<UIState>()(
       closeSubscriptionCreateModal: () => set({ isSubscriptionCreateModalOpen: false }),
       openSubscriptionEditModal: (id: number) => set({ isSubscriptionEditModalOpen: true, editingSubscriptionId: id }),
       closeSubscriptionEditModal: () => set({ isSubscriptionEditModalOpen: false, editingSubscriptionId: null }),
+
+      openAssetEditModal: (id: number) => set({ isAssetEditModalOpen: true, editingAssetItemId: id }),
+      closeAssetEditModal: () => set({ isAssetEditModalOpen: false, editingAssetItemId: null }),
 
       openAssetCreateModal: () => set({ isAssetCreateModalOpen: true }),
       closeAssetCreateModal: () => set({ isAssetCreateModalOpen: false }),

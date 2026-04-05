@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { db } from '@/services/database'
-import { incrementalUpload, pauseRealtimeSync, resumeRealtimeSync, getIsSyncWriting, startRealtimeSync } from '@/services/firestoreSync'
+import { incrementalUpload, getIsSyncWriting, startRealtimeSync } from '@/services/firestoreSync'
 
 /**
  * Watches Dexie for changes and debounce-uploads to Firestore when user is logged in.
@@ -23,14 +23,11 @@ export function useAutoSync() {
         if (syncInProgressRef.current) return
         syncInProgressRef.current = true
         try {
-          // Pause real-time listeners to avoid echo loop
-          pauseRealtimeSync()
           await incrementalUpload(user.uid)
         } catch (err) {
           console.error('[auto-sync] upload failed:', err)
         } finally {
           syncInProgressRef.current = false
-          resumeRealtimeSync()
         }
       }, DEBOUNCE_MS)
     }
@@ -53,7 +50,8 @@ export function useAutoSync() {
     }
     window.addEventListener('online', handleOnline)
 
-    // Restart listeners when tab becomes visible (may have died while hidden)
+    // Ensure listeners are alive when tab becomes visible
+    // startRealtimeSync is a no-op if already active for this uid
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
         startRealtimeSync(user.uid)

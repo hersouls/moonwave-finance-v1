@@ -55,6 +55,7 @@ async function reloadStoresAfterSync() {
   const { useBudgetStore } = await import('@/stores/budgetStore')
   const { useGoalStore } = await import('@/stores/goalStore')
   const { useDailyValueStore } = await import('@/stores/dailyValueStore')
+  const { useLoanStore } = await import('@/stores/loanStore')
   await Promise.all([
     useSubscriptionStore.getState().loadSubscriptions(),
     useTransactionStore.getState().loadTransactions(),
@@ -65,6 +66,7 @@ async function reloadStoresAfterSync() {
     useBudgetStore.getState().loadBudgets(),
     useGoalStore.getState().loadGoals(),
     useDailyValueStore.getState().loadValues(),
+    useLoanStore.getState().loadLoans(),
   ])
 }
 
@@ -92,7 +94,14 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const authUser = toAuthUser(firebaseUser)
-        set({ user: authUser, isLoading: false, isSigningIn: false })
+        const currentUser = get().user
+
+        // Only update state if user actually changed (skip token refreshes)
+        if (!currentUser || currentUser.uid !== authUser.uid) {
+          set({ user: authUser, isLoading: false, isSigningIn: false })
+        } else if (get().isSigningIn) {
+          set({ isSigningIn: false })
+        }
 
         // Sync on login: only run once per session (skip token refreshes)
         if (!hasSyncedOnLogin) {
@@ -105,10 +114,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             console.error('Sync on login failed:', err)
             set({ syncStatus: 'error' })
           }
+          // Start listeners only after first login merge
+          startRealtimeSync(authUser.uid)
         }
-
-        // 항상 리스너 (재)시작 — 토큰 갱신, 네트워크 복구 시 리스너 복원
-        startRealtimeSync(authUser.uid)
       } else {
         hasSyncedOnLogin = false
         stopRealtimeSync()

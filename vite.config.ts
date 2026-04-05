@@ -46,6 +46,7 @@ export default defineConfig({
           'vendor-charts': ['chart.js', 'react-chartjs-2'],
           'vendor-ui': ['lucide-react', '@headlessui/react'],
           'vendor-data': ['zustand', 'dexie', 'dexie-react-hooks', 'date-fns'],
+          'vendor-motion': ['framer-motion'],
         },
       },
     },

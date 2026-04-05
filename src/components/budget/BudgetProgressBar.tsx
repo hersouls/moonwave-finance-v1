@@ -1,4 +1,5 @@
 import { clsx } from 'clsx'
+import { motion, useReducedMotion } from 'framer-motion'
 
 interface BudgetProgressBarProps {
   used: number
@@ -8,6 +9,7 @@ interface BudgetProgressBarProps {
 }
 
 export function BudgetProgressBar({ used, budget, showLabel = true, size = 'md' }: BudgetProgressBarProps) {
+  const shouldReduceMotion = useReducedMotion()
   const percentage = budget > 0 ? Math.min((used / budget) * 100, 100) : 0
   const overBudget = used > budget
 
@@ -17,15 +19,27 @@ export function BudgetProgressBar({ used, budget, showLabel = true, size = 'md' 
       ? 'bg-amber-500'
       : 'bg-emerald-500'
 
+  const glowColor = overBudget
+    ? 'rgba(239, 68, 68, 0.3)'
+    : percentage > 80
+      ? 'rgba(245, 158, 11, 0.3)'
+      : 'rgba(16, 185, 129, 0.3)'
+
   return (
     <div>
       <div className={clsx(
         'w-full rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-800',
         size === 'sm' ? 'h-1.5' : 'h-2.5'
       )}>
-        <div
-          className={clsx('h-full rounded-full transition-all duration-300', barColor)}
-          style={{ width: `${percentage}%` }}
+        <motion.div
+          className={clsx('h-full rounded-full', barColor)}
+          initial={{ width: 0 }}
+          animate={{ width: `${percentage}%` }}
+          transition={shouldReduceMotion
+            ? { duration: 0 }
+            : { type: 'spring', stiffness: 80, damping: 18, mass: 0.8 }
+          }
+          style={percentage > 80 ? { boxShadow: `0 0 8px ${glowColor}` } : undefined}
         />
       </div>
       {showLabel && (

@@ -19,6 +19,7 @@ export function useSearch(query: string) {
       return
     }
 
+    let cancelled = false
     const timer = setTimeout(async () => {
       setIsSearching(true)
       const q = query.toLowerCase()
@@ -97,11 +98,13 @@ export function useSearch(query: string) {
         // ignore search errors
       }
 
-      setResults(found.slice(0, 20))
-      setIsSearching(false)
+      if (!cancelled) {
+        setResults(found.slice(0, 20))
+        setIsSearching(false)
+      }
     }, 300) // 300ms debounce
 
-    return () => clearTimeout(timer)
+    return () => { cancelled = true; clearTimeout(timer) }
   }, [query])
 
   return { results, isSearching }

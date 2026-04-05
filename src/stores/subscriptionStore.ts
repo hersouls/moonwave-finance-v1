@@ -51,7 +51,7 @@ function monthlyAmount(sub: Subscription): number {
     case 'yearly': return sub.amount / 12
     case 'custom': return (sub.customCycleDays && sub.customCycleDays > 0)
       ? sub.amount * (365 / sub.customCycleDays / 12)
-      : sub.amount
+      : sub.amount * (365 / 30 / 12)
     default: return sub.amount
   }
 }

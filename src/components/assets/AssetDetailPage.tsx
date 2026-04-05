@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Trash2, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Pencil, Trash2, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import { useAssetStore } from '@/stores/assetStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useMemberStore } from '@/stores/memberStore'
@@ -13,7 +13,9 @@ import { clsx } from 'clsx'
 import { format } from 'date-fns'
 import { UI_DELAYS } from '@/utils/constants'
 import { useSyncListener } from '@/hooks/useSyncListener'
+import { useUIStore } from '@/stores/uiStore'
 import { useToastStore } from '@/stores/toastStore'
+import { AssetEditModal } from '@/components/assets/AssetEditModal'
 import { calculateSeverancePay, generateSeverancePayValues, calculateSeveranceTax, getServiceYears } from '@/services/assetAnalytics'
 
 export function AssetDetailPage() {
@@ -39,6 +41,7 @@ export function AssetDetailPage() {
   const categories = useAssetStore((s) => s.categories)
   const members = useMemberStore((s) => s.members)
   const deleteItem = useAssetStore((s) => s.deleteItem)
+  const openAssetEditModal = useUIStore((s) => s.openAssetEditModal)
 
   const values = useDailyValueStore((s) => s.values)
   const selectedMonth = useDailyValueStore((s) => s.selectedMonth)
@@ -189,9 +192,14 @@ export function AssetDetailPage() {
             </div>
           </div>
         </div>
-        <IconButton onClick={() => setShowDeleteConfirm(true)} color="danger" plain>
-          <Trash2 className="w-5 h-5" />
-        </IconButton>
+        <div className="flex items-center gap-1">
+          <IconButton onClick={() => openAssetEditModal(itemId)} plain>
+            <Pencil className="w-5 h-5" />
+          </IconButton>
+          <IconButton onClick={() => setShowDeleteConfirm(true)} color="danger" plain>
+            <Trash2 className="w-5 h-5" />
+          </IconButton>
+        </div>
       </div>
 
       {/* Current Value Summary */}
@@ -380,6 +388,7 @@ export function AssetDetailPage() {
         confirmText="삭제"
         variant="danger"
       />
+      <AssetEditModal />
     </div>
   )
 }

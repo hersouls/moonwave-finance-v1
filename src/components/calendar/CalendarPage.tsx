@@ -6,6 +6,7 @@ import { CalendarGrid } from './CalendarGrid'
 import { CalendarSkeleton } from './CalendarSkeleton'
 import { TransactionCard } from '@/components/ledger/TransactionCard'
 import { TransactionFormModal } from '@/components/ledger/TransactionFormModal'
+import { TransactionWizard } from '@/components/ledger/TransactionWizard'
 import { IconButton } from '@/components/ui/Button'
 import { FAB } from '@/components/ui/FAB'
 import { EmptyState, ErrorEmptyState } from '@/components/ui/EmptyState'
@@ -152,9 +153,8 @@ export function CalendarPage() {
 
       <FAB onClick={() => openCreateWithDate(selectedDate || getTodayString())} label="거래 기록" />
 
-      {/* Create Modal */}
-      <TransactionFormModal
-        mode="create"
+      {/* Create Wizard */}
+      <TransactionWizard
         open={isCreateOpen}
         onClose={closeCreate}
         initialDate={prefillDate}
