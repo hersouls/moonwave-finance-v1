@@ -46,7 +46,7 @@ export function Dialog({ open, onClose, children, size = 'lg', noPadding = false
           <DialogPanel
             transition
             className={clsx(
-              'row-start-2 w-full min-w-0 rounded-t-2xl bg-surface-primary elevation-4 ring-1 ring-[var(--border-default)]',
+              'row-start-2 w-full min-w-0 rounded-t-2xl bg-surface-primary elevation-4 ring-1 ring-[var(--border-default)] el-dialog',
               noPadding
                 ? 'pb-[env(safe-area-inset-bottom,0px)]'
                 : 'p-6 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] sm:p-8 sm:pb-8',

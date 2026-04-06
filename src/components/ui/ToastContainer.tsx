@@ -34,7 +34,7 @@ export function ToastContainer() {
                 }
               }}
               className={clsx(
-                'toast-base',
+                'toast-base el-toast',
                 toast.type === 'success' && 'toast-success',
                 toast.type === 'error' && 'toast-error',
                 toast.type === 'info' && 'toast-info',

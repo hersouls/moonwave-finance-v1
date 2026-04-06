@@ -17,7 +17,7 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles = {
-  primary: 'bg-primary-500 hover:bg-primary-600 text-white border-transparent',
+  primary: 'bg-primary-500 hover:bg-primary-600 text-white border-transparent el-btn-primary',
   secondary: 'bg-[var(--surface-tertiary)] hover:bg-[var(--hover-bg)] text-heading border-transparent',
   danger: 'bg-danger-500 hover:bg-danger-600 text-white border-transparent',
   ghost: 'bg-transparent hover:bg-[var(--hover-bg)] text-body border-transparent',

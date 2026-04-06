@@ -25,7 +25,7 @@ export function Card({ children, className, onClick, variant = 'default' }: Card
     return (
       <motion.div
         className={clsx(
-          'card-base',
+          'card-base el-card',
           variant === 'interactive' && 'card-interactive',
           onClick && 'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2',
           className
@@ -46,7 +46,7 @@ export function Card({ children, className, onClick, variant = 'default' }: Card
   return (
     <div
       className={clsx(
-        'card-base',
+        'card-base el-card',
         variant === 'interactive' && 'card-interactive',
         onClick && 'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 active:scale-[0.98]',
         className

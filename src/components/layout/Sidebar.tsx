@@ -144,7 +144,7 @@ export function Sidebar() {
         className={clsx(
           'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
           active
-            ? 'bg-accent-primary text-accent-primary'
+            ? 'bg-accent-primary text-accent-primary el-sidebar-active'
             : 'text-sub hover:bg-[var(--hover-bg)]'
         )}
         role="menuitem"
@@ -193,7 +193,7 @@ export function Sidebar() {
               className={clsx(
                 'w-full flex items-center justify-center px-3 py-2.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                 isGroupActive
-                  ? 'bg-accent-primary text-accent-primary'
+                  ? 'bg-accent-primary text-accent-primary el-sidebar-active'
                   : 'text-sub hover:bg-[var(--hover-bg)]'
               )}
               role="menuitem"

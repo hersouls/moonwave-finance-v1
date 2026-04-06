@@ -40,14 +40,21 @@
   border-color: var(--color-primary-500);
   border-width: 2px;
   padding: calc(var(--input-padding-y, 16px) - 1px) calc(var(--input-padding-x, 16px) - 1px);
+  /* Edge Lighting focus glow */
   outline: none;
-  box-shadow: 0 0 0 3px var(--glow-primary);
+  box-shadow:
+    0 0 0 3px var(--glow-primary),
+    0 0 16px -4px oklch(0.64 0.16 250 / 0.08),
+    0 0 4px 0 oklch(0.64 0.16 250 / 0.03);
 }
 
 .dark .input-base:focus,
 .dark .input-base:focus-within {
   border-color: var(--color-primary-400);
-  box-shadow: 0 0 0 3px var(--glow-primary);
+  box-shadow:
+    0 0 0 3px var(--glow-primary),
+    0 0 28px -4px oklch(0.64 0.16 250 / 0.20),
+    0 0 8px 0 oklch(0.64 0.16 250 / 0.10);
 }
 
 .input-error {

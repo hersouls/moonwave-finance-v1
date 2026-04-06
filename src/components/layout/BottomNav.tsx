@@ -32,7 +32,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-[var(--z-nav)] bg-[var(--surface-elevated)] glass-heavy border-t border-base pb-safe nav-bottom"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-[var(--z-nav)] bg-[var(--surface-elevated)] glass-heavy border-t border-base pb-safe nav-bottom el-bottomnav"
       aria-label="하단 메인 네비게이션"
     >
       <ul className="flex items-center justify-around nav-bottom fold:h-14" role="menubar">
