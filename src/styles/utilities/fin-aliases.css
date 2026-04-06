@@ -3,17 +3,37 @@
  * Maps FIN component class names → Foundation tokens
  * =============================================== */
 
-/* ── Card Aliases ──────────────────────────────── */
+/* ── Card Aliases (with Edge Lighting) ─────────── */
 .card-base {
   background-color: var(--card-bg-primary);
   border-radius: var(--card-radius);
   border: var(--card-border-width) solid var(--card-border-color);
   padding: var(--card-padding);
+  transition: border-color var(--duration-fast) var(--easing-default),
+              box-shadow var(--duration-normal) var(--easing-default),
+              transform var(--duration-fast) var(--easing-default);
 }
 
 .dark .card-base {
   background-color: var(--card-bg-primary);
   border-color: var(--card-border-color);
+}
+
+/* Edge Lighting: card hover glow */
+.card-base:hover {
+  border-color: var(--card-hover-border-color, rgba(0,0,0,0.12));
+  box-shadow:
+    var(--shadow-1),
+    0 0 16px -4px oklch(0.64 0.16 250 / 0.08),
+    0 0 4px 0 oklch(0.64 0.16 250 / 0.03);
+}
+
+.dark .card-base:hover {
+  border-color: oklch(0.64 0.16 250 / 0.12);
+  box-shadow:
+    var(--shadow-1),
+    0 0 28px -4px oklch(0.64 0.16 250 / 0.20),
+    0 0 8px 0 oklch(0.64 0.16 250 / 0.10);
 }
 
 .card-pad-sm  { padding: var(--card-padding-sm, 12px); }
@@ -80,6 +100,17 @@
   background-size: 16px;
   padding-right: 48px;
   border-radius: var(--radius-xl, 12px);
+  transition: border-color var(--duration-fast) var(--easing-default),
+              box-shadow var(--duration-fast) var(--easing-default);
+}
+
+.select-base:focus {
+  border-color: var(--color-primary-500);
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--glow-primary),
+    0 0 16px -4px oklch(0.64 0.16 250 / 0.08),
+    0 0 4px 0 oklch(0.64 0.16 250 / 0.03);
 }
 
 /* ── Navigation Tab Aliases ────────────────────── */
@@ -151,7 +182,10 @@
   padding: 12px 16px;
   border-radius: var(--radius-xl, 12px);
   font-size: 14px;
-  box-shadow: var(--shadow-3);
+  box-shadow:
+    var(--shadow-3),
+    0 0 20px -4px oklch(0.55 0.20 250 / 0.12),
+    0 0 6px 0 oklch(0.55 0.20 250 / 0.04);
   min-width: 200px;
 }
 
