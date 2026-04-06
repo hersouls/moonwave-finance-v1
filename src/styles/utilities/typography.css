@@ -1,0 +1,54 @@
+/* Foundation Typography Utility Classes */
+.typo-heading2 {
+  font-size: var(--typo-heading2-size);
+  font-weight: var(--typo-heading2-weight);
+  line-height: var(--typo-heading2-line-height);
+}
+
+.typo-title1 {
+  font-size: var(--typo-title1-size);
+  font-weight: var(--typo-title1-weight);
+  line-height: var(--typo-title1-line-height);
+}
+
+.typo-title2 {
+  font-size: var(--typo-title2-size);
+  font-weight: var(--typo-title2-weight);
+  line-height: var(--typo-title2-line-height);
+}
+
+.typo-body1 {
+  font-size: var(--typo-body1-size);
+  font-weight: var(--typo-body1-weight);
+  line-height: var(--typo-body1-line-height);
+}
+
+.typo-body1-bold {
+  font-size: var(--typo-body1-bold-size);
+  font-weight: var(--typo-body1-bold-weight);
+  line-height: var(--typo-body1-bold-line-height);
+}
+
+.typo-body2 {
+  font-size: var(--typo-body2-size);
+  font-weight: var(--typo-body2-weight);
+  line-height: var(--typo-body2-line-height);
+}
+
+.typo-body2-bold {
+  font-size: var(--typo-body2-bold-size);
+  font-weight: var(--typo-body2-bold-weight);
+  line-height: var(--typo-body2-bold-line-height);
+}
+
+.typo-label3 {
+  font-size: var(--typo-label3-size);
+  font-weight: var(--typo-label3-weight);
+  line-height: var(--typo-label3-line-height);
+}
+
+.typo-label3-medium {
+  font-size: var(--typo-label3-medium-size);
+  font-weight: var(--typo-label3-medium-weight);
+  line-height: var(--typo-label3-medium-line-height);
+}

@@ -1,0 +1,128 @@
+/* ===============================================
+ * 05_Card Foundation Utility Classes
+ * =============================================== */
+
+/* -------------------------------------------------
+ * A. Base Card
+ * ------------------------------------------------- */
+
+.card-foundation {
+  background-color: var(--card-bg-primary);
+  border-radius: var(--card-radius);
+  border: var(--card-border-width) solid var(--card-border-color);
+  padding: var(--card-padding);
+  overflow: hidden;
+}
+
+.card-foundation--lg {
+  border-radius: var(--card-radius-lg);
+  padding: var(--card-padding-lg);
+}
+
+/* Card: Fill type (no border) */
+.card-fill {
+  background-color: var(--card-bg-secondary);
+  border-radius: var(--card-radius);
+  padding: var(--card-padding);
+  border: none;
+  overflow: hidden;
+}
+
+/* Card: Interactive (with Edge Lighting hover glow) */
+.card-interactive {
+  cursor: pointer;
+  transition: border-color 300ms ease, box-shadow 300ms ease, transform 150ms ease;
+}
+
+.card-interactive:hover {
+  border-color: var(--card-hover-border-color);
+  box-shadow:
+    var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.08)),
+    0 0 16px -4px oklch(0.64 0.16 250 / 0.08),
+    0 0 4px 0 oklch(0.64 0.16 250 / 0.03);
+}
+
+.dark .card-interactive:hover {
+  border-color: oklch(0.64 0.16 250 / 0.12);
+  box-shadow:
+    var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.24)),
+    0 0 28px -4px oklch(0.64 0.16 250 / 0.20),
+    0 0 8px 0 oklch(0.64 0.16 250 / 0.10);
+}
+
+.card-interactive:active {
+  transform: scale(0.98);
+}
+
+.card-interactive:focus-visible {
+  outline: 2px solid var(--color-primary-500, #3B82F6);
+  outline-offset: 2px;
+  box-shadow: var(--el-glow-strong, 0 0 48px -4px oklch(0.64 0.16 250 / 0.20));
+}
+
+/* -------------------------------------------------
+ * D. Text List Card (Settings / Info)
+ * ------------------------------------------------- */
+
+/* List Item Base */
+.list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--list-item-height);
+  padding-left: var(--list-item-padding-x);
+  padding-right: var(--list-item-padding-x);
+}
+
+.list-item + .list-item {
+  border-top: 1px solid var(--list-item-divider-color);
+}
+
+.list-item__label {
+  font-size: var(--typo-body1-size, 16px);
+  font-weight: var(--typo-body1-weight, 500);
+  line-height: var(--typo-body1-line-height, 170%);
+  color: inherit;
+}
+
+.list-item__value {
+  font-size: var(--typo-body1-bold-size, 16px);
+  font-weight: var(--typo-body1-bold-weight, 700);
+  line-height: var(--typo-body1-bold-line-height, 170%);
+  color: inherit;
+}
+
+/* List Item: Text + Button (with chevron) */
+.list-item--button {
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.list-item--button:hover {
+  background-color: var(--card-bg-secondary);
+}
+
+.list-item--button:active {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.dark .list-item--button:active {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.list-item__chevron {
+  width: 20px;
+  height: 20px;
+  color: #999999;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+/* List Item: Text + Switch */
+.list-item__trailing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+

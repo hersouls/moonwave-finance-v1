@@ -1,0 +1,29 @@
+/* ===============================================
+ * Layout Utilities — UIUX Responsive Design v2.0
+ * Responsive content container
+ * =============================================== */
+
+.content-container {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: 1rem;        /* base: 16px */
+}
+
+@media (min-width: 390px) {
+  .content-container {
+    padding-inline: 1.25rem;   /* sm: 20px */
+  }
+}
+
+@media (min-width: 768px) {
+  .content-container {
+    padding-inline: 1.5rem;    /* lg: 24px */
+  }
+}
+
+@media (min-width: 1920px) {
+  .content-container {
+    max-width: 1600px;         /* 3xl: 대형 모니터 */
+  }
+}

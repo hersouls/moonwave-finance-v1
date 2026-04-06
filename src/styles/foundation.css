@@ -1,0 +1,116 @@
+/* ===============================================
+ * Moonwave Finance v1.0 — Foundation Design System
+ * Shared design tokens & utility classes
+ * Synced with TDL Foundation (98% compatible)
+ * =============================================== */
+
+
+/* ===============================================
+ * DESIGN TOKENS
+ * =============================================== */
+
+/* 01_Foundation */
+@import './tokens/spacing.css';
+@import './tokens/breakpoints.css';
+@import './tokens/radius.css';
+@import './tokens/elevation.css';
+@import './tokens/typography.css';
+@import './tokens/icon.css';
+@import './tokens/components.css';
+
+/* 02_Button */
+@import './tokens/button.css';
+
+/* 03_Input */
+@import './tokens/input.css';
+
+/* 04_Navigation */
+@import './tokens/navigation.css';
+
+/* 05_Card */
+@import './tokens/card.css';
+
+/* 06_Dialog */
+@import './tokens/dialog.css';
+
+/* 07_BottomSheet */
+@import './tokens/bottomsheet.css';
+
+/* 08_Toast_Snackbar */
+@import './tokens/toast.css';
+
+/* 09_Tab */
+@import './tokens/tab.css';
+
+/* 10_Checkbox_Radio */
+@import './tokens/checkbox-radio.css';
+
+/* 11_Chip_Badge */
+@import './tokens/chip-badge.css';
+
+/* 12_Misc */
+@import './tokens/misc.css';
+
+/* 13_Semantic Colors */
+@import './tokens/semantic-colors.css';
+
+/* Category Colors */
+@import './tokens/category-colors.css';
+
+/* Edge Lighting */
+@import './tokens/edge-lighting.css';
+
+
+/* ===============================================
+ * UTILITY CLASSES
+ * =============================================== */
+
+/* 01_Foundation */
+@import './utilities/typography.css';
+@import './utilities/elevation.css';
+@import './utilities/divider.css';
+@import './utilities/icon.css';
+
+/* 02_Button */
+@import './utilities/button.css';
+
+/* 03_Input */
+@import './utilities/input.css';
+
+/* 04_Navigation */
+@import './utilities/navigation.css';
+
+/* 05_Card */
+@import './utilities/card.css';
+
+/* 06_Dialog */
+@import './utilities/dialog.css';
+
+/* 07_BottomSheet */
+@import './utilities/bottomsheet.css';
+
+/* 08_Toast_Snackbar */
+@import './utilities/toast.css';
+
+/* 09_Tab */
+@import './utilities/tab.css';
+
+/* 10_Checkbox_Radio */
+@import './utilities/checkbox-radio.css';
+
+/* 11_Chip_Badge */
+@import './utilities/chip-badge.css';
+
+/* 12_Misc */
+@import './utilities/misc.css';
+
+/* 13_Semantic Colors */
+@import './utilities/semantic-colors.css';
+
+/* Edge Lighting */
+@import './utilities/edge-lighting.css';
+
+/* FIN-specific class aliases (card-base, input-base, nav-tabs, etc.) */
+@import './utilities/fin-aliases.css';
+
+/* 14_Theme Overlays — moved to index.css (after palette definitions for cascade priority) */

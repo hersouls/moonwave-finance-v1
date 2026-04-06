@@ -1,0 +1,203 @@
+/* ===============================================
+ * 12_Misc (기타 UI) Foundation Utility Classes
+ * =============================================== */
+
+/* -------------------------------------------------
+ * A. Empty State
+ * ------------------------------------------------- */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px var(--empty-padding-x);
+  gap: var(--empty-gap);
+}
+
+.empty-state__icon {
+  width: var(--empty-icon-size);
+  height: var(--empty-icon-size);
+  border-radius: var(--empty-icon-radius);
+  background: var(--empty-icon-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state__title {
+  font-size: var(--empty-title-size);
+  font-weight: var(--empty-title-weight);
+  color: var(--empty-title-color);
+  line-height: 1.4;
+}
+
+.empty-state__desc {
+  font-size: var(--empty-desc-size);
+  color: var(--empty-desc-color);
+  line-height: 1.5;
+}
+
+.empty-state__action {
+  margin-top: 8px;
+}
+
+/* -------------------------------------------------
+ * H. Context Menu
+ * ------------------------------------------------- */
+
+.context-menu {
+  position: absolute;
+  z-index: 50;
+  min-width: var(--context-menu-min-width);
+  background: var(--context-menu-bg);
+  border-radius: var(--context-menu-radius);
+  /* Edge Lighting: context menu glow */
+  box-shadow:
+    var(--context-menu-shadow),
+    0 0 16px -4px oklch(0.64 0.16 250 / 0.06);
+  padding: var(--context-menu-padding-y) 0;
+  outline: none;
+}
+
+.dark .context-menu {
+  border: 1px solid oklch(0.64 0.16 250 / 0.08);
+  box-shadow:
+    var(--context-menu-shadow),
+    0 0 28px -4px oklch(0.55 0.20 250 / 0.14),
+    0 0 8px 0 oklch(0.55 0.20 250 / 0.05);
+}
+
+.context-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--context-menu-item-gap);
+  height: var(--context-menu-item-height);
+  padding: 0 var(--context-menu-item-padding-x);
+  font-size: var(--context-menu-item-font-size);
+  font-weight: var(--context-menu-item-font-weight);
+  color: var(--context-menu-item-color);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+  user-select: none;
+}
+
+.context-menu__item:hover {
+  background: var(--context-menu-item-hover-bg);
+}
+
+.context-menu__item:focus-visible {
+  background: var(--context-menu-item-focus-bg);
+  outline: none;
+}
+
+.context-menu__item:active {
+  background: var(--context-menu-item-pressed-bg);
+}
+
+.context-menu__item--danger {
+  color: var(--context-menu-item-danger-color);
+}
+
+.context-menu__icon {
+  width: var(--context-menu-item-icon-size);
+  height: var(--context-menu-item-icon-size);
+  flex-shrink: 0;
+}
+
+.context-menu__divider {
+  height: 1px;
+  background: var(--divider-color, #E5E7EB);
+  margin: 4px 0;
+}
+
+/* -------------------------------------------------
+ * Rich Text / Prose
+ * ------------------------------------------------- */
+
+.prose-blockquote {
+  border-left: var(--prose-blockquote-bar-width) solid var(--prose-blockquote-bar-color);
+  background: var(--prose-blockquote-bg);
+  padding: var(--prose-blockquote-padding);
+  border-radius: 0 4px 4px 0;
+  margin: 12px 0;
+}
+
+.prose-code {
+  background: var(--prose-code-bg);
+  padding: var(--prose-code-padding);
+  border-radius: var(--prose-code-radius);
+  font-family: var(--prose-code-font);
+  font-size: var(--prose-code-font-size);
+}
+
+.prose-link {
+  color: var(--prose-link-color);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose-link:hover {
+  opacity: 0.8;
+}
+
+.prose-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--prose-table-border);
+  font-size: 14px;
+}
+
+.prose-table th,
+.prose-table td {
+  padding: var(--prose-table-cell-padding);
+  border: 1px solid var(--prose-table-border);
+  text-align: left;
+}
+
+.prose-table th {
+  background: var(--prose-table-header-bg);
+  font-weight: 600;
+}
+
+.prose-file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--prose-table-border);
+  border-radius: 8px;
+  margin: 12px 0;
+}
+
+.prose-file__icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.prose-file__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.prose-file__name {
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prose-file__meta {
+  font-size: 12px;
+  color: var(--empty-desc-color);
+}
+
+.prose-file__download {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: pointer;
+}

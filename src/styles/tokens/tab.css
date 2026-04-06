@@ -1,0 +1,63 @@
+/* ===============================================
+ * 09_Tab Design Tokens
+ * =============================================== */
+
+:root {
+  /* --- Container --- */
+  --tab-height: 48px;
+  --tab-bg: transparent;
+  --tab-divider-color: rgba(0, 0, 0, 0.06);
+  --tab-divider-height: 1px;
+
+  /* --- Label --- */
+  --tab-font-size: 16px;
+  --tab-font-weight-default: 500;
+  --tab-font-weight-selected: 700;
+  --tab-line-height: 170%;
+  --tab-padding-x: 4px;
+
+  /* --- Colors --- */
+  --tab-color-default: #666666;
+  --tab-color-selected: #000000;
+  --tab-color-disabled: #CCCCCC;
+  --tab-color-hover: #333333;
+
+  /* --- Indicator --- */
+  --tab-indicator-height: 3px;
+  --tab-indicator-color: #000000;
+  --tab-indicator-radius: 1.5px;
+
+  /* --- Fixed Tab --- */
+  --tab-fixed-columns: 3;
+
+  /* --- Scrollable Tab --- */
+  --tab-scroll-padding-left: 20px;
+  --tab-scroll-gap: 16px;
+  --tab-scroll-padding-right: 20px;
+
+  /* --- Interaction --- */
+  --tab-hover-bg: rgba(0, 0, 0, 0.03);
+  --tab-pressed-bg: rgba(0, 0, 0, 0.06);
+  --tab-focus-ring-color: var(--color-primary-500, #3B82F6);
+  --tab-focus-ring-width: 2px;
+
+  /* --- Animation --- */
+  --tab-indicator-duration: 250ms;
+  --tab-indicator-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --tab-label-duration: 150ms;
+
+  /* --- Responsive --- */
+  --tab-max-label-chars: 10;
+}
+
+/* --- Dark Mode --- */
+.dark {
+  --tab-divider-color: rgba(255, 255, 255, 0.06);
+  --tab-color-default: #999999;
+  --tab-color-selected: #FFFFFF;
+  --tab-color-disabled: #555555;
+  --tab-color-hover: #CCCCCC;
+  --tab-indicator-color: #FFFFFF;
+  --tab-hover-bg: rgba(255, 255, 255, 0.04);
+  --tab-pressed-bg: rgba(255, 255, 255, 0.08);
+}

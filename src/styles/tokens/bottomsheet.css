@@ -1,0 +1,105 @@
+/* ===============================================
+ * 07_BottomSheet Design Tokens
+ * =============================================== */
+
+:root {
+  /* --- Sheet Container --- */
+  --sheet-radius: 16px;
+  --sheet-padding-x: 20px;
+  --sheet-min-top-offset: 64px;
+  --sheet-bg: #FFFFFF;
+  --sheet-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
+
+  /* --- Dim Overlay --- */
+  --sheet-overlay-bg: rgba(0, 0, 0, 0.4);
+  --sheet-overlay-blur: 2px;
+
+  /* --- Drag Handle --- */
+  --sheet-handle-width: 48px;
+  --sheet-handle-height: 5px;
+  --sheet-handle-radius: 2px;
+  --sheet-handle-color: #D1D1D1;
+  --sheet-handle-margin-top: 8px;
+  --sheet-handle-margin-bottom: 8px;
+
+  /* --- Header --- */
+  --sheet-header-height: 56px;
+  --sheet-header-padding-y: 16px;
+  --sheet-title-size: 20px;
+  --sheet-title-weight: 700;
+  --sheet-close-size: 24px;
+  --sheet-close-touch-target: 44px;
+
+  /* --- Body / Content --- */
+  --sheet-body-padding-y: 16px;
+  --sheet-body-gap: 16px;
+
+  /* --- CTA Button Area --- */
+  --sheet-cta-height: 48px;
+  --sheet-cta-radius: 12px;
+  --sheet-cta-padding-x: 20px;
+  --sheet-cta-padding-y: 16px;
+  --sheet-cta-bg: #1A1A1A;
+  --sheet-cta-text: #FFFFFF;
+  --sheet-cta-font-size: 16px;
+  --sheet-cta-font-weight: 500;
+
+  /* --- Text Button (Secondary action) --- */
+  --sheet-text-btn-height: 48px;
+  --sheet-text-btn-font-size: 16px;
+  --sheet-text-btn-font-weight: 500;
+  --sheet-text-btn-color: #666666;
+
+  /* --- List Item (Selection) --- */
+  --sheet-list-item-height: 48px;
+  --sheet-list-item-padding-x: 20px;
+  --sheet-list-icon-size: 24px;
+  --sheet-list-check-color: #000000;
+  --sheet-list-selected-weight: 700;
+  --sheet-list-unselected-weight: 500;
+
+  /* --- Checkbox / Agreement --- */
+  --sheet-checkbox-size: 24px;
+  --sheet-checkbox-all-size: 28px;
+  --sheet-checkbox-gap: 12px;
+  --sheet-divider-color: rgba(0, 0, 0, 0.08);
+
+  /* --- Action Buttons (Copy/Edit) --- */
+  --sheet-action-btn-height: 44px;
+  --sheet-action-btn-radius: 8px;
+  --sheet-action-btn-border: 1px solid rgba(0, 0, 0, 0.12);
+  --sheet-action-btn-gap: 8px;
+
+  /* --- Home Indicator --- */
+  --sheet-home-indicator-width: 134px;
+  --sheet-home-indicator-height: 5px;
+  --sheet-home-indicator-radius: 3px;
+  --sheet-home-indicator-color: #000000;
+  --sheet-home-indicator-margin: 8px;
+
+  /* --- Animation --- */
+  --sheet-enter-duration: 300ms;
+  --sheet-leave-duration: 200ms;
+  --sheet-enter-easing: cubic-bezier(0.32, 0.72, 0, 1);
+  --sheet-leave-easing: ease-in;
+}
+
+/* --- Dark Mode Overrides --- */
+.dark {
+  --sheet-bg: #1A1A1A;
+  --sheet-overlay-bg: rgba(0, 0, 0, 0.6);
+  --sheet-handle-color: #555555;
+  --sheet-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+
+  --sheet-cta-bg: #FFFFFF;
+  --sheet-cta-text: #1A1A1A;
+
+  --sheet-text-btn-color: #999999;
+
+  --sheet-list-check-color: #FFFFFF;
+
+  --sheet-divider-color: rgba(255, 255, 255, 0.08);
+  --sheet-action-btn-border: 1px solid rgba(255, 255, 255, 0.12);
+
+  --sheet-home-indicator-color: #FFFFFF;
+}

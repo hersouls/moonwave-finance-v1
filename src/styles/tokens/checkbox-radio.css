@@ -1,0 +1,92 @@
+/* ===============================================
+ * 10_Checkbox_Radio Design Tokens
+ * =============================================== */
+
+:root {
+  /* --- Checkbox --- */
+  --checkbox-size: 24px;
+  --checkbox-size-sm: 20px;
+  --checkbox-border-radius: 50%;
+  --checkbox-border-width: 2px;
+  --checkbox-touch-target: 48px;
+  --checkbox-padding-x: 20px;
+  --checkbox-label-gap: 12px;
+  --checkbox-row-width: 100%;
+
+  /* Checkbox Colors — Default */
+  --checkbox-border-default: #D1D1D6;
+  --checkbox-bg-default: transparent;
+  --checkbox-check-default: #D1D1D6;
+
+  /* Checkbox Colors — Hover */
+  --checkbox-border-hover: #A1A1A6;
+  --checkbox-check-hover: #A1A1A6;
+
+  /* Checkbox Colors — Disabled */
+  --checkbox-border-disabled: #E5E5EA;
+  --checkbox-bg-disabled: transparent;
+  --checkbox-check-disabled: #E5E5EA;
+
+  /* Checkbox Colors — Selected */
+  --checkbox-bg-selected: #1C1C1E;
+  --checkbox-check-selected: #FFFFFF;
+
+  /* Checkbox Colors — Selected Hover */
+  --checkbox-bg-selected-hover: #333333;
+  --checkbox-check-selected-hover: #FFFFFF;
+
+  /* Checkbox Colors — Selected Disabled */
+  --checkbox-bg-selected-disabled: #E5E5EA;
+  --checkbox-check-selected-disabled: #C7C7CC;
+
+  /* --- Radio Button --- */
+  --radio-size: 24px;
+  --radio-border-radius: 50%;
+  --radio-border-width: 2px;
+  --radio-dot-size: 10px;
+  --radio-touch-target: 48px;
+  --radio-item-gap-compact: 4px;
+  --radio-item-gap-standard: 16px;
+  --radio-label-gap: 12px;
+
+  /* Radio Colors — Default */
+  --radio-border-default: #D1D1D6;
+  --radio-bg-default: transparent;
+
+  /* Radio Colors — Selected */
+  --radio-border-selected: #1C1C1E;
+  --radio-dot-selected: #1C1C1E;
+
+  /* --- Common Label --- */
+  --control-label-color: #1C1C1E;
+  --control-label-disabled-color: #C7C7CC;
+  --control-label-size: 16px;
+  --control-label-weight: 400;
+  --control-label-weight-selected: 600;
+  --control-label-line-height: 24px;
+  --control-label-max-chars: 16;
+}
+
+/* --- Dark Mode --- */
+.dark {
+  --checkbox-border-default: #48484A;
+  --checkbox-check-default: #48484A;
+  --checkbox-border-hover: #636366;
+  --checkbox-check-hover: #636366;
+  --checkbox-border-disabled: #2C2C2E;
+  --checkbox-bg-disabled: transparent;
+  --checkbox-check-disabled: #2C2C2E;
+  --checkbox-bg-selected: #F5F5F7;
+  --checkbox-check-selected: #1C1C1E;
+  --checkbox-bg-selected-hover: #E5E5EA;
+  --checkbox-check-selected-hover: #1C1C1E;
+  --checkbox-bg-selected-disabled: #2C2C2E;
+  --checkbox-check-selected-disabled: #48484A;
+
+  --radio-border-default: #48484A;
+  --radio-border-selected: #F5F5F7;
+  --radio-dot-selected: #F5F5F7;
+
+  --control-label-color: #F5F5F7;
+  --control-label-disabled-color: #48484A;
+}

@@ -1,0 +1,339 @@
+/* ===============================================
+ * FIN-specific class aliases
+ * Maps FIN component class names → Foundation tokens
+ * =============================================== */
+
+/* ── Card Aliases ──────────────────────────────── */
+.card-base {
+  background-color: var(--card-bg-primary);
+  border-radius: var(--card-radius);
+  border: var(--card-border-width) solid var(--card-border-color);
+  padding: var(--card-padding);
+}
+
+.dark .card-base {
+  background-color: var(--card-bg-primary);
+  border-color: var(--card-border-color);
+}
+
+.card-pad-sm  { padding: var(--card-padding-sm, 12px); }
+.card-pad-lg  { padding: var(--card-padding-lg, 20px); }
+.card-pad-xl  { padding: var(--card-padding-xl, 24px); }
+.card-pad-none { padding: 0; }
+
+/* ── Input Aliases ─────────────────────────────── */
+.input-base {
+  min-height: var(--input-height, 56px);
+  padding: var(--input-padding-y, 16px) var(--input-padding-x, 16px);
+  border: 1px solid var(--input-border-default);
+  border-radius: var(--input-radius, 8px);
+  background: var(--input-bg-default);
+  color: var(--text-primary);
+  font-size: var(--font-size-body1, 16px);
+  width: 100%;
+  transition: border-color var(--duration-fast) var(--easing-default),
+              box-shadow var(--duration-fast) var(--easing-default);
+}
+
+.input-base:focus,
+.input-base:focus-within {
+  border-color: var(--color-primary-500);
+  border-width: 2px;
+  padding: calc(var(--input-padding-y, 16px) - 1px) calc(var(--input-padding-x, 16px) - 1px);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--glow-primary);
+}
+
+.dark .input-base:focus,
+.dark .input-base:focus-within {
+  border-color: var(--color-primary-400);
+  box-shadow: 0 0 0 3px var(--glow-primary);
+}
+
+.input-error {
+  border-color: var(--color-danger-500) !important;
+  box-shadow: 0 0 0 3px var(--glow-danger) !important;
+}
+
+.input-readonly {
+  background: var(--input-bg-disabled, oklch(0.96 0 0));
+  cursor: default;
+}
+
+.input-search {
+  min-height: var(--input-search-height, 48px);
+  padding-right: 48px;
+}
+
+.select-base {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+  padding-right: 48px;
+  border-radius: var(--radius-xl, 12px);
+}
+
+/* ── Navigation Tab Aliases ────────────────────── */
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-lg, 8px);
+  background: oklch(0.95 0 0);
+}
+
+.dark .nav-tabs {
+  background: oklch(0.22 0 0);
+}
+
+.nav-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md, 6px);
+  font-size: 14px;
+  font-weight: 500;
+  color: oklch(0.45 0 0);
+  white-space: nowrap;
+  transition: color var(--duration-fast) var(--easing-default);
+}
+
+.dark .nav-tab {
+  color: oklch(0.6 0 0);
+}
+
+/* Selected state — background handled by framer-motion layoutId */
+.nav-tab[aria-selected="true"],
+.nav-tab.is-active {
+  color: oklch(0.15 0 0);
+  font-weight: 600;
+}
+
+.dark .nav-tab[aria-selected="true"],
+.dark .nav-tab.is-active {
+  color: oklch(0.95 0 0);
+}
+
+.nav-tab:not([aria-selected="true"]):hover {
+  color: oklch(0.2 0 0);
+}
+
+.dark .nav-tab:not([aria-selected="true"]):hover {
+  color: oklch(0.85 0 0);
+}
+
+.nav-tabs-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.nav-tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Toast Aliases ─────────────────────────────── */
+.toast-base {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: var(--radius-xl, 12px);
+  font-size: 14px;
+  box-shadow: var(--shadow-3);
+  min-width: 200px;
+}
+
+.toast-success {
+  background: oklch(0.35 0.12 145);
+  color: white;
+}
+
+.toast-error {
+  background: oklch(0.35 0.12 25);
+  color: white;
+}
+
+.toast-info {
+  background: oklch(0.25 0 0);
+  color: white;
+}
+
+.toast-container {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-toast, 55);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+}
+
+.toast-container > * {
+  pointer-events: auto;
+}
+
+/* ── Navigation Utilities ──────────────────────── */
+.nav-header {
+  display: flex;
+  align-items: center;
+  height: var(--app-bar-height, 52px);
+}
+
+.nav-header-inset {
+  padding-left: var(--app-bar-padding-x, 16px);
+  padding-right: var(--app-bar-padding-x, 16px);
+}
+
+@media (min-width: 1024px) {
+  .nav-header-inset {
+    padding-left: var(--app-bar-padding-x-lg, 24px);
+    padding-right: var(--app-bar-padding-x-lg, 24px);
+  }
+}
+
+.nav-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Bottom Nav Aliases ────────────────────────── */
+.nav-bottom {
+  height: var(--bottom-nav-height, 56px);
+}
+
+.nav-bottom-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 0;
+  position: relative;
+}
+
+.nav-bottom-label {
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* ── Sidebar Aliases ───────────────────────────── */
+.nav-sidebar-divider {
+  height: 1px;
+  background: oklch(0.9 0 0);
+  margin: 8px 0;
+}
+
+.dark .nav-sidebar-divider {
+  background: oklch(0.25 0 0);
+}
+
+/* ── Dialog Aliases ────────────────────────────── */
+.dialog-title {
+  font-size: var(--dialog-title-size, 18px);
+  font-weight: var(--dialog-title-weight, 700);
+  line-height: var(--leading-tight, 1.48);
+  color: var(--text-primary);
+}
+
+.dialog-body {
+  margin-top: 16px;
+  font-size: var(--dialog-body-size, 15px);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed, 1.7);
+}
+
+.dialog-footer {
+  display: flex;
+  gap: var(--dialog-footer-gap, 8px);
+  margin-top: 24px;
+}
+
+/* ── Floating Label Aliases ────────────────────── */
+.input-float-container {
+  position: relative;
+}
+
+.input-float-label {
+  position: absolute;
+  top: 50%;
+  left: var(--input-padding-x, 16px);
+  transform: translateY(-50%);
+  font-size: var(--font-size-body1, 16px);
+  color: oklch(0.55 0 0);
+  pointer-events: none;
+  transition: all var(--duration-fast) var(--easing-default);
+  transform-origin: left center;
+}
+
+.input-base:focus ~ .input-float-label,
+.input-base:not(:placeholder-shown) ~ .input-float-label,
+.input-float-label.is-floating {
+  top: 12px;
+  transform: translateY(0) scale(0.8);
+  font-size: 12px;
+  color: oklch(0.5 0 0);
+}
+
+.dark .input-base:focus ~ .input-float-label,
+.dark .input-base:not(:placeholder-shown) ~ .input-float-label,
+.dark .input-float-label.is-floating {
+  color: oklch(0.55 0 0);
+}
+
+/* ── Touch Target ──────────────────────────────── */
+.touch-target-icon {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Sheet Aliases ─────────────────────────────── */
+@keyframes sheetSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes sheetSlideDown {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+
+.sheet-enter { animation: sheetSlideUp 300ms var(--easing-default) both; }
+.sheet-exit { animation: sheetSlideDown 200ms var(--easing-default) both; }
+
+/* ── Tooltip Aliases ───────────────────────────── */
+.tooltip-dark {
+  position: absolute;
+  z-index: var(--z-tooltip, 60);
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: oklch(0.2 0 0);
+  color: white;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ── FIN Typography Aliases ────────────────────── */
+.text-heading2 { font-size: 24px; font-weight: 700; line-height: 1.48; }
+.text-title1 { font-size: 20px; font-weight: 700; line-height: 1.48; }
+.text-title2 { font-size: 18px; font-weight: 700; line-height: 1.48; }
+.text-body1 { font-size: 16px; font-weight: 500; line-height: 1.70; }
+.text-body1-bold { font-size: 16px; font-weight: 700; line-height: 1.70; }
+.text-body2 { font-size: 15px; font-weight: 700; line-height: 1.48; }
+.text-body3 { font-size: 14px; font-weight: 500; line-height: 1.48; }
+.text-body3-semi { font-size: 14px; font-weight: 600; line-height: 1.48; }
+.text-body3-bold { font-size: 14px; font-weight: 700; line-height: 1.48; }
+.text-caption { font-size: 12px; font-weight: 500; line-height: 1.48; }
+.text-caption-bold { font-size: 12px; font-weight: 700; line-height: 1.48; }

@@ -1,0 +1,547 @@
+/* ===============================================
+ * 06_Dialog Foundation Utility Classes
+ * =============================================== */
+
+/* -------------------------------------------------
+ * A. Dialog Backdrop
+ * ------------------------------------------------- */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: var(--dialog-backdrop-color);
+  backdrop-filter: blur(var(--dialog-backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--dialog-backdrop-blur));
+  overscroll-behavior: none;
+}
+
+.dialog-backdrop--no-blur {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* -------------------------------------------------
+ * B. Dialog Container (Centering Wrapper)
+ * ------------------------------------------------- */
+
+.dialog-container {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--dialog-margin-x);
+  z-index: 50;
+  overflow-y: auto;
+}
+
+/* -------------------------------------------------
+ * C. Dialog Panel Base
+ * ------------------------------------------------- */
+
+.dialog-panel {
+  width: 100%;
+  background-color: var(--dialog-bg);
+  border-radius: var(--dialog-radius);
+  padding: var(--dialog-padding);
+  box-shadow:
+    var(--dialog-shadow),
+    0 0 16px -4px oklch(0.64 0.16 250 / 0.06),
+    0 0 4px 0 oklch(0.64 0.16 250 / 0.02);
+  position: relative;
+}
+
+.dark .dialog-panel {
+  border: 1px solid oklch(0.64 0.16 250 / 0.10);
+  box-shadow:
+    var(--dialog-shadow),
+    0 0 32px -8px oklch(0.55 0.20 250 / 0.18),
+    0 0 12px 0 oklch(0.55 0.20 250 / 0.06);
+}
+
+.dialog-panel--sm {
+  max-width: var(--dialog-max-width-sm);
+  border-radius: var(--dialog-radius-sm);
+  padding: var(--dialog-padding-sm);
+}
+
+.dialog-panel--md {
+  max-width: var(--dialog-max-width-md);
+}
+
+.dialog-panel--lg {
+  max-width: var(--dialog-max-width-lg);
+}
+
+/* Responsive Width (Mobile): iPhone 15~17 (393pt), Galaxy S24 (412px) 등 */
+@media (max-width: 430px) {
+  .dialog-panel {
+    max-width: calc(100vw - 48px);
+  }
+}
+
+@media (max-width: 360px) {
+  .dialog-panel {
+    max-width: var(--dialog-width-360);
+  }
+}
+
+@media (max-width: 320px) {
+  .dialog-panel {
+    max-width: var(--dialog-width-320);
+  }
+}
+
+/* Mobile Bottom Sheet Style */
+@media (max-width: 1023px) {
+  .dialog-panel--sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: 100%;
+    border-radius: var(--dialog-radius) var(--dialog-radius) 0 0;
+    padding-bottom: max(var(--dialog-padding), env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* -------------------------------------------------
+ * D. Dialog Drag Handle (Mobile)
+ * ------------------------------------------------- */
+
+.dialog-handle {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+  padding-bottom: 4px;
+}
+
+.dialog-handle__bar {
+  width: var(--dialog-handle-width);
+  height: var(--dialog-handle-height);
+  border-radius: var(--dialog-handle-radius);
+  background-color: var(--dialog-handle-color);
+}
+
+@media (min-width: 1024px) {
+  .dialog-handle {
+    display: none;
+  }
+}
+
+/* -------------------------------------------------
+ * E. Alert Dialog (Single Button)
+ * ------------------------------------------------- */
+
+.dialog-alert {
+  text-align: center;
+}
+
+.dialog-alert__title {
+  font-size: var(--dialog-title-size);
+  font-weight: var(--dialog-title-weight);
+  line-height: var(--dialog-title-line-height);
+  text-align: center;
+}
+
+.dialog-alert__footer {
+  margin-top: var(--dialog-header-to-footer);
+}
+
+/* -------------------------------------------------
+ * F. Confirm Dialog (Two Buttons)
+ * ------------------------------------------------- */
+
+.dialog-confirm {
+  text-align: center;
+}
+
+.dialog-confirm__title {
+  font-size: var(--dialog-title-size);
+  font-weight: var(--dialog-title-weight);
+  line-height: var(--dialog-title-line-height);
+  text-align: center;
+}
+
+.dialog-confirm__footer {
+  display: flex;
+  gap: var(--dialog-btn-gap);
+  margin-top: var(--dialog-header-to-footer);
+}
+
+.dialog-confirm__footer > * {
+  flex: 1;
+}
+
+/* -------------------------------------------------
+ * G. Info Dialog - Text
+ * ------------------------------------------------- */
+
+.dialog-info {
+  position: relative;
+}
+
+.dialog-info__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dialog-info__title {
+  font-size: var(--dialog-title-size);
+  font-weight: var(--dialog-title-weight);
+  line-height: var(--dialog-title-line-height);
+  text-align: left;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: var(--dialog-title-max-lines);
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.dialog-info__body {
+  margin-top: var(--dialog-header-to-body);
+  font-size: var(--dialog-body-size);
+  font-weight: var(--dialog-body-weight);
+  line-height: var(--dialog-body-line-height);
+  color: var(--dialog-body-color);
+}
+
+.dialog-info__footer {
+  margin-top: var(--dialog-body-to-footer);
+}
+
+/* -------------------------------------------------
+ * H. Info Dialog - Image
+ * ------------------------------------------------- */
+
+.dialog-image__area {
+  margin-top: var(--dialog-header-to-body);
+  border-radius: var(--dialog-image-radius);
+  border: var(--dialog-image-border);
+  background-color: var(--dialog-image-placeholder-bg);
+  min-height: var(--dialog-image-min-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.dialog-image__area img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dialog-image__placeholder {
+  font-size: var(--typo-body1-size, 16px);
+  font-weight: var(--typo-body1-weight, 500);
+  color: #CCCCCC;
+}
+
+.dialog-image__footer {
+  display: flex;
+  gap: var(--dialog-btn-gap);
+  margin-top: var(--dialog-body-to-footer);
+}
+
+.dialog-image__footer > * {
+  flex: 1;
+}
+
+/* -------------------------------------------------
+ * I. Dialog Close Button
+ * ------------------------------------------------- */
+
+.dialog-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--dialog-close-size) + var(--dialog-close-padding) * 2);
+  height: calc(var(--dialog-close-size) + var(--dialog-close-padding) * 2);
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--dialog-close-color);
+  flex-shrink: 0;
+  transition: background-color 150ms ease;
+}
+
+.dialog-close:hover {
+  background-color: var(--dialog-close-hover-bg);
+}
+
+.dialog-close__icon {
+  width: var(--dialog-close-size);
+  height: var(--dialog-close-size);
+}
+
+/* -------------------------------------------------
+ * J. Dialog Button Styles
+ * ------------------------------------------------- */
+
+/* Base Dialog Button */
+.dialog-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--dialog-btn-height);
+  border-radius: var(--dialog-btn-radius);
+  font-size: var(--dialog-btn-font-size);
+  font-weight: var(--dialog-btn-font-weight);
+  border: none;
+  cursor: pointer;
+  transition: background-color 150ms ease, transform 100ms ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dialog-btn--sm {
+  height: var(--dialog-btn-height-sm);
+  border-radius: var(--dialog-btn-radius-sm);
+}
+
+.dialog-btn:active {
+  transform: scale(0.98);
+}
+
+/* Primary (Black) */
+.dialog-btn--primary {
+  background-color: var(--dialog-btn-primary-bg);
+  color: var(--dialog-btn-primary-color);
+}
+
+.dialog-btn--primary:hover {
+  background-color: var(--dialog-btn-primary-hover-bg);
+}
+
+.dialog-btn--primary:active {
+  background-color: var(--dialog-btn-primary-pressed-bg);
+}
+
+/* Secondary (Light Gray) */
+.dialog-btn--secondary {
+  background-color: var(--dialog-btn-secondary-bg);
+  color: var(--dialog-btn-secondary-color);
+}
+
+.dialog-btn--secondary:hover {
+  background-color: var(--dialog-btn-secondary-hover-bg);
+}
+
+.dialog-btn--secondary:active {
+  background-color: var(--dialog-btn-secondary-pressed-bg);
+}
+
+/* Accent (Red) */
+.dialog-btn--accent {
+  background-color: var(--dialog-btn-accent-bg);
+  color: var(--dialog-btn-accent-color);
+}
+
+.dialog-btn--accent:hover {
+  background-color: var(--dialog-btn-accent-hover-bg);
+}
+
+.dialog-btn--accent:active {
+  background-color: var(--dialog-btn-accent-pressed-bg);
+}
+
+/* Tertiary (Outline) */
+.dialog-btn--tertiary {
+  background-color: var(--dialog-btn-tertiary-bg);
+  color: var(--dialog-btn-tertiary-color);
+  border: var(--dialog-btn-tertiary-border);
+}
+
+.dialog-btn--tertiary:hover {
+  background-color: var(--dialog-btn-tertiary-hover-bg);
+}
+
+.dialog-btn--tertiary:active {
+  background-color: var(--dialog-btn-tertiary-pressed-bg);
+}
+
+/* Disabled */
+.dialog-btn:disabled,
+.dialog-btn--disabled {
+  background-color: var(--dialog-btn-disabled-bg);
+  color: var(--dialog-btn-disabled-color);
+  cursor: not-allowed;
+  border: none;
+  transform: none;
+}
+
+/* Full Width */
+.dialog-btn--full {
+  width: 100%;
+}
+
+/* Focus Visible */
+.dialog-btn:focus-visible {
+  outline: 2px solid var(--color-primary-500, #3B82F6);
+  outline-offset: 2px;
+}
+
+/* -------------------------------------------------
+ * K. Dialog Footer Layouts
+ * ------------------------------------------------- */
+
+/* Single Button (Full Width) */
+.dialog-footer--single {
+  margin-top: var(--dialog-header-to-footer);
+}
+
+.dialog-footer--single .dialog-btn {
+  width: 100%;
+}
+
+/* Two Buttons (Equal Split) */
+.dialog-footer--split {
+  display: flex;
+  gap: var(--dialog-btn-gap);
+  margin-top: var(--dialog-header-to-footer);
+}
+
+.dialog-footer--split > * {
+  flex: 1;
+}
+
+/* Two Buttons (Right-Aligned, Desktop) */
+@media (min-width: 1024px) {
+  .dialog-footer--right {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--dialog-btn-gap);
+    margin-top: var(--dialog-body-to-footer);
+  }
+
+  .dialog-footer--right > * {
+    flex: none;
+    min-width: 80px;
+  }
+}
+
+/* -------------------------------------------------
+ * L. Dialog Animations
+ * ------------------------------------------------- */
+
+/* Backdrop */
+@keyframes dialog-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dialog-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.dialog-backdrop--enter {
+  animation: dialog-backdrop-in var(--dialog-enter-duration) var(--dialog-enter-ease) forwards;
+}
+
+.dialog-backdrop--leave {
+  animation: dialog-backdrop-out var(--dialog-leave-duration) var(--dialog-leave-ease) forwards;
+}
+
+/* Panel: Center Scale */
+@keyframes dialog-panel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dialog-panel-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+.dialog-panel--enter {
+  animation: dialog-panel-in var(--dialog-enter-duration) var(--dialog-enter-ease) forwards;
+  will-change: transform, opacity;
+}
+
+.dialog-panel--leave {
+  animation: dialog-panel-out var(--dialog-leave-duration) var(--dialog-leave-ease) forwards;
+}
+
+/* Panel: Bottom Sheet Slide */
+@keyframes dialog-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dialog-sheet-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+@media (max-width: 1023px) {
+  .dialog-panel--sheet.dialog-panel--enter {
+    animation: dialog-sheet-in var(--dialog-enter-duration) var(--dialog-enter-ease) forwards;
+  }
+
+  .dialog-panel--sheet.dialog-panel--leave {
+    animation: dialog-sheet-out var(--dialog-leave-duration) var(--dialog-leave-ease) forwards;
+  }
+}
+
+/* -------------------------------------------------
+ * M. Accessibility: Reduced Motion
+ * ------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog-backdrop--enter,
+  .dialog-backdrop--leave,
+  .dialog-panel--enter,
+  .dialog-panel--leave {
+    animation-duration: 0ms;
+  }
+
+  .dialog-btn:active {
+    transform: none;
+  }
+}
+
+/* ========================================
+   Landscape compact — 횡 모드에서 다이얼로그 높이 제한
+   ======================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+  .dialog-panel--sheet {
+    max-height: 80dvh;
+  }
+
+  .dialog-container {
+    padding: 8px;
+  }
+
+  .dialog-body {
+    padding-block: 8px;
+  }
+}

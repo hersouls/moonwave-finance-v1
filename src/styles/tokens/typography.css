@@ -1,0 +1,48 @@
+/* 01_Foundation Typography Scale */
+/* Font family: existing Pretendard maintained */
+:root {
+  /* Font Weights */
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+
+  /* Line Heights */
+  --line-height-tight: 148%;
+  --line-height-relaxed: 170%;
+
+  /* Type Scale — size / weight */
+  --typo-heading2-size: 24px;
+  --typo-heading2-weight: 700;
+  --typo-heading2-line-height: 148%;
+
+  --typo-title1-size: 20px;
+  --typo-title1-weight: 700;
+  --typo-title1-line-height: 148%;
+
+  --typo-title2-size: 18px;
+  --typo-title2-weight: 700;
+  --typo-title2-line-height: 148%;
+
+  --typo-body1-size: 16px;
+  --typo-body1-weight: 500;
+  --typo-body1-line-height: 170%;
+
+  --typo-body1-bold-size: 16px;
+  --typo-body1-bold-weight: 700;
+  --typo-body1-bold-line-height: 170%;
+
+  --typo-body2-size: 15px;
+  --typo-body2-weight: 500;
+  --typo-body2-line-height: 170%;
+
+  --typo-body2-bold-size: 15px;
+  --typo-body2-bold-weight: 700;
+  --typo-body2-bold-line-height: 170%;
+
+  --typo-label3-size: 13px;
+  --typo-label3-weight: 700;
+  --typo-label3-line-height: 148%;
+
+  --typo-label3-medium-size: 13px;
+  --typo-label3-medium-weight: 500;
+  --typo-label3-medium-line-height: 148%;
+}

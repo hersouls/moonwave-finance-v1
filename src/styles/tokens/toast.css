@@ -1,0 +1,54 @@
+/* ===============================================
+ * 08_Toast_Snackbar Design Tokens
+ * =============================================== */
+
+:root {
+  /* --- Container --- */
+  --toast-bg: #3C3C3C;
+  --toast-text: #FFFFFF;
+  --toast-radius: 999px;
+  --toast-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --toast-max-height: 66px;
+  --toast-screen-margin: 20px;
+
+  /* --- Internal Spacing --- */
+  --toast-padding-text-only: 20px;
+  --toast-padding-icon-left: 16px;
+  --toast-icon-size: 20px;
+  --toast-icon-text-gap: 4px;
+  --toast-padding-action-right: 4px;
+  --toast-content-height: 24px;
+
+  /* --- Typography --- */
+  --toast-font-size: 14px;
+  --toast-font-weight: 400;
+  --toast-action-font-weight: 600;
+  --toast-max-lines: 2;
+  --toast-max-chars-icon: 16;
+  --toast-max-chars-text: 20;
+
+  /* --- Semantic Icon Colors --- */
+  --toast-icon-success: #FFFFFF;
+  --toast-icon-info: #00BFA5;
+  --toast-icon-critical: #FF5252;
+
+  /* --- Position --- */
+  --toast-bottom-offset-mobile: 96px;
+  --toast-bottom-offset-desktop: 32px;
+  --toast-z-index: 50;
+
+  /* --- Animation --- */
+  --toast-enter-duration: 300ms;
+  --toast-exit-duration: 200ms;
+  --toast-auto-dismiss: 5000ms;
+
+  /* --- Responsive Widths --- */
+  --toast-min-width-320: 228px;
+  --toast-min-width-icon-320: 280px;
+}
+
+/* --- Dark Mode --- */
+.dark {
+  --toast-bg: #525252;
+  --toast-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}

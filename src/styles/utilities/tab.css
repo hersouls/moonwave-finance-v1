@@ -1,0 +1,382 @@
+/* ===============================================
+ * 09_Tab Foundation Utility Classes
+ * =============================================== */
+
+/* -------------------------------------------------
+ * A. Tab Container Base
+ * ------------------------------------------------- */
+
+.tab-bar {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: var(--tab-height);
+  background-color: var(--tab-bg);
+}
+
+/* Bottom Divider */
+.tab-bar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--tab-divider-height);
+  background-color: var(--tab-divider-color);
+}
+
+/* No Divider variant */
+.tab-bar--no-divider::after {
+  display: none;
+}
+
+/* -------------------------------------------------
+ * B. Fixed Tab (1/N Equal Split)
+ * ------------------------------------------------- */
+
+.tab-bar--fixed {
+  display: flex;
+}
+
+.tab-bar--fixed .tab-item {
+  flex: 1;
+}
+
+/* Column Variants */
+.tab-bar--2col .tab-item { flex: 1 1 50%; }
+.tab-bar--3col .tab-item { flex: 1 1 33.333%; }
+.tab-bar--4col .tab-item { flex: 1 1 25%; }
+.tab-bar--5col .tab-item { flex: 1 1 20%; }
+
+/* -------------------------------------------------
+ * C. Scrollable Tab
+ * ------------------------------------------------- */
+
+.tab-bar--scrollable {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: var(--tab-scroll-gap);
+  padding-left: var(--tab-scroll-padding-left);
+  padding-right: var(--tab-scroll-padding-right);
+}
+
+.tab-bar--scrollable::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-bar--scrollable .tab-item {
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
+/* -------------------------------------------------
+ * D. Tab Item
+ * ------------------------------------------------- */
+
+.tab-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--tab-height);
+  padding: 0 var(--tab-padding-x);
+  font-size: var(--tab-font-size);
+  font-weight: var(--tab-font-weight-default);
+  line-height: var(--tab-line-height);
+  color: var(--tab-color-default);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color var(--tab-label-duration) ease,
+    font-weight var(--tab-label-duration) ease,
+    background-color var(--tab-label-duration) ease;
+}
+
+/* Hover */
+.tab-item:hover {
+  color: var(--tab-color-hover);
+  background-color: var(--tab-hover-bg);
+}
+
+/* Pressed */
+.tab-item:active {
+  background-color: var(--tab-pressed-bg);
+}
+
+/* Selected */
+.tab-item--selected {
+  color: var(--tab-color-selected);
+  font-weight: var(--tab-font-weight-selected);
+}
+
+.tab-item--selected:hover {
+  color: var(--tab-color-selected);
+}
+
+/* Disabled */
+.tab-item--disabled,
+.tab-item:disabled {
+  color: var(--tab-color-disabled);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Focus Visible */
+.tab-item:focus-visible {
+  outline: var(--tab-focus-ring-width) solid var(--tab-focus-ring-color);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+/* -------------------------------------------------
+ * E. Tab Indicator (Bottom Bar)
+ * ------------------------------------------------- */
+
+/* Per-item Indicator (CSS-only) — with Edge Lighting glow */
+.tab-item--selected::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: var(--tab-padding-x);
+  right: var(--tab-padding-x);
+  height: var(--tab-indicator-height);
+  background-color: var(--tab-indicator-color);
+  border-radius: var(--tab-indicator-radius) var(--tab-indicator-radius) 0 0;
+  z-index: 1;
+  box-shadow:
+    0 -2px 8px 0 oklch(0.55 0.20 250 / 0.15),
+    0 0 14px 0 oklch(0.55 0.20 250 / 0.06);
+}
+
+.dark .tab-item--selected::after {
+  box-shadow:
+    0 -2px 12px 0 oklch(0.55 0.20 250 / 0.28),
+    0 0 20px 0 oklch(0.55 0.20 250 / 0.10);
+}
+
+/* Full-width Indicator (Fixed Tab) */
+.tab-bar--fixed .tab-item--selected::after {
+  left: 0;
+  right: 0;
+}
+
+/* Sliding Indicator (JS-controlled) */
+.tab-indicator {
+  position: absolute;
+  bottom: 0;
+  height: var(--tab-indicator-height);
+  background-color: var(--tab-indicator-color);
+  border-radius: var(--tab-indicator-radius) var(--tab-indicator-radius) 0 0;
+  z-index: 1;
+  transition:
+    left var(--tab-indicator-duration) var(--tab-indicator-ease),
+    width var(--tab-indicator-duration) var(--tab-indicator-ease);
+  will-change: left, width;
+}
+
+/* -------------------------------------------------
+ * F. Tab Content (TabPanel)
+ * ------------------------------------------------- */
+
+.tab-content {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.tab-content--animate {
+  animation: tab-content-in 200ms ease-out;
+}
+
+@keyframes tab-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* -------------------------------------------------
+ * G. Sticky Tab Bar
+ * ------------------------------------------------- */
+
+.tab-bar--sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--color-bg, #FFFFFF);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.dark .tab-bar--sticky {
+  background-color: var(--color-bg-dark, #111111);
+}
+
+/* -------------------------------------------------
+ * H. Segment Tab (Existing Pill Pattern)
+ * ------------------------------------------------- */
+
+.tab-bar--segment {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background-color: #F4F4F5;
+  border-radius: 8px;
+  height: auto;
+}
+
+.dark .tab-bar--segment {
+  background-color: #27272A;
+}
+
+.tab-bar--segment::after {
+  display: none;
+}
+
+.tab-bar--segment .tab-item {
+  height: auto;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+/* Background handled by framer-motion layoutId indicator */
+.tab-bar--segment .tab-item--selected {
+  font-weight: 600;
+}
+
+.dark .tab-bar--segment .tab-item--selected {
+  font-weight: 600;
+}
+
+.tab-bar--segment .tab-item--selected::after {
+  display: none;
+}
+
+/* -------------------------------------------------
+ * I. Vertical Tab (Settings Sidebar)
+ * ------------------------------------------------- */
+
+.tab-bar--vertical {
+  flex-direction: column;
+  height: auto;
+  width: auto;
+  gap: 2px;
+}
+
+.tab-bar--vertical::after {
+  display: none;
+}
+
+.tab-bar--vertical .tab-item {
+  height: auto;
+  justify-content: flex-start;
+  padding: 8px 12px;
+  border-radius: 8px;
+  gap: 8px;
+}
+
+.tab-bar--vertical .tab-item--selected {
+  background-color: var(--color-primary-50, #EFF6FF);
+}
+
+.dark .tab-bar--vertical .tab-item--selected {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.tab-bar--vertical .tab-item--selected::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  border-radius: 0 1.5px 1.5px 0;
+  background-color: var(--color-primary-500, #3B82F6);
+  bottom: auto;
+  right: auto;
+  /* Edge Lighting: side indicator glow */
+  box-shadow:
+    2px 0 8px oklch(0.55 0.20 250 / 0.25),
+    0 0 14px oklch(0.55 0.20 250 / 0.10);
+}
+
+.dark .tab-bar--vertical .tab-item--selected::after {
+  box-shadow:
+    2px 0 12px oklch(0.55 0.20 250 / 0.40),
+    0 0 20px oklch(0.55 0.20 250 / 0.16);
+}
+
+/* -------------------------------------------------
+ * J. Responsive Rules
+ * ------------------------------------------------- */
+
+/* 5+ tabs on small screens → auto-switch to scrollable */
+@media (max-width: 360px) {
+  .tab-bar--fixed.tab-bar--5col {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tab-bar--fixed.tab-bar--5col::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-bar--fixed.tab-bar--5col .tab-item {
+    flex: none;
+    min-width: 64px;
+  }
+}
+
+/* Fold screen */
+@media (max-width: 320px) {
+  .tab-bar--fixed.tab-bar--4col,
+  .tab-bar--fixed.tab-bar--5col {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tab-bar--fixed.tab-bar--4col::-webkit-scrollbar,
+  .tab-bar--fixed.tab-bar--5col::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-bar--fixed.tab-bar--4col .tab-item,
+  .tab-bar--fixed.tab-bar--5col .tab-item {
+    flex: none;
+    min-width: 56px;
+  }
+
+  .tab-item {
+    font-size: 14px;
+  }
+}
+
+/* -------------------------------------------------
+ * K. Accessibility: Reduced Motion
+ * ------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-indicator {
+    transition: none;
+  }
+
+  .tab-content--animate {
+    animation: none;
+  }
+
+  .tab-item {
+    transition: none;
+  }
+}

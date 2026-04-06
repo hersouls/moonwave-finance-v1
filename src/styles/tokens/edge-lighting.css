@@ -1,0 +1,163 @@
+/* ===============================================
+ * Edge Lighting Design Tokens
+ * 2026 High-End Ambient Glow System
+ * ===============================================
+ *
+ * Edge Lighting = 요소 테두리에 은은한 글로우(glow)를 적용하여
+ * 인터랙티브 요소의 시각적 피드백과 프리미엄 느낌을 극대화하는 시스템.
+ *
+ * 원칙:
+ *   - 기능적 글로우 (상태 전달: active, hover, focus)
+ *   - 단일 색상 계열 (primary 컬러 기반)
+ *   - 다크 모드 강화 (다크 배경에서 글로우가 더 잘 보임)
+ *   - 절제된 불투명도 (0.04–0.35, 유치하지 않게)
+ * =============================================== */
+
+:root {
+  /* --- Glow Core Color (primary 계열) --- */
+  --el-color: var(--color-primary-400);
+  --el-color-bright: var(--color-primary-300);
+  --el-color-dim: var(--color-primary-500);
+
+  /* --- Opacity Scale --- */
+  --el-opacity-idle: 0;
+  --el-opacity-subtle: 0.04;
+  --el-opacity-soft: 0.08;
+  --el-opacity-medium: 0.14;
+  --el-opacity-strong: 0.22;
+  --el-opacity-vivid: 0.30;
+
+  /* --- Blur Radius Scale --- */
+  --el-blur-xs: 4px;
+  --el-blur-sm: 8px;
+  --el-blur-md: 16px;
+  --el-blur-lg: 28px;
+  --el-blur-xl: 48px;
+
+  /* --- Spread Scale --- */
+  --el-spread-tight: -4px;
+  --el-spread-none: 0px;
+  --el-spread-soft: 2px;
+  --el-spread-wide: 6px;
+
+  /* --- Border Glow (1px luminous border) --- */
+  --el-border-idle: 1px solid transparent;
+  --el-border-subtle: 1px solid oklch(0.64 0.16 250 / 0.06);
+  --el-border-soft: 1px solid oklch(0.64 0.16 250 / 0.12);
+  --el-border-active: 1px solid oklch(0.64 0.16 250 / 0.25);
+
+  /* --- Transition --- */
+  --el-transition: box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
+                   border-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* --- Composed Glow Presets (Light Mode) --- */
+
+  /* Idle: no glow */
+  --el-glow-idle: 0 0 0 0 transparent;
+
+  /* Subtle: barely visible ambient (for surfaces at rest in dark mode) */
+  --el-glow-subtle:
+    0 0 var(--el-blur-sm) var(--el-spread-tight) oklch(0.64 0.16 250 / 0.04);
+
+  /* Soft: gentle hover state */
+  --el-glow-soft:
+    0 0 var(--el-blur-md) var(--el-spread-tight) oklch(0.64 0.16 250 / 0.08),
+    0 0 var(--el-blur-xs) var(--el-spread-none) oklch(0.64 0.16 250 / 0.03);
+
+  /* Medium: active/selected state */
+  --el-glow-medium:
+    0 0 var(--el-blur-lg) var(--el-spread-tight) oklch(0.64 0.16 250 / 0.14),
+    0 0 var(--el-blur-sm) var(--el-spread-none) oklch(0.64 0.16 250 / 0.06);
+
+  /* Strong: primary focus / CTA emphasis */
+  --el-glow-strong:
+    0 0 var(--el-blur-xl) var(--el-spread-tight) oklch(0.64 0.16 250 / 0.20),
+    0 0 var(--el-blur-md) var(--el-spread-none) oklch(0.64 0.16 250 / 0.10),
+    0 0 var(--el-blur-xs) var(--el-spread-none) oklch(0.64 0.16 250 / 0.04);
+
+  /* Vivid: FAB, hero CTA, notification pulse */
+  --el-glow-vivid:
+    0 0 var(--el-blur-xl) var(--el-spread-soft) oklch(0.55 0.20 250 / 0.28),
+    0 0 var(--el-blur-lg) var(--el-spread-none) oklch(0.55 0.20 250 / 0.14),
+    0 0 var(--el-blur-sm) var(--el-spread-none) oklch(0.55 0.20 250 / 0.06);
+
+  /* --- Inset Glow (top-edge highlight for depth) --- */
+  --el-inset-top: inset 0 1px 0 0 oklch(1 0 0 / 0.04);
+  --el-inset-glow: inset 0 0 var(--el-blur-md) oklch(0.64 0.16 250 / 0.04);
+
+  /* --- Nav-specific Glow (bottom indicator) --- */
+  --el-nav-indicator:
+    0 2px var(--el-blur-sm) 0 oklch(0.55 0.20 250 / 0.18);
+
+  /* --- Status Glow Colors --- */
+  --el-glow-success:
+    0 0 var(--el-blur-lg) var(--el-spread-tight) oklch(0.62 0.18 145 / 0.14),
+    0 0 var(--el-blur-sm) var(--el-spread-none) oklch(0.62 0.18 145 / 0.06);
+
+  --el-glow-danger:
+    0 0 var(--el-blur-lg) var(--el-spread-tight) oklch(0.58 0.22 25 / 0.14),
+    0 0 var(--el-blur-sm) var(--el-spread-none) oklch(0.58 0.22 25 / 0.06);
+
+  --el-glow-warning:
+    0 0 var(--el-blur-lg) var(--el-spread-tight) oklch(0.75 0.18 70 / 0.14),
+    0 0 var(--el-blur-sm) var(--el-spread-none) oklch(0.75 0.18 70 / 0.06);
+}
+
+/* --- Dark Mode: Amplified Glow --- */
+.dark {
+  --el-opacity-subtle: 0.06;
+  --el-opacity-soft: 0.12;
+  --el-opacity-medium: 0.20;
+  --el-opacity-strong: 0.30;
+  --el-opacity-vivid: 0.40;
+
+  --el-border-subtle: 1px solid oklch(0.64 0.16 250 / 0.10);
+  --el-border-soft: 1px solid oklch(0.64 0.16 250 / 0.18);
+  --el-border-active: 1px solid oklch(0.64 0.16 250 / 0.35);
+
+  --el-glow-subtle:
+    0 0 var(--el-blur-sm) var(--el-spread-tight) oklch(0.64 0.16 250 / 0.06);
+
+  --el-glow-soft:
+    0 0 var(--el-blur-md) var(--el-spread-tight) oklch(0.64 0.16 250 / 0.12),
+    0 0 var(--el-blur-xs) var(--el-spread-none) oklch(0.64 0.16 250 / 0.05);
+
+  --el-glow-medium:
+    0 0 var(--el-blur-lg) var(--el-spread-tight) oklch(0.64 0.16 250 / 0.20),
+    0 0 var(--el-blur-sm) var(--el-spread-none) oklch(0.64 0.16 250 / 0.10);
+
+  --el-glow-strong:
+    0 0 var(--el-blur-xl) var(--el-spread-tight) oklch(0.64 0.16 250 / 0.30),
+    0 0 var(--el-blur-md) var(--el-spread-none) oklch(0.64 0.16 250 / 0.14),
+    0 0 var(--el-blur-xs) var(--el-spread-none) oklch(0.64 0.16 250 / 0.06);
+
+  --el-glow-vivid:
+    0 0 var(--el-blur-xl) var(--el-spread-soft) oklch(0.55 0.20 250 / 0.38),
+    0 0 var(--el-blur-lg) var(--el-spread-none) oklch(0.55 0.20 250 / 0.20),
+    0 0 var(--el-blur-sm) var(--el-spread-none) oklch(0.55 0.20 250 / 0.08);
+
+  --el-inset-top: inset 0 1px 0 0 oklch(1 0 0 / 0.06);
+  --el-inset-glow: inset 0 0 var(--el-blur-md) oklch(0.64 0.16 250 / 0.08);
+
+  --el-nav-indicator:
+    0 2px var(--el-blur-sm) 0 oklch(0.55 0.20 250 / 0.28);
+
+  --el-glow-success:
+    0 0 var(--el-blur-lg) var(--el-spread-tight) oklch(0.62 0.18 145 / 0.20),
+    0 0 var(--el-blur-sm) var(--el-spread-none) oklch(0.62 0.18 145 / 0.10);
+
+  --el-glow-danger:
+    0 0 var(--el-blur-lg) var(--el-spread-tight) oklch(0.58 0.22 25 / 0.20),
+    0 0 var(--el-blur-sm) var(--el-spread-none) oklch(0.58 0.22 25 / 0.10);
+
+  --el-glow-warning:
+    0 0 var(--el-blur-lg) var(--el-spread-tight) oklch(0.75 0.18 70 / 0.20),
+    0 0 var(--el-blur-sm) var(--el-spread-none) oklch(0.75 0.18 70 / 0.10);
+}
+
+/* --- Reduced Motion: Instant transitions --- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --el-transition: box-shadow 0ms, border-color 0ms;
+  }
+}

@@ -1,0 +1,27 @@
+/* Foundation Icon Size Utilities */
+.icon-xs {
+  width: var(--icon-size-xs);
+  height: var(--icon-size-xs);
+}
+
+.icon-sm {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+}
+
+.icon-md {
+  width: var(--icon-size-md);
+  height: var(--icon-size-md);
+}
+
+.icon-lg {
+  width: var(--icon-size-lg);
+  height: var(--icon-size-lg);
+}
+
+/* Icon SVG stroke consistency */
+.icon-stroke {
+  stroke-width: var(--icon-stroke-width);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

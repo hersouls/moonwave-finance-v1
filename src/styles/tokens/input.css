@@ -1,0 +1,95 @@
+/* ===============================================
+ * 03_Input Design Tokens
+ * =============================================== */
+
+:root {
+  /* --- Text Field Dimensions --- */
+  --input-height: 56px;
+  --input-margin-x: 20px;
+  --input-radius: 8px;
+  --input-border-width: 1px;
+  --input-border-width-active: 2px;
+
+  /* --- Text Field Colors --- */
+  --input-border-default: #D1D1D1;
+  --input-border-focused: #000000;
+  --input-border-error: var(--color-danger-500);
+  --input-bg-default: #FFFFFF;
+  --input-bg-hover: #F5F5F5;
+  --input-bg-disabled: #F5F5F5;
+
+  /* --- Text Field Typography --- */
+  --input-font-size: 16px;
+  --input-font-weight: 700;
+  --input-label-size-float: 12px;
+  --input-label-size-placeholder: 16px;
+  --input-label-weight: 400;
+  --input-helper-size: 12px;
+  --input-helper-weight: 400;
+
+  /* --- Text Field Label Colors --- */
+  --input-label-color: #666666;
+  --input-placeholder-color: #999999;
+  --input-text-color: #000000;
+  --input-helper-color: #999999;
+  --input-error-color: var(--color-danger-500);
+
+  /* --- Search Input --- */
+  --search-height: 48px;
+  --search-radius: 24px;
+  --search-margin-x: 20px;
+  --search-min-text-width: 212px;
+
+  /* --- Select/Dropdown --- */
+  --select-height: 56px;
+  --select-radius: 8px;
+  --select-chevron-size: 24px;
+
+  /* --- Textarea --- */
+  --textarea-min-height: 120px;
+  --textarea-radius: 8px;
+  --textarea-counter-size: 12px;
+
+  /* --- Chat/AI Input --- */
+  --chat-input-radius: 24px;
+  --chat-input-bg: #F5F5F5;
+  --chat-input-icon-size: 24px;
+
+  /* --- Snackbar/Toast --- */
+  --snackbar-height: 48px;
+  --snackbar-radius: 24px;
+  --snackbar-bg: #333333;
+  --snackbar-text: #FFFFFF;
+  --snackbar-max-width: 272px;
+
+  /* --- Toggle Switch --- */
+  --toggle-width: 48px;
+  --toggle-height: 24px;
+  --toggle-thumb-size: 20px;
+
+  /* --- Trailing Icon --- */
+  --input-icon-clear-size: 20px;
+  --input-icon-action-gap: 8px;
+
+  /* --- Bottom Tab Bar --- */
+  --tab-bar-height: 56px;
+  --tab-icon-size: 24px;
+  --tab-label-size: 11px;
+}
+
+/* --- Dark Mode Overrides --- */
+.dark {
+  --input-border-default: #404040;
+  --input-border-focused: #FFFFFF;
+  --input-bg-default: #1A1A1A;
+  --input-bg-hover: #2A2A2A;
+  --input-bg-disabled: #2A2A2A;
+  --input-label-color: #999999;
+  --input-placeholder-color: #666666;
+  --input-text-color: #FFFFFF;
+  --input-helper-color: #666666;
+
+  --chat-input-bg: #2A2A2A;
+  --snackbar-bg: #E5E5E5;
+  --snackbar-text: #1A1A1A;
+}

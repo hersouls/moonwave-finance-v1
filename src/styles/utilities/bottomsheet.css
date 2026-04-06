@@ -1,0 +1,359 @@
+/* ===============================================
+ * 07_BottomSheet Foundation Utility Classes
+ * =============================================== */
+
+/* -------------------------------------------------
+ * A. Overlay
+ * ------------------------------------------------- */
+
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: var(--sheet-overlay-bg);
+  -webkit-backdrop-filter: blur(var(--sheet-overlay-blur));
+  backdrop-filter: blur(var(--sheet-overlay-blur));
+  z-index: 50;
+  overscroll-behavior: none;
+}
+
+/* -------------------------------------------------
+ * B. Sheet Container
+ * ------------------------------------------------- */
+
+.sheet-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - var(--sheet-min-top-offset));
+  max-height: calc(100dvh - var(--sheet-min-top-offset));
+  background-color: var(--sheet-bg);
+  border-top-left-radius: var(--sheet-radius);
+  border-top-right-radius: var(--sheet-radius);
+  /* Edge Lighting: top edge glow */
+  box-shadow:
+    var(--sheet-shadow),
+    0 -2px 16px -4px oklch(0.64 0.16 250 / 0.06);
+  overflow: hidden;
+}
+
+.dark .sheet-container {
+  border-top: 1px solid oklch(0.64 0.16 250 / 0.10);
+  box-shadow:
+    var(--sheet-shadow),
+    0 -4px 32px -8px oklch(0.55 0.20 250 / 0.16),
+    0 -1px 8px 0 oklch(0.55 0.20 250 / 0.06);
+}
+
+/* -------------------------------------------------
+ * C. Drag Handle
+ * ------------------------------------------------- */
+
+.sheet-handle {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--sheet-handle-margin-top);
+  padding-bottom: var(--sheet-handle-margin-bottom);
+  flex-shrink: 0;
+}
+
+.sheet-handle::before {
+  content: '';
+  width: var(--sheet-handle-width);
+  height: var(--sheet-handle-height);
+  border-radius: var(--sheet-handle-radius);
+  background-color: var(--sheet-handle-color);
+}
+
+/* -------------------------------------------------
+ * D. Sheet Header (Sticky)
+ * ------------------------------------------------- */
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--sheet-header-height);
+  padding: var(--sheet-header-padding-y) var(--sheet-padding-x);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  background-color: var(--sheet-bg);
+  z-index: 1;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.sheet-title {
+  font-size: var(--sheet-title-size);
+  font-weight: var(--sheet-title-weight);
+  line-height: 148%;
+  flex: 1;
+  min-width: 0;
+}
+
+.sheet-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--sheet-close-touch-target);
+  height: var(--sheet-close-touch-target);
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-right: -10px;
+  color: inherit;
+  transition: background-color 150ms ease;
+}
+
+.sheet-close:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.dark .sheet-close:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.sheet-close > svg,
+.sheet-close > img {
+  width: var(--sheet-close-size);
+  height: var(--sheet-close-size);
+}
+
+/* -------------------------------------------------
+ * E. Sheet Body (Scrollable)
+ * ------------------------------------------------- */
+
+.sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--sheet-padding-x);
+  padding-bottom: var(--sheet-body-padding-y);
+  -webkit-overflow-scrolling: touch;
+}
+
+.sheet-body--with-cta {
+  padding-bottom: calc(var(--sheet-cta-height) + var(--sheet-cta-padding-y) * 2 + env(safe-area-inset-bottom, 0px));
+}
+
+/* -------------------------------------------------
+ * F. Sheet Footer / CTA (Sticky)
+ * ------------------------------------------------- */
+
+.sheet-footer {
+  flex-shrink: 0;
+  padding: var(--sheet-cta-padding-y) var(--sheet-padding-x);
+  padding-bottom: calc(var(--sheet-cta-padding-y) + env(safe-area-inset-bottom, 0px));
+  background-color: var(--sheet-bg);
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+}
+
+/* CTA Button */
+.sheet-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: var(--sheet-cta-height);
+  border: none;
+  border-radius: var(--sheet-cta-radius);
+  background-color: var(--sheet-cta-bg);
+  color: var(--sheet-cta-text);
+  font-size: var(--sheet-cta-font-size);
+  font-weight: var(--sheet-cta-font-weight);
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 200ms ease;
+}
+
+.sheet-cta:hover {
+  opacity: 0.9;
+}
+
+.sheet-cta:active {
+  transform: scale(0.98);
+}
+
+.sheet-cta:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Text Button (Secondary) */
+.sheet-text-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: var(--sheet-text-btn-height);
+  border: none;
+  background: transparent;
+  color: var(--sheet-text-btn-color);
+  font-size: var(--sheet-text-btn-font-size);
+  font-weight: var(--sheet-text-btn-font-weight);
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 150ms ease;
+}
+
+.sheet-text-btn:hover {
+  opacity: 0.7;
+}
+
+/* Button Group (2-column) */
+.sheet-btn-group {
+  display: flex;
+  gap: var(--sheet-action-btn-gap);
+}
+
+.sheet-btn-group > * {
+  flex: 1;
+}
+
+/* -------------------------------------------------
+ * G. List Selection BottomSheet
+ * ------------------------------------------------- */
+
+.sheet-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--sheet-list-item-height);
+  padding: 0 var(--sheet-list-item-padding-x);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.sheet-list-item:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.dark .sheet-list-item:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.sheet-list-item:active {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.dark .sheet-list-item:active {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.sheet-list-item__label {
+  flex: 1;
+  font-size: 16px;
+  font-weight: var(--sheet-list-unselected-weight);
+  line-height: 170%;
+}
+
+.sheet-list-item--selected .sheet-list-item__label {
+  font-weight: var(--sheet-list-selected-weight);
+}
+
+.sheet-list-item__check {
+  width: var(--sheet-list-icon-size);
+  height: var(--sheet-list-icon-size);
+  flex-shrink: 0;
+  color: var(--sheet-list-check-color);
+}
+
+/* Radio Selection */
+.sheet-list-item__radio {
+  width: var(--sheet-list-icon-size);
+  height: var(--sheet-list-icon-size);
+  border-radius: 50%;
+  border: 2px solid #D1D1D1;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 150ms ease;
+}
+
+.sheet-list-item--selected .sheet-list-item__radio {
+  border-color: var(--sheet-list-check-color);
+}
+
+.sheet-list-item--selected .sheet-list-item__radio::after {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--sheet-list-check-color);
+}
+
+/* -------------------------------------------------
+ * N. Sheet Enter/Leave Animations
+ * ------------------------------------------------- */
+
+@keyframes sheet-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheet-slide-down {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes sheet-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sheet-overlay-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.sheet-enter {
+  animation: sheet-slide-up var(--sheet-enter-duration) var(--sheet-enter-easing) forwards;
+  will-change: transform, opacity;
+}
+
+.sheet-leave {
+  animation: sheet-slide-down var(--sheet-leave-duration) var(--sheet-leave-easing) forwards;
+}
+
+.sheet-overlay-enter {
+  animation: sheet-overlay-in var(--sheet-enter-duration) ease-out forwards;
+}
+
+.sheet-overlay-leave {
+  animation: sheet-overlay-out var(--sheet-leave-duration) ease-in forwards;
+}
+
+/* ========================================
+   Landscape compact — 횡 모드에서 바텀시트 높이 제한
+   ======================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+  .sheet-container {
+    max-height: 70dvh;
+  }
+
+  .sheet-header {
+    padding-block: 8px;
+  }
+
+  .sheet-body {
+    padding-block: 8px;
+  }
+}

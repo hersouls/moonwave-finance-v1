@@ -1,0 +1,180 @@
+/* ===============================================
+ * 10_Checkbox_Radio Foundation Utility Classes
+ * =============================================== */
+
+/* -------------------------------------------------
+ * A. Checkbox Row
+ * ------------------------------------------------- */
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  min-height: var(--checkbox-touch-target);
+  padding-left: var(--checkbox-padding-x);
+  padding-right: var(--checkbox-padding-x);
+  width: var(--checkbox-row-width);
+  gap: var(--checkbox-label-gap);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.checkbox-row--disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* -------------------------------------------------
+ * B. Checkbox Icon
+ * ------------------------------------------------- */
+
+.checkbox-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  min-width: var(--checkbox-size);
+  border-radius: var(--checkbox-border-radius);
+  border: var(--checkbox-border-width) solid var(--checkbox-border-default);
+  background: var(--checkbox-bg-default);
+  transition: all 200ms ease;
+}
+
+.checkbox-icon--sm {
+  width: var(--checkbox-size-sm);
+  height: var(--checkbox-size-sm);
+  min-width: var(--checkbox-size-sm);
+}
+
+/* Hover (unselected) */
+.checkbox-row:hover .checkbox-icon:not(.checkbox-icon--selected):not(.checkbox-icon--disabled) {
+  border-color: var(--checkbox-border-hover);
+}
+
+/* Selected */
+.checkbox-icon--selected {
+  background: var(--checkbox-bg-selected);
+  border-color: transparent;
+}
+
+/* Selected Hover */
+.checkbox-row:hover .checkbox-icon--selected:not(.checkbox-icon--disabled) {
+  background: var(--checkbox-bg-selected-hover);
+}
+
+/* Disabled */
+.checkbox-icon--disabled {
+  border-color: var(--checkbox-border-disabled);
+  background: var(--checkbox-bg-disabled);
+}
+
+/* Selected + Disabled */
+.checkbox-icon--selected.checkbox-icon--disabled {
+  background: var(--checkbox-bg-selected-disabled);
+  border-color: transparent;
+}
+
+/* -------------------------------------------------
+ * C. Checkbox Check Mark
+ * ------------------------------------------------- */
+
+.checkbox-icon__check {
+  color: var(--checkbox-check-default);
+  width: 16px;
+  height: 16px;
+}
+
+.checkbox-icon--selected .checkbox-icon__check {
+  color: var(--checkbox-check-selected);
+}
+
+.checkbox-icon--selected.checkbox-icon--disabled .checkbox-icon__check {
+  color: var(--checkbox-check-selected-disabled);
+}
+
+/* -------------------------------------------------
+ * D. Checkbox Label
+ * ------------------------------------------------- */
+
+.checkbox-label {
+  font-size: var(--control-label-size);
+  font-weight: var(--control-label-weight);
+  line-height: var(--control-label-line-height);
+  color: var(--control-label-color);
+}
+
+.checkbox-row--disabled .checkbox-label {
+  color: var(--control-label-disabled-color);
+}
+
+/* -------------------------------------------------
+ * E. Checkbox Hierarchy (Select-All Pattern)
+ * ------------------------------------------------- */
+
+.checkbox-group-parent {
+  /* Parent: uses standard .checkbox-icon (filled circle) */
+}
+
+.checkbox-group-divider {
+  height: 1px;
+  background: #E5E5EA;
+  margin-left: var(--checkbox-padding-x);
+  margin-right: var(--checkbox-padding-x);
+}
+
+.dark .checkbox-group-divider {
+  background: #2C2C2E;
+}
+
+.checkbox-group-child {
+  display: flex;
+  align-items: center;
+  min-height: var(--checkbox-touch-target);
+  padding-left: calc(var(--checkbox-padding-x) + var(--checkbox-size) + var(--checkbox-label-gap));
+  padding-right: var(--checkbox-padding-x);
+  gap: var(--checkbox-label-gap);
+  cursor: pointer;
+}
+
+.checkbox-group-child__check {
+  width: 20px;
+  height: 20px;
+  color: var(--checkbox-check-default);
+}
+
+.checkbox-group-child--selected .checkbox-group-child__check {
+  color: var(--checkbox-bg-selected);
+}
+
+.checkbox-group-child__chevron {
+  margin-left: auto;
+  width: 20px;
+  height: 20px;
+  color: #A1A1A6;
+}
+
+/* -------------------------------------------------
+ * J. Focus Visible (Common)
+ * ------------------------------------------------- */
+
+.checkbox-row:focus-visible .checkbox-icon {
+  outline: 2px solid var(--checkbox-bg-selected);
+  outline-offset: 2px;
+}
+
+/* -------------------------------------------------
+ * K. Dark Mode (.dark class overrides)
+ * ------------------------------------------------- */
+
+.dark .checkbox-icon {
+  border-color: var(--checkbox-border-default);
+}
+
+.dark .checkbox-icon--selected {
+  background: var(--checkbox-bg-selected);
+}
+
+.dark .checkbox-label {
+  color: var(--control-label-color);
+}

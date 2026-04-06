@@ -1,0 +1,168 @@
+/* ===============================================
+ * Data Table Utility Classes (PPA-specific)
+ * =============================================== */
+
+/* -------------------------------------------------
+ * A. Base Data Table
+ * ------------------------------------------------- */
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+/* -------------------------------------------------
+ * B. Table Header
+ * ------------------------------------------------- */
+
+.data-table th {
+  position: sticky;
+  top: 0;
+  background-color: var(--surface-tertiary);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: var(--table-header-font-size);
+  line-height: 1.4;
+  padding: 10px 12px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border-default);
+  z-index: 1;
+}
+
+/* -------------------------------------------------
+ * C. Table Body Cells
+ * ------------------------------------------------- */
+
+.data-table td {
+  padding: 10px 12px;
+  font-size: var(--table-cell-font-size);
+  line-height: 1.5;
+  border-bottom: 1px solid var(--border-default);
+  color: var(--text-primary);
+}
+
+/* -------------------------------------------------
+ * D. Row Hover
+ * ------------------------------------------------- */
+
+.data-table tr:hover {
+  background-color: var(--hover-bg);
+}
+
+/* -------------------------------------------------
+ * E. Numeric Alignment
+ * ------------------------------------------------- */
+
+.data-table .text-right {
+  text-align: right;
+}
+
+.data-table .text-center {
+  text-align: center;
+}
+
+/* -------------------------------------------------
+ * F. Compact Variant
+ * ------------------------------------------------- */
+
+.data-table--compact th,
+.data-table--compact td {
+  padding: 6px 10px;
+  font-size: var(--table-compact-font-size);
+}
+
+/* -------------------------------------------------
+ * G. Bordered Variant
+ * ------------------------------------------------- */
+
+.data-table--bordered th,
+.data-table--bordered td {
+  border: 1px solid var(--border-default);
+}
+
+/* -------------------------------------------------
+ * H. Striped Variant
+ * ------------------------------------------------- */
+
+.data-table--striped tbody tr:nth-child(even) {
+  background-color: var(--surface-secondary);
+}
+
+.data-table--striped tbody tr:nth-child(even):hover {
+  background-color: var(--hover-bg);
+}
+
+/* -------------------------------------------------
+ * I. Interactive Row (Edge Lighting hover)
+ * ------------------------------------------------- */
+
+.data-table-row--interactive {
+  position: relative;
+  transition: background-color 200ms ease, box-shadow 300ms ease;
+  cursor: pointer;
+}
+
+.data-table-row--interactive:hover {
+  background-color: var(--hover-bg);
+  box-shadow: var(--shadow-1, 0 1px 3px rgba(0,0,0,0.06)), 0 0 16px -4px oklch(0.64 0.16 250 / 0.08);
+}
+
+.dark .data-table-row--interactive:hover {
+  box-shadow: var(--shadow-1, 0 1px 3px rgba(0,0,0,0.20)), 0 0 28px -4px oklch(0.64 0.16 250 / 0.20);
+}
+
+/* Left accent line on hover — use box-shadow on first td
+   (::before on <tr> creates anonymous table-cell in some browsers) */
+.data-table-row--interactive td:first-child {
+  box-shadow: inset 2px 0 0 0 transparent;
+  transition: box-shadow 200ms ease;
+}
+
+.data-table-row--interactive:hover td:first-child {
+  box-shadow: inset 2px 0 0 0 var(--accent-primary);
+}
+
+/* Row entrance animation */
+.data-table-row--animate {
+  animation: tableRowIn 300ms ease both;
+}
+
+@keyframes tableRowIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-table-row--animate {
+    animation: none;
+  }
+}
+
+/* -------------------------------------------------
+ * J. Mobile Responsive
+ * ------------------------------------------------- */
+
+@media (max-width: 767px) {
+  .data-table th {
+    padding: 8px 8px;
+    font-size: max(11px, var(--table-compact-font-size, 12px));
+  }
+
+  .data-table td {
+    padding: 8px 8px;
+    font-size: max(12px, var(--table-cell-font-size, 13px));
+  }
+
+  .data-table--compact th,
+  .data-table--compact td {
+    padding: 5px 6px;
+  }
+}

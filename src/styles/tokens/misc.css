@@ -1,0 +1,132 @@
+/* ===============================================
+ * 12_Misc (기타 UI) Design Tokens
+ * =============================================== */
+
+:root {
+  /* --- A. Empty State --- */
+  --empty-icon-size: 64px;
+  --empty-icon-bg: rgba(0, 0, 0, 0.04);
+  --empty-icon-radius: 50%;
+  --empty-title-size: 18px;
+  --empty-title-weight: 700;
+  --empty-title-color: #1A1A1A;
+  --empty-desc-size: 14px;
+  --empty-desc-color: #888888;
+  --empty-gap: 16px;
+  --empty-padding-x: 40px;
+
+  /* --- B. Skeleton --- */
+  --skeleton-bg: #E5E5E5;
+  --skeleton-shimmer: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  --skeleton-radius: 4px;
+  --skeleton-radius-circle: 50%;
+  --skeleton-animation-duration: 1.5s;
+
+  /* --- H. Context Menu --- */
+  --context-menu-bg: #FFFFFF;
+  --context-menu-radius: 12px;
+  --context-menu-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  --context-menu-padding-y: 8px;
+  --context-menu-min-width: 180px;
+
+  /* Context Menu Item */
+  --context-menu-item-height: 44px;
+  --context-menu-item-padding-x: 16px;
+  --context-menu-item-gap: 12px;
+  --context-menu-item-icon-size: 20px;
+  --context-menu-item-font-size: 15px;
+  --context-menu-item-font-weight: 400;
+  --context-menu-item-color: #1A1A1A;
+
+  /* Context Menu Item States */
+  --context-menu-item-hover-bg: #F5F5F5;
+  --context-menu-item-focus-bg: #EFF6FF;
+  --context-menu-item-pressed-bg: #E5E5E5;
+  --context-menu-item-danger-color: #DC2626;
+
+  /* --- I. Icon Touch Target --- */
+  --icon-touch-target: 44px;
+  --icon-visual-size: 24px;
+  --icon-touch-padding: calc((var(--icon-touch-target) - var(--icon-visual-size)) / 2);
+
+  /* --- M. Completion Screen --- */
+  --completion-top-spacing: 80px;
+  --completion-icon-size: 80px;
+  --completion-title-size: 22px;
+  --completion-title-weight: 700;
+  --completion-desc-size: 15px;
+  --completion-desc-color: #888888;
+  --completion-gap: 16px;
+
+  /* --- P. Expandable / Accordion --- */
+  --expandable-max-lines: 4;
+  --expandable-font-size: 16px;
+  --expandable-toggle-size: 14px;
+  --expandable-toggle-color: #666666;
+  --expandable-transition: max-height 300ms ease;
+
+  /* --- Rich Text (Markdown / Prose) --- */
+  --prose-blockquote-bar-width: 3px;
+  --prose-blockquote-bar-color: #D1D5DB;
+  --prose-blockquote-bg: #F9FAFB;
+  --prose-blockquote-padding: 12px 16px;
+  --prose-code-bg: #F3F4F6;
+  --prose-code-padding: 2px 6px;
+  --prose-code-radius: 4px;
+  --prose-code-font: 'Fira Code', 'Consolas', monospace;
+  --prose-code-font-size: 13px;
+  --prose-link-color: var(--color-primary, #2563eb);
+  --prose-table-border: #E5E7EB;
+  --prose-table-header-bg: #F9FAFB;
+  --prose-table-cell-padding: 8px 12px;
+
+  /* --- Dialog Button Placement --- */
+  --dialog-footer-direction: row;
+  --dialog-footer-gap: 8px;
+  --dialog-btn-cancel-order: 1;
+  --dialog-btn-confirm-order: 2;
+}
+
+/* --- Dark Mode --- */
+.dark {
+  /* Empty State */
+  --empty-icon-bg: rgba(255, 255, 255, 0.06);
+  --empty-title-color: #F5F5F5;
+  --empty-desc-color: #888888;
+
+  /* Skeleton */
+  --skeleton-bg: #3F3F46;
+  --skeleton-shimmer: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+
+  /* Context Menu */
+  --context-menu-bg: #27272A;
+  --context-menu-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --context-menu-item-color: #F4F4F5;
+  --context-menu-item-hover-bg: #3F3F46;
+  --context-menu-item-focus-bg: rgba(37, 99, 235, 0.15);
+  --context-menu-item-pressed-bg: #52525B;
+  --context-menu-item-danger-color: #F87171;
+
+  /* Completion */
+  --completion-desc-color: #71717A;
+
+  /* Expandable */
+  --expandable-toggle-color: #A1A1AA;
+
+  /* Rich Text */
+  --prose-blockquote-bar-color: #52525B;
+  --prose-blockquote-bg: #27272A;
+  --prose-code-bg: #3F3F46;
+  --prose-table-border: #3F3F46;
+  --prose-table-header-bg: #27272A;
+}

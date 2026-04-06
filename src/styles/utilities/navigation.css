@@ -1,0 +1,441 @@
+/* ===============================================
+ * 04_Navigation Foundation Utility Classes
+ * =============================================== */
+
+/* -------------------------------------------------
+ * A. Bottom Navigation Bar
+ * ------------------------------------------------- */
+
+.bottom-nav-foundation {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--bottom-nav-height);
+  background-color: var(--bottom-nav-bg);
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  z-index: 40;
+  /* Edge Lighting: top edge ambient glow */
+  box-shadow:
+    0 -1px 0 0 oklch(0.64 0.16 250 / 0.04),
+    0 -4px 12px -4px oklch(0.64 0.16 250 / 0.03);
+}
+
+.dark .bottom-nav-foundation {
+  border-top-color: oklch(0.64 0.16 250 / 0.10);
+  box-shadow:
+    0 -1px 0 0 oklch(0.64 0.16 250 / 0.08),
+    0 -6px 20px -4px oklch(0.64 0.16 250 / 0.06);
+}
+
+@media (min-width: 1024px) {
+  .bottom-nav-foundation {
+    display: none;
+  }
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  min-height: 48px;
+  cursor: pointer;
+  transition: color 200ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Default (Inactive) */
+.bottom-nav-item--default .bottom-nav-icon {
+  color: var(--bottom-nav-inactive-icon);
+}
+
+.bottom-nav-item--default .bottom-nav-label-text {
+  color: var(--bottom-nav-inactive-label);
+}
+
+/* Selected (Active) — filled icon + edge lighting indicator */
+.bottom-nav-item--selected {
+  position: relative;
+}
+
+.bottom-nav-item--selected::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--color-primary-500);
+  border-radius: 0 0 2px 2px;
+  box-shadow:
+    0 2px 8px 0 oklch(0.55 0.20 250 / 0.20),
+    0 0 16px 0 oklch(0.55 0.20 250 / 0.08);
+}
+
+.dark .bottom-nav-item--selected::after {
+  box-shadow:
+    0 2px 12px 0 oklch(0.55 0.20 250 / 0.35),
+    0 0 24px 0 oklch(0.55 0.20 250 / 0.14);
+}
+
+.bottom-nav-item--selected .bottom-nav-icon {
+  color: var(--bottom-nav-active-icon);
+}
+
+.bottom-nav-item--selected .bottom-nav-label-text {
+  color: var(--bottom-nav-active-label);
+  font-weight: 600;
+}
+
+/* Disabled */
+.bottom-nav-item--disabled {
+  pointer-events: none;
+}
+
+.bottom-nav-item--disabled .bottom-nav-icon {
+  color: var(--bottom-nav-disabled-icon);
+}
+
+.bottom-nav-item--disabled .bottom-nav-label-text {
+  color: var(--bottom-nav-disabled-label);
+}
+
+.bottom-nav-icon {
+  width: var(--bottom-nav-icon-size);
+  height: var(--bottom-nav-icon-size);
+  flex-shrink: 0;
+}
+
+.bottom-nav-label-text {
+  font-size: var(--bottom-nav-label-size);
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Notification Dot */
+.bottom-nav-dot {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 14px);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #FF3B30;
+}
+
+/* -------------------------------------------------
+ * B. Top App Bar (Header)
+ * ------------------------------------------------- */
+
+.app-bar-foundation {
+  position: sticky;
+  top: 0;
+  height: var(--app-bar-height);
+  background-color: var(--bottom-nav-bg);
+  display: flex;
+  align-items: center;
+  padding: env(safe-area-inset-top, 0px) var(--app-bar-padding-right) 0;
+  z-index: 30;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* App Bar — Blur variant */
+.app-bar-blur {
+  background-color: var(--surface-elevated);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom-color: var(--border-default);
+}
+
+/* Logo Variant */
+.app-bar-logo {
+  flex-shrink: 0;
+}
+
+/* Back Button */
+.app-bar-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--app-bar-icon-size);
+  height: var(--app-bar-icon-size);
+  padding: 8px;
+  margin-right: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Title (Sub-page variant) */
+.app-bar-title {
+  flex: 1;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: #000000;
+  min-width: var(--app-bar-title-min-width);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dark .app-bar-title {
+  color: #FFFFFF;
+}
+
+/* Action Icons */
+.app-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--app-bar-icon-gap);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.app-bar-action-icon {
+  width: var(--app-bar-icon-size);
+  height: var(--app-bar-icon-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  transition: background-color 150ms ease;
+}
+
+.app-bar-action-icon:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.dark .app-bar-action-icon:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* -------------------------------------------------
+ * C. Side Navigation Drawer
+ * ------------------------------------------------- */
+
+.drawer-scrim {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, var(--drawer-scrim-opacity));
+  z-index: 50;
+}
+
+.drawer-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: calc(100vw * var(--drawer-width-ratio));
+  max-width: 320px;
+  background-color: var(--drawer-bg-default);
+  z-index: 51;
+  overflow-y: auto;
+  transition: transform 300ms ease;
+}
+
+.drawer-panel--closed {
+  transform: translateX(-100%);
+}
+
+.drawer-panel--open {
+  transform: translateX(0);
+}
+
+/* Drawer Menu Items */
+.drawer-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px var(--drawer-padding-left);
+  border-radius: var(--drawer-item-radius);
+  margin: 0 8px;
+  font-size: var(--drawer-text-size);
+  color: #000000;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.dark .drawer-item {
+  color: #FFFFFF;
+}
+
+.drawer-item:hover {
+  background-color: var(--drawer-bg-hover);
+}
+
+.drawer-item:active {
+  background-color: var(--drawer-bg-pressed);
+}
+
+.drawer-item--selected {
+  background-color: var(--drawer-bg-selected);
+  /* Edge Lighting: left accent bar with glow */
+  position: relative;
+  box-shadow: var(--el-glow-soft, 0 0 16px -4px oklch(0.64 0.16 250 / 0.08));
+}
+
+.drawer-item--selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-primary-500);
+  box-shadow:
+    0 0 8px oklch(0.55 0.20 250 / 0.30),
+    0 0 16px oklch(0.55 0.20 250 / 0.12);
+}
+
+.dark .drawer-item--selected::before {
+  box-shadow:
+    0 0 10px oklch(0.55 0.20 250 / 0.45),
+    0 0 24px oklch(0.55 0.20 250 / 0.20);
+}
+
+.drawer-item-icon {
+  width: var(--drawer-icon-size);
+  height: var(--drawer-icon-size);
+  flex-shrink: 0;
+}
+
+/* Section Header */
+.drawer-section-header {
+  font-size: var(--drawer-section-header-size);
+  color: #999999;
+  padding: 16px var(--drawer-padding-left) 8px;
+  font-weight: 500;
+}
+
+.dark .drawer-section-header {
+  color: #666666;
+}
+
+/* -------------------------------------------------
+ * D. Modal List / Bottom Sheet Selection
+ * ------------------------------------------------- */
+
+.modal-list {
+  background: var(--drawer-bg-default);
+  border-radius: var(--modal-list-radius) var(--modal-list-radius) 0 0;
+  padding: 24px 0;
+  max-height: 80vh;
+  max-height: 80dvh;
+  overflow-y: auto;
+}
+
+.modal-list-title {
+  font-size: var(--modal-list-title-size);
+  font-weight: var(--modal-list-title-weight);
+  padding: 0 20px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  font-size: var(--modal-list-item-size);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.modal-list-item:hover {
+  background-color: var(--drawer-bg-hover);
+}
+
+.modal-list-item--selected {
+  font-weight: var(--modal-list-selected-weight);
+  color: #000000;
+}
+
+.dark .modal-list-item--selected {
+  color: #FFFFFF;
+}
+
+.modal-list-item--unselected {
+  color: var(--modal-list-unselected-color);
+}
+
+.modal-list-check {
+  width: 24px;
+  height: 24px;
+  color: #000000;
+}
+
+.dark .modal-list-check {
+  color: #FFFFFF;
+}
+
+/* -------------------------------------------------
+ * E. Auto Tooltip
+ * ------------------------------------------------- */
+
+.auto-tooltip {
+  position: absolute;
+  background-color: var(--tooltip-bg);
+  color: var(--tooltip-text);
+  font-size: var(--tooltip-font-size);
+  padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
+  border-radius: var(--tooltip-radius);
+  white-space: nowrap;
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* Arrow pointing up */
+.auto-tooltip--top::before {
+  content: '';
+  position: absolute;
+  top: calc(-1 * var(--tooltip-arrow-size) / 2);
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: calc(var(--tooltip-arrow-size) / 2) solid transparent;
+  border-right: calc(var(--tooltip-arrow-size) / 2) solid transparent;
+  border-bottom: calc(var(--tooltip-arrow-size) / 2) solid var(--tooltip-bg);
+}
+
+/* Arrow pointing down */
+.auto-tooltip--bottom::after {
+  content: '';
+  position: absolute;
+  bottom: calc(-1 * var(--tooltip-arrow-size) / 2);
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: calc(var(--tooltip-arrow-size) / 2) solid transparent;
+  border-right: calc(var(--tooltip-arrow-size) / 2) solid transparent;
+  border-top: calc(var(--tooltip-arrow-size) / 2) solid var(--tooltip-bg);
+}
+
+/* -------------------------------------------------
+ * F. Landscape Mode (모바일 가로 모드)
+ * ------------------------------------------------- */
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .bottom-nav-foundation {
+    height: 48px;
+  }
+
+  .app-bar-foundation {
+    height: 48px;
+  }
+}
+

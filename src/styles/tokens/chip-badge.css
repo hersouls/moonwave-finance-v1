@@ -1,0 +1,140 @@
+/* ===============================================
+ * 11_Chip_Badge Design Tokens
+ * =============================================== */
+
+:root {
+  /* --- Chip: Size --- */
+  --chip-height-sm: 24px;
+  --chip-height-md: 32px;
+  --chip-height-lg: 36px;
+
+  --chip-padding-x-sm: 8px;
+  --chip-padding-y-sm: 2px;
+  --chip-padding-x-md: 12px;
+  --chip-padding-y-md: 6px;
+  --chip-padding-x-lg: 16px;
+  --chip-padding-y-lg: 8px;
+
+  --chip-gap: 4px;
+  --chip-gap-md: 6px;
+  --chip-border-radius: 9999px;
+
+  /* --- Chip: Typography --- */
+  --chip-font-size-sm: 12px;
+  --chip-font-size-md: 14px;
+  --chip-font-size-lg: 14px;
+  --chip-font-weight: 500;
+  --chip-line-height: 1.25;
+
+  /* --- Chip: Colors (Light) --- */
+  --chip-bg-default: #f4f4f5;
+  --chip-text-default: #3f3f46;
+  --chip-border-default: transparent;
+
+  --chip-bg-selected: #808080;
+  --chip-text-selected: #ffffff;
+  --chip-border-selected: transparent;
+
+  --chip-bg-active: var(--color-primary-500);
+  --chip-text-active: #ffffff;
+  --chip-border-active: transparent;
+
+  --chip-bg-hover: #e4e4e7;
+  --chip-text-hover: #3f3f46;
+
+  --chip-bg-disabled: #f4f4f5;
+  --chip-text-disabled: #a1a1aa;
+  --chip-opacity-disabled: 0.5;
+
+  /* --- Chip: Outline Variant --- */
+  --chip-outline-border: #d4d4d8;
+  --chip-outline-bg: transparent;
+  --chip-outline-text: #3f3f46;
+
+  /* --- Chip: Icon / Dot --- */
+  --chip-dot-size-sm: 8px;
+  --chip-dot-size-md: 10px;
+  --chip-icon-size-sm: 12px;
+  --chip-icon-size-md: 16px;
+  --chip-close-size: 16px;
+  --chip-close-offset: 2px;
+
+  /* --- Badge: Size --- */
+  --badge-height-sm: 20px;
+  --badge-height-md: 24px;
+
+  --badge-padding-x-sm: 8px;
+  --badge-padding-y-sm: 2px;
+  --badge-padding-x-md: 10px;
+  --badge-padding-y-md: 4px;
+
+  --badge-font-size-sm: 12px;
+  --badge-font-size-md: 14px;
+  --badge-font-weight: 500;
+  --badge-border-radius: 9999px;
+
+  /* --- Badge: Variant Colors (Light) --- */
+  --badge-default-bg: #f4f4f5;
+  --badge-default-text: #3f3f46;
+
+  --badge-primary-bg: var(--color-primary-100);
+  --badge-primary-text: var(--color-primary-700);
+
+  --badge-success-bg: #f0fdf4;
+  --badge-success-text: #15803d;
+
+  --badge-warning-bg: #fffbeb;
+  --badge-warning-text: #a16207;
+
+  --badge-danger-bg: #fef2f2;
+  --badge-danger-text: #b91c1c;
+
+  /* --- Badge: Dot Indicator --- */
+  --badge-dot-size: 8px;
+  --badge-dot-offset: -2px;
+
+  /* --- Badge: Count --- */
+  --badge-count-min-width: 20px;
+  --badge-count-height: 20px;
+  --badge-count-font-size: 11px;
+  --badge-count-font-weight: 700;
+  --badge-count-bg: var(--color-danger-500, #ef4444);
+  --badge-count-text: #ffffff;
+
+  /* --- Transition --- */
+  --chip-transition: color 150ms, background-color 150ms, border-color 150ms, opacity 150ms;
+}
+
+/* --- Dark Mode --- */
+.dark {
+  --chip-bg-default: #27272a;
+  --chip-text-default: #d4d4d8;
+
+  --chip-bg-selected: #71717a;
+  --chip-text-selected: #ffffff;
+
+  --chip-bg-hover: #3f3f46;
+  --chip-text-hover: #d4d4d8;
+
+  --chip-bg-disabled: #27272a;
+  --chip-text-disabled: #52525b;
+
+  --chip-outline-border: #52525b;
+  --chip-outline-bg: transparent;
+  --chip-outline-text: #d4d4d8;
+
+  --badge-default-bg: #27272a;
+  --badge-default-text: #d4d4d8;
+
+  --badge-primary-bg: rgba(var(--color-primary-900-rgb, 30, 27, 75), 0.5);
+  --badge-primary-text: var(--color-primary-300);
+
+  --badge-success-bg: rgba(20, 83, 45, 0.5);
+  --badge-success-text: #86efac;
+
+  --badge-warning-bg: rgba(113, 63, 18, 0.5);
+  --badge-warning-text: #fcd34d;
+
+  --badge-danger-bg: rgba(127, 29, 29, 0.5);
+  --badge-danger-text: #fca5a5;
+}

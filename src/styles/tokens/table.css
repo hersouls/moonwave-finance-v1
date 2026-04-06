@@ -1,0 +1,117 @@
+/* ===============================================
+ * 14_Table Design Tokens (PPA-specific)
+ * Data tables for payment, billing, and usage data
+ * =============================================== */
+
+:root {
+  /* --- Table Container --- */
+  --table-radius: 12px;
+  --table-border-color: var(--border-default, #e4e4e7);
+  --table-bg: var(--surface-primary, #ffffff);
+
+  /* --- Table Header --- */
+  --table-header-bg: #f9fafb;
+  --table-header-color: var(--text-secondary, #52525b);
+  --table-header-font-size: 13px;
+  --table-header-font-weight: 600;
+  --table-header-line-height: 148%;
+  --table-header-height: 44px;
+  --table-header-padding-x: 16px;
+  --table-header-padding-y: 10px;
+
+  /* --- Table Body --- */
+  --table-cell-font-size: 14px;
+  --table-cell-font-weight: 400;
+  --table-cell-line-height: 170%;
+  --table-cell-color: var(--text-primary, #18181b);
+  --table-cell-padding-x: 16px;
+  --table-cell-padding-y: 12px;
+  --table-cell-min-height: 48px;
+
+  /* --- Table Row --- */
+  --table-row-border-color: var(--border-subtle, #f4f4f5);
+  --table-row-hover-bg: #f4f4f5;
+  --table-row-selected-bg: var(--color-primary-50, oklch(0.97 0.02 25));
+  --table-row-stripe-bg: #fafafa;
+
+  /* --- Table Numeric Cells --- */
+  --table-number-font-weight: 500;
+  --table-number-font-variant: tabular-nums;
+  --table-amount-color: var(--text-primary, #18181b);
+  --table-amount-negative-color: var(--color-danger-500, #ef4444);
+  --table-amount-positive-color: var(--color-success-500, #10b981);
+
+  /* --- Table Sort Indicator --- */
+  --table-sort-icon-size: 16px;
+  --table-sort-icon-color: #a1a1aa;
+  --table-sort-icon-active-color: var(--text-primary, #18181b);
+  --table-sort-gap: 4px;
+
+  /* --- Table Footer / Summary --- */
+  --table-footer-bg: #f9fafb;
+  --table-footer-font-weight: 700;
+  --table-footer-border-top: 2px solid var(--border-strong, #d4d4d8);
+
+  /* --- Table Pagination --- */
+  --table-pagination-height: 48px;
+  --table-pagination-font-size: 13px;
+  --table-pagination-btn-size: 32px;
+  --table-pagination-btn-radius: 8px;
+  --table-pagination-btn-gap: 4px;
+  --table-pagination-active-bg: var(--color-primary-500);
+  --table-pagination-active-color: #ffffff;
+  --table-pagination-default-color: var(--text-secondary, #52525b);
+
+  /* --- Table Empty State --- */
+  --table-empty-padding: 48px 20px;
+  --table-empty-icon-size: 48px;
+  --table-empty-text-size: 14px;
+  --table-empty-text-color: var(--text-muted, #a1a1aa);
+
+  /* --- Table Status Cells --- */
+  --table-status-dot-size: 8px;
+  --table-status-gap: 8px;
+  --table-status-paid-color: #059669;
+  --table-status-pending-color: #d97706;
+  --table-status-overdue-color: #dc2626;
+  --table-status-cancelled-color: #a1a1aa;
+
+  /* --- Compact Table Variant --- */
+  --table-compact-cell-padding-x: 12px;
+  --table-compact-cell-padding-y: 8px;
+  --table-compact-font-size: 13px;
+  --table-compact-header-height: 36px;
+
+  /* --- Responsive / Mobile Card View --- */
+  --table-mobile-card-radius: 12px;
+  --table-mobile-card-padding: 16px;
+  --table-mobile-card-gap: 12px;
+  --table-mobile-label-size: 12px;
+  --table-mobile-label-color: var(--text-tertiary, #71717a);
+  --table-mobile-value-size: 14px;
+  --table-mobile-value-weight: 500;
+
+  /* --- Table Sticky --- */
+  --table-sticky-header-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --table-sticky-column-shadow: 4px 0 8px rgba(0, 0, 0, 0.06);
+}
+
+/* --- Dark Mode --- */
+.dark {
+  --table-header-bg: #18181b;
+  --table-row-hover-bg: #27272a;
+  --table-row-stripe-bg: #18181b;
+
+  --table-sort-icon-color: #52525b;
+  --table-sort-icon-active-color: var(--text-primary, #f4f4f5);
+
+  --table-footer-bg: #18181b;
+
+  --table-status-paid-color: #34d399;
+  --table-status-pending-color: #fbbf24;
+  --table-status-overdue-color: #f87171;
+  --table-status-cancelled-color: #52525b;
+
+  --table-sticky-header-shadow: 0 1px 3px rgba(0, 0, 0, 0.24);
+  --table-sticky-column-shadow: 4px 0 8px rgba(0, 0, 0, 0.2);
+}

@@ -1,0 +1,96 @@
+/* ===============================================
+ * 04_Navigation Design Tokens
+ * =============================================== */
+
+:root {
+  /* --- Bottom Navigation Bar --- */
+  --bottom-nav-height: 56px;
+  --bottom-nav-safe-padding: 24px;
+  --bottom-nav-icon-size: 24px;
+  --bottom-nav-label-size: 11px;
+  --bottom-nav-label-max-chars: 6;
+  --bottom-nav-item-width-430: 78px;
+  --bottom-nav-item-width-360: 64px;
+  --bottom-nav-item-width-320: 56px;
+  --bottom-nav-max-items: 5;
+
+  /* Bottom Nav Colors */
+  --bottom-nav-bg: #FFFFFF;
+  --bottom-nav-active-icon: #000000;
+  --bottom-nav-inactive-icon: #999999;
+  --bottom-nav-disabled-icon: #CCCCCC;
+  --bottom-nav-active-label: #000000;
+  --bottom-nav-inactive-label: #999999;
+  --bottom-nav-disabled-label: #CCCCCC;
+
+  /* --- Top App Bar (Header) --- */
+  --app-bar-height: 52px;
+  --app-bar-icon-size: 24px;
+  --app-bar-icon-gap: 8px;
+  --app-bar-padding-right: 24px;
+  --app-bar-title-max-chars: 9;
+  --app-bar-title-min-width: 100px;
+  --app-bar-max-actions: 3;
+
+  /* --- Side Navigation Drawer --- */
+  --drawer-width-ratio: 0.7;
+  --drawer-icon-size: 24px;
+  --drawer-text-size: 16px;
+  --drawer-section-header-size: 13px;
+  --drawer-padding-left: 20px;
+  --drawer-item-gap: 16px;
+  --drawer-item-radius: 12px;
+  --drawer-scrim-opacity: 0.45;
+
+  /* Drawer Item State Colors */
+  --drawer-bg-default: #FFFFFF;
+  --drawer-bg-hover: #F0F0F0;
+  --drawer-bg-pressed: #E0E0E0;
+  --drawer-bg-selected: #F0F0F0;
+
+  /* --- Modal List / Bottom Sheet --- */
+  --modal-list-radius: 20px;
+  --modal-list-title-size: 20px;
+  --modal-list-title-weight: 700;
+  --modal-list-item-size: 16px;
+  --modal-list-selected-weight: 700;
+  --modal-list-unselected-color: #AAAAAA;
+
+  /* --- Tooltip --- */
+  --tooltip-bg: #333333;
+  --tooltip-text: #FFFFFF;
+  --tooltip-font-size: 14px;
+  --tooltip-padding-x: 16px;
+  --tooltip-padding-y: 10px;
+  --tooltip-radius: 8px;
+  --tooltip-arrow-size: 10px;
+
+  /* --- Underline Tabs --- */
+  --tab-underline-text-size: 14px;
+  --tab-underline-indicator-height: 2px;
+  --tab-underline-active-color: #000000;
+  --tab-underline-inactive-color: #999999;
+  --tab-underline-gap: 20px;
+}
+
+/* --- Dark Mode Overrides --- */
+.dark {
+  --bottom-nav-bg: #0A0A0A;
+  --bottom-nav-active-icon: #FFFFFF;
+  --bottom-nav-inactive-icon: #666666;
+  --bottom-nav-disabled-icon: #333333;
+  --bottom-nav-active-label: #FFFFFF;
+  --bottom-nav-inactive-label: #666666;
+  --bottom-nav-disabled-label: #333333;
+
+  --drawer-bg-default: #0A0A0A;
+  --drawer-bg-hover: #1A1A1A;
+  --drawer-bg-pressed: #2A2A2A;
+  --drawer-bg-selected: #1A1A1A;
+
+  --tooltip-bg: #E5E5E5;
+  --tooltip-text: #1A1A1A;
+
+  --tab-underline-active-color: #FFFFFF;
+  --tab-underline-inactive-color: #666666;
+}

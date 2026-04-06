@@ -1,0 +1,149 @@
+/* ===============================================
+ * 06_Dialog Design Tokens
+ * =============================================== */
+
+:root {
+  /* --- Dialog Container --- */
+  --dialog-radius: 20px;
+  --dialog-radius-sm: 16px;
+  --dialog-padding: 24px;
+  --dialog-padding-sm: 20px;
+  --dialog-bg: #FFFFFF;
+  --dialog-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+
+  /* --- Dialog Width (Mobile) --- */
+  --dialog-width-430: 350px;
+  --dialog-width-360: 280px;
+  --dialog-width-320: 240px;
+  --dialog-margin-x: 40px;
+
+  /* --- Dialog Width (Desktop) --- */
+  --dialog-max-width-sm: 400px;
+  --dialog-max-width-md: 480px;
+  --dialog-max-width-lg: 560px;
+
+  /* --- Dialog Backdrop --- */
+  --dialog-backdrop-color: rgba(0, 0, 0, 0.55);
+  --dialog-backdrop-blur: 0px;
+
+  /* --- Dialog Header --- */
+  --dialog-title-size: 18px;
+  --dialog-title-weight: 700;
+  --dialog-title-line-height: 148%;
+  --dialog-title-max-lines: 2;
+
+  /* --- Dialog Body --- */
+  --dialog-body-size: 16px;
+  --dialog-body-weight: 500;
+  --dialog-body-line-height: 170%;
+  --dialog-body-color: #666666;
+  --dialog-body-margin-top: 12px;
+
+  /* --- Dialog Spacing --- */
+  --dialog-header-to-body: 12px;
+  --dialog-body-to-footer: 24px;
+  --dialog-header-to-footer: 32px;
+
+  /* --- Dialog Button --- */
+  --dialog-btn-height: 52px;
+  --dialog-btn-height-sm: 48px;
+  --dialog-btn-radius: 14px;
+  --dialog-btn-radius-sm: 12px;
+  --dialog-btn-gap: 8px;
+  --dialog-btn-font-size: 16px;
+  --dialog-btn-font-weight: 600;
+
+  /* --- Dialog Button: Primary (Black) --- */
+  --dialog-btn-primary-bg: #000000;
+  --dialog-btn-primary-color: #FFFFFF;
+  --dialog-btn-primary-hover-bg: #333333;
+  --dialog-btn-primary-pressed-bg: #555555;
+
+  /* --- Dialog Button: Secondary (Light Gray) --- */
+  --dialog-btn-secondary-bg: #E8E8E8;
+  --dialog-btn-secondary-color: #000000;
+  --dialog-btn-secondary-hover-bg: #D0D0D0;
+  --dialog-btn-secondary-pressed-bg: #B8B8B8;
+
+  /* --- Dialog Button: Accent (Red) --- */
+  --dialog-btn-accent-bg: #E50000;
+  --dialog-btn-accent-color: #FFFFFF;
+  --dialog-btn-accent-hover-bg: #C40000;
+  --dialog-btn-accent-pressed-bg: #A00000;
+
+  /* --- Dialog Button: Tertiary (Outline) --- */
+  --dialog-btn-tertiary-bg: transparent;
+  --dialog-btn-tertiary-color: #000000;
+  --dialog-btn-tertiary-border: 1px solid rgba(0, 0, 0, 0.15);
+  --dialog-btn-tertiary-hover-bg: #F5F5F5;
+  --dialog-btn-tertiary-pressed-bg: #E8E8E8;
+
+  /* --- Dialog Button: Disabled --- */
+  --dialog-btn-disabled-bg: #E8E8E8;
+  --dialog-btn-disabled-color: #AAAAAA;
+
+  /* --- Dialog Close Button --- */
+  --dialog-close-size: 24px;
+  --dialog-close-color: #000000;
+  --dialog-close-hover-bg: rgba(0, 0, 0, 0.06);
+  --dialog-close-padding: 8px;
+
+  /* --- Dialog Image Area --- */
+  --dialog-image-radius: 12px;
+  --dialog-image-border: 1px dashed rgba(0, 0, 0, 0.15);
+  --dialog-image-placeholder-bg: #F9F9F9;
+  --dialog-image-min-height: 180px;
+
+  /* --- Dialog Animation --- */
+  --dialog-enter-duration: 300ms;
+  --dialog-leave-duration: 200ms;
+  --dialog-enter-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dialog-leave-ease: cubic-bezier(0.4, 0, 1, 1);
+
+  /* --- Mobile Drag Handle --- */
+  --dialog-handle-width: 48px;
+  --dialog-handle-height: 5px;
+  --dialog-handle-radius: 2px;
+  --dialog-handle-color: #D0D0D0;
+}
+
+/* --- Dark Mode Overrides --- */
+.dark {
+  --dialog-bg: #1A1A1A;
+  --dialog-backdrop-color: rgba(0, 0, 0, 0.75);
+  --dialog-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  --dialog-body-color: #999999;
+
+  /* Button: Primary (Dark) */
+  --dialog-btn-primary-bg: #FFFFFF;
+  --dialog-btn-primary-color: #000000;
+  --dialog-btn-primary-hover-bg: #E8E8E8;
+  --dialog-btn-primary-pressed-bg: #D0D0D0;
+
+  /* Button: Secondary (Dark) */
+  --dialog-btn-secondary-bg: #333333;
+  --dialog-btn-secondary-color: #FFFFFF;
+  --dialog-btn-secondary-hover-bg: #444444;
+  --dialog-btn-secondary-pressed-bg: #555555;
+
+  /* Button: Tertiary (Dark) */
+  --dialog-btn-tertiary-color: #FFFFFF;
+  --dialog-btn-tertiary-border: 1px solid rgba(255, 255, 255, 0.15);
+  --dialog-btn-tertiary-hover-bg: #2A2A2A;
+  --dialog-btn-tertiary-pressed-bg: #333333;
+
+  /* Button: Disabled (Dark) */
+  --dialog-btn-disabled-bg: #333333;
+  --dialog-btn-disabled-color: #666666;
+
+  /* Close Button (Dark) */
+  --dialog-close-color: #FFFFFF;
+  --dialog-close-hover-bg: rgba(255, 255, 255, 0.08);
+
+  /* Image Area (Dark) */
+  --dialog-image-placeholder-bg: #2A2A2A;
+  --dialog-image-border: 1px dashed rgba(255, 255, 255, 0.15);
+
+  /* Handle (Dark) */
+  --dialog-handle-color: #555555;
+}

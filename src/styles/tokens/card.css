@@ -1,0 +1,71 @@
+/* ===============================================
+ * 05_Card Design Tokens
+ * =============================================== */
+
+:root {
+  /* --- Card Container --- */
+  --card-radius: 12px;
+  --card-radius-lg: 16px;
+  --card-padding: 16px;
+  --card-padding-lg: 20px;
+  --card-border-width: 1px;
+
+  /* --- Card Colors (Light) --- */
+  --card-bg-primary: #FFFFFF;
+  --card-bg-secondary: #F5F5F5;
+  --card-border-color: rgba(0, 0, 0, 0.08);
+  --card-hover-border-color: rgba(0, 0, 0, 0.16);
+
+  /* --- List Item --- */
+  --list-item-height: 48px;
+  --list-item-margin-x: 20px;
+  --list-item-padding-x: 20px;
+  --list-item-divider-color: rgba(0, 0, 0, 0.06);
+  --list-item-divider-inset: 20px;
+
+  /* --- Image Card --- */
+  --card-image-radius: 12px;
+  --card-image-ratio: 1 / 1;
+  --card-image-placeholder-bg: #F5F5F5;
+
+  /* --- Product Card --- */
+  --product-image-radius: 8px;
+  --product-like-size: 24px;
+  --product-discount-color: #E50000;
+
+  /* --- File Card --- */
+  --file-card-radius: 12px;
+  --file-card-padding: 12px 16px;
+  --file-card-icon-size: 24px;
+
+  /* --- Horizontal Scroll Section --- */
+  --scroll-section-gap: 8px;
+  --scroll-section-card-width: 160px;
+  --scroll-section-padding-x: 20px;
+
+  /* --- Event/Benefit Card --- */
+  --event-card-radius: 16px;
+  --event-card-padding: 16px 20px;
+
+  /* --- Card Grid --- */
+  --card-grid-columns: 2;
+  --card-grid-gap: 12px;
+
+  /* --- Full Image Card Overlay --- */
+  --card-overlay-gradient: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.2) 40%,
+    transparent 100%
+  );
+}
+
+/* --- Dark Mode Overrides --- */
+.dark {
+  --card-bg-primary: #1A1A1A;
+  --card-bg-secondary: #2A2A2A;
+  --card-border-color: rgba(255, 255, 255, 0.08);
+  --card-hover-border-color: rgba(255, 255, 255, 0.16);
+  --list-item-divider-color: rgba(255, 255, 255, 0.06);
+  --card-image-placeholder-bg: #333333;
+}

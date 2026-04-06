@@ -1,0 +1,465 @@
+/* ===============================================
+ * Edge Lighting Utility Classes
+ * 2026 High-End Ambient Glow System
+ * =============================================== */
+
+/* =================================================
+ * A. Static Glow Classes (always-on)
+ * ================================================= */
+
+.el-subtle {
+  box-shadow: var(--el-glow-subtle);
+}
+
+.el-soft {
+  box-shadow: var(--el-glow-soft);
+}
+
+.el-medium {
+  box-shadow: var(--el-glow-medium);
+}
+
+.el-strong {
+  box-shadow: var(--el-glow-strong);
+}
+
+.el-vivid {
+  box-shadow: var(--el-glow-vivid);
+}
+
+/* =================================================
+ * B. Interactive Glow (hover/focus transitions)
+ * ================================================= */
+
+/* Hover: idle → soft glow */
+.el-hover {
+  transition: var(--el-transition);
+  box-shadow: var(--el-glow-idle);
+}
+
+.el-hover:hover {
+  box-shadow: var(--el-glow-soft);
+}
+
+/* Hover: idle → medium glow */
+.el-hover-md {
+  transition: var(--el-transition);
+  box-shadow: var(--el-glow-idle);
+}
+
+.el-hover-md:hover {
+  box-shadow: var(--el-glow-medium);
+}
+
+/* Hover: idle → strong glow */
+.el-hover-strong {
+  transition: var(--el-transition);
+  box-shadow: var(--el-glow-idle);
+}
+
+.el-hover-strong:hover {
+  box-shadow: var(--el-glow-strong);
+}
+
+/* Hover: subtle → medium (for elements with resting glow) */
+.el-hover-lift {
+  transition: var(--el-transition);
+  box-shadow: var(--el-glow-subtle);
+}
+
+.el-hover-lift:hover {
+  box-shadow: var(--el-glow-medium);
+}
+
+/* =================================================
+ * C. Focus Glow (keyboard navigation)
+ * ================================================= */
+
+.el-focus {
+  transition: var(--el-transition);
+}
+
+.el-focus:focus-visible {
+  box-shadow: var(--el-glow-strong);
+  outline: none;
+}
+
+/* =================================================
+ * D. Active / Selected State Glow
+ * ================================================= */
+
+.el-active {
+  box-shadow: var(--el-glow-medium);
+  border-color: oklch(0.64 0.16 250 / 0.15);
+}
+
+.dark .el-active {
+  border-color: oklch(0.64 0.16 250 / 0.25);
+}
+
+/* =================================================
+ * E. Navigation Edge Lighting
+ * ================================================= */
+
+/* Bottom Nav: active tab indicator glow */
+.el-nav-active {
+  position: relative;
+}
+
+.el-nav-active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 25%;
+  right: 25%;
+  height: 2px;
+  background: var(--color-primary-500);
+  border-radius: 1px;
+  box-shadow: var(--el-nav-indicator);
+  transition: opacity 200ms ease;
+}
+
+/* Sidebar: active nav item edge lighting */
+.el-sidebar-active {
+  position: relative;
+  box-shadow: var(--el-glow-soft);
+}
+
+.el-sidebar-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-primary-500);
+  box-shadow:
+    0 0 var(--el-blur-sm) oklch(0.55 0.20 250 / 0.30),
+    0 0 var(--el-blur-md) oklch(0.55 0.20 250 / 0.15);
+}
+
+.dark .el-sidebar-active::before {
+  box-shadow:
+    0 0 var(--el-blur-sm) oklch(0.55 0.20 250 / 0.50),
+    0 0 var(--el-blur-md) oklch(0.55 0.20 250 / 0.25);
+}
+
+/* =================================================
+ * F. Header / AppBar Edge Lighting
+ * ================================================= */
+
+/* Header bottom border glow */
+.el-header {
+  border-bottom-color: oklch(0.64 0.16 250 / 0.06);
+  box-shadow:
+    0 1px 0 0 oklch(0.64 0.16 250 / 0.04),
+    0 4px 12px -4px oklch(0.64 0.16 250 / 0.03);
+}
+
+.dark .el-header {
+  border-bottom-color: oklch(0.64 0.16 250 / 0.12);
+  box-shadow:
+    0 1px 0 0 oklch(0.64 0.16 250 / 0.08),
+    0 4px 16px -4px oklch(0.64 0.16 250 / 0.06);
+}
+
+/* =================================================
+ * G. Card Edge Lighting
+ * ================================================= */
+
+/* Card with hover glow activation */
+.el-card {
+  transition: var(--el-transition);
+  box-shadow: var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+.el-card:hover {
+  box-shadow:
+    var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.08)),
+    var(--el-glow-soft);
+}
+
+.dark .el-card {
+  border-color: oklch(1 0 0 / 0.04);
+}
+
+.dark .el-card:hover {
+  border-color: oklch(0.64 0.16 250 / 0.12);
+  box-shadow:
+    var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.24)),
+    var(--el-glow-medium);
+}
+
+/* Card with always-on subtle glow (elevated) */
+.el-card-elevated {
+  box-shadow:
+    var(--shadow-2, 0 4px 8px rgba(0, 0, 0, 0.10)),
+    var(--el-glow-subtle);
+  transition: var(--el-transition);
+}
+
+.el-card-elevated:hover {
+  box-shadow:
+    var(--shadow-2, 0 4px 8px rgba(0, 0, 0, 0.10)),
+    var(--el-glow-medium);
+}
+
+/* =================================================
+ * H. Button Edge Lighting
+ * ================================================= */
+
+/* Primary CTA button glow */
+.el-btn-primary {
+  transition: var(--el-transition);
+  box-shadow: var(--el-glow-subtle);
+}
+
+.el-btn-primary:hover {
+  box-shadow: var(--el-glow-medium);
+}
+
+.el-btn-primary:active {
+  box-shadow: var(--el-glow-soft);
+}
+
+/* FAB (Floating Action Button) — always glowing */
+.el-fab {
+  box-shadow:
+    0 4px 14px -2px oklch(0.55 0.20 250 / 0.30),
+    var(--el-glow-medium);
+  transition: var(--el-transition);
+}
+
+.el-fab:hover {
+  box-shadow:
+    0 6px 20px -2px oklch(0.55 0.20 250 / 0.40),
+    var(--el-glow-strong);
+}
+
+.el-fab:active {
+  box-shadow:
+    0 2px 8px -2px oklch(0.55 0.20 250 / 0.25),
+    var(--el-glow-soft);
+}
+
+.dark .el-fab {
+  box-shadow:
+    0 4px 14px -2px oklch(0.55 0.20 250 / 0.40),
+    var(--el-glow-strong);
+}
+
+.dark .el-fab:hover {
+  box-shadow:
+    0 6px 24px -2px oklch(0.55 0.20 250 / 0.50),
+    var(--el-glow-vivid);
+}
+
+/* =================================================
+ * I. Input Edge Lighting (focus state)
+ * ================================================= */
+
+.el-input {
+  transition: var(--el-transition);
+}
+
+.el-input:focus-within {
+  box-shadow: var(--el-glow-medium);
+  border-color: oklch(0.55 0.20 250 / 0.40);
+}
+
+.dark .el-input:focus-within {
+  box-shadow: var(--el-glow-strong);
+  border-color: oklch(0.55 0.20 250 / 0.50);
+}
+
+/* =================================================
+ * J. Dialog / Modal Edge Lighting
+ * ================================================= */
+
+.el-dialog {
+  box-shadow:
+    var(--dialog-shadow, 0 25px 50px -12px rgba(0, 0, 0, 0.35)),
+    var(--el-glow-soft);
+}
+
+.dark .el-dialog {
+  border: var(--el-border-subtle);
+  box-shadow:
+    var(--dialog-shadow, 0 25px 50px -12px rgba(0, 0, 0, 0.6)),
+    var(--el-glow-medium);
+}
+
+/* =================================================
+ * K. Toast / Snackbar Edge Lighting
+ * ================================================= */
+
+.el-toast {
+  box-shadow:
+    var(--shadow-3, 0 12px 24px rgba(0, 0, 0, 0.12)),
+    var(--el-glow-soft);
+}
+
+.dark .el-toast {
+  box-shadow:
+    var(--shadow-3, 0 12px 24px rgba(0, 0, 0, 0.40)),
+    var(--el-glow-medium);
+}
+
+/* =================================================
+ * L. Status Glow Variants
+ * ================================================= */
+
+.el-success {
+  box-shadow: var(--el-glow-success);
+}
+
+.el-danger {
+  box-shadow: var(--el-glow-danger);
+}
+
+.el-warning {
+  box-shadow: var(--el-glow-warning);
+}
+
+/* =================================================
+ * M. Sidebar & BottomNav Container Glow
+ * ================================================= */
+
+/* Sidebar right edge glow */
+.el-sidebar-edge {
+  border-right-color: oklch(0.64 0.16 250 / 0.06);
+  box-shadow:
+    1px 0 0 0 oklch(0.64 0.16 250 / 0.04),
+    4px 0 16px -4px oklch(0.64 0.16 250 / 0.03);
+}
+
+.dark .el-sidebar-edge {
+  border-right-color: oklch(0.64 0.16 250 / 0.12);
+  box-shadow:
+    1px 0 0 0 oklch(0.64 0.16 250 / 0.08),
+    4px 0 20px -4px oklch(0.64 0.16 250 / 0.06);
+}
+
+/* BottomNav top edge glow */
+.el-bottomnav {
+  border-top-color: oklch(0.64 0.16 250 / 0.06);
+  box-shadow:
+    0 -1px 0 0 oklch(0.64 0.16 250 / 0.04),
+    0 -4px 12px -4px oklch(0.64 0.16 250 / 0.03);
+}
+
+.dark .el-bottomnav {
+  border-top-color: oklch(0.64 0.16 250 / 0.12);
+  box-shadow:
+    0 -1px 0 0 oklch(0.64 0.16 250 / 0.08),
+    0 -4px 16px -4px oklch(0.64 0.16 250 / 0.06);
+}
+
+/* =================================================
+ * N. Animated Gradient Border (premium accent)
+ * ================================================= */
+
+@property --el-border-angle {
+  inherits: false;
+  initial-value: 0deg;
+  syntax: "<angle>";
+}
+
+.el-gradient-border {
+  background:
+    linear-gradient(var(--surface-primary, #fff), var(--surface-primary, #fff)) padding-box,
+    conic-gradient(
+      from var(--el-border-angle),
+      oklch(0.64 0.16 250 / 0.25),
+      oklch(0.55 0.20 250 / 0.10),
+      oklch(0.64 0.16 250 / 0.25)
+    ) border-box;
+  border: 1px solid transparent;
+  animation: el-rotate-border 6s linear infinite paused;
+}
+
+.el-gradient-border:hover {
+  animation-play-state: running;
+}
+
+.dark .el-gradient-border {
+  background:
+    linear-gradient(var(--surface-primary, #09090b), var(--surface-primary, #09090b)) padding-box,
+    conic-gradient(
+      from var(--el-border-angle),
+      oklch(0.64 0.16 250 / 0.40),
+      oklch(0.55 0.20 250 / 0.15),
+      oklch(0.64 0.16 250 / 0.40)
+    ) border-box;
+}
+
+@keyframes el-rotate-border {
+  to { --el-border-angle: 360deg; }
+}
+
+/* =================================================
+ * O. Glow Pulse Animation (notifications, FAB attention)
+ * ================================================= */
+
+@keyframes el-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 var(--el-blur-md) var(--el-spread-tight) oklch(0.55 0.20 250 / 0.15),
+      0 0 var(--el-blur-sm) var(--el-spread-none) oklch(0.55 0.20 250 / 0.06);
+  }
+  50% {
+    box-shadow:
+      0 0 var(--el-blur-xl) var(--el-spread-soft) oklch(0.55 0.20 250 / 0.28),
+      0 0 var(--el-blur-md) var(--el-spread-none) oklch(0.55 0.20 250 / 0.12);
+  }
+}
+
+.el-pulse {
+  animation: el-pulse 2.5s ease-in-out infinite;
+}
+
+/* =================================================
+ * P. Inset Top Highlight (glass-like depth)
+ * ================================================= */
+
+.el-inset {
+  box-shadow: var(--el-inset-top);
+}
+
+.el-inset-glow {
+  box-shadow: var(--el-inset-top), var(--el-inset-glow);
+}
+
+/* =================================================
+ * Q. Accessibility: Reduced Motion
+ * ================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .el-pulse {
+    animation: none;
+    box-shadow: var(--el-glow-medium);
+  }
+
+  .el-gradient-border {
+    animation: none;
+  }
+}
+
+/* =================================================
+ * R. High Contrast Mode: Disable subtle glows
+ * ================================================= */
+
+@media (prefers-contrast: more) {
+  .el-subtle,
+  .el-soft,
+  .el-hover,
+  .el-hover-md,
+  .el-hover-strong,
+  .el-card,
+  .el-header,
+  .el-sidebar-edge,
+  .el-bottomnav {
+    box-shadow: none;
+  }
+}

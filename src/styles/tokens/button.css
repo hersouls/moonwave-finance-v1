@@ -1,0 +1,68 @@
+/* 02_Button Size Tokens */
+:root {
+  /* Button Heights */
+  --btn-height-lg: 48px;
+  --btn-height-md: 44px;
+  --btn-height-sm: 32px;
+
+  /* Button Horizontal Padding */
+  --btn-padding-x: 16px;
+
+  /* Button Border Radius */
+  --btn-radius: 12px;
+  --btn-radius-pill: 9999px;
+
+  /* Button Font Sizes */
+  --btn-font-size-lg: 16px;
+  --btn-font-size-md: 14px;
+  --btn-font-size-sm: 13px;
+  --btn-font-weight: 500;
+
+  /* Icon Button */
+  --btn-icon-area: 24px;
+  --btn-icon-touch: 44px;
+  --btn-icon-padding: 10px;
+
+  /* Button Width Modes */
+  --btn-flex-margin: 20px;
+  --btn-flex-margin-mobile: 16px;
+
+  /* Label Constraints */
+  --btn-max-lines: 2;
+  --btn-max-chars-per-line: 20;
+
+  /* Sticky CTA */
+  --btn-sticky-bottom-padding: 16px;
+}
+
+/* 02_Button Color Tokens */
+:root {
+  /* Secondary Button (Foundation spec) */
+  --btn-secondary-bg: #E5E5E5;
+  --btn-secondary-bg-hover: #D4D4D4;
+  --btn-secondary-text: #1A1A1A;
+
+  /* Text Button */
+  --btn-text-bg: #FFFFFF;
+  --btn-text-text: #1A1A1A;
+  --btn-text-border: rgba(0, 0, 0, 0.08);
+
+  /* Slider Colors */
+  --slider-active: #D32F2F;
+  --slider-track: #D9D9D9;
+  --slider-disabled-active: #BDBDBD;
+  --slider-disabled-track: #E8E8E8;
+  --slider-thumb-size: 24px;
+  --slider-thumb-size-active: 32px;
+  --slider-track-height: 4px;
+}
+
+.dark {
+  --btn-secondary-bg: #3A3A3A;
+  --btn-secondary-bg-hover: #4A4A4A;
+  --btn-secondary-text: #E5E5E5;
+
+  --btn-text-bg: #1A1A1A;
+  --btn-text-text: #E5E5E5;
+  --btn-text-border: rgba(255, 255, 255, 0.08);
+}

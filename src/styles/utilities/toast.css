@@ -1,0 +1,265 @@
+/* ===============================================
+ * 08_Toast_Snackbar Foundation Utility Classes
+ * =============================================== */
+
+/* -------------------------------------------------
+ * A. Toast Container
+ * ------------------------------------------------- */
+
+.toast-foundation {
+  position: fixed;
+  bottom: calc(var(--toast-bottom-offset-mobile) + env(safe-area-inset-bottom, 0px));
+  left: var(--toast-screen-margin);
+  right: var(--toast-screen-margin);
+  z-index: var(--toast-z-index);
+  display: flex;
+  align-items: center;
+  background-color: var(--toast-bg);
+  color: var(--toast-text);
+  border-radius: var(--toast-radius);
+  /* Edge Lighting: toast ambient glow */
+  box-shadow:
+    var(--toast-shadow),
+    0 0 16px -4px oklch(0.64 0.16 250 / 0.06),
+    0 0 4px 0 oklch(0.64 0.16 250 / 0.03);
+  max-height: var(--toast-max-height);
+  overflow: hidden;
+  font-size: var(--toast-font-size);
+  font-weight: var(--toast-font-weight);
+  font-family: inherit;
+}
+
+.dark .toast-foundation {
+  box-shadow:
+    var(--toast-shadow),
+    0 0 28px -4px oklch(0.55 0.20 250 / 0.16),
+    0 0 8px 0 oklch(0.55 0.20 250 / 0.06);
+}
+
+/* Desktop: centered, max-width */
+@media (min-width: 1024px) {
+  .toast-foundation {
+    bottom: var(--toast-bottom-offset-desktop);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    max-width: 480px;
+    min-width: 280px;
+  }
+}
+
+/* -------------------------------------------------
+ * B. Layout Sub-Variants
+ * ------------------------------------------------- */
+
+/* Text Only */
+.toast-text-only {
+  padding: 12px var(--toast-padding-text-only);
+  justify-content: center;
+}
+
+/* Icon + Text */
+.toast-icon-text {
+  padding: 12px var(--toast-padding-text-only) 12px var(--toast-padding-icon-left);
+  gap: var(--toast-icon-text-gap);
+}
+
+/* Icon + Text + Action */
+.toast-icon-text-action {
+  padding: 12px var(--toast-padding-action-right) 12px var(--toast-padding-icon-left);
+  gap: var(--toast-icon-text-gap);
+}
+
+/* -------------------------------------------------
+ * C. Toast Parts
+ * ------------------------------------------------- */
+
+/* Icon */
+.toast-icon {
+  flex-shrink: 0;
+  width: var(--toast-icon-size);
+  height: var(--toast-icon-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast-icon--success {
+  color: var(--toast-icon-success);
+}
+
+.toast-icon--info {
+  color: var(--toast-icon-info);
+}
+
+.toast-icon--critical {
+  color: var(--toast-icon-critical);
+}
+
+/* Text */
+.toast-message {
+  flex: 1;
+  color: var(--toast-text);
+  font-size: var(--toast-font-size);
+  line-height: 1.4;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: var(--toast-max-lines);
+  -webkit-box-orient: vertical;
+}
+
+/* Action Label */
+.toast-action {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 4px 8px;
+  color: var(--toast-text);
+  font-size: var(--toast-font-size);
+  font-weight: var(--toast-action-font-weight);
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 4px;
+  transition: background-color 150ms ease;
+}
+
+.toast-action:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Close Button */
+.toast-close {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--toast-text);
+  opacity: 0.6;
+  cursor: pointer;
+  background: none;
+  border: none;
+  margin-left: 8px;
+  transition: opacity 150ms ease;
+}
+
+.toast-close:hover {
+  opacity: 1;
+}
+
+/* -------------------------------------------------
+ * D. Semantic Variants
+ * ------------------------------------------------- */
+
+.toast-success .toast-icon {
+  color: var(--toast-icon-success);
+}
+
+.toast-info .toast-icon {
+  color: var(--toast-icon-info);
+}
+
+.toast-critical .toast-icon {
+  color: var(--toast-icon-critical);
+}
+
+/* -------------------------------------------------
+ * E. Animations
+ * ------------------------------------------------- */
+
+.toast-enter {
+  animation: toastSlideIn var(--toast-enter-duration) ease-out;
+}
+
+.toast-exit {
+  animation: toastSlideOut var(--toast-exit-duration) ease-in forwards;
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+/* Desktop: translateX correction */
+@media (min-width: 1024px) {
+  @keyframes toastSlideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
+  @keyframes toastSlideOut {
+    from {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(-50%) translateY(100%);
+    }
+  }
+}
+
+/* -------------------------------------------------
+ * F. Countdown Progress Bar
+ * ------------------------------------------------- */
+
+.toast-countdown-track {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0 0 var(--toast-radius) var(--toast-radius);
+  overflow: hidden;
+}
+
+.toast-countdown-bar {
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.4);
+  animation: toastCountdown var(--toast-auto-dismiss) linear forwards;
+}
+
+@keyframes toastCountdown {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+/* -------------------------------------------------
+ * G. Swipe Dismiss
+ * ------------------------------------------------- */
+
+.toast-swipeable {
+  touch-action: pan-x;
+  cursor: grab;
+  user-select: none;
+}
+
+.toast-swipeable:active {
+  cursor: grabbing;
+}

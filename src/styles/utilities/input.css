@@ -1,0 +1,406 @@
+/* ===============================================
+ * 03_Input Foundation Utility Classes
+ * =============================================== */
+
+/* --- Text Field Container --- */
+.input-field {
+  position: relative;
+  width: 100%;
+  height: var(--input-height);
+  border: var(--input-border-width) solid var(--input-border-default);
+  border-radius: var(--input-radius);
+  background-color: var(--input-bg-default);
+  transition: border-color 200ms ease, border-width 200ms ease, background-color 200ms ease, box-shadow 300ms ease;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+}
+
+.input-field:hover {
+  background-color: var(--input-bg-hover);
+}
+
+.input-field:focus-within {
+  border-color: var(--input-border-focused);
+  border-width: var(--input-border-width-active);
+  background-color: var(--input-bg-default);
+  /* Edge Lighting: focus glow */
+  box-shadow:
+    0 0 16px -4px oklch(0.55 0.20 250 / 0.12),
+    0 0 4px 0 oklch(0.55 0.20 250 / 0.04);
+}
+
+.dark .input-field:focus-within {
+  box-shadow:
+    0 0 28px -4px oklch(0.55 0.20 250 / 0.22),
+    0 0 8px 0 oklch(0.55 0.20 250 / 0.10);
+}
+
+.input-field--error {
+  border-color: var(--input-border-error);
+  border-width: var(--input-border-width-active);
+}
+
+.input-field--disabled {
+  background-color: var(--input-bg-disabled);
+  border-color: transparent;
+  pointer-events: none;
+}
+
+.input-field--readonly {
+  cursor: default;
+}
+
+/* --- Floating Label --- */
+.input-label {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--input-label-size-placeholder);
+  font-weight: var(--input-label-weight);
+  color: var(--input-placeholder-color);
+  pointer-events: none;
+  transition: all 200ms ease;
+  transform-origin: left center;
+}
+
+/* Label floats up when input is focused or has value */
+.input-field:focus-within .input-label,
+.input-field--has-value .input-label {
+  top: 12px;
+  transform: translateY(0);
+  font-size: var(--input-label-size-float);
+  color: var(--input-label-color);
+}
+
+.input-field--error .input-label {
+  color: var(--input-error-color);
+}
+
+/* --- Input Element --- */
+.input-value {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: var(--input-font-size);
+  font-weight: var(--input-font-weight);
+  color: var(--input-text-color);
+  font-family: inherit;
+  padding-top: 20px; /* space for floating label */
+}
+
+.input-value::placeholder {
+  color: var(--input-placeholder-color);
+  font-weight: var(--input-label-weight);
+}
+
+.input-value:disabled {
+  color: var(--input-placeholder-color);
+  opacity: 0.5;
+}
+
+/* --- Trailing Icon (Clear Button) --- */
+.input-trailing-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--input-icon-clear-size);
+  height: var(--input-icon-clear-size);
+  flex-shrink: 0;
+  margin-left: var(--input-icon-action-gap);
+  color: var(--input-placeholder-color);
+  cursor: pointer;
+}
+
+/* --- Inline Action Button --- */
+.input-inline-action {
+  flex-shrink: 0;
+  margin-left: var(--input-icon-action-gap);
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  background-color: var(--input-bg-hover);
+  color: var(--input-text-color);
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 150ms ease;
+}
+
+.input-inline-action:hover {
+  background-color: var(--input-border-default);
+}
+
+/* --- Helper Text --- */
+.input-helper {
+  font-size: var(--input-helper-size);
+  font-weight: var(--input-helper-weight);
+  color: var(--input-helper-color);
+  margin-top: 4px;
+  padding-left: 16px;
+}
+
+/* --- Error Text (replaces helper) --- */
+.input-error-text {
+  font-size: var(--input-helper-size);
+  font-weight: var(--input-helper-weight);
+  color: var(--input-error-color);
+  margin-top: 4px;
+  padding-left: 16px;
+}
+
+/* --- Flexible Width Container --- */
+.input-container-flex {
+  margin-left: var(--input-margin-x);
+  margin-right: var(--input-margin-x);
+}
+
+/* --- Search Input (Outlined / Pill) --- */
+.search-field {
+  position: relative;
+  width: 100%;
+  height: var(--search-height);
+  border: var(--input-border-width) solid var(--input-border-default);
+  border-radius: var(--search-radius);
+  background-color: var(--input-bg-default);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  transition: border-color 200ms ease, border-width 200ms ease, background-color 200ms ease, box-shadow 300ms ease;
+}
+
+.search-field:hover {
+  background-color: var(--input-bg-hover);
+}
+
+.search-field:focus-within {
+  border-color: var(--input-border-focused);
+  border-width: var(--input-border-width-active);
+  box-shadow:
+    0 0 16px -4px oklch(0.55 0.20 250 / 0.12),
+    0 0 4px 0 oklch(0.55 0.20 250 / 0.04);
+}
+
+.dark .search-field:focus-within {
+  box-shadow:
+    0 0 28px -4px oklch(0.55 0.20 250 / 0.22),
+    0 0 8px 0 oklch(0.55 0.20 250 / 0.10);
+}
+
+.search-field--disabled {
+  background-color: var(--input-bg-disabled);
+  border-color: transparent;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.search-field .input-value {
+  padding-top: 0; /* no floating label */
+  font-weight: var(--input-label-weight);
+}
+
+/* Search icon */
+.search-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: var(--input-placeholder-color);
+  margin-left: 8px;
+}
+
+/* --- Search Input (Underline) --- */
+.search-field-underline {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--input-border-default);
+  transition: border-color 200ms ease;
+}
+
+.search-field-underline:focus-within {
+  border-bottom-width: 2px;
+  border-bottom-color: var(--input-border-focused);
+}
+
+/* --- Textarea --- */
+.textarea-field {
+  position: relative;
+  width: 100%;
+  min-height: var(--textarea-min-height);
+  border: var(--input-border-width) solid var(--input-border-default);
+  border-radius: var(--textarea-radius);
+  background-color: var(--input-bg-default);
+  padding: 16px;
+  transition: border-color 200ms ease, border-width 200ms ease, box-shadow 300ms ease;
+}
+
+.textarea-field:focus-within {
+  box-shadow:
+    0 0 16px -4px oklch(0.55 0.20 250 / 0.12),
+    0 0 4px 0 oklch(0.55 0.20 250 / 0.04);
+}
+
+.dark .textarea-field:focus-within {
+  box-shadow:
+    0 0 28px -4px oklch(0.55 0.20 250 / 0.22),
+    0 0 8px 0 oklch(0.55 0.20 250 / 0.10);
+}
+
+.textarea-field:focus-within {
+  border-color: var(--input-border-focused);
+  border-width: var(--input-border-width-active);
+}
+
+.textarea-field--error {
+  border-color: var(--input-border-error);
+  border-width: var(--input-border-width-active);
+}
+
+.textarea-value {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: var(--input-font-size);
+  font-weight: var(--input-font-weight);
+  color: var(--input-text-color);
+  font-family: inherit;
+  resize: none;
+  padding-top: 16px; /* space for floating label */
+}
+
+/* --- Character Counter --- */
+.textarea-counter {
+  position: absolute;
+  bottom: 8px;
+  right: 16px;
+  font-size: var(--textarea-counter-size);
+  color: var(--input-helper-color);
+}
+
+/* --- Select / Dropdown --- */
+.select-field {
+  position: relative;
+  width: 100%;
+  height: var(--select-height);
+  border: var(--input-border-width) solid var(--input-border-default);
+  border-radius: var(--select-radius);
+  background-color: var(--input-bg-default);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  cursor: pointer;
+  transition: border-color 200ms ease, border-width 200ms ease;
+}
+
+.select-field:focus-within,
+.select-field--open {
+  border-color: var(--input-border-focused);
+  border-width: var(--input-border-width-active);
+}
+
+.select-field--error {
+  border-color: var(--input-border-error);
+  border-width: var(--input-border-width-active);
+}
+
+.select-field--disabled {
+  background-color: var(--input-bg-disabled);
+  border-color: transparent;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Chevron */
+.select-chevron {
+  flex-shrink: 0;
+  width: var(--select-chevron-size);
+  height: var(--select-chevron-size);
+  margin-left: auto;
+  transition: transform 200ms ease;
+  color: var(--input-label-color);
+}
+
+.select-field--open .select-chevron {
+  transform: rotate(180deg);
+}
+
+/* Options Panel */
+.select-options {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--input-bg-default);
+  border: 1px solid var(--input-border-default);
+  border-radius: var(--select-radius);
+  box-shadow: var(--shadow-2, 0 4px 8px rgba(0, 0, 0, 0.10));
+  z-index: var(--z-overlay);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.select-option {
+  padding: 12px 16px;
+  font-size: var(--input-font-size);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.select-option:hover {
+  background-color: var(--input-bg-hover);
+}
+
+.select-option--selected {
+  background-color: var(--input-bg-hover);
+  font-weight: var(--input-font-weight);
+}
+
+/* --- Toggle Switch --- */
+.toggle-switch {
+  position: relative;
+  width: var(--toggle-width);
+  height: var(--toggle-height);
+  border-radius: calc(var(--toggle-height) / 2);
+  background-color: var(--input-border-default);
+  cursor: pointer;
+  transition: background-color 200ms ease, box-shadow 300ms ease;
+}
+
+.toggle-switch--on {
+  background-color: #000000;
+  box-shadow: 0 0 10px -2px oklch(0.55 0.20 250 / 0.15);
+}
+
+.dark .toggle-switch--on {
+  background-color: #FFFFFF;
+  box-shadow: 0 0 14px -2px oklch(0.55 0.20 250 / 0.30);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: var(--toggle-thumb-size);
+  height: var(--toggle-thumb-size);
+  border-radius: 50%;
+  background-color: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: transform 200ms ease;
+}
+
+.toggle-switch--on .toggle-thumb {
+  transform: translateX(calc(var(--toggle-width) - var(--toggle-thumb-size) - 4px));
+}
+
+.dark .toggle-thumb {
+  background-color: #1A1A1A;
+}
+
+.dark .toggle-switch--on .toggle-thumb {
+  background-color: #1A1A1A;
+}
