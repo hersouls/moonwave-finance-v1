@@ -62,6 +62,10 @@ export function DashboardPage() {
     }
   }
 
+  const shouldReduceMotion = useReducedMotion()
+  const containerV = motionVariants(shouldReduceMotion, staggerContainer, reducedStaggerContainer)
+  const itemV = motionVariants(shouldReduceMotion, staggerItem, reducedStaggerItem)
+
   useEffect(() => { loadData() }, [])
   useSyncListener(loadData)
 
@@ -112,10 +116,6 @@ export function DashboardPage() {
       </div>
     )
   }
-
-  const shouldReduceMotion = useReducedMotion()
-  const containerV = motionVariants(shouldReduceMotion, staggerContainer, reducedStaggerContainer)
-  const itemV = motionVariants(shouldReduceMotion, staggerItem, reducedStaggerItem)
 
   return (
     <motion.div
