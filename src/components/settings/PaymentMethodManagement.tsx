@@ -112,8 +112,8 @@ export function PaymentMethodManagement() {
 
   return (
     <div>
-      <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">거래수단 관리</h3>
-      <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-4">
+      <h3 className="text-body3-semi text-heading mb-3">거래수단 관리</h3>
+      <p className="text-caption text-sub mb-4">
         자주 사용하는 카드나 계좌를 등록하면 거래 기록 시 빠르게 선택할 수 있습니다.
       </p>
 
@@ -123,7 +123,7 @@ export function PaymentMethodManagement() {
           return (
             <div key={group.type}>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-caption text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <h4 className="text-caption text-sub uppercase tracking-wider">
                   {group.label}
                 </h4>
                 <button
@@ -139,9 +139,9 @@ export function PaymentMethodManagement() {
                   {items.map(item => (
                     <div
                       key={item.id}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 group"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-secondary group"
                     >
-                      <span className="flex-1 text-sm text-zinc-900 dark:text-zinc-100">
+                      <span className="flex-1 text-sm text-heading">
                         {item.name}
                         {item.memo && (
                           <span className="ml-2 text-caption text-zinc-400">({item.memo})</span>
@@ -171,7 +171,7 @@ export function PaymentMethodManagement() {
                   ))}
                 </div>
               ) : (
-                <p className="text-caption text-zinc-400 dark:text-zinc-500 px-3 py-2">
+                <p className="text-caption text-disabled px-3 py-2">
                   등록된 {group.label}이(가) 없습니다.
                 </p>
               )}
@@ -189,7 +189,7 @@ export function PaymentMethodManagement() {
         <DialogBody>
           <div className="space-y-4">
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">이름</label>
+              <label className="block text-body3 text-body mb-1.5">이름</label>
               <input
                 type="text"
                 value={name}
@@ -200,7 +200,7 @@ export function PaymentMethodManagement() {
               />
             </div>
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
+              <label className="block text-body3 text-body mb-1.5">메모 (선택)</label>
               <input
                 type="text"
                 value={memo}
@@ -211,7 +211,7 @@ export function PaymentMethodManagement() {
             </div>
             {showAssetLink && linkableItems.length > 0 && (
               <div>
-                <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">{linkLabel} (선택)</label>
+                <label className="block text-body3 text-body mb-1.5">{linkLabel} (선택)</label>
                 <Select
                   value={String(linkedAssetItemId ?? '')}
                   onChange={(v) => setLinkedAssetItemId(v ? Number(v) : undefined)}
@@ -234,10 +234,10 @@ export function PaymentMethodManagement() {
       <Dialog open={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)} size="sm">
         <DialogHeader title="거래수단 삭제" onClose={() => setIsDeleteConfirmOpen(false)} />
         <DialogBody>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">{deletingItem?.name}</span>을(를) 삭제하시겠습니까?
+          <p className="text-sm text-sub">
+            <span className="font-medium text-heading">{deletingItem?.name}</span>을(를) 삭제하시겠습니까?
           </p>
-          <p className="mt-2 text-caption text-zinc-500 dark:text-zinc-500">
+          <p className="mt-2 text-caption text-sub">
             관련 거래에서 이 거래수단 정보가 제거됩니다.
           </p>
         </DialogBody>

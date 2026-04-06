@@ -75,13 +75,13 @@ export function SettingsModal() {
     <Dialog open={isOpen} onClose={handleClose} size="4xl" noPadding>
       <div className="flex flex-col md:flex-row md:min-h-[560px] max-h-[85dvh]">
         {/* Left sidebar / top bar */}
-        <nav className="shrink-0 md:w-52 md:border-r border-zinc-200 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/30 md:rounded-l-xl">
+        <nav className="shrink-0 md:w-52 md:border-r border-base bg-surface-secondary md:rounded-l-xl">
           {/* Header */}
           <div className="flex items-center justify-between p-4 pb-2 md:p-5 md:pb-4">
-            <h2 className="text-title2 text-zinc-900 dark:text-zinc-100">설정</h2>
+            <h2 className="text-title2 text-heading">설정</h2>
             <button
               onClick={handleClose}
-              className="p-2 rounded-lg text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              className="p-2 rounded-lg text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-[var(--hover-bg)] transition-colors"
               aria-label="닫기"
             >
               <X className="w-5 h-5" />
@@ -108,7 +108,7 @@ export function SettingsModal() {
                   'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                   activeTab === tab.id
                     ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/50'
+                    : 'text-sub hover:bg-zinc-100 dark:hover:bg-zinc-700/50'
                 )}
               >
                 <tab.Icon className="w-4 h-4 shrink-0" />
@@ -138,7 +138,7 @@ export function SettingsModal() {
 
       {/* Footer - save bar */}
       {isDirty && (
-        <div className="border-t border-zinc-200 dark:border-zinc-700 px-4 md:px-6 py-3 flex justify-end gap-3 bg-white dark:bg-zinc-900 rounded-b-xl">
+        <div className="border-t border-base px-4 md:px-6 py-3 flex justify-end gap-3 bg-surface-primary rounded-b-xl">
           <Button variant="ghost" onClick={handleCancel}>취소</Button>
           <Button variant="primary" onClick={handleSave}>저장</Button>
         </div>

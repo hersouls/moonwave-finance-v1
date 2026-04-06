@@ -142,8 +142,8 @@ export function AssetDetailPage() {
   if (isLoading) {
     return (
       <div className="p-4 lg:p-6 animate-pulse space-y-4">
-        <div className="h-8 w-48 bg-zinc-200 dark:bg-zinc-700 rounded" />
-        <div className="h-64 bg-zinc-200 dark:bg-zinc-700 rounded-xl" />
+        <div className="h-8 w-48 bg-[var(--surface-tertiary)] rounded" />
+        <div className="h-64 bg-[var(--surface-tertiary)] rounded-xl" />
       </div>
     )
   }
@@ -151,7 +151,7 @@ export function AssetDetailPage() {
   if (!item) {
     return (
       <div className="p-4 lg:p-6">
-        <p className="text-zinc-500 dark:text-zinc-400">항목을 찾을 수 없습니다.</p>
+        <p className="text-sub">항목을 찾을 수 없습니다.</p>
         <Button variant="secondary" onClick={() => navigate(-1)} className="mt-4">
           돌아가기
         </Button>
@@ -179,9 +179,9 @@ export function AssetDetailPage() {
               {category && (
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: category.color }} />
               )}
-              <h1 className="text-title1 text-zinc-900 dark:text-zinc-100">{item.name}</h1>
+              <h1 className="text-title1 text-heading">{item.name}</h1>
             </div>
-            <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+            <div className="flex items-center gap-2 text-sm text-sub">
               {category && <span>{category.name}</span>}
               {member && (
                 <>
@@ -204,20 +204,20 @@ export function AssetDetailPage() {
 
       {/* Current Value Summary */}
       <Card className="card-pad-lg">
-        <span className="text-sm text-zinc-500 dark:text-zinc-400">현재 가치</span>
-        <p className="text-heading2 text-zinc-900 dark:text-zinc-100 tabular-nums mt-1">
+        <span className="text-sm text-sub">현재 가치</span>
+        <p className="text-heading2 text-heading tabular-nums mt-1">
           {formatKRW(latestValue)}
         </p>
         {latestValue !== prevValue && (
           <p className={clsx(
             'text-sm tabular-nums mt-1',
-            latestValue > prevValue ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+            latestValue > prevValue ? 'text-status-success' : 'text-status-danger'
           )}>
             {formatChange(latestValue - prevValue)}
           </p>
         )}
         {item.memo && (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">{item.memo}</p>
+          <p className="text-sm text-sub mt-2">{item.memo}</p>
         )}
       </Card>
 
@@ -228,11 +228,11 @@ export function AssetDetailPage() {
         const sevTax = sevEstimated > 0 ? calculateSeveranceTax(sevEstimated, sevServiceYears) : null
         return (
           <Card className="card-pad-lg space-y-4">
-            <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+            <h3 className="text-body3-semi text-heading flex items-center gap-2">
               <RefreshCw className="w-4 h-4 text-zinc-500" />
               퇴직금 재계산
             </h3>
-            <p className="text-caption text-zinc-500 dark:text-zinc-400 leading-relaxed">
+            <p className="text-caption text-sub leading-relaxed">
               입사일과 월 평균임금을 입력하면 입사일부터 오늘까지 일별 퇴직금을 다시 계산합니다.
             </p>
             <div className="space-y-3">
@@ -264,29 +264,29 @@ export function AssetDetailPage() {
                 <p className="text-[12px] text-zinc-500 mt-1">최근 3개월 급여총액 / 해당 기간 총일수 x 30</p>
               </div>
               {sevEstimated > 0 && (
-                <div className="pt-3 border-t border-zinc-200 dark:border-zinc-700 space-y-2">
+                <div className="pt-3 border-t border-base space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">퇴직금 예상액</span>
-                    <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                    <span className="text-sm font-medium text-body">퇴직금 예상액</span>
+                    <span className="text-lg font-bold text-status-success tabular-nums">
                       {sevEstimated.toLocaleString('ko-KR')} <span className="text-sm font-normal">원</span>
                     </span>
                   </div>
                   {sevTax && sevTax.totalTax > 0 && (
                     <>
                       <div className="flex justify-between items-center text-[13px]">
-                        <span className="text-zinc-500 dark:text-zinc-400">퇴직소득세</span>
+                        <span className="text-sub">퇴직소득세</span>
                         <span className="text-zinc-600 dark:text-zinc-300 tabular-nums">
                           -{sevTax.incomeTax.toLocaleString('ko-KR')}원
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-[13px]">
-                        <span className="text-zinc-500 dark:text-zinc-400">퇴직주민세</span>
+                        <span className="text-sub">퇴직주민세</span>
                         <span className="text-zinc-600 dark:text-zinc-300 tabular-nums">
                           -{sevTax.residentTax.toLocaleString('ko-KR')}원
                         </span>
                       </div>
-                      <div className="flex justify-between items-center pt-2 border-t border-zinc-200 dark:border-zinc-700">
-                        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">세후 예상 수령액</span>
+                      <div className="flex justify-between items-center pt-2 border-t border-base">
+                        <span className="text-sm font-medium text-body">세후 예상 수령액</span>
                         <span className="text-base font-bold text-blue-600 dark:text-blue-400 tabular-nums">
                           {sevTax.netSeverance.toLocaleString('ko-KR')} <span className="text-sm font-normal">원</span>
                         </span>
@@ -315,7 +315,7 @@ export function AssetDetailPage() {
           <IconButton onClick={() => setSelectedMonth(getPreviousMonth(selectedMonth))} plain size="sm">
             <ChevronLeft className="w-5 h-5" />
           </IconButton>
-          <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100">
+          <h3 className="text-body3-semi text-heading">
             {formatMonthLabel(selectedMonth)}
           </h3>
           <IconButton onClick={() => setSelectedMonth(getNextMonth(selectedMonth))} plain size="sm">
@@ -340,7 +340,7 @@ export function AssetDetailPage() {
                   className="flex items-center px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer"
                   onClick={() => !isEditing && handleCellClick(date)}
                 >
-                  <span className="w-10 text-sm text-zinc-500 dark:text-zinc-400 tabular-nums">
+                  <span className="w-10 text-sm text-sub tabular-nums">
                     {day}일
                   </span>
                   <div className="flex-1">
@@ -353,12 +353,12 @@ export function AssetDetailPage() {
                         onChange={(e) => setEditValue(e.target.value)}
                         onBlur={() => handleCellSave(date)}
                         onKeyDown={(e) => handleKeyDown(e, date, idx)}
-                        className="w-full px-2 py-1 rounded border border-primary-400 dark:border-primary-600 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 tabular-nums focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        className="w-full px-2 py-1 rounded border border-primary-400 dark:border-primary-600 bg-white dark:bg-zinc-800 text-sm text-heading tabular-nums focus:outline-none focus:ring-1 focus:ring-primary-500"
                       />
                     ) : (
                       <span className={clsx(
                         'text-sm tabular-nums',
-                        val ? 'text-zinc-900 dark:text-zinc-100 font-medium' : 'text-zinc-300 dark:text-zinc-600'
+                        val ? 'text-heading font-medium' : 'text-zinc-300 dark:text-zinc-600'
                       )}>
                         {val ? formatKRW(val.value) : '-'}
                       </span>
@@ -367,7 +367,7 @@ export function AssetDetailPage() {
                   {change !== 0 && !isEditing && (
                     <span className={clsx(
                       'text-caption tabular-nums ml-2',
-                      change > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+                      change > 0 ? 'text-status-success' : 'text-status-danger'
                     )}>
                       {formatChange(change)}
                     </span>

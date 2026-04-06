@@ -93,7 +93,7 @@ export default function App() {
   if (!isInitialized) return <AppLoadingScreen />
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex flex-col">
+    <div className="min-h-screen bg-surface-secondary flex flex-col">
       {!isOnline && <OfflineBanner />}
       <Sidebar />
       <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'}`}>

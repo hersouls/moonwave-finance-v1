@@ -93,30 +93,30 @@ export function ReportsPage() {
           {/* Summary Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <Card className="text-center">
-              <span className="text-caption text-zinc-500 dark:text-zinc-400">순자산</span>
-              <p className="text-title2 text-zinc-900 dark:text-zinc-100 tabular-nums mt-1">
+              <span className="text-caption text-sub">순자산</span>
+              <p className="text-title2 text-heading tabular-nums mt-1">
                 {formatKoreanUnit(stats.netWorth)}
               </p>
             </Card>
             <Card className="text-center">
-              <span className="text-caption text-zinc-500 dark:text-zinc-400">총 자산</span>
-              <p className="text-title2 text-emerald-600 dark:text-emerald-400 tabular-nums mt-1">
+              <span className="text-caption text-sub">총 자산</span>
+              <p className="text-title2 text-status-success tabular-nums mt-1">
                 {formatKoreanUnit(stats.totalAssets)}
               </p>
             </Card>
             <Card className="text-center">
-              <span className="text-caption text-zinc-500 dark:text-zinc-400">총 부채</span>
-              <p className="text-title2 text-red-600 dark:text-red-400 tabular-nums mt-1">
+              <span className="text-caption text-sub">총 부채</span>
+              <p className="text-title2 text-status-danger tabular-nums mt-1">
                 {formatKoreanUnit(stats.totalLiabilities)}
               </p>
             </Card>
             <Card className="text-center">
-              <span className="text-caption text-zinc-500 dark:text-zinc-400">부채비율</span>
+              <span className="text-caption text-sub">부채비율</span>
               <p className={clsx(
                 'text-title2 tabular-nums mt-1',
-                stats.debtRatio < 30 ? 'text-emerald-600 dark:text-emerald-400'
+                stats.debtRatio < 30 ? 'text-status-success'
                   : stats.debtRatio < 60 ? 'text-amber-600 dark:text-amber-400'
-                  : 'text-red-600 dark:text-red-400'
+                  : 'text-status-danger'
               )}>
                 {formatPercent(stats.debtRatio)}
               </p>

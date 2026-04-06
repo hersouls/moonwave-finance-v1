@@ -15,25 +15,25 @@ export function AssetLiabilityBreakdown({ stats }: AssetLiabilityBreakdownProps)
       {/* Total Assets Card */}
       <div className="card-base card-pad-lg">
         <div className="flex items-center gap-3 mb-3">
-          <div className="p-2.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-            <Landmark className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <div className="p-2.5 rounded-lg bg-status-success">
+            <Landmark className="w-5 h-5 text-status-success" />
           </div>
-          <span className="text-body3 text-zinc-500 dark:text-zinc-400">총 자산</span>
+          <span className="text-body3 text-sub">총 자산</span>
         </div>
-        <p className="text-heading2 text-emerald-600 dark:text-emerald-400 tabular-nums">
+        <p className="text-heading2 text-status-success tabular-nums">
           {formatKoreanUnit(totalAssets)}
-          <span className="text-sm text-zinc-400 dark:text-zinc-500 ml-1">원</span>
+          <span className="text-sm text-disabled ml-1">원</span>
         </p>
       </div>
 
       {/* Total Liabilities Card */}
       <div className="card-base card-pad-lg">
         <div className="flex items-center gap-3 mb-3">
-          <div className="p-2.5 rounded-lg bg-red-100 dark:bg-red-900/30">
-            <CreditCard className="w-5 h-5 text-red-600 dark:text-red-400" />
+          <div className="p-2.5 rounded-lg bg-status-danger">
+            <CreditCard className="w-5 h-5 text-status-danger" />
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-body3 text-zinc-500 dark:text-zinc-400">총 부채</span>
+            <span className="text-body3 text-sub">총 부채</span>
             <span className={clsx(
               'text-caption px-2 py-0.5 rounded-full font-medium',
               debtRatio < 30
@@ -46,9 +46,9 @@ export function AssetLiabilityBreakdown({ stats }: AssetLiabilityBreakdownProps)
             </span>
           </div>
         </div>
-        <p className="text-heading2 text-red-600 dark:text-red-400 tabular-nums">
+        <p className="text-heading2 text-status-danger tabular-nums">
           {formatKoreanUnit(totalLiabilities)}
-          <span className="text-sm text-zinc-400 dark:text-zinc-500 ml-1">원</span>
+          <span className="text-sm text-disabled ml-1">원</span>
         </p>
       </div>
     </div>

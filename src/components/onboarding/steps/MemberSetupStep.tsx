@@ -33,16 +33,16 @@ export function MemberSetupStep({ onNext, onBack }: MemberSetupStepProps) {
       <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mb-4">
         <Users className="w-6 h-6 text-primary-600 dark:text-primary-400" />
       </div>
-      <h2 className="text-title1 text-zinc-900 dark:text-zinc-100 mb-2">가족 구성원</h2>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8 text-center">자산을 관리할 구성원을 확인하세요</p>
+      <h2 className="text-title1 text-heading mb-2">가족 구성원</h2>
+      <p className="text-sm text-sub mb-8 text-center">자산을 관리할 구성원을 확인하세요</p>
 
       <div className="w-full max-w-sm space-y-2 mb-6">
         {members.map(m => (
-          <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50">
+          <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl bg-surface-secondary">
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: m.color }}>
               {m.name.charAt(0)}
             </div>
-            <span className="flex-1 text-body3 text-zinc-900 dark:text-zinc-100">{m.name}</span>
+            <span className="flex-1 text-body3 text-heading">{m.name}</span>
             {!m.isDefault && (
               <IconButton plain size="sm" color="danger" onClick={() => deleteMember(m.id!)}>
                 <Trash2 className="w-4 h-4" />

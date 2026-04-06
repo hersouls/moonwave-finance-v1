@@ -39,13 +39,13 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-white dark:bg-zinc-900 flex flex-col">
+    <div className="fixed inset-0 z-50 bg-surface-primary flex flex-col">
       {/* Progress */}
       <div className="flex gap-1.5 px-6 pt-6">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="h-1 flex-1 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden"
+            className="h-1 flex-1 rounded-full bg-[var(--surface-tertiary)] overflow-hidden"
           >
             <motion.div
               className="h-full rounded-full bg-primary-500"

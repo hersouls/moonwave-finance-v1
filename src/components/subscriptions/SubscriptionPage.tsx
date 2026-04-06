@@ -57,11 +57,11 @@ export function SubscriptionPage() {
       <div className="space-y-4 p-4 animate-pulse">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[0, 1, 2].map(i => (
-            <div key={i} className="h-24 bg-zinc-200 dark:bg-zinc-700 rounded-xl" />
+            <div key={i} className="h-24 bg-[var(--surface-tertiary)] rounded-xl" />
           ))}
         </div>
         {[0, 1, 2].map(i => (
-          <div key={i} className="h-16 bg-zinc-200 dark:bg-zinc-700 rounded-xl" />
+          <div key={i} className="h-16 bg-[var(--surface-tertiary)] rounded-xl" />
         ))}
       </div>
     )
@@ -85,7 +85,7 @@ export function SubscriptionPage() {
             'px-3 py-1.5 rounded-full text-caption whitespace-nowrap transition-colors flex-shrink-0',
             !categoryFilter
               ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+              : 'bg-surface-tertiary text-sub'
           )}
         >
           전체
@@ -98,7 +98,7 @@ export function SubscriptionPage() {
               'px-3 py-1.5 rounded-full text-caption whitespace-nowrap transition-colors flex-shrink-0',
               categoryFilter === cat.value
                 ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                : 'bg-surface-tertiary text-sub'
             )}
           >
             {cat.label}
@@ -110,7 +110,7 @@ export function SubscriptionPage() {
       {subscriptions.length === 0 ? (
         <SubscriptionEmptyState />
       ) : active.length === 0 && inactive.length === 0 ? (
-        <p className="text-center text-sm text-zinc-400 dark:text-zinc-500 py-8">
+        <p className="text-center text-sm text-disabled py-8">
           해당 조건에 맞는 구독이 없습니다.
         </p>
       ) : (
@@ -134,7 +134,7 @@ export function SubscriptionPage() {
             <div>
               <button
                 onClick={() => setShowInactive(!showInactive)}
-                className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors py-2"
+                className="flex items-center gap-2 text-sm text-sub hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors py-2"
               >
                 {showInactive ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 일시정지/해지 ({inactive.length})

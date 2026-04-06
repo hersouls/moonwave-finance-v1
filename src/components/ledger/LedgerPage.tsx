@@ -108,7 +108,7 @@ export function LedgerPage() {
       <div className="p-4 lg:p-6 space-y-4">
         <div className="grid grid-cols-3 gap-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-24 bg-zinc-200 dark:bg-zinc-700 rounded-xl animate-pulse" />
+            <div key={i} className="h-24 bg-[var(--surface-tertiary)] rounded-xl animate-pulse" />
           ))}
         </div>
         {Array.from({ length: 5 }).map((_, i) => (
@@ -136,7 +136,7 @@ export function LedgerPage() {
         <IconButton onClick={() => setSelectedMonth(getPreviousMonth(selectedMonth))} plain size="sm">
           <ChevronLeft className="w-5 h-5" />
         </IconButton>
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+        <h2 className="text-base font-semibold text-heading">
           {formatMonthLabel(selectedMonth)}
         </h2>
         <IconButton onClick={() => setSelectedMonth(getNextMonth(selectedMonth))} plain size="sm">

@@ -144,7 +144,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
                   'flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full text-xs font-bold transition-all duration-200',
                   isCompleted && 'bg-primary-500 text-white',
                   isCurrent && 'border-2 border-primary-500 text-primary-500',
-                  !isCompleted && !isCurrent && 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500',
+                  !isCompleted && !isCurrent && 'bg-surface-tertiary text-disabled',
                 )}
                 aria-current={isCurrent ? 'step' : undefined}
               >
@@ -153,7 +153,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
               <span
                 className={clsx(
                   'mt-1 text-[10px] sm:text-xs font-medium',
-                  isCurrent ? 'text-primary-500' : isCompleted ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400 dark:text-zinc-500',
+                  isCurrent ? 'text-primary-500' : isCompleted ? 'text-body' : 'text-disabled',
                 )}
               >
                 {step.label}
@@ -163,7 +163,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
               <div
                 className={clsx(
                   'mx-1 sm:mx-2 h-0.5 w-5 sm:w-10 transition-colors duration-200',
-                  i < currentStep ? 'bg-primary-500' : 'bg-zinc-200 dark:bg-zinc-700',
+                  i < currentStep ? 'bg-primary-500' : 'bg-[var(--surface-tertiary)]',
                 )}
               />
             )}
@@ -300,7 +300,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
         <div className="space-y-3 pb-4 border-b border-zinc-100 dark:border-zinc-800">
           {templates.length > 0 && (
             <div>
-              <label className="flex items-center gap-1 text-caption text-zinc-500 dark:text-zinc-400 mb-2">
+              <label className="flex items-center gap-1 text-caption text-sub mb-2">
                 <Zap className="w-3.5 h-3.5" />
                 빠른 입력
               </label>
@@ -312,7 +312,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                       key={i}
                       type="button"
                       onClick={() => dispatch({ type: 'APPLY_TEMPLATE', data: tmpl })}
-                      className="flex-shrink-0 px-3 py-1.5 rounded-lg text-caption bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 transition-all"
+                      className="flex-shrink-0 px-3 py-1.5 rounded-lg text-caption bg-surface-tertiary text-body hover:bg-[var(--hover-bg)] active:scale-95 transition-all"
                     >
                       {cat?.name || '미분류'} {formatKoreanUnit(tmpl.amount)}원
                     </button>
@@ -323,7 +323,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
           )}
           {activeLoans.length > 0 && (
             <div>
-              <label className="flex items-center gap-1 text-caption text-zinc-500 dark:text-zinc-400 mb-2">
+              <label className="flex items-center gap-1 text-caption text-sub mb-2">
                 <Landmark className="w-3.5 h-3.5" />
                 대출이자 불러오기
               </label>
@@ -357,7 +357,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
 
       {/* Type Toggle */}
       <div>
-        <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-2">유형</label>
+        <label className="block text-body3 text-body mb-2">유형</label>
         <div className="flex gap-2" role="radiogroup" aria-label="거래 유형">
           <button
             type="button"
@@ -365,7 +365,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
             className={clsx(
               'flex-1 py-2.5 px-4 rounded-lg text-body3 font-medium transition-all duration-150',
               state.type === 'expense'
-                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 ring-1 ring-red-200 dark:ring-red-800'
+                ? 'bg-status-danger text-red-700 dark:text-red-400 ring-1 ring-red-200 dark:ring-red-800'
                 : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700',
             )}
           >
@@ -377,7 +377,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
             className={clsx(
               'flex-1 py-2.5 px-4 rounded-lg text-body3 font-medium transition-all duration-150',
               state.type === 'income'
-                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800'
+                ? 'bg-status-success text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800'
                 : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700',
             )}
           >
@@ -388,8 +388,8 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
 
       {/* Hero Amount Input */}
       <div>
-        <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-2">금액</label>
-        <div className="wizard-amount-wrap rounded-xl border-2 border-zinc-200 dark:border-zinc-700 transition-all duration-300 focus-within:border-primary-400 dark:focus-within:border-primary-400 focus-within:wizard-amount-glow">
+        <label className="block text-body3 text-body mb-2">금액</label>
+        <div className="wizard-amount-wrap rounded-xl border-2 border-base transition-all duration-300 focus-within:border-primary-400 dark:focus-within:border-primary-400 focus-within:wizard-amount-glow">
           <div className="relative py-4 px-4">
             <input
               ref={amountRef}
@@ -400,11 +400,11 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               placeholder="0"
               className="w-full bg-transparent text-center text-3xl sm:text-4xl font-bold tabular-nums text-zinc-900 dark:text-white placeholder-zinc-300 dark:placeholder-zinc-600 outline-none"
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg text-zinc-400 dark:text-zinc-500 font-medium">원</span>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg text-disabled font-medium">원</span>
           </div>
         </div>
         {numAmount > 0 && (
-          <p className="mt-1.5 text-center text-caption text-zinc-400 dark:text-zinc-500 tabular-nums">
+          <p className="mt-1.5 text-center text-caption text-disabled tabular-nums">
             {formatKoreanUnit(numAmount)}원
           </p>
         )}
@@ -413,7 +413,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
       {/* Member */}
       {members.length > 0 && (
         <div>
-          <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-2">구성원</label>
+          <label className="block text-body3 text-body mb-2">구성원</label>
           <div className="flex gap-2" role="group" aria-label="구성원 선택">
             {members.length <= 4 ? (
               <>
@@ -438,7 +438,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                       'flex-1 py-2 px-4 rounded-lg text-body3 transition-all duration-150',
                       state.memberId === m.id
                         ? 'text-white ring-1'
-                        : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700',
+                        : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700',
                     )}
                     style={state.memberId === m.id ? { backgroundColor: m.color, boxShadow: `0 0 0 1px ${m.color}` } : undefined}
                   >
@@ -464,7 +464,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
 
   const renderStep1 = () => (
     <div className="space-y-4">
-      <label className="block text-body3 text-zinc-700 dark:text-zinc-300">
+      <label className="block text-body3 text-body">
         {state.type === 'expense' ? '지출' : '수입'} 카테고리
       </label>
 
@@ -484,7 +484,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                 'hover:scale-[1.03] active:scale-[0.97]',
                 isSelected
                   ? 'border-transparent'
-                  : 'bg-zinc-50 dark:bg-zinc-800/60 border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600',
+                  : 'bg-zinc-50 dark:bg-zinc-800/60 border-base hover:border-zinc-300 dark:hover:border-zinc-600',
               )}
               style={isSelected ? {
                 backgroundColor: `${cat.color}14`,
@@ -500,7 +500,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               </div>
               <span className={clsx(
                 'text-[11px] sm:text-caption truncate max-w-full font-medium',
-                isSelected ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-600 dark:text-zinc-400',
+                isSelected ? 'text-heading' : 'text-zinc-600 dark:text-zinc-400',
               )}>
                 {cat.name}
               </span>
@@ -519,13 +519,13 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
             'hover:scale-[1.03] active:scale-[0.97]',
             state.categoryId === ''
               ? 'bg-zinc-100 dark:bg-zinc-700 border-zinc-300 dark:border-zinc-600'
-              : 'bg-zinc-50 dark:bg-zinc-800/60 border-zinc-200 dark:border-zinc-700',
+              : 'bg-zinc-50 dark:bg-zinc-800/60 border-base',
           )}
         >
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center bg-zinc-100 dark:bg-zinc-700">
             <MoreHorizontal className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-zinc-400" />
           </div>
-          <span className="text-[11px] sm:text-caption truncate max-w-full font-medium text-zinc-500 dark:text-zinc-400">
+          <span className="text-[11px] sm:text-caption truncate max-w-full font-medium text-sub">
             미분류
           </span>
         </button>
@@ -559,7 +559,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
     <div className="space-y-5">
       {/* Date */}
       <div>
-        <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-2">날짜</label>
+        <label className="block text-body3 text-body mb-2">날짜</label>
         <div className="flex gap-2 mb-2">
           {[
             { label: '오늘', value: today },
@@ -573,7 +573,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                 'px-3 py-1.5 rounded-lg text-caption font-medium transition-all duration-150',
                 state.date === chip.value
                   ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 ring-1 ring-primary-300 dark:ring-primary-700'
-                  : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700',
+                  : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700',
               )}
             >
               {chip.label}
@@ -590,7 +590,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
 
       {/* Payment Method */}
       <div>
-        <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-2">거래수단 (선택)</label>
+        <label className="block text-body3 text-body mb-2">거래수단 (선택)</label>
         <div className="grid grid-cols-3 gap-2">
           {PAYMENT_METHOD_OPTIONS.map(opt => (
             <button
@@ -601,7 +601,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                 'py-2 px-2 rounded-lg text-caption transition-all duration-150 text-center',
                 state.paymentMethod === opt.value
                   ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 ring-1 ring-primary-300 dark:ring-primary-700'
-                  : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700',
+                  : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700',
               )}
             >
               {opt.label}
@@ -660,7 +660,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
 
       {/* Memo */}
       <div>
-        <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
+        <label className="block text-body3 text-body mb-1.5">메모 (선택)</label>
         <input
           type="text"
           value={state.memo}
@@ -679,13 +679,13 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
             onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'isRecurring', value: e.target.checked })}
             className="check"
           />
-          <span className="text-body3 text-zinc-700 dark:text-zinc-300">반복 거래</span>
+          <span className="text-body3 text-body">반복 거래</span>
         </label>
       </div>
       {state.isRecurring && (
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">반복 주기</label>
+            <label className="block text-body3 text-body mb-1.5">반복 주기</label>
             <Select
               value={state.recurType}
               onChange={(v) => dispatch({ type: 'SET_FIELD', field: 'recurType', value: v as RepeatType })}
@@ -698,7 +698,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
             />
           </div>
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">종료일 (선택)</label>
+            <label className="block text-body3 text-body mb-1.5">종료일 (선택)</label>
             <input
               type="date"
               value={state.recurEndDate}
@@ -738,7 +738,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
 
     return (
       <div className="space-y-4">
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+        <div className="rounded-xl border border-base overflow-hidden">
           {/* Hero Amount */}
           <div className={clsx(
             'py-5 text-center',
@@ -748,7 +748,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
           )}>
             <p className={clsx(
               'text-2xl sm:text-3xl font-bold tabular-nums',
-              state.type === 'expense' ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400',
+              state.type === 'expense' ? 'text-status-danger' : 'text-status-success',
             )}>
               {state.amount || '0'}
               <span className="text-lg ml-0.5">원</span>
@@ -759,16 +759,16 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
           <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {rows.map((row) => (
               <div key={row.label} className="flex items-center justify-between px-4 py-3">
-                <span className="text-caption text-zinc-500 dark:text-zinc-400">{row.label}</span>
+                <span className="text-caption text-sub">{row.label}</span>
                 <div className="flex items-center gap-2">
                   {row.color && (
                     <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: row.color }} />
                   )}
-                  <span className="text-body3 text-zinc-900 dark:text-zinc-100">{row.value}</span>
+                  <span className="text-body3 text-heading">{row.value}</span>
                   <button
                     type="button"
                     onClick={() => dispatch({ type: 'GO_TO_STEP', step: row.step, direction: 'backward' })}
-                    className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                    className="p-1 rounded hover:bg-[var(--hover-bg)] transition-colors"
                     aria-label={`${row.label} 수정`}
                   >
                     <Pencil className="w-3.5 h-3.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300" />
@@ -811,7 +811,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
           <h2 className="text-title2 font-semibold text-zinc-900 dark:text-white">새 거래 기록</h2>
           <button
             onClick={onClose}
-            className="touch-target-icon text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors rounded-lg"
+            className="touch-target-icon text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-[var(--hover-bg)] transition-colors rounded-lg"
             aria-label="닫기"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -11,9 +11,9 @@ export function AccountTab() {
   return (
     <div className="space-y-8">
       <section>
-        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">프로필 설정</h3>
+        <h3 className="text-body3-semi text-heading mb-3">프로필 설정</h3>
         {user ? (
-          <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+          <div className="p-4 bg-surface-secondary rounded-xl">
             <div className="flex items-center gap-4">
               {user.photoURL ? (
                 <img
@@ -28,10 +28,10 @@ export function AccountTab() {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-body3 text-zinc-900 dark:text-zinc-100 truncate">
+                <p className="text-body3 text-heading truncate">
                   {user.displayName}
                 </p>
-                <p className="text-caption text-zinc-500 dark:text-zinc-400 truncate">
+                <p className="text-caption text-sub truncate">
                   {user.email}
                 </p>
                 <span className="badge badge-sm badge-success mt-1.5">
@@ -49,17 +49,17 @@ export function AccountTab() {
             </div>
           </div>
         ) : (
-          <div className="p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl text-center">
-            <div className="w-14 h-14 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center mx-auto mb-3">
-              <User className="w-7 h-7 text-zinc-400 dark:text-zinc-500" />
+          <div className="p-6 bg-surface-secondary rounded-xl text-center">
+            <div className="w-14 h-14 rounded-full bg-[var(--surface-tertiary)] flex items-center justify-center mx-auto mb-3">
+              <User className="w-7 h-7 text-disabled" />
             </div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
+            <p className="text-sm text-sub mb-4">
               Google 로그인 시 프로필이 자동으로 표시됩니다.
             </p>
             <Button onClick={login} disabled={isSigningIn}>
               {isSigningIn ? '로그인 중...' : 'Google 로그인'}
             </Button>
-            <p className="text-caption text-zinc-500 dark:text-zinc-400 mt-3">
+            <p className="text-caption text-sub mt-3">
               로그인 없이도 로컬에서 모든 기능을 사용할 수 있습니다
             </p>
           </div>

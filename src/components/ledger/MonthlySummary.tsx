@@ -14,29 +14,29 @@ export function MonthlySummary({ totalIncome, totalExpense, netSavings }: Monthl
       <div className="card-base text-center">
         <div className="flex items-center justify-center gap-1.5 mb-1">
           <TrendingUp className="w-4 h-4 text-emerald-500" />
-          <span className="text-caption text-zinc-500 dark:text-zinc-400">수입</span>
+          <span className="text-caption text-sub">수입</span>
         </div>
-        <p className="text-body1-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+        <p className="text-body1-bold text-status-success tabular-nums">
           {formatKoreanUnit(totalIncome)}
         </p>
       </div>
       <div className="card-base text-center">
         <div className="flex items-center justify-center gap-1.5 mb-1">
           <TrendingDown className="w-4 h-4 text-red-500" />
-          <span className="text-caption text-zinc-500 dark:text-zinc-400">지출</span>
+          <span className="text-caption text-sub">지출</span>
         </div>
-        <p className="text-body1-bold text-red-600 dark:text-red-400 tabular-nums">
+        <p className="text-body1-bold text-status-danger tabular-nums">
           {formatKoreanUnit(totalExpense)}
         </p>
       </div>
       <div className="card-base text-center">
         <div className="flex items-center justify-center gap-1.5 mb-1">
           <PiggyBank className="w-4 h-4 text-blue-500" />
-          <span className="text-caption text-zinc-500 dark:text-zinc-400">잔액</span>
+          <span className="text-caption text-sub">잔액</span>
         </div>
         <p className={clsx(
           'text-body1-bold tabular-nums',
-          netSavings >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'
+          netSavings >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-status-danger'
         )}>
           {formatKoreanUnit(netSavings)}
         </p>

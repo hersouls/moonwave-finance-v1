@@ -18,9 +18,9 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles = {
   primary: 'bg-primary-500 hover:bg-primary-600 text-white border-transparent',
-  secondary: 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 border-transparent',
+  secondary: 'bg-[var(--surface-tertiary)] hover:bg-[var(--hover-bg)] text-heading border-transparent',
   danger: 'bg-danger-500 hover:bg-danger-600 text-white border-transparent',
-  ghost: 'bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-transparent',
+  ghost: 'bg-transparent hover:bg-[var(--hover-bg)] text-body border-transparent',
 }
 
 const sizeStyles = {
@@ -35,7 +35,7 @@ export function Button({ children, variant = 'primary', size = 'md', leftIcon, r
       className={clsx(
         'inline-flex items-center justify-center gap-2 rounded-lg font-medium',
         'border transition-all active:scale-95',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-primary)]',
         'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
         variantStyles[variant],
         sizeStyles[size],
@@ -57,8 +57,8 @@ const iconButtonColors = {
     plain: 'text-primary-600 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/30',
   },
   secondary: {
-    solid: 'bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-200',
-    plain: 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800',
+    solid: 'bg-[var(--surface-tertiary)] hover:bg-[var(--active-bg)] text-body',
+    plain: 'text-sub hover:bg-[var(--hover-bg)]',
   },
   danger: {
     solid: 'bg-danger-500 hover:bg-danger-600 text-white',
@@ -77,7 +77,7 @@ export function IconButton({ children, color = 'secondary', plain = false, size 
     <button
       className={clsx(
         'inline-flex items-center justify-center rounded-lg transition-colors',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-primary)]',
         'disabled:opacity-50 disabled:cursor-not-allowed',
         iconButtonColors[color][plain ? 'plain' : 'solid'],
         iconButtonSizes[size],

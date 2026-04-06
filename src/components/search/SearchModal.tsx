@@ -52,11 +52,11 @@ export function SearchModal() {
     <div className="fixed inset-0 z-[var(--z-overlay)] flex items-start justify-center pt-[15vh]" onClick={close}>
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-lg mx-4 bg-white dark:bg-zinc-900 rounded-xl elevation-4 border border-zinc-200 dark:border-zinc-700 overflow-hidden"
+        className="relative w-full max-w-lg mx-4 bg-surface-primary rounded-xl elevation-4 border border-base overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input */}
-        <div className="flex items-center gap-3 px-4 border-b border-zinc-200 dark:border-zinc-700">
+        <div className="flex items-center gap-3 px-4 border-b border-base">
           <Search className="w-5 h-5 text-zinc-400 flex-shrink-0" />
           <input
             ref={inputRef}
@@ -65,10 +65,10 @@ export function SearchModal() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="자산, 거래, 구독, 카테고리 검색..."
-            className="flex-1 py-4 text-sm bg-transparent text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none"
+            className="flex-1 py-4 text-sm bg-transparent text-heading placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none"
           />
           {query && (
-            <button onClick={() => setQuery('')} className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800">
+            <button onClick={() => setQuery('')} className="p-1 rounded hover:bg-[var(--hover-bg)]">
               <X className="w-4 h-4 text-zinc-400" />
             </button>
           )}

@@ -23,7 +23,7 @@ export function Select({ value, onChange, options, placeholder, disabled, classN
     <Listbox value={value} onChange={onChange} disabled={disabled}>
       <div className={clsx('relative', className)}>
         <ListboxButton className="select-base text-left">
-          <span className={clsx('block truncate', !selected && 'text-zinc-400 dark:text-zinc-500')}>
+          <span className={clsx('block truncate', !selected && 'text-disabled')}>
             {selected?.label || placeholder || '선택'}
           </span>
         </ListboxButton>
@@ -31,7 +31,7 @@ export function Select({ value, onChange, options, placeholder, disabled, classN
           transition
           className={clsx(
             'absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl',
-            'bg-white dark:bg-zinc-800 elevation-3 ring-1 ring-zinc-200 dark:ring-zinc-700',
+            'bg-surface-primary elevation-3 ring-1 ring-[var(--border-default)]',
             'py-1 text-sm focus:outline-none',
             'transition data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-150 data-[enter]:ease-out data-[leave]:ease-in'
           )}
@@ -41,8 +41,8 @@ export function Select({ value, onChange, options, placeholder, disabled, classN
               value=""
               className={clsx(
                 'relative cursor-pointer select-none py-2.5 pl-10 pr-4',
-                'text-zinc-400 dark:text-zinc-500',
-                'data-[focus]:bg-zinc-100 dark:data-[focus]:bg-zinc-700/50'
+                'text-disabled',
+                'data-[focus]:bg-[var(--hover-bg)]'
               )}
             >
               {placeholder}
@@ -54,8 +54,8 @@ export function Select({ value, onChange, options, placeholder, disabled, classN
               value={option.value}
               className={clsx(
                 'relative cursor-pointer select-none py-2.5 pl-10 pr-4',
-                'text-zinc-900 dark:text-zinc-100',
-                'data-[focus]:bg-zinc-100 dark:data-[focus]:bg-zinc-700/50'
+                'text-heading',
+                'data-[focus]:bg-[var(--hover-bg)]'
               )}
             >
               {({ selected: isSelected }) => (

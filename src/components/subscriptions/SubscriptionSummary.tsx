@@ -20,18 +20,18 @@ export function SubscriptionSummary({ currencyFilter }: SubscriptionSummaryProps
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Card>
-          <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-1">월간 구독료</p>
-          <p className="text-title2 text-zinc-900 dark:text-zinc-100 tabular-nums">
+          <p className="text-caption text-sub mb-1">월간 구독료</p>
+          <p className="text-title2 text-heading tabular-nums">
             {formatKRW(monthlyKRW)}
           </p>
-          <p className="text-caption text-zinc-400 dark:text-zinc-500">/월</p>
+          <p className="text-caption text-disabled">/월</p>
         </Card>
         <Card>
-          <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-1">연간 환산</p>
+          <p className="text-caption text-sub mb-1">연간 환산</p>
           <p className="text-title2 text-primary-600 dark:text-primary-400 tabular-nums">
             {formatKRW(monthlyKRW * 12)}
           </p>
-          <p className="text-caption text-zinc-400 dark:text-zinc-500">/년</p>
+          <p className="text-caption text-disabled">/년</p>
         </Card>
       </div>
     )
@@ -41,18 +41,18 @@ export function SubscriptionSummary({ currencyFilter }: SubscriptionSummaryProps
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Card>
-          <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-1">월간 구독료</p>
-          <p className="text-title2 text-zinc-900 dark:text-zinc-100 tabular-nums">
+          <p className="text-caption text-sub mb-1">월간 구독료</p>
+          <p className="text-title2 text-heading tabular-nums">
             {formatUSD(monthlyUSD)}
           </p>
-          <p className="text-caption text-zinc-400 dark:text-zinc-500">/월</p>
+          <p className="text-caption text-disabled">/월</p>
         </Card>
         <Card>
-          <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-1">연간 환산</p>
+          <p className="text-caption text-sub mb-1">연간 환산</p>
           <p className="text-title2 text-primary-600 dark:text-primary-400 tabular-nums">
             {formatUSD(monthlyUSD * 12)}
           </p>
-          <p className="text-caption text-zinc-400 dark:text-zinc-500">/년</p>
+          <p className="text-caption text-disabled">/년</p>
         </Card>
       </div>
     )
@@ -61,27 +61,27 @@ export function SubscriptionSummary({ currencyFilter }: SubscriptionSummaryProps
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
       <Card>
-        <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-1">원화 구독</p>
-        <p className="text-title2 text-zinc-900 dark:text-zinc-100 tabular-nums">
+        <p className="text-caption text-sub mb-1">원화 구독</p>
+        <p className="text-title2 text-heading tabular-nums">
           {formatKRW(monthlyKRW)}
         </p>
-        <p className="text-caption text-zinc-400 dark:text-zinc-500">/월</p>
+        <p className="text-caption text-disabled">/월</p>
       </Card>
 
       <Card>
-        <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-1">달러 구독</p>
-        <p className="text-title2 text-zinc-900 dark:text-zinc-100 tabular-nums">
+        <p className="text-caption text-sub mb-1">달러 구독</p>
+        <p className="text-title2 text-heading tabular-nums">
           {formatUSD(monthlyUSD)}
         </p>
-        <p className="text-caption text-zinc-400 dark:text-zinc-500">/월</p>
+        <p className="text-caption text-disabled">/월</p>
       </Card>
 
       <Card>
-        <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-1">합계 (환산)</p>
+        <p className="text-caption text-sub mb-1">합계 (환산)</p>
         <p className="text-title2 text-primary-600 dark:text-primary-400 tabular-nums">
           {formatKRW(monthlyCombined)}
         </p>
-        <p className="text-caption text-zinc-400 dark:text-zinc-500">
+        <p className="text-caption text-disabled">
           연 {formatKoreanUnit(yearlyCombined)}
         </p>
       </Card>

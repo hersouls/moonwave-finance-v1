@@ -64,7 +64,7 @@ export function BudgetSettingModal({ open, onClose }: BudgetSettingModalProps) {
           {expenseCategories.map(cat => (
             <div key={cat.id} className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
-              <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1 min-w-0 truncate">{cat.name}</span>
+              <span className="text-sm text-body flex-1 min-w-0 truncate">{cat.name}</span>
               <div className="relative w-36">
                 <input
                   type="text"

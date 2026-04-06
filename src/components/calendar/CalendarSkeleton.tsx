@@ -8,7 +8,7 @@ export function CalendarSkeleton() {
       </div>
       <div className="grid grid-cols-7 gap-1">
         {Array.from({ length: 35 }).map((_, i) => (
-          <div key={i} className="aspect-square bg-zinc-200 dark:bg-zinc-700 rounded-lg" />
+          <div key={i} className="aspect-square bg-[var(--surface-tertiary)] rounded-lg" />
         ))}
       </div>
     </div>

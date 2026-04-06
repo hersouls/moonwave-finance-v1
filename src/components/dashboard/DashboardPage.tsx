@@ -153,7 +153,7 @@ export function DashboardPage() {
         {assetBreakdown.length > 0 && (
           <Card className="card-pad-lg">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100">자산 구성</h3>
+              <h3 className="text-body3-semi text-heading">자산 구성</h3>
               <button
                 onClick={() => navigate('/assets')}
                 className="text-caption text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
@@ -165,11 +165,11 @@ export function DashboardPage() {
               {assetBreakdown.slice(0, 5).map((bd) => (
                 <div key={bd.categoryId} className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: bd.categoryColor }} />
-                  <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1 truncate">{bd.categoryName}</span>
-                  <span className="text-body3 text-zinc-900 dark:text-zinc-100 tabular-nums">
+                  <span className="text-sm text-body flex-1 truncate">{bd.categoryName}</span>
+                  <span className="text-body3 text-heading tabular-nums">
                     {formatKoreanUnit(bd.total)}
                   </span>
-                  <span className="text-caption text-zinc-400 dark:text-zinc-500 w-12 text-right tabular-nums">
+                  <span className="text-caption text-disabled w-12 text-right tabular-nums">
                     {formatPercent(bd.percentage, 0)}
                   </span>
                 </div>
@@ -182,7 +182,7 @@ export function DashboardPage() {
         {liabilityBreakdown.length > 0 && (
           <Card className="card-pad-lg">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100">부채 구성</h3>
+              <h3 className="text-body3-semi text-heading">부채 구성</h3>
               <button
                 onClick={() => navigate('/liabilities')}
                 className="text-caption text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
@@ -194,11 +194,11 @@ export function DashboardPage() {
               {liabilityBreakdown.slice(0, 5).map((bd) => (
                 <div key={bd.categoryId} className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: bd.categoryColor }} />
-                  <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1 truncate">{bd.categoryName}</span>
-                  <span className="text-body3 text-zinc-900 dark:text-zinc-100 tabular-nums">
+                  <span className="text-sm text-body flex-1 truncate">{bd.categoryName}</span>
+                  <span className="text-body3 text-heading tabular-nums">
                     {formatKoreanUnit(bd.total)}
                   </span>
-                  <span className="text-caption text-zinc-400 dark:text-zinc-500 w-12 text-right tabular-nums">
+                  <span className="text-caption text-disabled w-12 text-right tabular-nums">
                     {formatPercent(bd.percentage, 0)}
                   </span>
                 </div>
@@ -212,7 +212,7 @@ export function DashboardPage() {
       {activeGoals.length > 0 && (
         <motion.div variants={itemV}>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100">진행 중인 목표</h3>
+            <h3 className="text-body3-semi text-heading">진행 중인 목표</h3>
             <button
               onClick={() => navigate('/profile')}
               className="text-caption text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"

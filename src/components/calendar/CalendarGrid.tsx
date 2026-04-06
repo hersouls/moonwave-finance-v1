@@ -20,7 +20,7 @@ export function CalendarGrid({ days, summaries, selectedDate, onSelectDate }: Ca
           <div
             key={label}
             className={`text-center text-caption py-2 ${
-              i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-zinc-500 dark:text-zinc-400'
+              i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-sub'
             }`}
           >
             {label}

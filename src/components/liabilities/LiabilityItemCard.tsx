@@ -40,18 +40,18 @@ export function LiabilityItemCard({ itemId, name, categoryId }: LiabilityItemCar
                 style={{ backgroundColor: category.color }}
               />
             )}
-            <span className="text-body3 text-zinc-900 dark:text-zinc-100 truncate">
+            <span className="text-body3 text-heading truncate">
               {name}
             </span>
           </div>
-          <p className="text-title2 text-red-600 dark:text-red-400 tabular-nums">
+          <p className="text-title2 text-status-danger tabular-nums">
             {formatKoreanUnit(latestValue)}
             <span className="text-caption text-zinc-400 ml-1">원</span>
           </p>
           {change !== 0 && (
             <p className={clsx(
               'text-caption tabular-nums mt-0.5',
-              change < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+              change < 0 ? 'text-status-success' : 'text-status-danger'
             )}>
               {formatChange(change)}
             </p>

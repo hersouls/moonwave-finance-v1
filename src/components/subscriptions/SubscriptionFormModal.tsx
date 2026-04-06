@@ -189,7 +189,7 @@ export function SubscriptionFormModal() {
           {/* Presets */}
           {!isEdit && (
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-body3 text-body mb-2">
                 빠른 선택
               </label>
               <div className="flex gap-1 mb-2">
@@ -199,7 +199,7 @@ export function SubscriptionFormModal() {
                     'px-3 py-1 text-caption rounded-full transition-colors',
                     currency === 'KRW'
                       ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                      : 'bg-surface-tertiary text-sub'
                   )}
                 >
                   원화 (KRW)
@@ -210,7 +210,7 @@ export function SubscriptionFormModal() {
                     'px-3 py-1 text-caption rounded-full transition-colors',
                     currency === 'USD'
                       ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                      : 'bg-surface-tertiary text-sub'
                   )}
                 >
                   달러 (USD)
@@ -225,14 +225,14 @@ export function SubscriptionFormModal() {
                       'flex items-center gap-2 px-3 py-2 rounded-lg text-caption transition-colors border',
                       name === preset.name
                         ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                        : 'border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                        : 'border-base hover:bg-[var(--hover-bg)]'
                     )}
                   >
                     <span
                       className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{ backgroundColor: preset.color }}
                     />
-                    <span className="truncate text-zinc-700 dark:text-zinc-300">{preset.name}</span>
+                    <span className="truncate text-body">{preset.name}</span>
                   </button>
                 ))}
               </div>
@@ -241,7 +241,7 @@ export function SubscriptionFormModal() {
 
           {/* Name */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-body3 text-body mb-1.5">
               서비스명 *
             </label>
             <input
@@ -256,7 +256,7 @@ export function SubscriptionFormModal() {
           {/* Currency + Amount */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-body3 text-body mb-1.5">
                 통화
               </label>
               <div className="flex gap-1">
@@ -268,7 +268,7 @@ export function SubscriptionFormModal() {
                       'flex-1 py-2.5 rounded-lg text-body3 transition-colors',
                       currency === c
                         ? 'bg-primary-500 text-white'
-                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                        : 'bg-surface-tertiary text-sub'
                     )}
                   >
                     {c === 'KRW' ? '원화' : '달러'}
@@ -277,7 +277,7 @@ export function SubscriptionFormModal() {
               </div>
             </div>
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-body3 text-body mb-1.5">
                 금액 *
               </label>
               <div className="relative">
@@ -298,7 +298,7 @@ export function SubscriptionFormModal() {
 
           {/* Cycle */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-body3 text-body mb-1.5">
               결제주기
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -310,7 +310,7 @@ export function SubscriptionFormModal() {
                     'px-3 py-2 rounded-lg text-body3 transition-colors',
                     cycle === opt.value
                       ? 'bg-primary-500 text-white'
-                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                      : 'bg-surface-tertiary text-sub'
                   )}
                 >
                   {opt.label}
@@ -322,7 +322,7 @@ export function SubscriptionFormModal() {
           {/* Custom cycle days */}
           {cycle === 'custom' && (
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-body3 text-body mb-1.5">
                 반복 일수
               </label>
               <div className="flex items-center gap-2">
@@ -334,7 +334,7 @@ export function SubscriptionFormModal() {
                   onChange={(e) => setCustomCycleDays(Math.max(1, Math.min(365, Number(e.target.value) || 1)))}
                   className="input-base w-24 tabular-nums"
                 />
-                <span className="text-sm text-zinc-500 dark:text-zinc-400">일마다</span>
+                <span className="text-sm text-sub">일마다</span>
               </div>
             </div>
           )}
@@ -343,7 +343,7 @@ export function SubscriptionFormModal() {
           {needsBillingDay && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
+                <label className="block text-body3 text-body mb-1.5">
                   결제일
                 </label>
                 <Select
@@ -356,7 +356,7 @@ export function SubscriptionFormModal() {
               {/* Billing Month (yearly only) */}
               {cycle === 'yearly' && (
                 <div>
-                  <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
+                  <label className="block text-body3 text-body mb-1.5">
                     결제월
                   </label>
                   <Select
@@ -371,7 +371,7 @@ export function SubscriptionFormModal() {
 
           {/* Category */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-body3 text-body mb-1.5">
               카테고리
             </label>
             <div className="grid grid-cols-5 gap-2">
@@ -383,7 +383,7 @@ export function SubscriptionFormModal() {
                     'flex flex-col items-center gap-1 py-2 rounded-lg text-caption transition-colors border',
                     category === cat.value
                       ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                      : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                      : 'border-base text-sub hover:bg-[var(--hover-bg)]'
                   )}
                 >
                   <span
@@ -398,7 +398,7 @@ export function SubscriptionFormModal() {
 
           {/* Start Date */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-body3 text-body mb-1.5">
               시작일
             </label>
             <input
@@ -411,7 +411,7 @@ export function SubscriptionFormModal() {
 
           {/* Color */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-body3 text-body mb-1.5">
               색상
             </label>
             <div className="flex gap-2 flex-wrap">
@@ -433,7 +433,7 @@ export function SubscriptionFormModal() {
           {/* Payment Method (Credit Card) */}
           {creditCards.length > 0 && (
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-body3 text-body mb-1.5">
                 결제 카드 (선택)
               </label>
               <Select
@@ -448,7 +448,7 @@ export function SubscriptionFormModal() {
           {/* Linked Transaction Category */}
           {expenseCategories.length > 0 && (
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-body3 text-body mb-1.5">
                 가계부 카테고리 (선택)
               </label>
               <Select
@@ -457,7 +457,7 @@ export function SubscriptionFormModal() {
                 options={expenseCategories.map(cat => ({ value: String(cat.id), label: cat.name }))}
                 placeholder="선택 안 함"
               />
-              <p className="mt-1 text-caption text-zinc-400 dark:text-zinc-500">
+              <p className="mt-1 text-caption text-disabled">
                 가계부 지출에 자동 반영 시 사용할 카테고리
               </p>
             </div>
@@ -465,7 +465,7 @@ export function SubscriptionFormModal() {
 
           {/* URL & Memo */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-body3 text-body mb-1.5">
               URL (선택)
             </label>
             <input
@@ -478,7 +478,7 @@ export function SubscriptionFormModal() {
           </div>
 
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
+            <label className="block text-body3 text-body mb-1.5">
               메모 (선택)
             </label>
             <textarea

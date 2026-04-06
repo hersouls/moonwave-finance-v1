@@ -65,7 +65,7 @@ export function SubscriptionAnalysis() {
 
   if (active.length === 0) {
     return (
-      <div className="text-center py-12 text-zinc-400 dark:text-zinc-500 text-sm">
+      <div className="text-center py-12 text-disabled text-sm">
         활성 구독이 없습니다.
       </div>
     )
@@ -76,26 +76,26 @@ export function SubscriptionAnalysis() {
       {/* Summary Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Card className="text-center">
-          <span className="text-caption text-zinc-500 dark:text-zinc-400">활성 구독</span>
-          <p className="text-title2 text-zinc-900 dark:text-zinc-100 mt-1">
+          <span className="text-caption text-sub">활성 구독</span>
+          <p className="text-title2 text-heading mt-1">
             {active.length}개
           </p>
         </Card>
         <Card className="text-center">
-          <span className="text-caption text-zinc-500 dark:text-zinc-400">월간 총액</span>
-          <p className="text-title2 text-zinc-900 dark:text-zinc-100 tabular-nums mt-1">
+          <span className="text-caption text-sub">월간 총액</span>
+          <p className="text-title2 text-heading tabular-nums mt-1">
             {formatKoreanUnit(monthlyCombined)}
           </p>
         </Card>
         <Card className="text-center">
-          <span className="text-caption text-zinc-500 dark:text-zinc-400">연간 총액</span>
-          <p className="text-title2 text-zinc-900 dark:text-zinc-100 tabular-nums mt-1">
+          <span className="text-caption text-sub">연간 총액</span>
+          <p className="text-title2 text-heading tabular-nums mt-1">
             {formatKoreanUnit(yearlyCombined)}
           </p>
         </Card>
         <Card className="text-center">
-          <span className="text-caption text-zinc-500 dark:text-zinc-400">평균 구독료</span>
-          <p className="text-title2 text-zinc-900 dark:text-zinc-100 tabular-nums mt-1">
+          <span className="text-caption text-sub">평균 구독료</span>
+          <p className="text-title2 text-heading tabular-nums mt-1">
             {formatKoreanUnit(Math.round(monthlyCombined / active.length))}
           </p>
         </Card>
@@ -105,7 +105,7 @@ export function SubscriptionAnalysis() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Category Distribution */}
         <Card className="card-pad-lg">
-          <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-4">카테고리별 구독</h3>
+          <h3 className="text-body3-semi text-heading mb-4">카테고리별 구독</h3>
           {categoryData.data.length > 0 ? (
             <div className="h-64 flex items-center justify-center">
               <Doughnut
@@ -137,7 +137,7 @@ export function SubscriptionAnalysis() {
 
         {/* Currency Split */}
         <Card className="card-pad-lg">
-          <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-4">통화별 월간 구독료</h3>
+          <h3 className="text-body3-semi text-heading mb-4">통화별 월간 구독료</h3>
           <div className="h-64">
             <Bar
               data={{
@@ -161,7 +161,7 @@ export function SubscriptionAnalysis() {
 
       {/* Subscription List */}
       <Card className="card-pad-lg">
-        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-4">구독 목록</h3>
+        <h3 className="text-body3-semi text-heading mb-4">구독 목록</h3>
         <div className="space-y-2">
           {active
             .sort((a, b) => {
@@ -182,13 +182,13 @@ export function SubscriptionAnalysis() {
                     className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: sub.color }}
                   />
-                  <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1 truncate">
+                  <span className="text-sm text-body flex-1 truncate">
                     {sub.name}
                   </span>
-                  <span className="text-body3 text-zinc-900 dark:text-zinc-100 tabular-nums">
+                  <span className="text-body3 text-heading tabular-nums">
                     {formatSubscriptionAmount(monthly, sub.currency)}/월
                   </span>
-                  <span className="text-caption text-zinc-400 dark:text-zinc-500 w-12 text-right tabular-nums">
+                  <span className="text-caption text-disabled w-12 text-right tabular-nums">
                     {pct.toFixed(0)}%
                   </span>
                 </div>

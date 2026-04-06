@@ -108,16 +108,16 @@ export function DataTab() {
       {/* Cloud Sync */}
       {user && (
         <section>
-          <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+          <h3 className="text-body3-semi text-heading mb-3 flex items-center gap-2">
             <Cloud className="w-4 h-4" />
             클라우드 동기화
           </h3>
           <div className="space-y-3">
-            <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+            <div className="p-4 bg-surface-secondary rounded-xl">
               <div className="flex items-center gap-3">
                 <SyncStatusIndicator status={syncStatus} />
                 <div>
-                  <p className="text-body3 text-zinc-900 dark:text-zinc-100">
+                  <p className="text-body3 text-heading">
                     {SYNC_LABELS[syncStatus]}
                     {pendingChangesCount > 0 && syncStatus !== 'syncing' && (
                       <span className="text-caption text-amber-500 dark:text-amber-400 ml-2">
@@ -126,7 +126,7 @@ export function DataTab() {
                     )}
                   </p>
                   {lastSyncTime && (
-                    <p className="text-caption text-zinc-500 dark:text-zinc-400">
+                    <p className="text-caption text-sub">
                       마지막 동기화: {formatRelativeTime(lastSyncTime)}
                     </p>
                   )}
@@ -144,10 +144,10 @@ export function DataTab() {
                   }
                 }}
                 disabled={syncStatus === 'syncing'}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-base hover:bg-[var(--hover-bg)] transition-colors disabled:opacity-50"
               >
                 <Upload className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                <span className="text-caption text-zinc-600 dark:text-zinc-400">로컬 → 클라우드</span>
+                <span className="text-caption text-sub">로컬 → 클라우드</span>
               </button>
               <button
                 onClick={async () => {
@@ -159,10 +159,10 @@ export function DataTab() {
                   }
                 }}
                 disabled={syncStatus === 'syncing'}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-base hover:bg-[var(--hover-bg)] transition-colors disabled:opacity-50"
               >
                 <Download className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                <span className="text-caption text-zinc-600 dark:text-zinc-400">클라우드 → 로컬</span>
+                <span className="text-caption text-sub">클라우드 → 로컬</span>
               </button>
             </div>
           </div>
@@ -171,15 +171,15 @@ export function DataTab() {
 
       {/* Backup & Restore */}
       <section>
-        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+        <h3 className="text-body3-semi text-heading mb-3 flex items-center gap-2">
           <Database className="w-4 h-4" />
           백업 및 복원
         </h3>
         <div className="space-y-3">
-          <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+          <div className="flex items-center justify-between p-4 bg-surface-secondary rounded-xl">
             <div>
-              <p className="text-body3 text-zinc-900 dark:text-zinc-100">백업 다운로드</p>
-              <p className="text-caption text-zinc-500 dark:text-zinc-400">
+              <p className="text-body3 text-heading">백업 다운로드</p>
+              <p className="text-caption text-sub">
                 {settings.lastBackupDate
                   ? `마지막 백업: ${formatRelativeTime(settings.lastBackupDate)}`
                   : '백업한 적이 없습니다'}
@@ -195,10 +195,10 @@ export function DataTab() {
               {isBackingUp ? '백업 중...' : '내보내기'}
             </Button>
           </div>
-          <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+          <div className="flex items-center justify-between p-4 bg-surface-secondary rounded-xl">
             <div>
-              <p className="text-body3 text-zinc-900 dark:text-zinc-100">데이터 복원</p>
-              <p className="text-caption text-zinc-500 dark:text-zinc-400">JSON 백업 파일에서 복원합니다</p>
+              <p className="text-body3 text-heading">데이터 복원</p>
+              <p className="text-caption text-sub">JSON 백업 파일에서 복원합니다</p>
             </div>
             <Button
               variant="secondary"
@@ -215,14 +215,14 @@ export function DataTab() {
 
       {/* Easy Ledger Import */}
       <section>
-        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+        <h3 className="text-body3-semi text-heading mb-3 flex items-center gap-2">
           <FileUp className="w-4 h-4" />
           편한가계부 가져오기
         </h3>
-        <div className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+        <div className="flex items-center justify-between p-4 bg-surface-secondary rounded-xl">
           <div>
-            <p className="text-body3 text-zinc-900 dark:text-zinc-100">외부 데이터 가져오기</p>
-            <p className="text-caption text-zinc-500 dark:text-zinc-400">
+            <p className="text-body3 text-heading">외부 데이터 가져오기</p>
+            <p className="text-caption text-sub">
               편한가계부 앱의 Excel 내보내기 파일에서 거래 데이터를 가져옵니다
             </p>
           </div>
@@ -239,12 +239,12 @@ export function DataTab() {
 
       {/* CSV Export */}
       <section>
-        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+        <h3 className="text-body3-semi text-heading mb-3 flex items-center gap-2">
           <FileSpreadsheet className="w-4 h-4" />
           CSV 내보내기
         </h3>
-        <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
-          <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-3">
+        <div className="p-4 bg-surface-secondary rounded-xl">
+          <p className="text-caption text-sub mb-3">
             Excel 호환 CSV 파일로 데이터를 내보냅니다
           </p>
           <div className="flex gap-2">

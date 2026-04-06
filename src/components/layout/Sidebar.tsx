@@ -144,8 +144,8 @@ export function Sidebar() {
         className={clsx(
           'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
           active
-            ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-            : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+            ? 'bg-accent-primary text-accent-primary'
+            : 'text-sub hover:bg-[var(--hover-bg)]'
         )}
         role="menuitem"
         aria-current={active ? 'page' : undefined}
@@ -156,7 +156,7 @@ export function Sidebar() {
     ) : (
       <button
         onClick={() => item.action && handleAction(item.action)}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sub hover:bg-[var(--hover-bg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
         role="menuitem"
       >
         <Icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
@@ -193,8 +193,8 @@ export function Sidebar() {
               className={clsx(
                 'w-full flex items-center justify-center px-3 py-2.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                 isGroupActive
-                  ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  ? 'bg-accent-primary text-accent-primary'
+                  : 'text-sub hover:bg-[var(--hover-bg)]'
               )}
               role="menuitem"
             >
@@ -212,8 +212,8 @@ export function Sidebar() {
           className={clsx(
             'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
             isGroupActive
-              ? 'text-primary-700 dark:text-primary-300'
-              : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              ? 'text-accent-primary'
+              : 'text-sub hover:bg-[var(--hover-bg)]'
           )}
           aria-expanded={isExpanded}
         >
@@ -230,7 +230,7 @@ export function Sidebar() {
         <AnimatePresence initial={false}>
           {isExpanded && (
             <motion.ul
-              className="mt-1 space-y-0.5 ml-4 pl-4 border-l border-zinc-200 dark:border-zinc-700 overflow-hidden"
+              className="mt-1 space-y-0.5 ml-4 pl-4 border-l border-base overflow-hidden"
               role="menu"
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
@@ -252,8 +252,8 @@ export function Sidebar() {
                       className={clsx(
                         'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                         childActive
-                          ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
-                          : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300'
+                          ? 'bg-accent-primary text-accent-primary font-medium'
+                          : 'text-sub hover:bg-[var(--hover-bg)] hover:text-heading'
                       )}
                       role="menuitem"
                       aria-current={childActive ? 'page' : undefined}
@@ -273,7 +273,7 @@ export function Sidebar() {
   return (
     <aside
       className={clsx(
-        'hidden lg:flex flex-col fixed h-screen bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 transition-all duration-300 z-[var(--z-sidebar)]',
+        'hidden lg:flex flex-col fixed h-screen bg-surface-secondary border-r border-base transition-all duration-300 z-[var(--z-sidebar)]',
         isSidebarOpen ? 'w-64' : 'w-16'
       )}
       role="complementary"
@@ -281,7 +281,7 @@ export function Sidebar() {
       aria-expanded={isSidebarOpen}
     >
       {/* Logo */}
-      <div className="flex items-center h-16 px-4 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="flex items-center h-16 px-4 border-b border-base">
         <Link
           to="/"
           className="flex items-center gap-3 overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-lg"
@@ -297,7 +297,7 @@ export function Sidebar() {
                 exit={{ opacity: 0, width: 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <span className="font-bold text-zinc-900 dark:text-zinc-100 truncate">FIN</span>
+                <span className="font-bold text-heading truncate">FIN</span>
               </motion.div>
             )}
           </AnimatePresence>
@@ -325,12 +325,12 @@ export function Sidebar() {
       </nav>
 
       {/* Collapse Toggle */}
-      <div className="p-2 border-t border-zinc-200 dark:border-zinc-800">
+      <div className="p-2 border-t border-base">
         {!isSidebarOpen ? (
           <Tooltip content="사이드바 펼치기" placement="right">
             <button
               onClick={toggleSidebar}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-sub hover:bg-[var(--hover-bg)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
               aria-label="사이드바 펼치기"
               aria-expanded={false}
             >
@@ -340,7 +340,7 @@ export function Sidebar() {
         ) : (
           <button
             onClick={toggleSidebar}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 min-h-[44px] rounded-lg text-sub hover:bg-[var(--hover-bg)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
             aria-label="사이드바 접기"
             aria-expanded={true}
           >

@@ -131,15 +131,15 @@ export function AssetCreateModal() {
         <div className="space-y-4">
           {/* Type Toggle */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-2">유형</label>
+            <label className="block text-body3 text-body mb-2">유형</label>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => { setType('asset'); setCategoryId('') }}
                 className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'asset'
-                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                    : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                    ? 'bg-status-success text-emerald-700 dark:text-emerald-400'
+                    : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400'
                 }`}
               >
                 자산
@@ -149,8 +149,8 @@ export function AssetCreateModal() {
                 onClick={() => { setType('liability'); setCategoryId('') }}
                 className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'liability'
-                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                    : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                    ? 'bg-status-danger text-red-700 dark:text-red-400'
+                    : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400'
                 }`}
               >
                 부채
@@ -179,7 +179,7 @@ export function AssetCreateModal() {
 
           {/* Name */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">항목명</label>
+            <label className="block text-body3 text-body mb-1.5">항목명</label>
             <input
               type="text"
               value={name}
@@ -192,7 +192,7 @@ export function AssetCreateModal() {
 
           {/* Category */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">카테고리</label>
+            <label className="block text-body3 text-body mb-1.5">카테고리</label>
             <Select
               value={String(categoryId)}
               onChange={(v) => setCategoryId(v ? Number(v) : '')}
@@ -208,7 +208,7 @@ export function AssetCreateModal() {
             <RealEstateInputArea onValuesChange={(v) => setRealEstateAmount(v.initialAmount)} />
           ) : (
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">초기 금액 (선택)</label>
+              <label className="block text-body3 text-body mb-1.5">초기 금액 (선택)</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -225,7 +225,7 @@ export function AssetCreateModal() {
 
           {/* Member */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">구성원</label>
+            <label className="block text-body3 text-body mb-1.5">구성원</label>
             <Select
               value={String(memberId)}
               onChange={(v) => setMemberId(v ? Number(v) : '')}
@@ -236,7 +236,7 @@ export function AssetCreateModal() {
 
           {/* Memo */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
+            <label className="block text-body3 text-body mb-1.5">메모 (선택)</label>
             <input
               type="text"
               value={memo}

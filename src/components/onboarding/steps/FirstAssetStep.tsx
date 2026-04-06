@@ -16,19 +16,19 @@ export function FirstAssetStep({ onNext, onBack }: FirstAssetStepProps) {
 
   return (
     <div className="flex flex-col items-center min-h-full px-6 py-12">
-      <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4">
-        <TrendingUp className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+      <div className="w-12 h-12 rounded-xl bg-status-success flex items-center justify-center mb-4">
+        <TrendingUp className="w-6 h-6 text-status-success" />
       </div>
-      <h2 className="text-title1 text-zinc-900 dark:text-zinc-100 mb-2">자산 등록 가이드</h2>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8 text-center">설정 완료 후 자산을 등록해보세요</p>
+      <h2 className="text-title1 text-heading mb-2">자산 등록 가이드</h2>
+      <p className="text-sm text-sub mb-8 text-center">설정 완료 후 자산을 등록해보세요</p>
 
       <div className="w-full max-w-sm space-y-3 mb-10">
         {tips.map((tip, i) => (
-          <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50">
-            <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+          <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-surface-secondary">
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-status-success flex-shrink-0">
               {tip.icon}
             </div>
-            <p className="text-sm text-zinc-700 dark:text-zinc-300">{tip.text}</p>
+            <p className="text-sm text-body">{tip.text}</p>
           </div>
         ))}
       </div>

@@ -75,7 +75,7 @@ export function EmptyState({
 
       <h3
         className={clsx(
-          'font-bold text-zinc-900 dark:text-zinc-100 mb-2',
+          'font-bold text-heading mb-2',
           styles.title
         )}
       >
@@ -85,7 +85,7 @@ export function EmptyState({
       {description && (
         <p
           className={clsx(
-            'text-zinc-500 dark:text-zinc-400 max-w-md mb-6',
+            'text-sub max-w-md mb-6',
             styles.description
           )}
         >

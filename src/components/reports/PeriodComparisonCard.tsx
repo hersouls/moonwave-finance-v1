@@ -24,25 +24,25 @@ export function PeriodComparisonCard() {
 
   return (
     <Card className="card-pad-lg">
-      <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-4">
+      <h3 className="text-body3-semi text-heading mb-4">
         전월 대비 비교
       </h3>
-      <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-4">
+      <p className="text-caption text-sub mb-4">
         {formatMonthLabel(previousMonth)} vs {formatMonthLabel(currentMonth)}
       </p>
 
       {/* Summary row */}
       <div className="grid grid-cols-2 gap-3 mb-5">
-        <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-          <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-1">총 지출</p>
-          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
+        <div className="p-3 bg-surface-secondary rounded-lg">
+          <p className="text-caption text-sub mb-1">총 지출</p>
+          <p className="text-sm font-bold text-heading tabular-nums">
             {formatKoreanUnit(totalExpense.current)}
           </p>
           <DeltaBadge delta={totalExpense.delta} percent={totalExpense.deltaPercent} isExpense />
         </div>
-        <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-          <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-1">총 수입</p>
-          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
+        <div className="p-3 bg-surface-secondary rounded-lg">
+          <p className="text-caption text-sub mb-1">총 수입</p>
+          <p className="text-sm font-bold text-heading tabular-nums">
             {formatKoreanUnit(totalIncome.current)}
           </p>
           <DeltaBadge delta={totalIncome.delta} percent={totalIncome.deltaPercent} />
@@ -52,12 +52,12 @@ export function PeriodComparisonCard() {
       {/* Category breakdown */}
       {categories.length > 0 && (
         <div className="space-y-2.5">
-          <p className="text-caption text-zinc-500 dark:text-zinc-400">카테고리별 지출 변화</p>
+          <p className="text-caption text-sub">카테고리별 지출 변화</p>
           {categories.map((cat) => (
             <div key={cat.categoryId ?? 'uncategorized'} className="flex items-center gap-2.5">
               <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
-              <span className="text-caption text-zinc-700 dark:text-zinc-300 flex-1 truncate">{cat.name}</span>
-              <span className="text-caption text-zinc-500 dark:text-zinc-400 tabular-nums">
+              <span className="text-caption text-body flex-1 truncate">{cat.name}</span>
+              <span className="text-caption text-sub tabular-nums">
                 {formatKoreanUnit(cat.current)}
               </span>
               <span className="text-[10px] text-zinc-400 tabular-nums w-14 text-right">
@@ -95,7 +95,7 @@ function DeltaBadge({ delta, percent, isExpense = false, compact = false }: {
   return (
     <span className={clsx(
       'inline-flex items-center gap-0.5 text-[10px] font-medium tabular-nums',
-      isGood ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+      isGood ? 'text-status-success' : 'text-status-danger'
     )}>
       {isPositive
         ? <ArrowUpRight className="w-2.5 h-2.5" />

@@ -32,7 +32,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-[var(--z-nav)] bg-white/80 dark:bg-zinc-950/80 glass-heavy border-t border-zinc-200/60 dark:border-zinc-800/60 pb-safe nav-bottom"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-[var(--z-nav)] bg-[var(--surface-elevated)] glass-heavy border-t border-base pb-safe nav-bottom"
       aria-label="하단 메인 네비게이션"
     >
       <ul className="flex items-center justify-around nav-bottom fold:h-14" role="menubar">
@@ -48,7 +48,7 @@ export function BottomNav() {
                   'nav-bottom-item relative w-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500',
                   isActive
                     ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:text-primary-600 dark:hover:text-primary-400'
+                    : 'text-disabled hover:text-primary-600'
                 )}
                 role="menuitem"
                 aria-current={isActive ? 'page' : undefined}

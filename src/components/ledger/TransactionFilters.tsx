@@ -68,7 +68,7 @@ export function TransactionFilters({
               'flex items-center gap-1.5 px-3 py-2 rounded-lg text-caption transition-colors',
               isExpanded || activeFilterCount > 0
                 ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-                : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400 hover:bg-[var(--hover-bg)]'
             )}
           >
             <Filter className="w-3.5 h-3.5" />
@@ -85,11 +85,11 @@ export function TransactionFilters({
 
       {/* Advanced Filters Panel */}
       {isExpanded && hasAdvanced && (
-        <div className="card-base space-y-4 bg-zinc-50 dark:bg-zinc-800/50">
+        <div className="card-base space-y-4 bg-surface-secondary">
           {/* Member filter */}
           {onMemberChange && members && members.length > 0 && (
             <div>
-              <label className="block text-caption text-zinc-500 dark:text-zinc-400 mb-2">구성원</label>
+              <label className="block text-caption text-sub mb-2">구성원</label>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => onMemberChange(null)}
@@ -97,7 +97,7 @@ export function TransactionFilters({
                     'px-3 py-1.5 rounded-lg text-caption transition-colors',
                     memberFilter === null
                       ? 'bg-primary-500 text-white'
-                      : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
+                      : 'bg-[var(--surface-tertiary)] text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
                   )}
                 >
                   전체
@@ -110,7 +110,7 @@ export function TransactionFilters({
                       'px-3 py-1.5 rounded-lg text-caption transition-colors',
                       memberFilter === m.id
                         ? 'bg-primary-500 text-white'
-                        : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
+                        : 'bg-[var(--surface-tertiary)] text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
                     )}
                   >
                     {m.name}
@@ -123,7 +123,7 @@ export function TransactionFilters({
           {/* Payment method filter */}
           {onPaymentMethodChange && (
             <div>
-              <label className="block text-caption text-zinc-500 dark:text-zinc-400 mb-2">거래수단</label>
+              <label className="block text-caption text-sub mb-2">거래수단</label>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => onPaymentMethodChange(null)}
@@ -131,7 +131,7 @@ export function TransactionFilters({
                     'px-3 py-1.5 rounded-lg text-caption transition-colors',
                     paymentMethodFilter === null
                       ? 'bg-primary-500 text-white'
-                      : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
+                      : 'bg-[var(--surface-tertiary)] text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
                   )}
                 >
                   전체
@@ -144,7 +144,7 @@ export function TransactionFilters({
                       'px-3 py-1.5 rounded-lg text-caption transition-colors',
                       paymentMethodFilter === opt.value
                         ? 'bg-primary-500 text-white'
-                        : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
+                        : 'bg-[var(--surface-tertiary)] text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
                     )}
                   >
                     {opt.label}
@@ -157,7 +157,7 @@ export function TransactionFilters({
           {/* Amount range */}
           {onAmountRangeChange && (
             <div>
-              <label className="block text-caption text-zinc-500 dark:text-zinc-400 mb-2">금액 범위</label>
+              <label className="block text-caption text-sub mb-2">금액 범위</label>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -183,7 +183,7 @@ export function TransactionFilters({
           {onReset && activeFilterCount > 0 && (
             <button
               onClick={onReset}
-              className="flex items-center gap-1.5 text-caption text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+              className="flex items-center gap-1.5 text-caption text-status-danger hover:text-red-600 dark:hover:text-red-300 transition-colors"
             >
               <RotateCcw className="w-3 h-3" />
               필터 초기화

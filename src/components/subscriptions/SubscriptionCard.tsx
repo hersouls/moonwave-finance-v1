@@ -83,7 +83,7 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className={clsx(
-              'text-body3 text-zinc-900 dark:text-zinc-100 truncate',
+              'text-body3 text-heading truncate',
               isCancelled && 'line-through'
             )}>
               {subscription.name}
@@ -94,19 +94,19 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
               </span>
             )}
             {isCancelled && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-status-danger text-status-danger">
                 해지됨
               </span>
             )}
           </div>
           <div className="flex items-center gap-2 mt-0.5">
             {cat && (
-              <span className="text-caption text-zinc-500 dark:text-zinc-400">
+              <span className="text-caption text-sub">
                 {cat.label}
               </span>
             )}
             {isActive && (
-              <span className="text-caption text-zinc-400 dark:text-zinc-500">
+              <span className="text-caption text-disabled">
                 {schedule} D-{daysUntil}
               </span>
             )}
@@ -115,17 +115,17 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
 
         {/* Amount */}
         <div className="text-right flex-shrink-0">
-          <p className="text-sm font-bold tabular-nums text-zinc-900 dark:text-zinc-100">
+          <p className="text-sm font-bold tabular-nums text-heading">
             {formatSubscriptionAmount(subscription.amount, subscription.currency)}
           </p>
-          <p className="text-caption text-zinc-400 dark:text-zinc-500">{cycleLabel}</p>
+          <p className="text-caption text-disabled">{cycleLabel}</p>
         </div>
 
         {/* Menu */}
         <div className="relative flex-shrink-0" ref={menuRef}>
           <button
             onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen) }}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-[var(--hover-bg)] transition-colors"
             aria-label="메뉴"
           >
             <MoreVertical className="w-4 h-4" />
@@ -135,14 +135,14 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
             <div className="context-menu absolute right-0 top-full mt-1 z-50">
               <button
                 onClick={() => { setMenuOpen(false); openEdit(subscription.id!) }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-body hover:bg-[var(--hover-bg)]"
               >
                 <Pencil className="w-3.5 h-3.5" /> 수정
               </button>
               {isActive && (
                 <button
                   onClick={() => { setMenuOpen(false); changeStatus(subscription.id!, 'paused') }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-body hover:bg-[var(--hover-bg)]"
                 >
                   <Pause className="w-3.5 h-3.5" /> 일시정지
                 </button>
@@ -150,7 +150,7 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
               {isPaused && (
                 <button
                   onClick={() => { setMenuOpen(false); changeStatus(subscription.id!, 'active') }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-body hover:bg-[var(--hover-bg)]"
                 >
                   <Play className="w-3.5 h-3.5" /> 재개
                 </button>
@@ -158,14 +158,14 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
               {!isCancelled && (
                 <button
                   onClick={() => { setMenuOpen(false); changeStatus(subscription.id!, 'cancelled') }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-status-danger hover:bg-red-50 dark:hover:bg-red-900/20"
                 >
                   <XCircle className="w-3.5 h-3.5" /> 해지
                 </button>
               )}
               <button
                 onClick={() => { setMenuOpen(false); deleteSubscription(subscription.id!) }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-status-danger hover:bg-red-50 dark:hover:bg-red-900/20"
               >
                 <Trash2 className="w-3.5 h-3.5" /> 삭제
               </button>

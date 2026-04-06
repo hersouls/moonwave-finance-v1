@@ -1,10 +1,10 @@
 export function AppLoadingScreen() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-900">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-surface-secondary">
       <div className="animate-pulse mb-4">
         <img src="/icons/icon-192.png" alt="FIN" className="w-16 h-16 mx-auto rounded-2xl" />
       </div>
-      <h1 className="text-title2 text-zinc-900 dark:text-zinc-100 mb-3">
+      <h1 className="text-title2 text-heading mb-3">
         FIN
       </h1>
       <div className="flex items-center gap-2 text-sm text-zinc-400">

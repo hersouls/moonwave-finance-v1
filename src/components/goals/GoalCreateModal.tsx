@@ -106,7 +106,7 @@ export function GoalCreateModal({ open, onClose, editGoal }: GoalCreateModalProp
       <DialogBody>
         <div className="space-y-4">
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">목표명</label>
+            <label className="block text-body3 text-body mb-1.5">목표명</label>
             <input
               type="text"
               value={name}
@@ -118,7 +118,7 @@ export function GoalCreateModal({ open, onClose, editGoal }: GoalCreateModalProp
           </div>
 
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">유형</label>
+            <label className="block text-body3 text-body mb-1.5">유형</label>
             <div className="grid grid-cols-4 gap-2">
               {GOAL_TYPES.map(gt => (
                 <button
@@ -128,7 +128,7 @@ export function GoalCreateModal({ open, onClose, editGoal }: GoalCreateModalProp
                   className={`py-2 rounded-lg text-caption transition-colors ${
                     type === gt.value
                       ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
-                      : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                      : 'bg-surface-tertiary text-sub'
                   }`}
                 >
                   {gt.label}
@@ -139,7 +139,7 @@ export function GoalCreateModal({ open, onClose, editGoal }: GoalCreateModalProp
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">목표 금액</label>
+              <label className="block text-body3 text-body mb-1.5">목표 금액</label>
               <div className="relative">
                 <input
                   type="text" inputMode="numeric"
@@ -152,7 +152,7 @@ export function GoalCreateModal({ open, onClose, editGoal }: GoalCreateModalProp
               </div>
             </div>
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">현재 금액</label>
+              <label className="block text-body3 text-body mb-1.5">현재 금액</label>
               <div className="relative">
                 <input
                   type="text" inputMode="numeric"
@@ -167,7 +167,7 @@ export function GoalCreateModal({ open, onClose, editGoal }: GoalCreateModalProp
           </div>
 
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">목표 날짜</label>
+            <label className="block text-body3 text-body mb-1.5">목표 날짜</label>
             <input
               type="date"
               value={targetDate}
@@ -177,7 +177,7 @@ export function GoalCreateModal({ open, onClose, editGoal }: GoalCreateModalProp
           </div>
 
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">색상</label>
+            <label className="block text-body3 text-body mb-1.5">색상</label>
             <div className="flex gap-2 flex-wrap">
               {GOAL_COLORS.map(c => (
                 <button
@@ -192,7 +192,7 @@ export function GoalCreateModal({ open, onClose, editGoal }: GoalCreateModalProp
           </div>
 
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
+            <label className="block text-body3 text-body mb-1.5">메모 (선택)</label>
             <input
               type="text"
               value={memo}

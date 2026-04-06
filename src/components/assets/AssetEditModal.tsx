@@ -65,7 +65,7 @@ export function AssetEditModal() {
       <DialogBody>
         <div className="space-y-4">
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">항목명</label>
+            <label className="block text-body3 text-body mb-1.5">항목명</label>
             <input
               type="text"
               value={name}
@@ -77,7 +77,7 @@ export function AssetEditModal() {
           </div>
 
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">카테고리</label>
+            <label className="block text-body3 text-body mb-1.5">카테고리</label>
             <Select
               value={String(categoryId)}
               onChange={(v) => setCategoryId(v ? Number(v) : '')}
@@ -87,7 +87,7 @@ export function AssetEditModal() {
           </div>
 
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">구성원</label>
+            <label className="block text-body3 text-body mb-1.5">구성원</label>
             <Select
               value={String(memberId)}
               onChange={(v) => setMemberId(v ? Number(v) : '')}
@@ -97,7 +97,7 @@ export function AssetEditModal() {
           </div>
 
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
+            <label className="block text-body3 text-body mb-1.5">메모 (선택)</label>
             <input
               type="text"
               value={memo}

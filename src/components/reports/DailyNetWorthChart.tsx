@@ -72,24 +72,24 @@ export function DailyNetWorthChart() {
     <Card className="card-pad-lg">
       {/* Header with month navigation */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100">일별 순자산 추이</h3>
+        <h3 className="text-body3-semi text-heading">일별 순자산 추이</h3>
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => setDisplayMonth(getPreviousMonth(displayMonth))}
-            className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-[var(--hover-bg)] transition-colors"
             aria-label="이전 월"
           >
             <ChevronLeft className="w-4 h-4 text-zinc-500" />
           </button>
-          <span className="text-body3 text-zinc-600 dark:text-zinc-400 min-w-[90px] text-center tabular-nums">
+          <span className="text-body3 text-sub min-w-[90px] text-center tabular-nums">
             {formatMonthLabel(displayMonth)}
           </span>
           <button
             type="button"
             onClick={() => setDisplayMonth(getNextMonth(displayMonth))}
             disabled={isCurrentMonth}
-            className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="p-1.5 rounded-lg hover:bg-[var(--hover-bg)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label="다음 월"
           >
             <ChevronRight className="w-4 h-4 text-zinc-500" />
@@ -102,22 +102,22 @@ export function DailyNetWorthChart() {
         <div className="flex gap-4 mb-4 text-caption">
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="text-zinc-500 dark:text-zinc-400">순자산</span>
-            <span className="text-zinc-900 dark:text-zinc-100 font-medium tabular-nums">
+            <span className="text-sub">순자산</span>
+            <span className="text-heading font-medium tabular-nums">
               {formatKoreanUnit(snapshots[snapshots.length - 1].netWorth)}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-            <span className="text-zinc-500 dark:text-zinc-400">자산</span>
-            <span className="text-zinc-900 dark:text-zinc-100 font-medium tabular-nums">
+            <span className="text-sub">자산</span>
+            <span className="text-heading font-medium tabular-nums">
               {formatKoreanUnit(snapshots[snapshots.length - 1].totalAssets)}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-            <span className="text-zinc-500 dark:text-zinc-400">부채</span>
-            <span className="text-zinc-900 dark:text-zinc-100 font-medium tabular-nums">
+            <span className="text-sub">부채</span>
+            <span className="text-heading font-medium tabular-nums">
               {formatKoreanUnit(snapshots[snapshots.length - 1].totalLiabilities)}
             </span>
           </div>
@@ -170,7 +170,7 @@ export function DailyNetWorthChart() {
         </div>
       ) : (
         <div className="h-64 flex items-center justify-center">
-          <p className="text-body3 text-zinc-400 dark:text-zinc-500">
+          <p className="text-body3 text-disabled">
             {formatMonthLabel(displayMonth)}에 기록된 데이터가 없습니다.
           </p>
         </div>

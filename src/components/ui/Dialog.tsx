@@ -46,11 +46,10 @@ export function Dialog({ open, onClose, children, size = 'lg', noPadding = false
           <DialogPanel
             transition
             className={clsx(
-              'row-start-2 w-full min-w-0 rounded-t-2xl bg-white elevation-4 ring-1 ring-zinc-200',
+              'row-start-2 w-full min-w-0 rounded-t-2xl bg-surface-primary elevation-4 ring-1 ring-[var(--border-default)]',
               noPadding
                 ? 'pb-[env(safe-area-inset-bottom,0px)]'
                 : 'p-6 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] sm:p-8 sm:pb-8',
-              'dark:bg-zinc-900 dark:ring-zinc-700',
               'sm:mb-auto sm:rounded-xl',
               sizeStyles[size],
               'transition duration-300 data-[closed]:translate-y-12 data-[closed]:opacity-0 data-[enter]:ease-out data-[leave]:ease-in',
@@ -76,11 +75,11 @@ interface DialogHeaderProps {
 export function DialogHeader({ title, description, onClose }: DialogHeaderProps) {
   return (
     <div className="relative">
-      <DialogTitle className="text-balance text-title2 text-zinc-950 dark:text-white sm:text-base/6">
+      <DialogTitle className="text-balance text-title2 text-heading sm:text-base/6">
         {title}
       </DialogTitle>
       {description && (
-        <Description className="mt-2 text-pretty text-sm/6 text-zinc-500 dark:text-zinc-400">
+        <Description className="mt-2 text-pretty text-sm/6 text-sub">
           {description}
         </Description>
       )}
@@ -88,7 +87,7 @@ export function DialogHeader({ title, description, onClose }: DialogHeaderProps)
         <div className="absolute right-0 top-0">
           <button
             onClick={onClose}
-            className="touch-target-icon text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="touch-target-icon text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
             aria-label="닫기"
           >
             <X className="w-5 h-5" />

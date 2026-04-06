@@ -28,7 +28,7 @@ export function SpendingByCategoryChart({ breakdown, title = '지출 카테고�
 
   return (
     <Card className="card-pad-lg">
-      <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-4">{title}</h3>
+      <h3 className="text-body3-semi text-heading mb-4">{title}</h3>
       <div className="flex items-center gap-6">
         <div className="w-36 h-36 flex-shrink-0">
           <Doughnut
@@ -57,8 +57,8 @@ export function SpendingByCategoryChart({ breakdown, title = '지출 카테고�
           {breakdown.slice(0, 6).map(b => (
             <div key={b.categoryId} className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: b.categoryColor }} />
-              <span className="text-caption text-zinc-600 dark:text-zinc-400 truncate flex-1">{b.categoryName}</span>
-              <span className="text-caption text-zinc-900 dark:text-zinc-100 tabular-nums">
+              <span className="text-caption text-sub truncate flex-1">{b.categoryName}</span>
+              <span className="text-caption text-heading tabular-nums">
                 {formatPercent(b.percentage, 0)}
               </span>
             </div>

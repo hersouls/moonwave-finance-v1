@@ -148,7 +148,7 @@ export function MobileNav() {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-zinc-900/50 backdrop-blur-sm" aria-hidden="true" />
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
         </TransitionChild>
 
         <TransitionChild
@@ -161,21 +161,21 @@ export function MobileNav() {
           leaveTo="-translate-x-full"
         >
           <DialogPanel
-            className="fixed inset-y-0 left-0 w-full max-w-xs bg-white dark:bg-zinc-950 elevation-4 flex flex-col"
+            className="fixed inset-y-0 left-0 w-full max-w-xs bg-surface-primary elevation-4 flex flex-col"
             aria-labelledby="mobile-nav-title"
           >
             {/* Header */}
-            <div className="flex items-center justify-between h-16 px-4 border-b border-zinc-200 dark:border-zinc-800 flex-shrink-0">
+            <div className="flex items-center justify-between h-16 px-4 border-b border-base flex-shrink-0">
               <div className="flex items-center gap-3">
                 <img src="/icons/icon-192.png" alt="FIN" className="w-8 h-8 rounded-lg flex-shrink-0" />
-                <span id="mobile-nav-title" className="font-bold text-zinc-900 dark:text-zinc-100">FIN</span>
+                <span id="mobile-nav-title" className="font-bold text-heading">FIN</span>
               </div>
               <button
                 onClick={closeMobileMenu}
                 className="touch-target-icon -mr-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                 aria-label="메뉴 닫기"
               >
-                <X className="w-5 h-5 text-zinc-600 dark:text-zinc-400" aria-hidden="true" />
+                <X className="w-5 h-5 text-sub" aria-hidden="true" />
               </button>
             </div>
 
@@ -185,7 +185,7 @@ export function MobileNav() {
               <div className="px-2 mb-4">
                 <button
                   onClick={handleAddAsset}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 min-h-[44px]"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-accent-primary text-accent-primary hover:bg-accent-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 min-h-[44px]"
                   aria-label="자산 추가"
                 >
                   <Plus className="w-5 h-5" aria-hidden="true" />
@@ -209,8 +209,8 @@ export function MobileNav() {
                             'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors min-h-[44px]',
                             'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                             isGroupActive
-                              ? 'text-primary-700 dark:text-primary-300'
-                              : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                              ? 'text-accent-primary'
+                              : 'text-sub hover:bg-[var(--hover-bg)]'
                           )}
                           aria-expanded={isExpanded}
                           role="menuitem"
@@ -226,7 +226,7 @@ export function MobileNav() {
                           />
                         </button>
                         {isExpanded && (
-                          <ul className="mt-1 ml-6 pl-4 border-l border-zinc-200 dark:border-zinc-700 space-y-0.5" role="menu">
+                          <ul className="mt-1 ml-6 pl-4 border-l border-base space-y-0.5" role="menu">
                             {group.children.map((child) => {
                               const childActive = location.pathname === child.path
                               return (
@@ -237,8 +237,8 @@ export function MobileNav() {
                                       'w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-colors min-h-[44px]',
                                       'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                                       childActive
-                                        ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
-                                        : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                        ? 'bg-accent-primary text-accent-primary font-medium'
+                                        : 'text-sub hover:bg-[var(--hover-bg)]'
                                     )}
                                     role="menuitem"
                                   >
@@ -260,7 +260,7 @@ export function MobileNav() {
                   <li role="none">
                     <button
                       onClick={() => handleNavigate('/reports')}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 min-h-[44px]"
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sub hover:bg-[var(--hover-bg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 min-h-[44px]"
                       role="menuitem"
                     >
                       <BarChart3 className="w-5 h-5" aria-hidden="true" />
@@ -272,7 +272,7 @@ export function MobileNav() {
                   <li role="none">
                     <button
                       onClick={handleThemeClick}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 min-h-[44px]"
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sub hover:bg-[var(--hover-bg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 min-h-[44px]"
                       role="menuitem"
                     >
                       <Palette className="w-5 h-5" aria-hidden="true" />
@@ -284,7 +284,7 @@ export function MobileNav() {
                   <li role="none">
                     <button
                       onClick={handleOpenFAQ}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 min-h-[44px]"
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sub hover:bg-[var(--hover-bg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 min-h-[44px]"
                       role="menuitem"
                     >
                       <HelpCircle className="w-5 h-5" aria-hidden="true" />
@@ -296,7 +296,7 @@ export function MobileNav() {
                   <li role="none">
                     <button
                       onClick={handleOpenSettings}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 min-h-[44px]"
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sub hover:bg-[var(--hover-bg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 min-h-[44px]"
                       role="menuitem"
                     >
                       <Settings className="w-5 h-5" aria-hidden="true" />

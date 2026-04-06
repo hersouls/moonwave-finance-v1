@@ -58,23 +58,23 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-[var(--z-header)] bg-white/80 dark:bg-zinc-950/80 glass-heavy border-b border-zinc-200/60 dark:border-zinc-800/60">
+    <header className="sticky top-0 z-[var(--z-header)] bg-[var(--surface-elevated)] glass-heavy border-b border-base">
       <nav className="flex items-center justify-between nav-header nav-header-inset">
         <div className="flex items-center gap-3">
           {isDetailPage ? (
             <button onClick={() => navigate(-1)} className="lg:hidden touch-target-icon -ml-2" aria-label="뒤로 가기">
-              <ArrowLeft className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+              <ArrowLeft className="w-5 h-5 text-sub" />
             </button>
           ) : (
             <button onClick={openMobileMenu} className="lg:hidden touch-target-icon -ml-2" aria-label="메뉴 열기">
-              <Menu className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+              <Menu className="w-5 h-5 text-sub" />
             </button>
           )}
           <Link to="/" className="lg:hidden flex items-center gap-2">
             <img src="/icons/icon-192.png" alt="FIN" className="w-8 h-8 rounded-lg" />
-            <span className="font-bold text-zinc-900 dark:text-zinc-100">FIN</span>
+            <span className="font-bold text-heading">FIN</span>
           </Link>
-          <h2 className="hidden lg:block text-title2 text-zinc-900 dark:text-zinc-100">{getPageTitle()}</h2>
+          <h2 className="hidden lg:block text-title2 text-heading">{getPageTitle()}</h2>
         </div>
         <div className="flex-1" />
         <div className="nav-header-actions">
@@ -82,9 +82,9 @@ export function Header() {
             <Tooltip content={user.displayName || user.email} placement="bottom">
               <button type="button" onClick={() => navigate('/profile')} className="mr-1 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500" aria-label="프로필 보기">
                 {user.photoURL ? (
-                  <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-zinc-800 elevation-1 object-cover" referrerPolicy="no-referrer" />
+                  <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full ring-2 ring-[var(--surface-primary)] elevation-1 object-cover" referrerPolicy="no-referrer" />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-300 text-sm font-bold ring-2 ring-white dark:ring-zinc-800 elevation-1">
+                  <div className="w-8 h-8 rounded-full bg-accent-primary flex items-center justify-center text-accent-primary text-sm font-bold ring-2 ring-[var(--surface-primary)] elevation-1">
                     {user.displayName?.[0] || user.email?.[0] || '?'}
                   </div>
                 )}

@@ -11,8 +11,10 @@
 /* Text */
 .text-heading { color: var(--text-primary); }
 .text-body { color: var(--text-secondary); }
-.text-caption { color: var(--text-tertiary); }
+.text-sub { color: var(--text-tertiary); }
 .text-disabled { color: var(--text-muted); }
+.text-muted { color: var(--text-muted); }
+.text-inverse { color: var(--text-inverse); }
 
 /* Border */
 .border-base { border-color: var(--border-default); }
@@ -31,6 +33,8 @@
 .bg-status-danger { background-color: var(--status-danger-bg); }
 .text-status-danger { color: var(--status-danger-text); }
 .text-status-success { color: var(--status-success-text); }
+.text-status-warning { color: var(--status-warning-text, #d97706); }
+.border-status-danger { border-color: var(--status-danger-border); }
 
 /* Muted / Glass */
 .bg-surface-muted { background-color: var(--surface-muted); }

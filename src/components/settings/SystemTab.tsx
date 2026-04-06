@@ -56,11 +56,11 @@ export function SystemTab() {
     <div className="space-y-8">
       {/* PWA Install */}
       <section>
-        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3 flex items-center gap-2">
+        <h3 className="text-body3-semi text-heading mb-3 flex items-center gap-2">
           <Smartphone className="w-4 h-4" />
           앱 설치
         </h3>
-        <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+        <div className="p-4 bg-surface-secondary rounded-xl">
           {isStandalone ? (
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-green-500" />
@@ -71,8 +71,8 @@ export function SystemTab() {
           ) : installPrompt ? (
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-body3 text-zinc-900 dark:text-zinc-100">앱으로 설치하기</p>
-                <p className="text-caption text-zinc-500 dark:text-zinc-400">
+                <p className="text-body3 text-heading">앱으로 설치하기</p>
+                <p className="text-caption text-sub">
                   홈 화면에 추가하여 더 빠르게 사용할 수 있습니다
                 </p>
               </div>
@@ -87,10 +87,10 @@ export function SystemTab() {
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              <p className="text-sm text-sub">
                 앱 설치를 위해 브라우저 메뉴에서 설치 옵션을 사용하세요
               </p>
-              <div className="text-caption text-zinc-500 dark:text-zinc-400 space-y-1">
+              <div className="text-caption text-sub space-y-1">
                 <p>• Chrome: 주소줄 오른쪽 설치 아이콘 또는 메뉴 → 앱 설치</p>
                 <p>• Safari: 공유 → 홈 화면에 추가</p>
                 <p>• Samsung: 메뉴 → 페이지를 다음에 추가 → 홈 화면</p>
@@ -102,7 +102,7 @@ export function SystemTab() {
 
       {/* Danger Zone */}
       <section>
-        <h3 className="text-body3-semi text-red-600 dark:text-red-400 mb-3 flex items-center gap-2">
+        <h3 className="text-body3-semi text-status-danger mb-3 flex items-center gap-2">
           <Trash2 className="w-4 h-4" />
           위험 구역
         </h3>
@@ -110,7 +110,7 @@ export function SystemTab() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-body3 text-red-700 dark:text-red-400">모든 데이터 삭제</p>
-              <p className="text-caption text-zinc-500 dark:text-zinc-400">
+              <p className="text-caption text-sub">
                 모든 데이터를 삭제하고 초기 상태로 되돌립니다. 이 작업은 되돌릴 수 없습니다.
               </p>
             </div>

@@ -105,7 +105,7 @@ export function CalendarPage() {
         </IconButton>
         <button
           onClick={goToToday}
-          className="text-base font-semibold text-zinc-900 dark:text-zinc-100 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+          className="text-base font-semibold text-heading hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
         >
           {monthLabel}
         </button>
@@ -125,11 +125,11 @@ export function CalendarPage() {
       {/* Selected Day Transactions */}
       {selectedDate && (
         <div>
-          <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">
+          <h3 className="text-body3-semi text-heading mb-3">
             {parseInt(selectedDate.split('-')[2])}일 거래 내역
           </h3>
           {selectedDayTransactions.length === 0 ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-6">
+            <p className="text-sm text-sub text-center py-6">
               기록된 거래가 없습니다.
             </p>
           ) : (

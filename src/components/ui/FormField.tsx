@@ -15,7 +15,7 @@ export function FormField({ label, required, error, children, className, floatin
           {children}
           <label className="input-float-label">
             {label}
-            {required && <span className="text-red-500 ml-0.5">*</span>}
+            {required && <span className="text-status-danger ml-0.5">*</span>}
           </label>
         </div>
         {error && (
@@ -27,9 +27,9 @@ export function FormField({ label, required, error, children, className, floatin
 
   return (
     <div className={className}>
-      <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">
+      <label className="block text-body3 text-body mb-1.5">
         {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
+        {required && <span className="text-status-danger ml-0.5">*</span>}
       </label>
       {children}
       {error && (

@@ -34,7 +34,7 @@ export function LedgerSummaryCard() {
   return (
     <Card className="card-pad-lg">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100">이번 달 가계부</h3>
+        <h3 className="text-body3-semi text-heading">이번 달 가계부</h3>
         <button
           onClick={() => navigate('/ledger/expense')}
           className="text-caption text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
@@ -46,20 +46,20 @@ export function LedgerSummaryCard() {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
+            <TrendingUp className="w-4 h-4 text-status-success" />
             <span className="text-sm text-zinc-600 dark:text-zinc-400">수입</span>
           </div>
-          <span className="text-body3-semi text-emerald-600 dark:text-emerald-400 tabular-nums">
+          <span className="text-body3-semi text-status-success tabular-nums">
             +{formatKoreanUnit(animatedIncome)}
           </span>
         </div>
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TrendingDown className="w-4 h-4 text-red-500" />
+            <TrendingDown className="w-4 h-4 text-status-danger" />
             <span className="text-sm text-zinc-600 dark:text-zinc-400">지출</span>
           </div>
-          <span className="text-body3-semi text-red-600 dark:text-red-400 tabular-nums">
+          <span className="text-body3-semi text-status-danger tabular-nums">
             -{formatKoreanUnit(animatedExpense)}
           </span>
         </div>
@@ -67,13 +67,13 @@ export function LedgerSummaryCard() {
         <div className="border-t border-zinc-200 dark:border-zinc-700 pt-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Minus className="w-4 h-4 text-zinc-400" />
-            <span className="text-body3 text-zinc-700 dark:text-zinc-300">잔액</span>
+            <span className="text-body3 text-body">잔액</span>
           </div>
           <span className={clsx(
             'text-sm font-bold tabular-nums',
             animatedSavings >= 0
-              ? 'text-emerald-600 dark:text-emerald-400'
-              : 'text-red-600 dark:text-red-400'
+              ? 'text-status-success'
+              : 'text-status-danger'
           )}>
             {animatedSavings >= 0 ? '+' : ''}{formatKoreanUnit(animatedSavings)}
           </span>

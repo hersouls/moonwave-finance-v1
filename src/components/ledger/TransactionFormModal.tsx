@@ -214,7 +214,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
           {/* Templates */}
           {mode === 'create' && templates.length > 0 && (
             <div>
-              <label className="block text-caption text-zinc-500 dark:text-zinc-400 mb-1.5">자주 쓰는 거래</label>
+              <label className="block text-caption text-sub mb-1.5">자주 쓰는 거래</label>
               <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
                 {templates.map((tmpl, i) => {
                   const cat = tmpl.categoryId ? categories.find(c => c.id === tmpl.categoryId) : null
@@ -223,7 +223,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                       key={i}
                       type="button"
                       onClick={() => applyTemplate(tmpl)}
-                      className="flex-shrink-0 px-3 py-1.5 rounded-lg text-caption bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                      className="flex-shrink-0 px-3 py-1.5 rounded-lg text-caption bg-surface-tertiary text-body hover:bg-[var(--hover-bg)] transition-colors"
                     >
                       {cat?.name || '미분류'} {formatKoreanUnit(tmpl.amount)}
                     </button>
@@ -236,7 +236,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
           {/* Loan Interest Shortcut */}
           {mode === 'create' && activeLoans.length > 0 && (
             <div>
-              <label className="block text-caption text-zinc-500 dark:text-zinc-400 mb-1.5 flex items-center gap-1">
+              <label className="block text-caption text-sub mb-1.5 flex items-center gap-1">
                 <Landmark className="w-3.5 h-3.5" />
                 대출이자 불러오기
               </label>
@@ -258,7 +258,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
           {/* Member - NOW AT TOP */}
           {members.length > 0 && (
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-2">구성원</label>
+              <label className="block text-body3 text-body mb-2">구성원</label>
               <div className="flex gap-2" role="group" aria-label="구성원 선택">
                 {members.length <= 4 ? (
                   <>
@@ -283,7 +283,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                           'flex-1 py-2 px-4 rounded-lg text-body3 transition-colors',
                           memberId === m.id
                             ? 'text-white ring-1'
-                            : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                            : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                         )}
                         style={memberId === m.id ? { backgroundColor: m.color, boxShadow: `0 0 0 1px ${m.color}` } : undefined}
                       >
@@ -305,15 +305,15 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
 
           {/* Type Toggle */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-2">유형</label>
+            <label className="block text-body3 text-body mb-2">유형</label>
             <div className="flex gap-2" role="radiogroup" aria-label="거래 유형">
               <button
                 type="button"
                 onClick={() => setType('expense')}
                 className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'expense'
-                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                    : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                    ? 'bg-status-danger text-red-700 dark:text-red-400'
+                    : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400'
                 }`}
               >
                 지출
@@ -323,8 +323,8 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                 onClick={() => setType('income')}
                 className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'income'
-                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                    : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                    ? 'bg-status-success text-emerald-700 dark:text-emerald-400'
+                    : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400'
                 }`}
               >
                 수입
@@ -334,7 +334,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
 
           {/* Amount */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">금액</label>
+            <label className="block text-body3 text-body mb-1.5">금액</label>
             <div className="relative">
               <input
                 type="text"
@@ -351,7 +351,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
 
           {/* Category */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">카테고리</label>
+            <label className="block text-body3 text-body mb-1.5">카테고리</label>
             <Select
               value={String(categoryId)}
               onChange={(v) => setCategoryId(v ? Number(v) : '')}
@@ -379,7 +379,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
 
           {/* Date */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">날짜</label>
+            <label className="block text-body3 text-body mb-1.5">날짜</label>
             <input
               type="date"
               value={date}
@@ -390,7 +390,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
 
           {/* Payment Method (거래수단) */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">거래수단 (선택)</label>
+            <label className="block text-body3 text-body mb-1.5">거래수단 (선택)</label>
             <div className="grid grid-cols-3 gap-2">
               {PAYMENT_METHOD_OPTIONS.map(opt => (
                 <button
@@ -401,7 +401,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                     'py-2 px-2 rounded-lg text-caption transition-colors text-center',
                     paymentMethod === opt.value
                       ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 ring-1 ring-primary-300 dark:ring-primary-700'
-                      : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                      : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                   )}
                 >
                   {opt.label}
@@ -458,7 +458,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
 
           {/* Memo */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
+            <label className="block text-body3 text-body mb-1.5">메모 (선택)</label>
             <input
               type="text"
               value={memo}
@@ -479,14 +479,14 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                     onChange={(e) => setIsRecurring(e.target.checked)}
                     className="check"
                   />
-                  <span className="text-body3 text-zinc-700 dark:text-zinc-300">반복 거래</span>
+                  <span className="text-body3 text-body">반복 거래</span>
                 </label>
               </div>
 
               {isRecurring && (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">반복 주기</label>
+                    <label className="block text-body3 text-body mb-1.5">반복 주기</label>
                     <Select
                       value={recurType}
                       onChange={(v) => setRecurType(v as RepeatType)}
@@ -499,7 +499,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                     />
                   </div>
                   <div>
-                    <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">종료일 (선택)</label>
+                    <label className="block text-body3 text-body mb-1.5">종료일 (선택)</label>
                     <input
                       type="date"
                       value={recurEndDate}

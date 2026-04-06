@@ -43,7 +43,7 @@ export function CategoryBreakdown({ transactions, type, budgets }: CategoryBreak
 
   return (
     <div className="card-base">
-      <h4 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">
+      <h4 className="text-body3-semi text-heading mb-3">
         {type === 'income' ? '수입' : '지출'} 카테고리
       </h4>
       <div className="space-y-2.5">
@@ -52,10 +52,10 @@ export function CategoryBreakdown({ transactions, type, budgets }: CategoryBreak
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <div className="badge-category-dot" style={{ backgroundColor: b.color }} />
-                <span className="text-sm text-zinc-700 dark:text-zinc-300">{b.name}</span>
+                <span className="text-sm text-body">{b.name}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-body3 text-zinc-900 dark:text-zinc-100 tabular-nums">
+                <span className="text-body3 text-heading tabular-nums">
                   {formatKoreanUnit(b.total)}
                 </span>
                 <span className="text-caption text-zinc-400 w-10 text-right tabular-nums">
@@ -63,7 +63,7 @@ export function CategoryBreakdown({ transactions, type, budgets }: CategoryBreak
                 </span>
               </div>
             </div>
-            <div className="h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-surface-tertiary rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all"
                 style={{ width: `${b.percentage}%`, backgroundColor: b.color }}
@@ -71,13 +71,13 @@ export function CategoryBreakdown({ transactions, type, budgets }: CategoryBreak
             </div>
             {b.budget !== null && (
               <div className="flex items-center justify-between mt-1">
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                <span className="text-[10px] text-disabled">
                   예산 {formatKoreanUnit(b.budget)}
                 </span>
                 <span className={`text-[10px] font-medium tabular-nums ${
                   b.total > b.budget
-                    ? 'text-red-500 dark:text-red-400'
-                    : 'text-emerald-500 dark:text-emerald-400'
+                    ? 'text-status-danger'
+                    : 'text-status-success'
                 }`}>
                   {b.total > b.budget
                     ? `${formatKoreanUnit(b.total - b.budget)} 초과`

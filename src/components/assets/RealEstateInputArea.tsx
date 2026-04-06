@@ -13,8 +13,8 @@ export function RealEstateInputArea({ onValuesChange }: RealEstateInputAreaProps
   }, [initialAmountStr, onValuesChange])
 
   return (
-    <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl space-y-4 border border-zinc-200 dark:border-zinc-700">
-      <h4 className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+    <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl space-y-4 border border-base">
+      <h4 className="text-[13px] font-semibold text-heading flex items-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-500">
           <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
           <polyline points="9 22 9 12 15 12 15 22"/>

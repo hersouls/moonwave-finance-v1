@@ -123,7 +123,7 @@ export function LiabilityCreateModal() {
           )}
 
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">항목명</label>
+            <label className="block text-body3 text-body mb-1.5">항목명</label>
             <input
               type="text"
               value={name}
@@ -135,7 +135,7 @@ export function LiabilityCreateModal() {
           </div>
 
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">카테고리</label>
+            <label className="block text-body3 text-body mb-1.5">카테고리</label>
             <Select
               value={String(categoryId)}
               onChange={(v) => setCategoryId(v ? Number(v) : '')}
@@ -146,7 +146,7 @@ export function LiabilityCreateModal() {
 
           {/* Initial Amount */}
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">초기 금액 (선택)</label>
+            <label className="block text-body3 text-body mb-1.5">초기 금액 (선택)</label>
             <input
               type="text"
               inputMode="numeric"
@@ -161,7 +161,7 @@ export function LiabilityCreateModal() {
           </div>
 
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">구성원</label>
+            <label className="block text-body3 text-body mb-1.5">구성원</label>
             <Select
               value={String(memberId)}
               onChange={(v) => setMemberId(v ? Number(v) : '')}
@@ -171,7 +171,7 @@ export function LiabilityCreateModal() {
           </div>
 
           <div>
-            <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">메모 (선택)</label>
+            <label className="block text-body3 text-body mb-1.5">메모 (선택)</label>
             <input
               type="text"
               value={memo}

@@ -80,9 +80,9 @@ export function AssetCalendarPage() {
   if (isLoading) {
     return (
       <div className="p-4 lg:p-6 space-y-4 animate-pulse">
-        <div className="h-10 bg-zinc-200 dark:bg-zinc-700 rounded-lg" />
-        <div className="h-24 bg-zinc-200 dark:bg-zinc-700 rounded-xl" />
-        <div className="h-64 bg-zinc-200 dark:bg-zinc-700 rounded-xl" />
+        <div className="h-10 bg-[var(--surface-tertiary)] rounded-lg" />
+        <div className="h-24 bg-[var(--surface-tertiary)] rounded-xl" />
+        <div className="h-64 bg-[var(--surface-tertiary)] rounded-xl" />
       </div>
     )
   }
@@ -99,7 +99,7 @@ export function AssetCalendarPage() {
         </IconButton>
         <button
           onClick={goToToday}
-          className="text-base font-semibold text-zinc-900 dark:text-zinc-100 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+          className="text-base font-semibold text-heading hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
         >
           {monthLabel}
         </button>
@@ -112,30 +112,30 @@ export function AssetCalendarPage() {
       {monthSummary && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Card className="card-pad-sm">
-            <p className="text-caption text-zinc-500 dark:text-zinc-400">순자산</p>
-            <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
+            <p className="text-caption text-sub">순자산</p>
+            <p className="text-sm font-bold text-heading tabular-nums">
               {formatKoreanUnit(monthSummary.netWorth)}
             </p>
           </Card>
           <Card className="card-pad-sm">
-            <p className="text-caption text-zinc-500 dark:text-zinc-400">총 자산</p>
-            <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+            <p className="text-caption text-sub">총 자산</p>
+            <p className="text-sm font-bold text-status-success tabular-nums">
               {formatKoreanUnit(monthSummary.totalAssets)}
             </p>
           </Card>
           <Card className="card-pad-sm">
-            <p className="text-caption text-zinc-500 dark:text-zinc-400">총 부채</p>
-            <p className="text-sm font-bold text-red-600 dark:text-red-400 tabular-nums">
+            <p className="text-caption text-sub">총 부채</p>
+            <p className="text-sm font-bold text-status-danger tabular-nums">
               {formatKoreanUnit(monthSummary.totalLiabilities)}
             </p>
           </Card>
           <Card className="card-pad-sm">
-            <p className="text-caption text-zinc-500 dark:text-zinc-400">월간 변동</p>
+            <p className="text-caption text-sub">월간 변동</p>
             <p className={clsx(
               'text-sm font-bold tabular-nums',
               monthSummary.monthChange >= 0
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : 'text-red-600 dark:text-red-400'
+                ? 'text-status-success'
+                : 'text-status-danger'
             )}>
               {monthSummary.monthChange >= 0 ? '+' : ''}{formatKoreanUnit(monthSummary.monthChange)}
             </p>
@@ -152,7 +152,7 @@ export function AssetCalendarPage() {
               key={d}
               className={clsx(
                 'text-center text-caption py-1',
-                i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-zinc-400 dark:text-zinc-500'
+                i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-disabled'
               )}
             >
               {d}
@@ -177,25 +177,25 @@ export function AssetCalendarPage() {
       {/* Selected Day Detail */}
       {selectedDate && selectedData && (
         <Card>
-          <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">
+          <h3 className="text-body3-semi text-heading mb-3">
             {parseInt(selectedDate.split('-')[2])}일 자산 현황
           </h3>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-zinc-500 dark:text-zinc-400">총 자산</span>
-              <span className="font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">
+              <span className="text-sub">총 자산</span>
+              <span className="font-medium text-status-success tabular-nums">
                 {formatKRW(selectedData.totalAssets)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-zinc-500 dark:text-zinc-400">총 부채</span>
-              <span className="font-medium text-red-600 dark:text-red-400 tabular-nums">
+              <span className="text-sub">총 부채</span>
+              <span className="font-medium text-status-danger tabular-nums">
                 {formatKRW(selectedData.totalLiabilities)}
               </span>
             </div>
-            <div className="border-t border-zinc-200 dark:border-zinc-700 pt-2 flex justify-between text-sm">
-              <span className="text-zinc-900 dark:text-zinc-100 font-medium">순자산</span>
-              <span className="font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
+            <div className="border-t border-base pt-2 flex justify-between text-sm">
+              <span className="text-heading font-medium">순자산</span>
+              <span className="font-bold text-heading tabular-nums">
                 {formatKRW(selectedData.netWorth)}
               </span>
             </div>
@@ -204,9 +204,9 @@ export function AssetCalendarPage() {
                 {selectedData.change > 0 ? (
                   <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
                 ) : (
-                  <TrendingDown className="w-3.5 h-3.5 text-red-500" />
+                  <TrendingDown className="w-3.5 h-3.5 text-status-danger" />
                 )}
-                <span className={selectedData.change > 0 ? 'text-emerald-500' : 'text-red-500'}>
+                <span className={selectedData.change > 0 ? 'text-emerald-500' : 'text-status-danger'}>
                   전일 대비 {selectedData.change > 0 ? '+' : ''}{formatKRW(selectedData.change)}
                 </span>
               </div>
@@ -239,21 +239,21 @@ function AssetDayCell({ day, data, isSelected, onSelect }: AssetDayCellProps) {
         isSelected
           ? 'bg-primary-100 dark:bg-primary-900/30 ring-1 ring-primary-500'
           : 'hover:bg-zinc-100 dark:hover:bg-zinc-700/50',
-        day.isToday && !isSelected && 'bg-zinc-100 dark:bg-zinc-800'
+        day.isToday && !isSelected && 'bg-surface-tertiary'
       )}
     >
       <span className={clsx(
         'text-caption',
         day.isToday
           ? 'text-primary-600 dark:text-primary-400 font-bold'
-          : 'text-zinc-600 dark:text-zinc-400'
+          : 'text-sub'
       )}>
         {day.day}
       </span>
       {data && data.netWorth !== 0 && (
         <span className={clsx(
           'text-[9px] sm:text-[10px] tabular-nums mt-auto truncate w-full',
-          data.netWorth >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'
+          data.netWorth >= 0 ? 'text-status-success' : 'text-status-danger'
         )}>
           {formatKoreanUnit(data.netWorth)}
         </span>

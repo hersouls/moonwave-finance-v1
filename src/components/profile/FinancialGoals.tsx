@@ -30,7 +30,7 @@ export function FinancialGoals() {
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-title2 text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+        <h2 className="text-title2 text-heading flex items-center gap-2">
           <Target className="w-5 h-5" />
           재정 목표
         </h2>
@@ -41,7 +41,7 @@ export function FinancialGoals() {
 
       {goals.length === 0 ? (
         <Card className="card-pad-lg">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center">
+          <p className="text-sm text-sub text-center">
             재정 목표를 설정하고 진행률을 추적해보세요.
           </p>
         </Card>

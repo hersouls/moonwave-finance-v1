@@ -148,7 +148,7 @@ export function LoanTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100">대출 관리</h3>
+        <h3 className="text-body3-semi text-heading">대출 관리</h3>
         <button
           onClick={openCreate}
           className="flex items-center gap-1 text-caption text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
@@ -157,7 +157,7 @@ export function LoanTab() {
           대출 추가
         </button>
       </div>
-      <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-4">
+      <p className="text-caption text-sub mb-4">
         대출 정보를 등록하면 부채 등록 및 가계부 이자 지출에 자동으로 연동할 수 있습니다.
       </p>
 
@@ -166,22 +166,22 @@ export function LoanTab() {
           {activeLoans.map(loan => (
             <div
               key={loan.id}
-              className="px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 group"
+              className="px-4 py-3 rounded-xl bg-surface-secondary group"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-body3-semi text-zinc-900 dark:text-zinc-100 truncate">
+                    <span className="text-body3-semi text-heading truncate">
                       {loan.name}
                     </span>
                     {loan.lender && (
-                      <span className="text-caption text-zinc-400 dark:text-zinc-500 flex items-center gap-0.5 shrink-0">
+                      <span className="text-caption text-disabled flex items-center gap-0.5 shrink-0">
                         <Building className="w-3 h-3" />
                         {loan.lender}
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-caption text-zinc-500 dark:text-zinc-400">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-caption text-sub">
                     <span className="flex items-center gap-1">
                       <Banknote className="w-3 h-3" />
                       잔액 {formatAmount(loan.currentBalance)}원
@@ -220,21 +220,21 @@ export function LoanTab() {
           ))}
         </div>
       ) : (
-        <p className="text-caption text-zinc-400 dark:text-zinc-500 px-3 py-6 text-center">
+        <p className="text-caption text-disabled px-3 py-6 text-center">
           등록된 대출이 없습니다.
         </p>
       )}
 
       {inactiveLoans.length > 0 && (
         <div className="mt-6">
-          <h4 className="text-caption text-zinc-400 dark:text-zinc-500 mb-2">비활성 대출</h4>
+          <h4 className="text-caption text-disabled mb-2">비활성 대출</h4>
           <div className="space-y-1.5">
             {inactiveLoans.map(loan => (
               <div
                 key={loan.id}
                 className="flex items-center gap-3 px-3 py-2 rounded-lg bg-zinc-50/50 dark:bg-zinc-800/30 opacity-60 group"
               >
-                <span className="flex-1 text-sm text-zinc-500 dark:text-zinc-400 truncate">{loan.name}</span>
+                <span className="flex-1 text-sm text-sub truncate">{loan.name}</span>
                 <button
                   onClick={() => openEdit(loan)}
                   className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-all"
@@ -257,7 +257,7 @@ export function LoanTab() {
         <DialogBody>
           <div className="space-y-4">
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">대출상품명 *</label>
+              <label className="block text-body3 text-body mb-1.5">대출상품명 *</label>
               <input
                 type="text"
                 value={name}
@@ -269,7 +269,7 @@ export function LoanTab() {
             </div>
 
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">대출기관</label>
+              <label className="block text-body3 text-body mb-1.5">대출기관</label>
               <input
                 type="text"
                 value={lender}
@@ -281,7 +281,7 @@ export function LoanTab() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">대출일 *</label>
+                <label className="block text-body3 text-body mb-1.5">대출일 *</label>
                 <input
                   type="date"
                   value={loanDate}
@@ -290,7 +290,7 @@ export function LoanTab() {
                 />
               </div>
               <div>
-                <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">만기일 *</label>
+                <label className="block text-body3 text-body mb-1.5">만기일 *</label>
                 <input
                   type="date"
                   value={maturityDate}
@@ -302,7 +302,7 @@ export function LoanTab() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">대출원금 *</label>
+                <label className="block text-body3 text-body mb-1.5">대출원금 *</label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -313,7 +313,7 @@ export function LoanTab() {
                 />
               </div>
               <div>
-                <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">현재 잔액 *</label>
+                <label className="block text-body3 text-body mb-1.5">현재 잔액 *</label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -327,7 +327,7 @@ export function LoanTab() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">연이율(%) *</label>
+                <label className="block text-body3 text-body mb-1.5">연이율(%) *</label>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -341,7 +341,7 @@ export function LoanTab() {
                 />
               </div>
               <div>
-                <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">이자납입일 *</label>
+                <label className="block text-body3 text-body mb-1.5">이자납입일 *</label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -358,7 +358,7 @@ export function LoanTab() {
             </div>
 
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">상환방식 *</label>
+              <label className="block text-body3 text-body mb-1.5">상환방식 *</label>
               <Select
                 value={repaymentType}
                 onChange={(v) => setRepaymentType(v as LoanRepaymentType)}
@@ -368,7 +368,7 @@ export function LoanTab() {
             </div>
 
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">이자납입계좌</label>
+              <label className="block text-body3 text-body mb-1.5">이자납입계좌</label>
               <input
                 type="text"
                 value={paymentAccount}
@@ -379,7 +379,7 @@ export function LoanTab() {
             </div>
 
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">메모</label>
+              <label className="block text-body3 text-body mb-1.5">메모</label>
               <input
                 type="text"
                 value={memo}
@@ -392,11 +392,11 @@ export function LoanTab() {
             {/* Monthly interest preview */}
             {previewBalance > 0 && previewRate > 0 && (
               <div className="rounded-lg bg-primary-50 dark:bg-primary-900/20 px-4 py-3">
-                <p className="text-caption text-zinc-500 dark:text-zinc-400 mb-0.5">월 예상이자</p>
+                <p className="text-caption text-sub mb-0.5">월 예상이자</p>
                 <p className="text-body2-semi text-primary-700 dark:text-primary-300 tabular-nums">
                   {formatAmount(previewMonthlyInterest)}원
                 </p>
-                <p className="text-caption text-zinc-400 dark:text-zinc-500 mt-0.5">
+                <p className="text-caption text-disabled mt-0.5">
                   = {formatAmount(previewBalance)}원 × {previewRate}% ÷ 12
                 </p>
               </div>
@@ -415,10 +415,10 @@ export function LoanTab() {
       <Dialog open={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)} size="sm">
         <DialogHeader title="대출 삭제" onClose={() => setIsDeleteConfirmOpen(false)} />
         <DialogBody>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">{deletingLoan?.name}</span>을(를) 삭제하시겠습니까?
+          <p className="text-sm text-sub">
+            <span className="font-medium text-heading">{deletingLoan?.name}</span>을(를) 삭제하시겠습니까?
           </p>
-          <p className="mt-2 text-caption text-zinc-500 dark:text-zinc-500">
+          <p className="mt-2 text-caption text-sub">
             연결된 부채 항목과 가계부 기록에는 영향이 없습니다.
           </p>
         </DialogBody>

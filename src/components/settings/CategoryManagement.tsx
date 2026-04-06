@@ -76,7 +76,7 @@ export function CategoryManagement() {
 
   return (
     <div>
-      <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-3">카테고리 관리</h3>
+      <h3 className="text-body3-semi text-heading mb-3">카테고리 관리</h3>
 
       {/* Type tabs */}
       <div className="flex gap-2 mb-4">
@@ -90,7 +90,7 @@ export function CategoryManagement() {
                 ? t === 'expense'
                   ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                   : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                : 'bg-surface-tertiary text-sub'
             )}
           >
             {t === 'expense' ? '지출' : '수입'}
@@ -103,13 +103,13 @@ export function CategoryManagement() {
         {filtered.map(cat => (
           <div
             key={cat.id}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 group"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-secondary group"
           >
             <div
               className="w-3 h-3 rounded-full shrink-0"
               style={{ backgroundColor: cat.color }}
             />
-            <span className="flex-1 text-sm text-zinc-900 dark:text-zinc-100">{cat.name}</span>
+            <span className="flex-1 text-sm text-heading">{cat.name}</span>
             <button
               onClick={() => openEdit(cat)}
               className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 opacity-0 group-hover:opacity-100 transition-all"
@@ -146,7 +146,7 @@ export function CategoryManagement() {
         <DialogBody>
           <div className="space-y-4">
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">이름</label>
+              <label className="block text-body3 text-body mb-1.5">이름</label>
               <input
                 type="text"
                 value={name}
@@ -157,7 +157,7 @@ export function CategoryManagement() {
               />
             </div>
             <div>
-              <label className="block text-body3 text-zinc-700 dark:text-zinc-300 mb-1.5">색상</label>
+              <label className="block text-body3 text-body mb-1.5">색상</label>
               <div className="grid grid-cols-9 gap-2">
                 {PRESET_COLORS.map(c => (
                   <button
@@ -187,10 +187,10 @@ export function CategoryManagement() {
       <Dialog open={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)} size="sm">
         <DialogHeader title="카테고리 삭제" onClose={() => setIsDeleteConfirmOpen(false)} />
         <DialogBody>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">{deletingCategory?.name}</span>을(를) 삭제하시겠습니까?
+          <p className="text-sm text-sub">
+            <span className="font-medium text-heading">{deletingCategory?.name}</span>을(를) 삭제하시겠습니까?
           </p>
-          <p className="mt-2 text-caption text-zinc-500 dark:text-zinc-500">
+          <p className="mt-2 text-caption text-sub">
             이 카테고리의 거래는 '미분류'로 변경됩니다.
           </p>
         </DialogBody>
