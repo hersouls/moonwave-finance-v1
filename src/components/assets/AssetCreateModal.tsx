@@ -139,7 +139,7 @@ export function AssetCreateModal() {
                 className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'asset'
                     ? 'bg-status-success text-emerald-700 dark:text-emerald-400'
-                    : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400'
+                    : 'bg-surface-tertiary text-sub'
                 }`}
               >
                 자산
@@ -150,7 +150,7 @@ export function AssetCreateModal() {
                 className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'liability'
                     ? 'bg-status-danger text-red-700 dark:text-red-400'
-                    : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400'
+                    : 'bg-surface-tertiary text-sub'
                 }`}
               >
                 부채

@@ -35,7 +35,7 @@ export function MemberSummaryCards() {
                   : 'text-status-danger'
               )}>
                 {formatKoreanUnit(mb.netWorth)}
-                <span className="text-caption text-zinc-400 ml-1">원</span>
+                <span className="text-caption text-disabled ml-1">원</span>
               </p>
 
               {/* Asset/Liability bar */}

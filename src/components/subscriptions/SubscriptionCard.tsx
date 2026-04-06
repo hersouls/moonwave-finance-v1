@@ -125,7 +125,7 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
         <div className="relative flex-shrink-0" ref={menuRef}>
           <button
             onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen) }}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-[var(--hover-bg)] transition-colors"
+            className="p-1.5 rounded-lg text-disabled hover:text-body hover:bg-[var(--hover-bg)] transition-colors"
             aria-label="메뉴"
           >
             <MoreVertical className="w-4 h-4" />

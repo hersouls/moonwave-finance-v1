@@ -60,7 +60,7 @@ export function PeriodComparisonCard() {
               <span className="text-caption text-sub tabular-nums">
                 {formatKoreanUnit(cat.current)}
               </span>
-              <span className="text-[10px] text-zinc-400 tabular-nums w-14 text-right">
+              <span className="text-[10px] text-disabled tabular-nums w-14 text-right">
                 (전월 {formatKoreanUnit(cat.previous)})
               </span>
               <DeltaBadge delta={cat.delta} percent={cat.deltaPercent} isExpense compact />
@@ -80,7 +80,7 @@ function DeltaBadge({ delta, percent, isExpense = false, compact = false }: {
 }) {
   if (delta === 0) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-[10px] text-zinc-400">
+      <span className="inline-flex items-center gap-0.5 text-[10px] text-disabled">
         <Minus className="w-2.5 h-2.5" />
         {!compact && '변동 없음'}
       </span>

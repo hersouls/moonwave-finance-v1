@@ -144,7 +144,7 @@ export function AssetCalendarPage() {
       )}
 
       {/* Calendar Grid */}
-      <div className="bg-white dark:bg-zinc-800/50 rounded-xl p-3">
+      <div className="bg-surface-primary rounded-xl p-3">
         {/* Weekday headers */}
         <div className="grid grid-cols-7 mb-2">
           {WEEKDAYS.map((d, i) => (
@@ -238,7 +238,7 @@ function AssetDayCell({ day, data, isSelected, onSelect }: AssetDayCellProps) {
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
         isSelected
           ? 'bg-primary-100 dark:bg-primary-900/30 ring-1 ring-primary-500'
-          : 'hover:bg-zinc-100 dark:hover:bg-zinc-700/50',
+          : 'hover:bg-[var(--hover-bg)]',
         day.isToday && !isSelected && 'bg-surface-tertiary'
       )}
     >

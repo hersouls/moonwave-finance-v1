@@ -9,7 +9,7 @@ export function IOSInstallBanner() {
   return (
     <div className="fixed top-0 left-0 right-0 z-[var(--z-overlay)] animate-[slideInFromTop_0.3s_ease-out]">
       <div className="mx-auto max-w-lg px-4 pt-3 pb-2">
-        <div className="relative px-4 py-3 bg-zinc-800 dark:bg-zinc-700 text-white rounded-xl elevation-4">
+        <div className="relative px-4 py-3 bg-[var(--surface-tertiary)] text-white rounded-xl elevation-4">
           {/* Close button */}
           <button
             type="button"

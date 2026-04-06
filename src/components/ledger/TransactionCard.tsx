@@ -142,14 +142,14 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
             {/* Desktop-only edit/delete buttons */}
             <button
               onClick={(e) => { e.stopPropagation(); openTransactionEditModal(transaction.id!) }}
-              className="hidden lg:flex p-1.5 rounded-lg text-zinc-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors flex-shrink-0"
+              className="hidden lg:flex p-1.5 rounded-lg text-disabled hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors flex-shrink-0"
               aria-label="수정"
             >
               <Pencil className="w-4 h-4" />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true) }}
-              className="hidden lg:flex p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
+              className="hidden lg:flex p-1.5 rounded-lg text-disabled hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
               aria-label="삭제"
             >
               <Trash2 className="w-4 h-4" />

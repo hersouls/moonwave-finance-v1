@@ -112,14 +112,14 @@ export function CategoryManagement() {
             <span className="flex-1 text-sm text-heading">{cat.name}</span>
             <button
               onClick={() => openEdit(cat)}
-              className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 opacity-0 group-hover:opacity-100 transition-all"
+              className="p-1.5 rounded-md text-disabled hover:text-body hover:bg-[var(--hover-bg)] opacity-0 group-hover:opacity-100 transition-all"
               aria-label="수정"
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => openDelete(cat)}
-              className="p-1.5 rounded-md text-zinc-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
+              className="p-1.5 rounded-md text-disabled hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
               aria-label="삭제"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -165,7 +165,7 @@ export function CategoryManagement() {
                     onClick={() => setColor(c)}
                     className={clsx(
                       'w-7 h-7 rounded-full transition-all',
-                      color === c ? 'ring-2 ring-offset-2 ring-primary-500 dark:ring-offset-zinc-900' : 'hover:scale-110'
+                      color === c ? 'ring-2 ring-offset-2 ring-primary-500 dark:ring-offset-[var(--surface-primary)]' : 'hover:scale-110'
                     )}
                     style={{ backgroundColor: c }}
                     aria-label={c}

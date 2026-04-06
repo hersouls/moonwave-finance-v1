@@ -74,7 +74,7 @@ export function BudgetSettingModal({ open, onClose }: BudgetSettingModalProps) {
                   placeholder="0"
                   className="input-base !pr-8 text-right tabular-nums"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-caption text-zinc-400">원</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-caption text-disabled">원</span>
               </div>
             </div>
           ))}

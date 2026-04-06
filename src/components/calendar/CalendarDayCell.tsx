@@ -19,7 +19,7 @@ export function CalendarDayCell({ day, summary, isSelected, onClick }: CalendarD
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
         day.isCurrentMonth
           ? 'text-heading'
-          : 'text-zinc-300 dark:text-zinc-600',
+          : 'text-disabled',
         day.isToday && 'ring-2 ring-primary-400 dark:ring-primary-600',
         isSelected && 'bg-primary-100 dark:bg-primary-900/30',
         !isSelected && day.isCurrentMonth && 'hover:bg-[var(--hover-bg)]',

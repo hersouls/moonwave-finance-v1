@@ -281,7 +281,7 @@ export function SubscriptionFormModal() {
                 금액 *
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-disabled">
                   {currency === 'KRW' ? '₩' : '$'}
                 </span>
                 <input
@@ -421,7 +421,7 @@ export function SubscriptionFormModal() {
                   onClick={() => setColor(c)}
                   className={clsx(
                     'w-8 h-8 rounded-full transition-all',
-                    color === c ? 'ring-2 ring-offset-2 ring-primary-500 dark:ring-offset-zinc-900' : ''
+                    color === c ? 'ring-2 ring-offset-2 ring-primary-500 ring-offset-[var(--surface-primary)]' : ''
                   )}
                   style={{ backgroundColor: c }}
                   aria-label={c}

@@ -24,7 +24,7 @@ export function SearchResultItem({ result, onClick, isActive }: SearchResultItem
       className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
         isActive
           ? 'bg-primary-50 dark:bg-primary-900/20'
-          : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+          : 'hover:bg-[var(--hover-bg)]'
       }`}
     >
       <div className="w-8 h-8 rounded-lg bg-surface-tertiary flex items-center justify-center text-sub flex-shrink-0">

@@ -83,7 +83,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
           )}
           {permission === 'unsupported' && (
             <div className="flex items-center gap-2">
-              <BellOff className="w-4 h-4 text-zinc-400" />
+              <BellOff className="w-4 h-4 text-disabled" />
               <span className="text-sm text-sub">이 브라우저에서는 알림을 지원하지 않습니다</span>
             </div>
           )}
@@ -117,7 +117,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
                       'px-3 py-1.5 rounded-lg text-body3 transition-all',
                       draft.notifications.budgetThreshold === v
                         ? 'bg-primary-500 text-white'
-                        : 'bg-[var(--surface-tertiary)] text-sub hover:bg-zinc-300 dark:hover:bg-zinc-600'
+                        : 'bg-[var(--surface-tertiary)] text-sub hover:bg-[var(--hover-bg)]'
                     )}
                   >
                     {v}%
@@ -156,7 +156,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
                       'px-3 py-1.5 rounded-lg text-body3 transition-all',
                       draft.notifications.reminderTime === t
                         ? 'bg-primary-500 text-white'
-                        : 'bg-[var(--surface-tertiary)] text-sub hover:bg-zinc-300 dark:hover:bg-zinc-600'
+                        : 'bg-[var(--surface-tertiary)] text-sub hover:bg-[var(--hover-bg)]'
                     )}
                   >
                     {t}
@@ -205,7 +205,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
                         'px-3 py-1.5 rounded-lg text-body3 transition-all',
                         isSelected
                           ? 'bg-primary-500 text-white'
-                          : 'bg-[var(--surface-tertiary)] text-sub hover:bg-zinc-300 dark:hover:bg-zinc-600'
+                          : 'bg-[var(--surface-tertiary)] text-sub hover:bg-[var(--hover-bg)]'
                       )}
                     >
                       {opt.label}

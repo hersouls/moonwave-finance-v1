@@ -268,8 +268,8 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                       className={clsx(
                         'px-3 py-2 rounded-lg text-body3 transition-colors',
                         memberId === ''
-                          ? 'bg-zinc-200 text-zinc-800 dark:bg-zinc-600 dark:text-zinc-100 ring-1 ring-zinc-300 dark:ring-zinc-500'
-                          : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                          ? 'bg-[var(--surface-tertiary)] text-heading ring-1 ring-[var(--border-default)]'
+                          : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]'
                       )}
                     >
                       미지정
@@ -283,7 +283,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                           'flex-1 py-2 px-4 rounded-lg text-body3 transition-colors',
                           memberId === m.id
                             ? 'text-white ring-1'
-                            : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                            : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]'
                         )}
                         style={memberId === m.id ? { backgroundColor: m.color, boxShadow: `0 0 0 1px ${m.color}` } : undefined}
                       >
@@ -312,8 +312,8 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                 onClick={() => setType('expense')}
                 className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'expense'
-                    ? 'bg-status-danger text-red-700 dark:text-red-400'
-                    : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400'
+                    ? 'bg-status-danger text-status-danger'
+                    : 'bg-surface-tertiary text-sub'
                 }`}
               >
                 지출
@@ -323,8 +323,8 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                 onClick={() => setType('income')}
                 className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'income'
-                    ? 'bg-status-success text-emerald-700 dark:text-emerald-400'
-                    : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400'
+                    ? 'bg-status-success text-status-success'
+                    : 'bg-surface-tertiary text-sub'
                 }`}
               >
                 수입
@@ -345,7 +345,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                 className="input-base !pr-8 tabular-nums"
                 autoFocus
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400">원</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-disabled">원</span>
             </div>
           </div>
 
@@ -401,7 +401,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                     'py-2 px-2 rounded-lg text-caption transition-colors text-center',
                     paymentMethod === opt.value
                       ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 ring-1 ring-primary-300 dark:ring-primary-700'
-                      : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                      : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]'
                   )}
                 >
                   {opt.label}
@@ -423,7 +423,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                           'px-3 py-1.5 rounded-lg text-caption transition-colors',
                           paymentMethodItemId === item.id
                             ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 ring-1 ring-blue-300 dark:ring-blue-700'
-                            : 'bg-zinc-50 text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                            : 'bg-surface-secondary text-sub hover:bg-[var(--hover-bg)]'
                         )}
                       >
                         {item.name}
@@ -435,8 +435,8 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                       className={clsx(
                         'px-3 py-1.5 rounded-lg text-caption transition-colors',
                         paymentMethodItemId === ''
-                          ? 'bg-zinc-200 text-zinc-700 dark:bg-zinc-600 dark:text-zinc-200'
-                          : 'bg-zinc-50 text-zinc-500 dark:bg-zinc-800/80 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                          ? 'bg-[var(--surface-tertiary)] text-body ring-1 ring-[var(--border-default)]'
+                          : 'bg-surface-secondary text-sub hover:bg-[var(--hover-bg)]'
                       )}
                     >
                       직접 입력

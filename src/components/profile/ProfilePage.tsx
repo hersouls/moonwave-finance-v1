@@ -446,5 +446,5 @@ function SyncStatusIndicator({ status }: { status: SyncStatus }) {
   if (status === 'error') {
     return <AlertCircle className="w-5 h-5 text-red-500" />
   }
-  return <CloudOff className="w-5 h-5 text-zinc-400" />
+  return <CloudOff className="w-5 h-5 text-disabled" />
 }

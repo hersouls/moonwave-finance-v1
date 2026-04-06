@@ -95,7 +95,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
               )}
             >
               <div
-                className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-zinc-800 elevation-1"
+                className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-[var(--surface-primary)] elevation-1"
                 style={{ backgroundColor: palette.colors.primary }}
               />
               <span className="text-caption text-sub">{palette.nameKo}</span>
@@ -181,7 +181,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
         <h3 className="text-body3-semi text-heading mb-3">앱 정보</h3>
         <div className="space-y-2">
           <div className="flex items-center gap-2 px-4 py-3 bg-surface-secondary rounded-xl">
-            <Info className="w-4 h-4 text-zinc-400" />
+            <Info className="w-4 h-4 text-disabled" />
             <span className="text-sm text-sub">
               {BACKUP_CONFIG.APP_NAME} v{BACKUP_CONFIG.CURRENT_VERSION}
             </span>

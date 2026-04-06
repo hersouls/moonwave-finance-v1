@@ -57,13 +57,13 @@ function AssetItemCardInner({ itemId, name, categoryId, type }: AssetItemCardPro
                 style={{ backgroundColor: category.color }}
               />
             )}
-            <span className="text-body3 text-zinc-900 dark:text-zinc-100 truncate">
+            <span className="text-body3 text-heading truncate">
               {name}
             </span>
           </div>
-          <p className="text-title2 text-zinc-900 dark:text-zinc-100 tabular-nums">
+          <p className="text-title2 text-heading tabular-nums">
             {formatKoreanUnit(latestValue)}
-            <span className="text-caption text-zinc-400 ml-1">원</span>
+            <span className="text-caption text-disabled ml-1">원</span>
           </p>
           {change !== 0 && (
             <p className={clsx(
@@ -84,7 +84,7 @@ function AssetItemCardInner({ itemId, name, categoryId, type }: AssetItemCardPro
               strokeWidth={1.5}
             />
           )}
-          <ChevronRight className="w-5 h-5 text-zinc-400" />
+          <ChevronRight className="w-5 h-5 text-disabled" />
         </div>
       </div>
     </Card>

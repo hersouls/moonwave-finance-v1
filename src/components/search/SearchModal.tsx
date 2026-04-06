@@ -57,7 +57,7 @@ export function SearchModal() {
       >
         {/* Search Input */}
         <div className="flex items-center gap-3 px-4 border-b border-base">
-          <Search className="w-5 h-5 text-zinc-400 flex-shrink-0" />
+          <Search className="w-5 h-5 text-disabled flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -65,11 +65,11 @@ export function SearchModal() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="자산, 거래, 구독, 카테고리 검색..."
-            className="flex-1 py-4 text-sm bg-transparent text-heading placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none"
+            className="flex-1 py-4 text-sm bg-transparent text-heading placeholder:text-disabled focus:outline-none"
           />
           {query && (
             <button onClick={() => setQuery('')} className="p-1 rounded hover:bg-[var(--hover-bg)]">
-              <X className="w-4 h-4 text-zinc-400" />
+              <X className="w-4 h-4 text-disabled" />
             </button>
           )}
         </div>
@@ -78,9 +78,9 @@ export function SearchModal() {
         {query && (
           <div className="max-h-80 overflow-y-auto">
             {isSearching ? (
-              <div className="px-4 py-8 text-center text-sm text-zinc-400">검색 중...</div>
+              <div className="px-4 py-8 text-center text-sm text-disabled">검색 중...</div>
             ) : results.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm text-zinc-400">검색 결과가 없습니다</div>
+              <div className="px-4 py-8 text-center text-sm text-disabled">검색 결과가 없습니다</div>
             ) : (
               <div className="py-2" role="listbox" aria-label="검색 결과">
                 {results.map((r, i) => (
@@ -97,7 +97,7 @@ export function SearchModal() {
         )}
 
         {/* Footer hint */}
-        <div className="px-4 py-2 border-t border-zinc-100 dark:border-zinc-800 flex gap-4 text-caption text-zinc-400">
+        <div className="px-4 py-2 border-t border-base flex gap-4 text-caption text-disabled">
           <span>↑↓ 이동</span>
           <span>↵ 선택</span>
           <span>ESC 닫기</span>

@@ -46,7 +46,7 @@ export function LiabilityItemCard({ itemId, name, categoryId }: LiabilityItemCar
           </div>
           <p className="text-title2 text-status-danger tabular-nums">
             {formatKoreanUnit(latestValue)}
-            <span className="text-caption text-zinc-400 ml-1">원</span>
+            <span className="text-caption text-disabled ml-1">원</span>
           </p>
           {change !== 0 && (
             <p className={clsx(
@@ -57,7 +57,7 @@ export function LiabilityItemCard({ itemId, name, categoryId }: LiabilityItemCar
             </p>
           )}
         </div>
-        <ChevronRight className="w-5 h-5 text-zinc-400 flex-shrink-0" />
+        <ChevronRight className="w-5 h-5 text-disabled flex-shrink-0" />
       </div>
     </Card>
   )

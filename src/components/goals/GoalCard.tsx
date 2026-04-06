@@ -29,7 +29,7 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
         {/* Progress Ring */}
         <div className="relative flex-shrink-0">
           <svg width="68" height="68" viewBox="0 0 68 68">
-            <circle cx="34" cy="34" r={radius} fill="none" stroke="currentColor" strokeWidth="4" className="text-zinc-100 dark:text-zinc-800" />
+            <circle cx="34" cy="34" r={radius} fill="none" stroke="currentColor" strokeWidth="4" className="text-[var(--surface-tertiary)]" />
             <motion.circle
               cx="34" cy="34" r={radius} fill="none"
               stroke={goal.color}

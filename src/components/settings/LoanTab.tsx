@@ -202,14 +202,14 @@ export function LoanTab() {
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => openEdit(loan)}
-                    className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 opacity-0 group-hover:opacity-100 transition-all"
+                    className="p-1.5 rounded-md text-disabled hover:text-body hover:bg-[var(--hover-bg)] opacity-0 group-hover:opacity-100 transition-all"
                     aria-label="수정"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => openDelete(loan)}
-                    className="p-1.5 rounded-md text-zinc-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
+                    className="p-1.5 rounded-md text-disabled hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
                     aria-label="삭제"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -232,12 +232,12 @@ export function LoanTab() {
             {inactiveLoans.map(loan => (
               <div
                 key={loan.id}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg bg-zinc-50/50 dark:bg-zinc-800/30 opacity-60 group"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-secondary opacity-60 group"
               >
                 <span className="flex-1 text-sm text-sub truncate">{loan.name}</span>
                 <button
                   onClick={() => openEdit(loan)}
-                  className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-all"
+                  className="p-1.5 rounded-md text-disabled hover:text-body opacity-0 group-hover:opacity-100 transition-all"
                   aria-label="수정"
                 >
                   <Pencil className="w-3.5 h-3.5" />

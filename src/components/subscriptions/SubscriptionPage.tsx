@@ -134,7 +134,7 @@ export function SubscriptionPage() {
             <div>
               <button
                 onClick={() => setShowInactive(!showInactive)}
-                className="flex items-center gap-2 text-sm text-sub hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors py-2"
+                className="flex items-center gap-2 text-sm text-sub hover:text-heading transition-colors py-2"
               >
                 {showInactive ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 일시정지/해지 ({inactive.length})

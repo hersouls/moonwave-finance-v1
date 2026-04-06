@@ -80,7 +80,7 @@ export function DailyNetWorthChart() {
             className="p-1.5 rounded-lg hover:bg-[var(--hover-bg)] transition-colors"
             aria-label="이전 월"
           >
-            <ChevronLeft className="w-4 h-4 text-zinc-500" />
+            <ChevronLeft className="w-4 h-4 text-sub" />
           </button>
           <span className="text-body3 text-sub min-w-[90px] text-center tabular-nums">
             {formatMonthLabel(displayMonth)}
@@ -92,7 +92,7 @@ export function DailyNetWorthChart() {
             className="p-1.5 rounded-lg hover:bg-[var(--hover-bg)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label="다음 월"
           >
-            <ChevronRight className="w-4 h-4 text-zinc-500" />
+            <ChevronRight className="w-4 h-4 text-sub" />
           </button>
         </div>
       </div>

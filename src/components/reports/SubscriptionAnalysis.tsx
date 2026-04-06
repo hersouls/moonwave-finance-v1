@@ -131,7 +131,7 @@ export function SubscriptionAnalysis() {
               />
             </div>
           ) : (
-            <p className="text-sm text-zinc-400 text-center py-8">데이터 없음</p>
+            <p className="text-sm text-disabled text-center py-8">데이터 없음</p>
           )}
         </Card>
 

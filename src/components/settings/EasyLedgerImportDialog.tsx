@@ -104,7 +104,7 @@ function LoadingView() {
   return (
     <div className="flex flex-col items-center gap-3 py-8">
       <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">파일 분석 중...</p>
+      <p className="text-sm text-sub">파일 분석 중...</p>
     </div>
   )
 }
@@ -114,15 +114,15 @@ function PreviewView({ preview }: { preview: ImportPreview }) {
     <div className="space-y-5">
       {/* Summary */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-          <p className="text-caption text-zinc-500 dark:text-zinc-400">총 거래</p>
-          <p className="text-title2 text-zinc-900 dark:text-zinc-100">
+        <div className="p-3 bg-surface-secondary rounded-lg">
+          <p className="text-caption text-sub">총 거래</p>
+          <p className="text-title2 text-heading">
             {preview.totalRecords.toLocaleString()}건
           </p>
         </div>
-        <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-          <p className="text-caption text-zinc-500 dark:text-zinc-400">기간</p>
-          <p className="text-body3 text-zinc-900 dark:text-zinc-100">
+        <div className="p-3 bg-surface-secondary rounded-lg">
+          <p className="text-caption text-sub">기간</p>
+          <p className="text-body3 text-heading">
             {preview.dateRange.from} ~ {preview.dateRange.to}
           </p>
         </div>
@@ -130,25 +130,25 @@ function PreviewView({ preview }: { preview: ImportPreview }) {
 
       {/* Categories */}
       <div>
-        <h4 className="text-body3 text-zinc-900 dark:text-zinc-100 mb-2">
+        <h4 className="text-body3 text-heading mb-2">
           카테고리 ({preview.categories.length}개)
         </h4>
         <div className="max-h-48 overflow-y-auto space-y-1">
           {preview.categories.map((cat) => (
             <div
               key={`${cat.name}-${cat.type}`}
-              className="flex items-center justify-between px-3 py-1.5 text-sm rounded-md bg-zinc-50 dark:bg-zinc-800/50"
+              className="flex items-center justify-between px-3 py-1.5 text-sm rounded-md bg-surface-secondary"
             >
               <div className="flex items-center gap-2">
-                <span className="text-zinc-700 dark:text-zinc-300">{cat.name}</span>
-                <span className="text-caption text-zinc-400">({cat.type})</span>
+                <span className="text-body">{cat.name}</span>
+                <span className="text-caption text-disabled">({cat.type})</span>
                 {cat.isNew && (
                   <span className="px-1.5 py-0.5 text-[10px] font-medium bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 rounded">
                     새로 생성
                   </span>
                 )}
               </div>
-              <span className="text-caption text-zinc-500">{cat.count.toLocaleString()}건</span>
+              <span className="text-caption text-sub">{cat.count.toLocaleString()}건</span>
             </div>
           ))}
         </div>
@@ -157,23 +157,23 @@ function PreviewView({ preview }: { preview: ImportPreview }) {
       {/* Members & Assets */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <h4 className="text-body3 text-zinc-900 dark:text-zinc-100 mb-2">감지된 구성원</h4>
+          <h4 className="text-body3 text-heading mb-2">감지된 구성원</h4>
           <div className="space-y-1">
             {preview.members.map((m) => (
-              <div key={m.name} className="flex items-center justify-between px-3 py-1.5 text-sm bg-zinc-50 dark:bg-zinc-800/50 rounded-md">
-                <span className="text-zinc-700 dark:text-zinc-300">{m.name}</span>
-                <span className="text-caption text-zinc-500">{m.count.toLocaleString()}건</span>
+              <div key={m.name} className="flex items-center justify-between px-3 py-1.5 text-sm bg-surface-secondary rounded-md">
+                <span className="text-body">{m.name}</span>
+                <span className="text-caption text-sub">{m.count.toLocaleString()}건</span>
               </div>
             ))}
           </div>
         </div>
         <div>
-          <h4 className="text-body3 text-zinc-900 dark:text-zinc-100 mb-2">거래수단</h4>
+          <h4 className="text-body3 text-heading mb-2">거래수단</h4>
           <div className="space-y-1">
             {preview.assets.map((a) => (
-              <div key={a.name} className="flex items-center justify-between px-3 py-1.5 text-sm bg-zinc-50 dark:bg-zinc-800/50 rounded-md">
-                <span className="text-zinc-700 dark:text-zinc-300">{a.name}</span>
-                <span className="text-caption text-zinc-500">{a.count.toLocaleString()}건</span>
+              <div key={a.name} className="flex items-center justify-between px-3 py-1.5 text-sm bg-surface-secondary rounded-md">
+                <span className="text-body">{a.name}</span>
+                <span className="text-caption text-sub">{a.count.toLocaleString()}건</span>
               </div>
             ))}
           </div>
@@ -206,13 +206,13 @@ function ImportingView({ progress }: { progress: { current: number; total: numbe
     <div className="flex flex-col items-center gap-4 py-8">
       <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
       <div className="w-full max-w-xs">
-        <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+        <div className="h-2 bg-[var(--surface-tertiary)] rounded-full overflow-hidden">
           <div
             className="h-full bg-primary-500 rounded-full transition-all duration-300"
             style={{ width: `${percent}%` }}
           />
         </div>
-        <p className="mt-2 text-sm text-center text-zinc-500 dark:text-zinc-400">
+        <p className="mt-2 text-sm text-center text-sub">
           {progress.phase}
         </p>
       </div>
@@ -225,36 +225,36 @@ function ResultView({ result }: { result: ImportResult }) {
     <div className="space-y-4">
       <div className="flex flex-col items-center gap-3 py-4">
         <CheckCircle2 className="w-12 h-12 text-green-500" />
-        <p className="text-title2 text-zinc-900 dark:text-zinc-100">
+        <p className="text-title2 text-heading">
           가져오기 완료
         </p>
       </div>
 
       <div className="space-y-2">
-        <div className="flex justify-between px-3 py-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-md text-sm">
-          <span className="text-zinc-500 dark:text-zinc-400">가져온 거래</span>
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">
+        <div className="flex justify-between px-3 py-2 bg-surface-secondary rounded-md text-sm">
+          <span className="text-sub">가져온 거래</span>
+          <span className="font-medium text-heading">
             {result.totalImported.toLocaleString()}건
           </span>
         </div>
-        <div className="flex justify-between px-3 py-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-md text-sm">
-          <span className="text-zinc-500 dark:text-zinc-400">기간</span>
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">
+        <div className="flex justify-between px-3 py-2 bg-surface-secondary rounded-md text-sm">
+          <span className="text-sub">기간</span>
+          <span className="font-medium text-heading">
             {result.dateRange.from} ~ {result.dateRange.to}
           </span>
         </div>
         {result.createdCategories.length > 0 && (
-          <div className="px-3 py-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-md text-sm">
-            <span className="text-zinc-500 dark:text-zinc-400">생성된 카테고리</span>
-            <p className="mt-1 text-zinc-900 dark:text-zinc-100">
+          <div className="px-3 py-2 bg-surface-secondary rounded-md text-sm">
+            <span className="text-sub">생성된 카테고리</span>
+            <p className="mt-1 text-heading">
               {result.createdCategories.join(', ')}
             </p>
           </div>
         )}
         {result.createdPaymentMethods.length > 0 && (
-          <div className="px-3 py-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-md text-sm">
-            <span className="text-zinc-500 dark:text-zinc-400">생성된 거래수단</span>
-            <p className="mt-1 text-zinc-900 dark:text-zinc-100">
+          <div className="px-3 py-2 bg-surface-secondary rounded-md text-sm">
+            <span className="text-sub">생성된 거래수단</span>
+            <p className="mt-1 text-heading">
               {result.createdPaymentMethods.join(', ')}
             </p>
           </div>
@@ -279,7 +279,7 @@ function ErrorView({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center gap-3 py-8">
       <AlertTriangle className="w-12 h-12 text-red-500" />
-      <p className="text-sm text-red-600 dark:text-red-400 text-center">{message}</p>
+      <p className="text-sm text-status-danger text-center">{message}</p>
     </div>
   )
 }

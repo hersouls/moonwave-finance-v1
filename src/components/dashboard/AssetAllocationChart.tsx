@@ -35,7 +35,7 @@ export function AssetAllocationChart() {
 
   return (
     <Card className="card-pad-lg">
-      <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100 mb-4">자산 구성</h3>
+      <h3 className="text-body3-semi text-heading mb-4">자산 구성</h3>
       <div className="flex items-center gap-6">
         <div className="relative w-36 h-36 flex-shrink-0">
           <Doughnut
@@ -63,8 +63,8 @@ export function AssetAllocationChart() {
           />
           {/* Center text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-caption text-zinc-400 dark:text-zinc-500">총 자산</span>
-            <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
+            <span className="text-caption text-disabled">총 자산</span>
+            <span className="text-sm font-bold text-heading tabular-nums">
               {formatKoreanUnit(animatedTotal)}
             </span>
           </div>
@@ -76,8 +76,8 @@ export function AssetAllocationChart() {
                 className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                 style={{ backgroundColor: b.categoryColor, boxShadow: `0 0 6px ${b.categoryColor}40` }}
               />
-              <span className="text-caption text-zinc-600 dark:text-zinc-400 truncate flex-1">{b.categoryName}</span>
-              <span className="text-caption font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
+              <span className="text-caption text-sub truncate flex-1">{b.categoryName}</span>
+              <span className="text-caption font-semibold text-heading tabular-nums">
                 {formatPercent(b.percentage, 0)}
               </span>
             </div>

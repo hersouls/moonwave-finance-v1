@@ -43,7 +43,7 @@ export function TransactionFilters({
     <div className="space-y-3">
       {onSearchChange && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-disabled" />
           <input
             type="text"
             value={searchQuery || ''}
@@ -68,7 +68,7 @@ export function TransactionFilters({
               'flex items-center gap-1.5 px-3 py-2 rounded-lg text-caption transition-colors',
               isExpanded || activeFilterCount > 0
                 ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-                : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400 hover:bg-[var(--hover-bg)]'
+                : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]'
             )}
           >
             <Filter className="w-3.5 h-3.5" />
@@ -97,7 +97,7 @@ export function TransactionFilters({
                     'px-3 py-1.5 rounded-lg text-caption transition-colors',
                     memberFilter === null
                       ? 'bg-primary-500 text-white'
-                      : 'bg-[var(--surface-tertiary)] text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
+                      : 'bg-[var(--surface-tertiary)] text-sub hover:bg-[var(--hover-bg)]'
                   )}
                 >
                   전체
@@ -110,7 +110,7 @@ export function TransactionFilters({
                       'px-3 py-1.5 rounded-lg text-caption transition-colors',
                       memberFilter === m.id
                         ? 'bg-primary-500 text-white'
-                        : 'bg-[var(--surface-tertiary)] text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
+                        : 'bg-[var(--surface-tertiary)] text-sub hover:bg-[var(--hover-bg)]'
                     )}
                   >
                     {m.name}
@@ -131,7 +131,7 @@ export function TransactionFilters({
                     'px-3 py-1.5 rounded-lg text-caption transition-colors',
                     paymentMethodFilter === null
                       ? 'bg-primary-500 text-white'
-                      : 'bg-[var(--surface-tertiary)] text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
+                      : 'bg-[var(--surface-tertiary)] text-sub hover:bg-[var(--hover-bg)]'
                   )}
                 >
                   전체
@@ -144,7 +144,7 @@ export function TransactionFilters({
                       'px-3 py-1.5 rounded-lg text-caption transition-colors',
                       paymentMethodFilter === opt.value
                         ? 'bg-primary-500 text-white'
-                        : 'bg-[var(--surface-tertiary)] text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
+                        : 'bg-[var(--surface-tertiary)] text-sub hover:bg-[var(--hover-bg)]'
                     )}
                   >
                     {opt.label}
@@ -166,7 +166,7 @@ export function TransactionFilters({
                   placeholder="최소"
                   className="input-base flex-1 text-caption"
                 />
-                <span className="text-caption text-zinc-400">~</span>
+                <span className="text-caption text-disabled">~</span>
                 <input
                   type="number"
                   value={maxAmount ?? ''}
@@ -174,7 +174,7 @@ export function TransactionFilters({
                   placeholder="최대"
                   className="input-base flex-1 text-caption"
                 />
-                <span className="text-caption text-zinc-400">원</span>
+                <span className="text-caption text-disabled">원</span>
               </div>
             </div>
           )}

@@ -144,7 +144,7 @@ export function PaymentMethodManagement() {
                       <span className="flex-1 text-sm text-heading">
                         {item.name}
                         {item.memo && (
-                          <span className="ml-2 text-caption text-zinc-400">({item.memo})</span>
+                          <span className="ml-2 text-caption text-disabled">({item.memo})</span>
                         )}
                         {item.linkedAssetItemId && (
                           <span className="ml-2 text-caption text-primary-500 dark:text-primary-400 inline-flex items-center gap-0.5">
@@ -155,14 +155,14 @@ export function PaymentMethodManagement() {
                       </span>
                       <button
                         onClick={() => openEdit(item)}
-                        className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 opacity-0 group-hover:opacity-100 transition-all"
+                        className="p-1.5 rounded-md text-disabled hover:text-body hover:bg-[var(--hover-bg)] opacity-0 group-hover:opacity-100 transition-all"
                         aria-label="수정"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => openDelete(item)}
-                        className="p-1.5 rounded-md text-zinc-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
+                        className="p-1.5 rounded-md text-disabled hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
                         aria-label="삭제"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

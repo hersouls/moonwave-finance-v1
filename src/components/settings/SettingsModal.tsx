@@ -81,7 +81,7 @@ export function SettingsModal() {
             <h2 className="text-title2 text-heading">설정</h2>
             <button
               onClick={handleClose}
-              className="p-2 rounded-lg text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-[var(--hover-bg)] transition-colors"
+              className="p-2 rounded-lg text-sub hover:text-body hover:bg-[var(--hover-bg)] transition-colors"
               aria-label="닫기"
             >
               <X className="w-5 h-5" />
@@ -108,7 +108,7 @@ export function SettingsModal() {
                   'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                   activeTab === tab.id
                     ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                    : 'text-sub hover:bg-zinc-100 dark:hover:bg-zinc-700/50'
+                    : 'text-sub hover:bg-[var(--hover-bg)]'
                 )}
               >
                 <tab.Icon className="w-4 h-4 shrink-0" />

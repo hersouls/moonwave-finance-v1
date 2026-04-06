@@ -185,7 +185,7 @@ export function AssetDetailPage() {
               {category && <span>{category.name}</span>}
               {member && (
                 <>
-                  <span className="text-zinc-300 dark:text-zinc-600">·</span>
+                  <span className="text-disabled">·</span>
                   <span>{member.name}</span>
                 </>
               )}
@@ -229,7 +229,7 @@ export function AssetDetailPage() {
         return (
           <Card className="card-pad-lg space-y-4">
             <h3 className="text-body3-semi text-heading flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 text-zinc-500" />
+              <RefreshCw className="w-4 h-4 text-sub" />
               퇴직금 재계산
             </h3>
             <p className="text-caption text-sub leading-relaxed">
@@ -237,7 +237,7 @@ export function AssetDetailPage() {
             </p>
             <div className="space-y-3">
               <div>
-                <label className="block text-[13px] text-zinc-600 dark:text-zinc-400 mb-1.5">입사일</label>
+                <label className="block text-[13px] text-sub mb-1.5">입사일</label>
                 <input
                   type="date"
                   value={sevJoinDate}
@@ -246,7 +246,7 @@ export function AssetDetailPage() {
                 />
               </div>
               <div>
-                <label className="block text-[13px] text-zinc-600 dark:text-zinc-400 mb-1.5">월 평균임금 (30일분)</label>
+                <label className="block text-[13px] text-sub mb-1.5">월 평균임금 (30일분)</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -259,9 +259,9 @@ export function AssetDetailPage() {
                     placeholder="0"
                     className="input-base text-right pr-8 tabular-nums"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400">원</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-disabled">원</span>
                 </div>
-                <p className="text-[12px] text-zinc-500 mt-1">최근 3개월 급여총액 / 해당 기간 총일수 x 30</p>
+                <p className="text-[12px] text-sub mt-1">최근 3개월 급여총액 / 해당 기간 총일수 x 30</p>
               </div>
               {sevEstimated > 0 && (
                 <div className="pt-3 border-t border-base space-y-2">
@@ -275,13 +275,13 @@ export function AssetDetailPage() {
                     <>
                       <div className="flex justify-between items-center text-[13px]">
                         <span className="text-sub">퇴직소득세</span>
-                        <span className="text-zinc-600 dark:text-zinc-300 tabular-nums">
+                        <span className="text-sub tabular-nums">
                           -{sevTax.incomeTax.toLocaleString('ko-KR')}원
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-[13px]">
                         <span className="text-sub">퇴직주민세</span>
-                        <span className="text-zinc-600 dark:text-zinc-300 tabular-nums">
+                        <span className="text-sub tabular-nums">
                           -{sevTax.residentTax.toLocaleString('ko-KR')}원
                         </span>
                       </div>
@@ -324,7 +324,7 @@ export function AssetDetailPage() {
         </div>
 
         <div className="card-base card-pad-none overflow-hidden">
-          <div className="grid grid-cols-1 divide-y divide-zinc-100 dark:divide-zinc-800">
+          <div className="grid grid-cols-1 divide-y divide-[var(--border-default)]">
             {dates.map((date, idx) => {
               const val = values.find(v => v.assetItemId === itemId && v.date === date)
               const prevDayVal = idx > 0
@@ -337,7 +337,7 @@ export function AssetDetailPage() {
               return (
                 <div
                   key={date}
-                  className="flex items-center px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer"
+                  className="flex items-center px-4 py-3 hover:bg-[var(--hover-bg)] cursor-pointer"
                   onClick={() => !isEditing && handleCellClick(date)}
                 >
                   <span className="w-10 text-sm text-sub tabular-nums">
@@ -353,12 +353,12 @@ export function AssetDetailPage() {
                         onChange={(e) => setEditValue(e.target.value)}
                         onBlur={() => handleCellSave(date)}
                         onKeyDown={(e) => handleKeyDown(e, date, idx)}
-                        className="w-full px-2 py-1 rounded border border-primary-400 dark:border-primary-600 bg-white dark:bg-zinc-800 text-sm text-heading tabular-nums focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        className="w-full px-2 py-1 rounded border border-primary-400 dark:border-primary-600 bg-surface-primary text-sm text-heading tabular-nums focus:outline-none focus:ring-1 focus:ring-primary-500"
                       />
                     ) : (
                       <span className={clsx(
                         'text-sm tabular-nums',
-                        val ? 'text-heading font-medium' : 'text-zinc-300 dark:text-zinc-600'
+                        val ? 'text-heading font-medium' : 'text-disabled'
                       )}>
                         {val ? formatKRW(val.value) : '-'}
                       </span>

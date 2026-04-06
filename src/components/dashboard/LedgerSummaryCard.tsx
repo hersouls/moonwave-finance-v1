@@ -47,7 +47,7 @@ export function LedgerSummaryCard() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-status-success" />
-            <span className="text-sm text-zinc-600 dark:text-zinc-400">수입</span>
+            <span className="text-sm text-sub">수입</span>
           </div>
           <span className="text-body3-semi text-status-success tabular-nums">
             +{formatKoreanUnit(animatedIncome)}
@@ -57,16 +57,16 @@ export function LedgerSummaryCard() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <TrendingDown className="w-4 h-4 text-status-danger" />
-            <span className="text-sm text-zinc-600 dark:text-zinc-400">지출</span>
+            <span className="text-sm text-sub">지출</span>
           </div>
           <span className="text-body3-semi text-status-danger tabular-nums">
             -{formatKoreanUnit(animatedExpense)}
           </span>
         </div>
 
-        <div className="border-t border-zinc-200 dark:border-zinc-700 pt-3 flex items-center justify-between">
+        <div className="border-t border-base pt-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Minus className="w-4 h-4 text-zinc-400" />
+            <Minus className="w-4 h-4 text-disabled" />
             <span className="text-body3 text-body">잔액</span>
           </div>
           <span className={clsx(

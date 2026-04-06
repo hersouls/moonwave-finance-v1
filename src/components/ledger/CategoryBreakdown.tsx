@@ -58,7 +58,7 @@ export function CategoryBreakdown({ transactions, type, budgets }: CategoryBreak
                 <span className="text-body3 text-heading tabular-nums">
                   {formatKoreanUnit(b.total)}
                 </span>
-                <span className="text-caption text-zinc-400 w-10 text-right tabular-nums">
+                <span className="text-caption text-disabled w-10 text-right tabular-nums">
                   {formatPercent(b.percentage, 0)}
                 </span>
               </div>

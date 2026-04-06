@@ -28,9 +28,9 @@ export function SeverancePayInputArea({ onValuesChange }: SeverancePayInputAreaP
   }, [joinDate, wageStr, onValuesChange])
 
   return (
-    <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl space-y-4 border border-base">
+    <div className="bg-surface-secondary p-4 rounded-xl space-y-4 border border-base">
       <h4 className="text-body3-semi text-heading flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-500">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-sub">
           <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
           <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
           <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
@@ -39,7 +39,7 @@ export function SeverancePayInputArea({ onValuesChange }: SeverancePayInputAreaP
       </h4>
       <div className="space-y-3">
         <div>
-          <label className="block text-[13px] text-zinc-600 dark:text-zinc-400 mb-1.5">입사일</label>
+          <label className="block text-[13px] text-sub mb-1.5">입사일</label>
           <input
             type="date"
             value={joinDate}
@@ -48,7 +48,7 @@ export function SeverancePayInputArea({ onValuesChange }: SeverancePayInputAreaP
           />
         </div>
         <div>
-          <label className="block text-[13px] text-zinc-600 dark:text-zinc-400 mb-1.5">월 평균임금 (30일분)</label>
+          <label className="block text-[13px] text-sub mb-1.5">월 평균임금 (30일분)</label>
           <div className="relative">
             <input
               type="text"
@@ -61,9 +61,9 @@ export function SeverancePayInputArea({ onValuesChange }: SeverancePayInputAreaP
               placeholder="0"
               className="input-base text-right pr-8 tabular-nums"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400">원</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-disabled">원</span>
           </div>
-          <p className="text-[12px] text-zinc-500 mt-1">최근 3개월 급여총액 / 해당 기간 총일수 x 30</p>
+          <p className="text-[12px] text-sub mt-1">최근 3개월 급여총액 / 해당 기간 총일수 x 30</p>
         </div>
 
         {estimatedAmount > 0 && (
@@ -78,13 +78,13 @@ export function SeverancePayInputArea({ onValuesChange }: SeverancePayInputAreaP
               <>
                 <div className="flex justify-between items-center text-[13px]">
                   <span className="text-sub">퇴직소득세</span>
-                  <span className="text-zinc-600 dark:text-zinc-300 tabular-nums">
+                  <span className="text-sub tabular-nums">
                     -{tax.incomeTax.toLocaleString('ko-KR')}원
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-[13px]">
                   <span className="text-sub">퇴직주민세</span>
-                  <span className="text-zinc-600 dark:text-zinc-300 tabular-nums">
+                  <span className="text-sub tabular-nums">
                     -{tax.residentTax.toLocaleString('ko-KR')}원
                   </span>
                 </div>

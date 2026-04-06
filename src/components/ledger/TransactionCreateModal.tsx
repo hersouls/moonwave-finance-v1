@@ -90,7 +90,7 @@ export function TransactionCreateModal() {
                 className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'expense'
                     ? 'bg-status-danger text-red-700 dark:text-red-400'
-                    : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400'
+                    : 'bg-surface-tertiary text-sub'
                 }`}
               >
                 지출
@@ -101,7 +101,7 @@ export function TransactionCreateModal() {
                 className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'income'
                     ? 'bg-status-success text-emerald-700 dark:text-emerald-400'
-                    : 'bg-surface-tertiary text-zinc-600 dark:text-zinc-400'
+                    : 'bg-surface-tertiary text-sub'
                 }`}
               >
                 수입
@@ -128,7 +128,7 @@ export function TransactionCreateModal() {
                 className="input-base !pr-8 tabular-nums"
                 autoFocus
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400">원</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-disabled">원</span>
             </div>
             {amountError && (
               <p className="text-caption text-status-danger mt-1">{amountError}</p>

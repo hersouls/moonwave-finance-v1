@@ -18,7 +18,7 @@ export function ToggleSwitch({ checked, onChange, label, description, disabled =
             {label}
           </Switch.Label>
           {description && (
-            <p className="text-caption text-zinc-500 dark:text-zinc-400 mt-0.5">{description}</p>
+            <p className="text-caption text-sub mt-0.5">{description}</p>
           )}
         </div>
         <Switch
@@ -27,7 +27,7 @@ export function ToggleSwitch({ checked, onChange, label, description, disabled =
           disabled={disabled}
           className={clsx(
             'toggle-track',
-            'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900',
+            'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-primary)]',
             disabled && 'opacity-50 cursor-not-allowed'
           )}
         >

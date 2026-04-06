@@ -16,7 +16,7 @@ function SyncStatusIndicator({ status }: { status: SyncStatus }) {
   if (status === 'syncing') return <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
   if (status === 'synced') return <CheckCircle2 className="w-5 h-5 text-green-500" />
   if (status === 'error') return <AlertCircle className="w-5 h-5 text-red-500" />
-  return <CloudOff className="w-5 h-5 text-zinc-400" />
+  return <CloudOff className="w-5 h-5 text-disabled" />
 }
 
 const SYNC_LABELS: Record<SyncStatus, string> = {

@@ -71,9 +71,9 @@ export function DailyChangeChart() {
   return (
     <Card className="card-pad-lg">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-body3-semi text-zinc-900 dark:text-zinc-100">일별 변동</h3>
+        <h3 className="text-body3-semi text-heading">일별 변동</h3>
         {chartData.avg !== 0 && (
-          <span className="text-caption text-zinc-400 dark:text-zinc-500 tabular-nums">
+          <span className="text-caption text-disabled tabular-nums">
             평균 {formatKoreanUnit(Math.round(chartData.avg))}원
           </span>
         )}

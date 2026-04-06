@@ -151,7 +151,7 @@ export function SubscriptionCalendarPage() {
       </div>
 
       {/* Calendar Grid */}
-      <div className="bg-white dark:bg-zinc-800/50 rounded-xl p-3">
+      <div className="bg-surface-primary rounded-xl p-3">
         {/* Weekday headers */}
         <div className="grid grid-cols-7 mb-2">
           {WEEKDAYS.map((d, i) => (
@@ -248,8 +248,8 @@ function BillingDayCell({ day, subscriptions, isSelected, onSelect }: BillingDay
         isSelected
           ? 'bg-primary-100 dark:bg-primary-900/30 ring-1 ring-primary-500'
           : hasBilling
-            ? 'hover:bg-zinc-100 dark:hover:bg-zinc-700/50 bg-zinc-50 dark:bg-zinc-800/30'
-            : 'hover:bg-zinc-100 dark:hover:bg-zinc-700/50',
+            ? 'hover:bg-[var(--hover-bg)] bg-surface-secondary'
+            : 'hover:bg-[var(--hover-bg)]',
         day.isToday && !isSelected && 'bg-surface-tertiary'
       )}
     >
