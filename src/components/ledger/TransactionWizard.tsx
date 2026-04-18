@@ -1237,7 +1237,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
 
   return (
     <Dialog open={open} onClose={onClose} size="md" noPadding>
-      <div className="px-4 pt-4 sm:px-8 sm:pt-8">
+      <div className="fold:px-3 fold:pt-3 px-4 pt-4 sm:px-8 sm:pt-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-3 sm:mb-4">
           <h2 className="text-title2 font-semibold text-heading">새 거래 기록</h2>
@@ -1262,7 +1262,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
       <div className="relative">
         <div
           ref={contentRef}
-          className="px-4 sm:px-8 pb-4 overflow-y-auto overflow-x-hidden max-h-[calc(100dvh-220px)] sm:max-h-[calc(100vh-240px)] min-h-[220px]"
+          className="fold:px-3 px-4 sm:px-8 pb-4 overflow-y-auto overflow-x-hidden max-h-[calc(100dvh-220px)] sm:max-h-[calc(100vh-240px)] min-h-[220px]"
         >
           <AnimatePresence mode="wait" custom={state.direction}>
             <motion.div
@@ -1289,7 +1289,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
       </div>
 
       {/* Footer — KT-style large pill buttons */}
-      <div className="px-4 sm:px-8 py-3 sm:py-4 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] border-t border-base bg-surface-primary">
+      <div className="fold:px-3 px-4 sm:px-8 py-3 sm:py-4 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] border-t border-base bg-surface-primary">
         <div className="flex items-center justify-between gap-3">
           {state.currentStep > 0 ? (
             <motion.button

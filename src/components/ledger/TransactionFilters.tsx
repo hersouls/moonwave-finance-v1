@@ -361,7 +361,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
           >
             <div
               className={clsx(
-                'rounded-2xl p-4 sm:p-5 space-y-5',
+                'rounded-2xl fold:p-3 p-4 sm:p-5 fold:space-y-4 space-y-5',
                 'bg-[color:var(--surface-secondary)] ring-1 ring-[color:var(--border-strong)]',
                 'shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]',
               )}
@@ -552,13 +552,13 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                     </ChipScroller>
 
                     {/* Manual inputs */}
-                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2.5 sm:gap-3">
                       <AmountField
                         label="최소"
                         value={minAmount}
                         onChange={(v) => onAmountRangeChange(v, maxAmount ?? null)}
                       />
-                      <span className="text-caption text-disabled">~</span>
+                      <span className="text-body3 text-sub font-semibold select-none" aria-hidden="true">~</span>
                       <AmountField
                         label="최대"
                         value={maxAmount}
@@ -752,9 +752,9 @@ function AmountField({
         }}
         placeholder={label}
         aria-label={`${label} 금액`}
-        className="w-full h-10 pl-3 pr-7 rounded-xl bg-surface-primary ring-1 ring-base focus:ring-[color:var(--color-primary-400)] outline-none text-body3 tabular-nums text-heading placeholder:text-disabled transition-colors shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+        className="w-full h-11 pl-3.5 pr-10 rounded-xl bg-surface-primary ring-1 ring-[color:var(--border-strong)] focus:ring-[color:var(--color-primary-400)] outline-none text-body3 tabular-nums text-heading placeholder:text-disabled transition-colors shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
       />
-      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-disabled pointer-events-none">원</span>
+      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-caption text-sub font-medium pointer-events-none">원</span>
     </div>
   )
 }

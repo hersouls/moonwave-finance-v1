@@ -79,7 +79,7 @@ export function Dialog({ open, onClose, children, size = 'lg', noPadding = false
               'overflow-hidden', // 내부 자식이 rounded 모서리를 덮는 문제 방지
               noPadding
                 ? 'pb-[env(safe-area-inset-bottom,0px)]'
-                : 'p-6 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] sm:p-8 sm:pb-8',
+                : 'fold:p-4 fold:pb-[max(1rem,env(safe-area-inset-bottom,0px))] p-6 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] sm:p-8 sm:pb-8',
               'sm:mb-auto sm:rounded-2xl',
               sizeStyles[size],
               'transition duration-300 data-[closed]:translate-y-12 data-[closed]:opacity-0 data-[enter]:ease-out data-[leave]:ease-in',

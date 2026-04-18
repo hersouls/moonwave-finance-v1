@@ -101,7 +101,7 @@ export function LedgerPage() {
 
   if (isLoading) {
     return (
-      <div className="p-4 lg:p-6 space-y-4">
+      <div className="fold:p-3 p-4 lg:p-6 space-y-4">
         <div className="grid grid-cols-3 gap-3">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-24 bg-[var(--surface-tertiary)] rounded-xl animate-pulse" />
@@ -116,14 +116,14 @@ export function LedgerPage() {
 
   if (error) {
     return (
-      <div className="p-4 lg:p-6">
+      <div className="fold:p-3 p-4 lg:p-6">
         <ErrorEmptyState description={error} onRetry={loadData} />
       </div>
     )
   }
 
   return (
-    <div className="p-4 lg:p-6 space-y-4" {...swipeHandlers}>
+    <div className="fold:p-3 p-4 lg:p-6 space-y-4" {...swipeHandlers}>
       {/* Segment Control */}
       <PageSegmentControl segments={LEDGER_SEGMENTS} />
 
