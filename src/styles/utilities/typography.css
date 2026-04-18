@@ -146,11 +146,11 @@
 /* ── Tabular nums for financial data ──────────── */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
-  font-feature-settings: 'tnum' 1, 'cv11' 1;
+  font-feature-settings: 'tnum' 1;
 }
 
 .financial-value {
   font-variant-numeric: tabular-nums;
-  font-feature-settings: 'tnum' 1, 'cv11' 1;
+  font-feature-settings: 'tnum' 1;
   letter-spacing: var(--letter-snug);
 }

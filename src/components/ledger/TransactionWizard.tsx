@@ -512,7 +512,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
       <div>
         <label className="block text-label2 text-sub mb-2.5">유형</label>
         <div
-          className="relative inline-flex w-full p-1 rounded-full bg-surface-tertiary"
+          className="relative inline-flex w-full p-1.5 rounded-full bg-surface-tertiary ring-1 ring-base"
           role="radiogroup"
           aria-label="거래 유형"
         >
@@ -526,7 +526,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                 aria-checked={active}
                 onClick={() => dispatch({ type: 'SET_TYPE', value: t })}
                 className={clsx(
-                  'relative flex-1 py-3 px-4 rounded-full text-body3 font-semibold z-10 transition-colors',
+                  'relative flex-1 py-2.5 px-4 rounded-full text-body3 font-bold z-10 transition-colors min-h-[44px]',
                   active ? 'text-white' : 'text-sub hover:text-heading',
                 )}
                 whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
@@ -537,12 +537,12 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                     layoutId="wizard-type-pill"
                     className="absolute inset-0 rounded-full -z-10"
                     style={{
-                      backgroundColor: t === 'expense'
-                        ? 'var(--value-negative)'
-                        : 'var(--value-positive)',
+                      background: t === 'expense'
+                        ? 'linear-gradient(135deg, oklch(0.60 0.22 25), oklch(0.50 0.22 25))'
+                        : 'linear-gradient(135deg, oklch(0.58 0.18 145), oklch(0.48 0.17 145))',
                       boxShadow: t === 'expense'
-                        ? '0 4px 14px color-mix(in srgb, var(--value-negative) 30%, transparent)'
-                        : '0 4px 14px color-mix(in srgb, var(--value-positive) 30%, transparent)',
+                        ? '0 6px 20px -4px color-mix(in srgb, var(--value-negative) 40%, transparent)'
+                        : '0 6px 20px -4px color-mix(in srgb, var(--value-positive) 40%, transparent)',
                     }}
                     transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                   />
@@ -573,65 +573,85 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
         </div>
         <motion.div
           className={clsx(
-            'rounded-2xl px-5 py-6 transition-colors',
-            numAmount > 0
-              ? 'bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/25 ring-1 ring-[color:var(--color-primary-300)]/60'
-              : 'bg-surface-tertiary ring-1 ring-base',
+            'relative overflow-hidden rounded-2xl px-5 py-6 transition-all',
+            numAmount > 0 ? 'ring-1 ring-[color:var(--color-primary-400)]/40' : 'ring-1 ring-base',
           )}
-          animate={{
+          style={{
+            background: numAmount > 0
+              ? `linear-gradient(135deg,
+                  color-mix(in srgb, var(--color-primary-500) 10%, var(--surface-primary)) 0%,
+                  color-mix(in srgb, var(--color-primary-500) 4%, var(--surface-primary)) 100%)`
+              : 'var(--surface-tertiary)',
             boxShadow: numAmount > 0
-              ? '0 12px 40px color-mix(in srgb, var(--color-primary-500) 18%, transparent)'
-              : '0 0 0 0 transparent',
+              ? '0 16px 40px -12px color-mix(in srgb, var(--color-primary-500) 22%, transparent), inset 0 1px 0 0 color-mix(in srgb, #fff 50%, transparent)'
+              : 'inset 0 1px 0 0 color-mix(in srgb, #fff 40%, transparent)',
           }}
+          animate={{ scale: numAmount > 0 ? 1 : 1 }}
           transition={{ duration: durations.base, ease: easeOutExpo }}
         >
-          <p className="text-caption text-sub mb-1.5 font-medium">
-            {state.type === 'expense' ? '지출 금액' : '수입 금액'}
-          </p>
-          <div className="relative">
-            <input
-              id="wizard-amount-input"
-              ref={amountRef}
-              type="text"
-              inputMode="numeric"
-              value={state.amount}
-              onChange={handleAmountChange}
-              placeholder="0"
-              aria-label="금액"
-              className={clsx(
-                'w-full bg-transparent tabular-nums outline-none font-extrabold pr-10',
-                numAmount > 0 ? 'text-heading' : 'text-disabled',
-              )}
+          {/* Subtle noise overlay when active */}
+          {numAmount > 0 && (
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 pointer-events-none opacity-[0.025]"
               style={{
-                fontSize: 'clamp(28px, 8vw, 42px)',
-                letterSpacing: '-0.025em',
-                lineHeight: 1.15,
+                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                backgroundSize: '128px 128px',
               }}
             />
-            <span
-              className={clsx(
-                'absolute right-0 bottom-1 font-semibold tabular-nums',
-                numAmount > 0 ? 'text-heading' : 'text-disabled',
-              )}
-              style={{ fontSize: 'clamp(18px, 4.5vw, 24px)' }}
-            >
-              원
-            </span>
-          </div>
-          <AnimatePresence mode="wait">
-            {numAmount > 0 && (
-              <motion.p
-                key="preview"
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: durations.fast }}
-                className="mt-2 text-caption text-[color:var(--color-primary-700)] dark:text-[color:var(--color-primary-300)] tabular-nums font-medium"
+          )}
+
+          <div className="relative">
+            <p className="text-caption text-sub mb-2 font-semibold tracking-wide uppercase opacity-80">
+              {state.type === 'expense' ? '지출 금액' : '수입 금액'}
+            </p>
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <input
+                id="wizard-amount-input"
+                ref={amountRef}
+                type="text"
+                inputMode="numeric"
+                value={state.amount}
+                onChange={handleAmountChange}
+                placeholder="0"
+                aria-label="금액"
+                className={clsx(
+                  'bg-transparent tabular-nums outline-none font-extrabold min-w-0 max-w-full',
+                  numAmount > 0 ? 'text-heading' : 'text-disabled',
+                )}
+                style={{
+                  fontSize: 'clamp(28px, 8vw, 42px)',
+                  letterSpacing: '-0.025em',
+                  lineHeight: 1.1,
+                  width: `${Math.max(state.amount.length || 1, 1)}ch`,
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                className={clsx(
+                  'font-bold tabular-nums flex-shrink-0',
+                  numAmount > 0 ? 'text-heading/80' : 'text-disabled',
+                )}
+                style={{ fontSize: 'clamp(16px, 3.5vw, 20px)', lineHeight: 1.2 }}
               >
-                {formatKoreanUnit(numAmount)}원
-              </motion.p>
-            )}
-          </AnimatePresence>
+                원
+              </span>
+            </div>
+            <AnimatePresence mode="wait">
+              {numAmount > 0 && (
+                <motion.p
+                  key="preview"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: durations.fast }}
+                  className="mt-2 text-caption text-[color:var(--color-primary-700)] dark:text-[color:var(--color-primary-300)] tabular-nums font-medium"
+                >
+                  {formatKoreanUnit(numAmount)}원
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </div>
         </motion.div>
 
         {/* Amount quick-add chips — pill form */}
@@ -641,13 +661,13 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               key={p.delta}
               type="button"
               onClick={() => dispatch({ type: 'ADD_AMOUNT', delta: p.delta })}
-              className="py-2.5 px-1 rounded-full text-caption font-semibold bg-surface-tertiary text-heading hover:bg-[var(--hover-bg)] ring-1 ring-base hover:ring-[color:var(--color-primary-300)] el-hover inline-flex items-center justify-center gap-0.5 transition-all"
+              className="py-3 px-1 rounded-full text-body3 font-semibold bg-surface-tertiary text-heading hover:bg-[var(--hover-bg)] ring-1 ring-base hover:ring-[color:var(--color-primary-300)] el-hover inline-flex items-center justify-center gap-1 transition-all min-h-[44px]"
               whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
               transition={springSnappy}
               aria-label={`금액 ${p.label.replace('+', '')} 추가`}
             >
-              <Plus className="w-3 h-3 opacity-60" />
-              {p.label.replace('+', '')}
+              <Plus className="w-3.5 h-3.5 opacity-60" />
+              <span className="tabular-nums">{p.label.replace('+', '')}</span>
             </motion.button>
           ))}
         </div>
@@ -664,9 +684,9 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                   type="button"
                   onClick={() => dispatch({ type: 'SET_FIELD', field: 'memberId', value: '' })}
                   className={clsx(
-                    'px-4 py-2.5 rounded-full text-body3 font-medium ring-1',
+                    'px-5 py-3 rounded-full text-body3 font-semibold ring-1 min-h-[44px]',
                     state.memberId === ''
-                      ? 'bg-surface-primary text-heading ring-[color:var(--border-strong)] shadow-sm'
+                      ? 'bg-surface-primary text-heading ring-[color:var(--border-strong)] shadow-[0_2px_8px_rgba(0,0,0,0.06)]'
                       : 'bg-surface-tertiary text-sub ring-transparent hover:bg-[var(--hover-bg)]',
                   )}
                   whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
@@ -679,13 +699,16 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                     type="button"
                     onClick={() => dispatch({ type: 'SET_FIELD', field: 'memberId', value: m.id! })}
                     className={clsx(
-                      'flex-1 py-2.5 px-4 rounded-full text-body3 font-medium ring-1 min-w-[68px]',
+                      'flex-1 py-3 px-4 rounded-full text-body3 font-semibold ring-1 min-w-[72px] min-h-[44px]',
                       state.memberId === m.id
                         ? 'text-white ring-transparent'
                         : 'bg-surface-tertiary text-sub ring-transparent hover:bg-[var(--hover-bg)]',
                     )}
                     style={state.memberId === m.id
-                      ? { backgroundColor: m.color, boxShadow: `0 4px 14px color-mix(in srgb, ${m.color} 30%, transparent)` }
+                      ? {
+                          background: `linear-gradient(135deg, ${m.color}, color-mix(in srgb, ${m.color} 82%, #000))`,
+                          boxShadow: `0 6px 20px -4px color-mix(in srgb, ${m.color} 40%, transparent)`,
+                        }
                       : undefined}
                     whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
                     animate={{ scale: state.memberId === m.id ? 1.03 : 1 }}

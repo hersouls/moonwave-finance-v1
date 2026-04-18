@@ -137,8 +137,8 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  /* Pretendard OpenType features — ss01 for Korean stylistic variants, cv11 for alt digits */
-  font-feature-settings: 'ss01' 1, 'cv11' 1, 'calt' 1, 'kern' 1;
+  /* Pretendard safe features — kern + calt only. tabular-nums is applied per-element. */
+  font-feature-settings: 'calt' 1, 'kern' 1;
   line-height: var(--line-height-normal, 1.5);
   color: var(--text-primary);
 }
@@ -246,7 +246,7 @@ select {
 /* Tabular numbers for financial data — global */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
-  font-feature-settings: 'tnum' 1, 'cv11' 1;
+  font-feature-settings: 'tnum' 1;
 }
 
 /* ========================================
