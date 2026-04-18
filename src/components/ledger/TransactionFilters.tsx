@@ -283,7 +283,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
             transition={{ duration: durations.fast, ease: easeOutExpo }}
             className="overflow-hidden"
           >
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1">
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 -my-1 py-1">
               <AnimatePresence initial={false} mode="popLayout">
                 {selectedCategory && onCategoryChange && (
                   <ActivePill
@@ -634,7 +634,7 @@ function Section({
 
 function ChipScroller({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1 snap-x">
+    <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 -my-1 py-1 snap-x">
       {children}
     </div>
   )

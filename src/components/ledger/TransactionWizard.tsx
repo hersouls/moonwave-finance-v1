@@ -413,7 +413,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                 <Zap className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" />
                 빠른 입력
               </label>
-              <div className="flex gap-2.5 overflow-x-auto scrollbar-none pb-1 -mx-1 px-1">
+              <div className="flex gap-2.5 overflow-x-auto scrollbar-none -mx-1 px-1 -my-1 py-1">
                 {templates.map((tmpl, i) => {
                   const cat = tmpl.categoryId ? categories.find(c => c.id === tmpl.categoryId) : null
                   const Icon = getCategoryIcon(cat?.icon)
@@ -459,7 +459,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                 <Landmark className="w-3.5 h-3.5 text-status-danger" />
                 대출이자 불러오기
               </label>
-              <div className="flex gap-2.5 overflow-x-auto scrollbar-none pb-1 -mx-1 px-1">
+              <div className="flex gap-2.5 overflow-x-auto scrollbar-none -mx-1 px-1 -my-1 py-1">
                 {activeLoans.map(loan => {
                   const interest = getMonthlyInterest(loan)
                   const interestCat = categories.find(c => c.type === 'expense' && c.name.includes(LOAN_INTEREST_CATEGORY_NAME))

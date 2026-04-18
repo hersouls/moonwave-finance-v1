@@ -78,7 +78,7 @@ export function SubscriptionPage() {
       )}
 
       {/* Category Filter */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+      <div className="flex gap-2 overflow-x-auto scrollbar-none -my-1 py-1">
         <button
           onClick={() => setCategoryFilter(null)}
           className={clsx(

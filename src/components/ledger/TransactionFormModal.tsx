@@ -189,7 +189,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
           {mode === 'create' && templates.length > 0 && (
             <div>
               <label className="block text-caption text-sub mb-1.5">자주 쓰는 거래</label>
-              <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+              <div className="flex gap-2 overflow-x-auto scrollbar-none -my-1 py-1">
                 {templates.map((tmpl, i) => {
                   const cat = tmpl.categoryId ? categories.find(c => c.id === tmpl.categoryId) : null
                   return (
@@ -214,7 +214,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                 <Landmark className="w-3.5 h-3.5" />
                 대출이자 불러오기
               </label>
-              <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+              <div className="flex gap-2 overflow-x-auto scrollbar-none -my-1 py-1">
                 {activeLoans.map(loan => (
                   <button
                     key={loan.id}
