@@ -123,32 +123,35 @@ export function LedgerPage() {
   }
 
   return (
-    <div className="fold:p-3 p-4 lg:p-6 space-y-4" {...swipeHandlers}>
+    <div className="fold:p-3 p-4 lg:p-6 space-y-4">
       {/* Segment Control */}
       <PageSegmentControl segments={LEDGER_SEGMENTS} />
 
-      {/* Month Navigator */}
-      <div className="flex items-center justify-between">
-        <IconButton onClick={() => setSelectedMonth(getPreviousMonth(selectedMonth))} plain size="sm">
-          <ChevronLeft className="w-5 h-5" />
-        </IconButton>
-        <h2 className="text-base font-semibold text-heading">
-          {formatMonthLabel(selectedMonth)}
-        </h2>
-        <IconButton onClick={() => setSelectedMonth(getNextMonth(selectedMonth))} plain size="sm">
-          <ChevronRight className="w-5 h-5" />
-        </IconButton>
+      {/* Swipe zone: month nav + summary + budget only (excludes filters/list to avoid card swipe-to-edit conflict) */}
+      <div className="space-y-4" {...swipeHandlers}>
+        {/* Month Navigator */}
+        <div className="flex items-center justify-between">
+          <IconButton onClick={() => setSelectedMonth(getPreviousMonth(selectedMonth))} plain size="sm">
+            <ChevronLeft className="w-5 h-5" />
+          </IconButton>
+          <h2 className="text-base font-semibold text-heading">
+            {formatMonthLabel(selectedMonth)}
+          </h2>
+          <IconButton onClick={() => setSelectedMonth(getNextMonth(selectedMonth))} plain size="sm">
+            <ChevronRight className="w-5 h-5" />
+          </IconButton>
+        </div>
+
+        {/* Monthly Summary */}
+        <MonthlySummary
+          totalIncome={summary.totalIncome}
+          totalExpense={summary.totalExpense}
+          netSavings={summary.netSavings}
+        />
+
+        {/* Budget Overview (expense view only) */}
+        {defaultType === 'expense' && budgets.length > 0 && <BudgetOverviewCard />}
       </div>
-
-      {/* Monthly Summary */}
-      <MonthlySummary
-        totalIncome={summary.totalIncome}
-        totalExpense={summary.totalExpense}
-        netSavings={summary.netSavings}
-      />
-
-      {/* Budget Overview (expense view only) */}
-      {defaultType === 'expense' && budgets.length > 0 && <BudgetOverviewCard />}
 
       {/* Type Filter + Advanced Filters */}
       <TransactionFilters
