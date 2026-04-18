@@ -3,18 +3,19 @@
  * =============================================== */
 
 :root {
-  /* --- Card Container --- */
-  --card-radius: 12px;
-  --card-radius-lg: 16px;
+  /* --- Card Container (v2 Obsidian — 16px default) --- */
+  --card-radius: 16px;
+  --card-radius-lg: 20px;
+  --card-radius-xl: 24px;
   --card-padding: 16px;
   --card-padding-lg: 20px;
   --card-border-width: 1px;
 
-  /* --- Card Colors (Light) --- */
-  --card-bg-primary: #FFFFFF;
-  --card-bg-secondary: #F5F5F5;
-  --card-border-color: rgba(0, 0, 0, 0.08);
-  --card-hover-border-color: rgba(0, 0, 0, 0.16);
+  /* --- Card Colors (Light) — surface tokens 참조 --- */
+  --card-bg-primary: var(--surface-primary, #FFFFFF);
+  --card-bg-secondary: var(--surface-secondary, #FAFAFA);
+  --card-border-color: var(--border-default, rgba(0, 0, 0, 0.08));
+  --card-hover-border-color: var(--color-primary-300, rgba(0, 0, 0, 0.16));
 
   /* --- List Item --- */
   --list-item-height: 48px;
@@ -60,12 +61,19 @@
   );
 }
 
-/* --- Dark Mode Overrides --- */
+/* --- Dark Mode Overrides — surface tokens 참조 + 대비 상향 --- */
 .dark {
-  --card-bg-primary: #1A1A1A;
-  --card-bg-secondary: #2A2A2A;
-  --card-border-color: rgba(255, 255, 255, 0.08);
-  --card-hover-border-color: rgba(255, 255, 255, 0.16);
-  --list-item-divider-color: rgba(255, 255, 255, 0.06);
+  --card-bg-primary: var(--surface-primary);
+  --card-bg-secondary: var(--surface-secondary);
+  /* 0.08 → 0.12 으로 가시성 확보 (유령 테두리 방지) */
+  --card-border-color: rgba(255, 255, 255, 0.12);
+  --card-hover-border-color: var(--color-primary-400);
+  --list-item-divider-color: rgba(255, 255, 255, 0.08);
   --card-image-placeholder-bg: #333333;
+}
+
+/* OLED 순수 블랙 모드: 테두리를 더 뚜렷하게 */
+html.dark[data-oled="true"] {
+  --card-bg-primary: #0a0a0a;
+  --card-border-color: rgba(255, 255, 255, 0.15);
 }

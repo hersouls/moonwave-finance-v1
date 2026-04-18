@@ -12,14 +12,15 @@ import { formatKRW } from '@/utils/format'
 import { Amount } from '@/components/ui/Amount'
 import { formatDate } from '@/lib/dateUtils'
 import { getPaymentMethodLabel } from '@/utils/paymentMethod'
+import { TRANSACTION_CARD_SWIPE, UNCATEGORIZED_LABEL } from '@/lib/ledgerConstants'
 import type { Transaction } from '@/lib/types'
 
 interface TransactionCardProps {
   transaction: Transaction
 }
 
-const SWIPE_THRESHOLD = 80
-const ACTION_WIDTH = 120
+const SWIPE_THRESHOLD = TRANSACTION_CARD_SWIPE.THRESHOLD
+const ACTION_WIDTH = TRANSACTION_CARD_SWIPE.ACTION_WIDTH
 
 function TransactionCardInner({ transaction }: TransactionCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -116,13 +117,13 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
             whileTap={shouldReduceMotion ? undefined : { scale: 0.995 }}
             transition={{ type: 'spring', stiffness: 320, damping: 24 }}
             className={clsx(
-              'w-full text-left rounded-2xl bg-surface-primary ring-1 ring-base',
-              'px-4 py-3.5 transition-all',
-              'hover:ring-[color:var(--color-primary-300)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.06)]',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring-focus)]',
-              'shadow-[0_1px_3px_rgba(0,0,0,0.04)]',
+              // 단일 소스 card-base (border/bg/radius) + el-card (shadow + glow hover)
+              'w-full text-left card-base el-card',
+              // padding override (기본 16 → 좌우 16 · 상하 14)
+              '!px-4 !py-3.5',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ring-offset)]',
             )}
-            aria-label={`${category?.name || '미분류'} ${formatKRW(transaction.amount)} 거래 상세`}
+            aria-label={`${category?.name || UNCATEGORIZED_LABEL} ${formatKRW(transaction.amount)} 거래 상세`}
           >
             <div className="flex items-center gap-3">
               {/* Category color indicator with icon */}
@@ -150,7 +151,7 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-body3 text-heading font-semibold truncate">
-                    {category?.name || '미분류'}
+                    {category?.name || UNCATEGORIZED_LABEL}
                   </span>
                   {member && (
                     <span

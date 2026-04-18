@@ -169,6 +169,7 @@
  * ================================================= */
 
 /* Card with hover glow activation */
+/* Note: border-color는 .card-base 가 단일 소스로 관리. el-card 는 shadow 전담. */
 .el-card {
   transition: var(--el-transition);
   box-shadow: var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.08));
@@ -180,12 +181,7 @@
     var(--el-glow-soft);
 }
 
-.dark .el-card {
-  border-color: oklch(1 0 0 / 0.04);
-}
-
 .dark .el-card:hover {
-  border-color: oklch(0.64 0.16 250 / 0.12);
   box-shadow:
     var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.24)),
     var(--el-glow-medium);

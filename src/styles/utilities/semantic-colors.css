@@ -19,6 +19,19 @@
 /* Border */
 .border-base { border-color: var(--border-default); }
 .border-strong { border-color: var(--border-strong); }
+.border-subtle { border-color: var(--border-subtle); }
+
+/* Ring color helpers — Tailwind ring-1/ring-2 와 병용 */
+/* 사용 예: `ring-1 ring-base` → 1px border-default ring */
+.ring-base {
+  --tw-ring-color: var(--border-default);
+}
+.ring-strong {
+  --tw-ring-color: var(--border-strong);
+}
+.ring-subtle {
+  --tw-ring-color: var(--border-subtle);
+}
 
 /* Interactive */
 .hover-surface:hover { background-color: var(--hover-bg); }
