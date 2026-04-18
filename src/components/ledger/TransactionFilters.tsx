@@ -362,8 +362,8 @@ export function TransactionFilters(props: TransactionFiltersProps) {
             <div
               className={clsx(
                 'rounded-2xl p-4 sm:p-5 space-y-5',
-                'bg-surface-primary ring-1 ring-base',
-                'shadow-[0_1px_3px_rgba(0,0,0,0.04)]',
+                'bg-[color:var(--surface-secondary)] ring-1 ring-[color:var(--border-strong)]',
+                'shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]',
               )}
             >
               {/* Sort + Date range row */}
@@ -410,7 +410,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                             'flex-shrink-0 flex items-center gap-2 pl-2.5 pr-3.5 h-9 rounded-2xl text-caption font-semibold transition-all',
                             isActive
                               ? 'text-white shadow-[0_4px_12px_rgba(0,0,0,0.12)]'
-                              : 'bg-surface-primary text-body ring-1 ring-base hover:ring-[color:var(--color-primary-300)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.06)]'
+                              : 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]'
                           )}
                           style={isActive ? { backgroundColor: c.color } : undefined}
                           whileHover={shouldReduceMotion ? undefined : { y: -1 }}
@@ -457,7 +457,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                             'flex-shrink-0 flex items-center gap-2 pl-1.5 pr-3.5 h-9 rounded-2xl text-caption font-semibold transition-all',
                             isActive
                               ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_12px_color-mix(in_oklch,var(--color-primary-500)_28%,transparent)]'
-                              : 'bg-surface-primary text-body ring-1 ring-base hover:ring-[color:var(--color-primary-300)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.06)]'
+                              : 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]'
                           )}
                           whileHover={shouldReduceMotion ? undefined : { y: -1 }}
                           whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
@@ -501,7 +501,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                             'flex-shrink-0 flex items-center gap-1.5 pl-2.5 pr-3.5 h-9 rounded-2xl text-caption font-semibold transition-all',
                             isActive
                               ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_12px_color-mix(in_oklch,var(--color-primary-500)_28%,transparent)]'
-                              : 'bg-surface-primary text-body ring-1 ring-base hover:ring-[color:var(--color-primary-300)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.06)]'
+                              : 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]'
                           )}
                           whileHover={shouldReduceMotion ? undefined : { y: -1 }}
                           whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
@@ -537,7 +537,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                               'flex-shrink-0 flex items-center gap-1.5 px-3.5 h-8 rounded-full text-[12px] font-semibold tabular-nums transition-all',
                               isActive
                                 ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_3px_10px_color-mix(in_oklch,var(--color-primary-500)_26%,transparent)]'
-                                : 'bg-surface-primary text-body ring-1 ring-base hover:ring-[color:var(--color-primary-300)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.06)]'
+                                : 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]'
                             )}
                             whileHover={shouldReduceMotion ? undefined : { y: -1 }}
                             whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
@@ -650,7 +650,7 @@ function AllChip({ active, onClick }: { active: boolean; onClick: () => void }) 
         'flex-shrink-0 flex items-center px-3.5 h-9 rounded-2xl text-caption font-semibold transition-all snap-start',
         active
           ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_12px_color-mix(in_oklch,var(--color-primary-500)_28%,transparent)]'
-          : 'bg-surface-primary text-body ring-1 ring-base hover:ring-[color:var(--color-primary-300)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.06)]'
+          : 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]'
       )}
       whileHover={shouldReduceMotion ? undefined : { y: -1 }}
       whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
