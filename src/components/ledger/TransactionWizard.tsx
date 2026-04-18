@@ -268,6 +268,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
   const loadLoans = useLoanStore((s) => s.loadLoans)
   const activeLoans = useMemo(() => loans.filter(l => l.isActive), [loans])
   const amountRef = useRef<HTMLInputElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
   const shouldReduceMotion = useReducedMotion()
   const { subtleSuccess } = useConfetti()
 
@@ -287,6 +288,13 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
       requestAnimationFrame(() => amountRef.current?.focus())
     }
   }, [open, state.currentStep])
+
+  // Reset scroll position on step change
+  useEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0
+    }
+  }, [state.currentStep])
 
   // ─── Derived data ──────────────────────────────
 
@@ -965,40 +973,54 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: durations.base, ease: easeOutExpo }}
-              className="mt-2.5 overflow-hidden"
+              className="mt-3 overflow-hidden"
             >
               {itemsForType.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {itemsForType.map(item => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => {
-                        dispatch({ type: 'SET_FIELD', field: 'paymentMethodItemId', value: item.id! })
-                        dispatch({ type: 'SET_FIELD', field: 'paymentMethodDetail', value: item.name })
-                      }}
-                      className={clsx(
-                        'px-3 py-1.5 rounded-lg text-caption transition-colors',
-                        state.paymentMethodItemId === item.id
-                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 ring-1 ring-blue-300 dark:ring-blue-700'
-                          : 'bg-surface-secondary text-sub hover:bg-[var(--hover-bg)]',
-                      )}
-                    >
-                      {item.name}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => { dispatch({ type: 'SET_FIELD', field: 'paymentMethodItemId', value: '' }); dispatch({ type: 'SET_FIELD', field: 'paymentMethodDetail', value: '' }) }}
+                <div className="rounded-2xl bg-surface-secondary ring-1 ring-base p-2.5 mb-2">
+                  <div
                     className={clsx(
-                      'px-3 py-1.5 rounded-lg text-caption transition-colors',
-                      state.paymentMethodItemId === ''
-                        ? 'bg-[var(--surface-tertiary)] text-heading'
-                        : 'bg-surface-secondary text-sub hover:bg-[var(--hover-bg)]',
+                      'flex flex-wrap gap-2',
+                      itemsForType.length > 6 && 'max-h-[140px] overflow-y-auto scrollbar-none pr-1',
                     )}
                   >
-                    직접 입력
-                  </button>
+                    {itemsForType.map(item => (
+                      <motion.button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          dispatch({ type: 'SET_FIELD', field: 'paymentMethodItemId', value: item.id! })
+                          dispatch({ type: 'SET_FIELD', field: 'paymentMethodDetail', value: item.name })
+                        }}
+                        whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
+                        className={clsx(
+                          'px-3 py-2 rounded-full text-caption font-semibold transition-colors',
+                          state.paymentMethodItemId === item.id
+                            ? 'bg-[color:var(--color-primary-600)] text-white shadow-[0_4px_14px_color-mix(in_srgb,var(--color-primary-500)_28%,transparent)]'
+                            : 'bg-surface-primary text-sub hover:bg-[var(--hover-bg)] ring-1 ring-base',
+                        )}
+                      >
+                        {item.name}
+                      </motion.button>
+                    ))}
+                    <motion.button
+                      type="button"
+                      onClick={() => { dispatch({ type: 'SET_FIELD', field: 'paymentMethodItemId', value: '' }); dispatch({ type: 'SET_FIELD', field: 'paymentMethodDetail', value: '' }) }}
+                      whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
+                      className={clsx(
+                        'px-3 py-2 rounded-full text-caption font-semibold transition-colors',
+                        state.paymentMethodItemId === ''
+                          ? 'bg-surface-tertiary text-heading ring-1 ring-[color:var(--border-strong)]'
+                          : 'bg-surface-primary text-sub hover:bg-[var(--hover-bg)] ring-1 ring-base',
+                      )}
+                    >
+                      직접 입력
+                    </motion.button>
+                  </div>
+                  {itemsForType.length > 6 && (
+                    <p className="text-[10px] text-disabled mt-2 text-center">
+                      스크롤하여 더 보기
+                    </p>
+                  )}
                 </div>
               )}
               {state.paymentMethodItemId === '' && (
@@ -1007,7 +1029,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                   value={state.paymentMethodDetail}
                   onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'paymentMethodDetail', value: e.target.value })}
                   placeholder="카드/계좌명 입력 (예: 신한카드)"
-                  className="input-base text-caption"
+                  className="input-base text-body3"
                 />
               )}
             </motion.div>
@@ -1266,21 +1288,34 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
         </div>
       </div>
 
-      {/* Step Content — AnimatePresence wraps */}
-      <div className="px-4 sm:px-8 pb-2 overflow-y-auto overflow-x-hidden max-h-[calc(100dvh-240px)] sm:max-h-[460px]">
-        <AnimatePresence mode="wait" custom={state.direction}>
-          <motion.div
-            key={state.currentStep}
-            custom={state.direction}
-            variants={stepVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: durations.base, ease: easeOutExpo }}
-          >
-            {stepRenderers[state.currentStep]()}
-          </motion.div>
-        </AnimatePresence>
+      {/* Step Content — AnimatePresence wraps + scroll fade indicator */}
+      <div className="relative">
+        <div
+          ref={contentRef}
+          className="px-4 sm:px-8 pb-4 overflow-y-auto overflow-x-hidden max-h-[calc(100dvh-220px)] sm:max-h-[calc(100vh-240px)] min-h-[220px]"
+        >
+          <AnimatePresence mode="wait" custom={state.direction}>
+            <motion.div
+              key={state.currentStep}
+              custom={state.direction}
+              variants={stepVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: durations.base, ease: easeOutExpo }}
+            >
+              {stepRenderers[state.currentStep]()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+        {/* Fade gradient at bottom — hint for scrollable content */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-0 right-0 bottom-0 h-6"
+          style={{
+            background: 'linear-gradient(to bottom, transparent, var(--surface-primary))',
+          }}
+        />
       </div>
 
       {/* Footer — KT-style large pill buttons */}
