@@ -30,9 +30,10 @@ import { useBudgetWarning, formatBudgetWarning, getBudgetWarningLevel } from '@/
 import { clsx } from 'clsx'
 import {
   Check, ChevronLeft, ChevronRight, Zap, Landmark, Pencil, MoreHorizontal,
-  Plus, Eraser, X, Calendar as CalendarIcon, ChevronDown,
+  Plus, Eraser, X, Calendar as CalendarIcon, ChevronDown, Calculator,
 } from 'lucide-react'
 import { MiniCalendar } from '@/components/ui/MiniCalendar'
+import { AmountCalculator } from '@/components/ledger/AmountCalculator'
 import type { TransactionType, RepeatType, PaymentMethod } from '@/lib/types'
 
 // ─── Types ─────────────────────────────────────────
@@ -56,6 +57,7 @@ interface WizardState {
   recurEndDate: string
   showCalendar: boolean
   showEndDateCalendar: boolean
+  showCalculator: boolean
 }
 
 type WizardAction =
@@ -95,6 +97,7 @@ function getInitialState(initialDate?: string, defaultMemberId?: number | ''): W
     recurEndDate: '',
     showCalendar: false,
     showEndDateCalendar: false,
+    showCalculator: false,
   }
 }
 
@@ -545,20 +548,38 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
 
       {/* Hero Amount Input — KT-style display */}
       <div>
-        <div className="flex items-center justify-between mb-2.5">
+        <div className="flex items-center justify-between mb-2.5 gap-2">
           <label htmlFor="wizard-amount-input" className="text-label2 text-sub">금액</label>
-          {numAmount > 0 && (
+          <div className="flex items-center gap-2">
             <motion.button
               type="button"
-              onClick={() => dispatch({ type: 'CLEAR_AMOUNT' })}
-              className="inline-flex items-center gap-1 text-caption text-sub hover:text-heading transition-colors"
-              aria-label="금액 지우기"
+              onClick={() => dispatch({ type: 'SET_FIELD', field: 'showCalculator', value: !state.showCalculator })}
               whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
+              aria-expanded={state.showCalculator}
+              aria-label="계산기 열기"
+              className={clsx(
+                'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-caption font-semibold transition-colors ring-1',
+                state.showCalculator
+                  ? 'bg-[color:var(--color-primary-600)] text-white ring-transparent shadow-[0_2px_8px_color-mix(in_oklch,var(--color-primary-500)_28%,transparent)]'
+                  : 'bg-surface-primary text-sub ring-[color:var(--border-strong)] hover:text-heading hover:ring-[color:var(--color-primary-300)]',
+              )}
             >
-              <Eraser className="w-3.5 h-3.5" />
-              지우기
+              <Calculator className="w-3.5 h-3.5" />
+              계산기
             </motion.button>
-          )}
+            {numAmount > 0 && (
+              <motion.button
+                type="button"
+                onClick={() => dispatch({ type: 'CLEAR_AMOUNT' })}
+                className="inline-flex items-center gap-1 text-caption text-sub hover:text-heading transition-colors"
+                aria-label="금액 지우기"
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
+              >
+                <Eraser className="w-3.5 h-3.5" />
+                지우기
+              </motion.button>
+            )}
+          </div>
         </div>
         <motion.div
           className={clsx(
@@ -642,6 +663,29 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
             </AnimatePresence>
           </div>
         </motion.div>
+
+        {/* Calculator — collapsible panel */}
+        <AnimatePresence initial={false}>
+          {state.showCalculator && (
+            <motion.div
+              key="calc"
+              initial={{ opacity: 0, height: 0, y: -4 }}
+              animate={{ opacity: 1, height: 'auto', y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -4 }}
+              transition={{ duration: durations.base, ease: easeOutExpo }}
+              className="overflow-hidden mt-3"
+            >
+              <AmountCalculator
+                value={numAmount}
+                onApply={(v) => {
+                  dispatch({ type: 'SET_FIELD', field: 'amount', value: v > 0 ? v.toLocaleString('ko-KR') : '' })
+                  dispatch({ type: 'SET_FIELD', field: 'showCalculator', value: false })
+                }}
+                onClose={() => dispatch({ type: 'SET_FIELD', field: 'showCalculator', value: false })}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Amount quick-add chips — pill form */}
         <div className="mt-3 grid grid-cols-4 gap-2" role="group" aria-label="빠른 금액 추가">
@@ -912,7 +956,6 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                   dispatch({ type: 'SET_FIELD', field: 'date', value: d })
                   dispatch({ type: 'SET_FIELD', field: 'showCalendar', value: false })
                 }}
-                maxDate={today}
               />
             </motion.div>
           )}
