@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Settings, User, Database, Bell, Cog, Receipt, Landmark, X } from 'lucide-react'
 import { Dialog } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
@@ -32,6 +32,17 @@ export function SettingsModal() {
 
   const [activeTab, setActiveTab] = useState<SettingsTabId>('general')
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const tabListRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+    const idx = TABS.findIndex((t) => t.id === activeTab)
+    const el = tabRefs.current[idx]
+    if (!el) return
+    const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+    if (!isMobile) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  }, [activeTab, isOpen])
 
   const handleClose = useCallback(() => {
     if (isDirty) cancel()
@@ -75,54 +86,82 @@ export function SettingsModal() {
     <Dialog open={isOpen} onClose={handleClose} size="4xl" noPadding>
       <div className="flex flex-col md:flex-row md:min-h-[560px] max-h-[85dvh]">
         {/* Left sidebar / top bar */}
-        <nav className="shrink-0 md:w-52 md:border-r border-base bg-surface-secondary md:rounded-l-xl">
+        <nav
+          aria-label="설정 탭"
+          className="shrink-0 md:w-52 md:border-r border-base bg-surface-secondary"
+        >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 pb-2 md:p-5 md:pb-4">
-            <h2 className="text-title2 text-heading">설정</h2>
+          <div className="flex items-center justify-between px-4 pt-3 pb-2 md:p-5 md:pb-4">
+            <h2 id="settings-modal-title" className="text-title2 text-heading">설정</h2>
             <button
               onClick={handleClose}
-              className="p-2 rounded-lg text-sub hover:text-body hover:bg-[var(--hover-bg)] transition-colors"
+              className="touch-target-icon text-sub hover:text-body hover:bg-[var(--hover-bg)] rounded-lg transition-colors"
               aria-label="닫기"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Tab buttons */}
+          {/* Tab buttons — mobile: horizontal scroll pill rail; desktop: vertical stack */}
           <div
+            ref={tabListRef}
             role="tablist"
             aria-orientation="vertical"
-            className="flex md:flex-col overflow-x-auto scrollbar-none px-4 md:px-3 pb-3 md:pb-4 gap-1"
+            className={clsx(
+              'flex md:flex-col overflow-x-auto md:overflow-visible scrollbar-none',
+              'gap-1.5 md:gap-1 px-3 md:px-3 pb-3 md:pb-4',
+              'snap-x snap-proximity md:snap-none scroll-smooth',
+              '[scroll-padding-inline:1rem]',
+              'border-b border-base md:border-b-0'
+            )}
           >
-            {TABS.map((tab, index) => (
-              <button
-                key={tab.id}
-                ref={(el) => { tabRefs.current[index] = el }}
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                tabIndex={activeTab === tab.id ? 0 : -1}
-                onClick={() => setActiveTab(tab.id)}
-                onKeyDown={(e) => handleTabKeyDown(e, index)}
-                className={clsx(
-                  'flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-body3 whitespace-nowrap transition-all',
-                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
-                  activeTab === tab.id
-                    ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                    : 'text-sub hover:bg-[var(--hover-bg)]'
-                )}
-              >
-                <tab.Icon className="w-4 h-4 shrink-0" />
-                <span>{tab.label}</span>
-              </button>
-            ))}
+            {TABS.map((tab, index) => {
+              const isActive = activeTab === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  ref={(el) => { tabRefs.current[index] = el }}
+                  id={`settings-tab-${tab.id}`}
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-controls={`settings-tabpanel-${tab.id}`}
+                  aria-label={tab.label}
+                  title={tab.label}
+                  tabIndex={isActive ? 0 : -1}
+                  onClick={() => setActiveTab(tab.id)}
+                  onKeyDown={(e) => handleTabKeyDown(e, index)}
+                  className={clsx(
+                    'group relative flex items-center justify-center md:justify-start gap-2 shrink-0 snap-start',
+                    'px-3 md:px-3 py-2 md:py-2.5 min-h-[40px] md:min-h-0',
+                    'rounded-lg text-body3 whitespace-nowrap transition-all',
+                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+                    isActive
+                      ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium elevation-1 md:elevation-0'
+                      : 'text-sub hover:bg-[var(--hover-bg)] active:bg-[var(--hover-bg)] md:bg-transparent'
+                  )}
+                >
+                  <tab.Icon
+                    className={clsx(
+                      'w-4 h-4 shrink-0 transition-transform',
+                      isActive && 'md:scale-100'
+                    )}
+                    aria-hidden="true"
+                  />
+                  <span className="fold:sr-only md:not-sr-only">{tab.label}</span>
+                </button>
+              )
+            })}
           </div>
         </nav>
 
         {/* Content area */}
         <div
+          key={activeTab}
+          id={`settings-tabpanel-${activeTab}`}
           className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8"
           role="tabpanel"
-          aria-labelledby={`tab-${activeTab}`}
+          aria-labelledby={`settings-tab-${activeTab}`}
+          tabIndex={0}
         >
           <div className="max-w-2xl">
             {activeTab === 'general' && <GeneralTab draft={draft} onChange={updateDraft} />}
