@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
+    "@tanstack/react-virtual": "^3.13.24",
     "canvas-confetti": "^1.9.4",
     "chart.js": "^4.5.0",
     "chartjs-adapter-date-fns": "^3.0.0",

@@ -12,6 +12,8 @@ import { useMonthlyTrend } from '@/hooks/useCategoryTrend'
 import { useSyncListener } from '@/hooks/useSyncListener'
 import { LedgerHero } from './LedgerHero'
 import { LedgerInsightsRow } from './LedgerInsightsRow'
+import { LedgerInsightsSidebar } from './LedgerInsightsSidebar'
+import { MonthlyReportCard } from './MonthlyReportCard'
 import { QuickRecordStrip } from './QuickRecordStrip'
 import { TransactionListGrouped } from './TransactionListGrouped'
 import { TransactionFormModal } from './TransactionFormModal'
@@ -131,78 +133,107 @@ export function LedgerPage() {
   const focalAmount = defaultType === 'expense' ? summary.totalExpense : summary.totalIncome
 
   return (
-    <div className="fold:p-3 p-4 lg:p-6 space-y-5">
+    <div className="fold:p-3 p-4 lg:p-6">
       {/* Segment Control */}
-      <PageSegmentControl segments={LEDGER_SEGMENTS} />
-
-      {/* Hero + Swipe for month nav */}
-      <div {...swipeHandlers}>
-        <LedgerHero
-          type={defaultType}
-          selectedMonth={selectedMonth}
-          onMonthChange={setSelectedMonth}
-          totalAmount={focalAmount}
-          income={summary.totalIncome}
-          expense={summary.totalExpense}
-          trend={monthlyTrend}
-          dailyValues={dailyValues}
-        />
+      <div className="mb-5">
+        <PageSegmentControl segments={LEDGER_SEGMENTS} />
       </div>
 
-      {/* Insights Row */}
-      <LedgerInsightsRow
-        type={defaultType}
-        month={selectedMonth}
-        transactions={transactions}
-        categories={categories}
-        budgets={budgets}
-        onCategoryFilter={setCategoryFilter}
-      />
+      {/* Responsive layout: mobile/tablet 1-col, desktop 3-col (main + sidebar 320px) */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6 xl:gap-8">
+        {/* ── Main column ─────────────────────────── */}
+        <div className="space-y-5 min-w-0">
+          {/* Monthly Report (월말 자동 노출) */}
+          <MonthlyReportCard
+            month={selectedMonth}
+            transactions={transactions}
+            categories={categories}
+          />
 
-      {/* Quick Record Strip */}
-      <QuickRecordStrip />
+          {/* Hero + Swipe for month nav */}
+          <div {...swipeHandlers}>
+            <LedgerHero
+              type={defaultType}
+              selectedMonth={selectedMonth}
+              onMonthChange={setSelectedMonth}
+              totalAmount={focalAmount}
+              income={summary.totalIncome}
+              expense={summary.totalExpense}
+              trend={monthlyTrend}
+              dailyValues={dailyValues}
+            />
+          </div>
 
-      {/* Type Filter + Advanced Filters */}
-      <TransactionFilters
-        activeType={filters.type}
-        onTypeChange={setTypeFilter}
-        typeCounts={typeCounts}
-        searchQuery={filters.searchQuery}
-        onSearchChange={setSearchQuery}
-        members={members}
-        categories={categories}
-        memberFilter={filters.memberId}
-        onMemberChange={setMemberFilter}
-        categoryFilter={filters.categoryId}
-        onCategoryChange={setCategoryFilter}
-        paymentMethodFilter={filters.paymentMethod}
-        onPaymentMethodChange={setPaymentMethodFilter}
-        minAmount={filters.minAmount}
-        maxAmount={filters.maxAmount}
-        onAmountRangeChange={(min, max) => { setMinAmount(min); setMaxAmount(max) }}
-        sortBy={filters.sortBy}
-        onSortByChange={setSortBy}
-        dateRange={filters.dateRange}
-        onDateRangeChange={setDateRange}
-        activeFilterCount={activeFilterCount}
-        onReset={resetFilters}
-      />
+          {/* Insights Row — mobile/tablet only (lg 에서는 sidebar 로 이동) */}
+          <div className="lg:hidden">
+            <LedgerInsightsRow
+              type={defaultType}
+              month={selectedMonth}
+              transactions={transactions}
+              categories={categories}
+              budgets={budgets}
+              onCategoryFilter={setCategoryFilter}
+            />
+          </div>
 
-      {/* Transaction List — 날짜 그룹핑 */}
-      {filtered.length === 0 ? (
-        <LedgerEmptyState />
-      ) : (
-        <motion.div
-          variants={containerV}
-          initial="hidden"
-          animate="visible"
-          key={`${selectedMonth}-${defaultType}`}
-        >
-          <motion.div variants={itemV}>
-            <TransactionListGrouped transactions={filtered} />
-          </motion.div>
-        </motion.div>
-      )}
+          {/* Quick Record Strip */}
+          <QuickRecordStrip />
+
+          {/* Type Filter + Advanced Filters */}
+          <TransactionFilters
+            activeType={filters.type}
+            onTypeChange={setTypeFilter}
+            typeCounts={typeCounts}
+            searchQuery={filters.searchQuery}
+            onSearchChange={setSearchQuery}
+            members={members}
+            categories={categories}
+            memberFilter={filters.memberId}
+            onMemberChange={setMemberFilter}
+            categoryFilter={filters.categoryId}
+            onCategoryChange={setCategoryFilter}
+            paymentMethodFilter={filters.paymentMethod}
+            onPaymentMethodChange={setPaymentMethodFilter}
+            minAmount={filters.minAmount}
+            maxAmount={filters.maxAmount}
+            onAmountRangeChange={(min, max) => { setMinAmount(min); setMaxAmount(max) }}
+            sortBy={filters.sortBy}
+            onSortByChange={setSortBy}
+            dateRange={filters.dateRange}
+            onDateRangeChange={setDateRange}
+            activeFilterCount={activeFilterCount}
+            onReset={resetFilters}
+          />
+
+          {/* Transaction List — 날짜 그룹핑 + 가상화 (200건+) */}
+          {filtered.length === 0 ? (
+            <LedgerEmptyState />
+          ) : (
+            <motion.div
+              variants={containerV}
+              initial="hidden"
+              animate="visible"
+              key={`${selectedMonth}-${defaultType}`}
+            >
+              <motion.div variants={itemV}>
+                <TransactionListGrouped transactions={filtered} />
+              </motion.div>
+            </motion.div>
+          )}
+        </div>
+
+        {/* ── Desktop sidebar (lg+) ─────────────────── */}
+        <div className="hidden lg:block sticky top-4 self-start">
+          <LedgerInsightsSidebar
+            type={defaultType}
+            month={selectedMonth}
+            transactions={transactions}
+            categories={categories}
+            budgets={budgets}
+            onCategoryFilter={setCategoryFilter}
+          />
+        </div>
+      </div>
 
       <FAB onClick={openTransactionCreateModal} label="거래 기록" />
 
