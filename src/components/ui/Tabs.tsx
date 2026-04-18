@@ -72,7 +72,7 @@ export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
             {isActive && (
               <motion.span
                 layoutId={`tabIndicator-${layoutGroupId}`}
-                className="absolute inset-0 rounded-md bg-white dark:bg-[oklch(0.3_0_0)] shadow-sm z-0"
+                className="absolute inset-0 rounded-md bg-surface-primary ring-1 ring-[color:var(--border-subtle)] shadow-[0_1px_3px_rgba(0,0,0,0.06)] z-0"
                 transition={{ type: 'spring', stiffness: 400, damping: 28 }}
               />
             )}

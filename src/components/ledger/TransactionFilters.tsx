@@ -224,7 +224,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
       <div
         role="tablist"
         aria-label="거래 타입"
-        className="relative flex items-center p-1 rounded-2xl bg-surface-tertiary ring-1 ring-base shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+        className="relative flex items-center p-1.5 rounded-2xl bg-surface-tertiary ring-1 ring-base shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
       >
         {TYPE_TABS.map(tab => {
           const isActive = activeType === tab.id
@@ -245,7 +245,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
               {isActive && (
                 <motion.span
                   layoutId="tx-type-indicator"
-                  className="absolute inset-0 rounded-xl bg-surface-primary shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+                  className="absolute inset-0 rounded-xl bg-surface-primary ring-1 ring-[color:var(--border-subtle)] shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
                   transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                   aria-hidden="true"
                 />
@@ -670,7 +670,7 @@ function SegmentedChips<T extends string>({
   onChange: (v: T) => void
 }) {
   return (
-    <div className="flex gap-1 p-1 rounded-xl bg-surface-secondary ring-1 ring-base">
+    <div className="flex gap-1 p-1.5 rounded-xl bg-surface-tertiary ring-1 ring-base">
       {options.map(opt => {
         const isActive = value === opt.value
         return (
@@ -688,7 +688,7 @@ function SegmentedChips<T extends string>({
             {isActive && (
               <motion.span
                 layoutId={`seg-${opt.value}`}
-                className="absolute inset-0 rounded-lg bg-surface-primary ring-1 ring-base shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
+                className="absolute inset-0 rounded-lg bg-surface-primary ring-1 ring-[color:var(--border-subtle)] shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
                 transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                 aria-hidden
               />

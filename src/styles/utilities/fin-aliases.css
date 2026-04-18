@@ -117,8 +117,8 @@
 .nav-tabs {
   display: flex;
   gap: 4px;
-  padding: 4px;
-  border-radius: var(--radius-lg, 8px);
+  padding: 6px;
+  border-radius: var(--radius-lg, 12px);
   background: var(--surface-tertiary);
   border: 1px solid var(--border-default);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
