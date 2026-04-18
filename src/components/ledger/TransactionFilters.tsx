@@ -224,7 +224,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
       <div
         role="tablist"
         aria-label="거래 타입"
-        className="relative flex items-center p-1 rounded-2xl bg-surface-tertiary"
+        className="relative flex items-center p-1 rounded-2xl bg-surface-tertiary ring-1 ring-base shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
       >
         {TYPE_TABS.map(tab => {
           const isActive = activeType === tab.id

@@ -119,11 +119,14 @@
   gap: 4px;
   padding: 4px;
   border-radius: var(--radius-lg, 8px);
-  background: oklch(0.95 0 0);
+  background: var(--surface-tertiary);
+  border: 1px solid var(--border-default);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .dark .nav-tabs {
-  background: oklch(0.22 0 0);
+  background: var(--surface-tertiary);
+  border-color: var(--border-default);
 }
 
 .nav-tab {
