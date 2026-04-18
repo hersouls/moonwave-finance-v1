@@ -4,33 +4,40 @@
  * =============================================== */
 
 /* ── Card Aliases (with Edge Lighting) ─────────── */
+/*
+ * border → inset box-shadow 전환 (v2 Obsidian)
+ * 이유: 실제 border는 rounded corner 에서 anti-aliasing 차이로 모서리만 굵게 보이는 현상 있음.
+ *       ring-1 (box-shadow) 과 함께 사용 시 이중 선이 모서리에서 겹쳐 4px까지 굵어짐.
+ * 해결: inset box-shadow 1px 로 경계선 구현 → layout 불변 + rounded corner 완벽 준수 + ring 중복 없음
+ */
 .card-base {
   background-color: var(--card-bg-primary);
   border-radius: var(--card-radius);
-  border: var(--card-border-width) solid var(--card-border-color);
+  /* 투명 border 로 layout 공간만 유지 (이전 코드 호환) */
+  border: var(--card-border-width) solid transparent;
   padding: var(--card-padding);
-  transition: border-color var(--duration-fast) var(--easing-default),
-              box-shadow var(--duration-normal) var(--easing-default),
+  box-shadow: inset 0 0 0 var(--card-border-width, 1px) var(--card-border-color);
+  transition: box-shadow var(--duration-normal) var(--easing-default),
               transform var(--duration-fast) var(--easing-default);
 }
 
 .dark .card-base {
   background-color: var(--card-bg-primary);
-  border-color: var(--card-border-color);
+  box-shadow: inset 0 0 0 var(--card-border-width, 1px) var(--card-border-color);
 }
 
-/* Edge Lighting: card hover glow */
+/* Edge Lighting: card hover glow (inset border + outer glow 합성) */
 .card-base:hover {
-  border-color: var(--card-hover-border-color, rgba(0,0,0,0.12));
   box-shadow:
+    inset 0 0 0 var(--card-border-width, 1px) var(--card-hover-border-color, rgba(0,0,0,0.12)),
     var(--shadow-1),
     0 0 16px -4px oklch(0.64 0.16 250 / 0.08),
     0 0 4px 0 oklch(0.64 0.16 250 / 0.03);
 }
 
 .dark .card-base:hover {
-  border-color: oklch(0.64 0.16 250 / 0.12);
   box-shadow:
+    inset 0 0 0 var(--card-border-width, 1px) oklch(0.64 0.16 250 / 0.12),
     var(--shadow-1),
     0 0 28px -4px oklch(0.64 0.16 250 / 0.20),
     0 0 8px 0 oklch(0.64 0.16 250 / 0.10);
@@ -120,13 +127,17 @@
   padding: 6px;
   border-radius: var(--radius-lg, 12px);
   background: var(--surface-muted);
-  border: 1px solid var(--border-strong);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+  /* border → inset box-shadow 로 전환, 내부 subtle shadow 합성 */
+  box-shadow:
+    inset 0 0 0 1px var(--border-strong),
+    inset 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .dark .nav-tabs {
   background: var(--surface-tertiary);
-  border-color: var(--border-strong);
+  box-shadow:
+    inset 0 0 0 1px var(--border-strong),
+    inset 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .nav-tab {
