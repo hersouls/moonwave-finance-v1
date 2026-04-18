@@ -87,22 +87,6 @@ interface TransactionFiltersProps {
 
 // ─── Motion ─────────────────────────────────────────
 
-const panelVariants: Variants = {
-  hidden: { opacity: 0, height: 0, y: -4 },
-  visible: {
-    opacity: 1,
-    height: 'auto',
-    y: 0,
-    transition: { duration: durations.base, ease: easeOutExpo },
-  },
-  exit: {
-    opacity: 0,
-    height: 0,
-    y: -4,
-    transition: { duration: durations.fast, ease: easeOutExpo },
-  },
-}
-
 const pillVariants: Variants = {
   hidden: { opacity: 0, scale: 0.85, y: -2 },
   visible: { opacity: 1, scale: 1, y: 0, transition: springSnappy },
@@ -348,24 +332,78 @@ export function TransactionFilters(props: TransactionFiltersProps) {
         )}
       </AnimatePresence>
 
-      {/* ─── Row 4: Expanded panel (KT-style high-end) */}
+      {/* ─── Row 4: Expanded panel → BottomSheet (v2 Prism Phase 3) */}
       <AnimatePresence initial={false}>
         {isExpanded && hasAdvanced && (
-          <motion.div
-            key="filter-panel"
-            variants={panelVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="overflow-hidden"
-          >
-            <div
+          <>
+            {/* Backdrop */}
+            <motion.div
+              key="filter-sheet-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setIsExpanded(false)}
+              className="fixed inset-0 z-[var(--z-overlay)] bg-black/40 dark:bg-black/60 backdrop-blur-[12px] saturate-[1.4]"
+              aria-hidden="true"
+            />
+            {/* Sheet */}
+            <motion.div
+              key="filter-sheet"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="filter-sheet-title"
+              initial={shouldReduceMotion ? { opacity: 0 } : { y: '100%' }}
+              animate={shouldReduceMotion ? { opacity: 1 } : { y: 0 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : { y: '100%' }}
+              transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+              drag={shouldReduceMotion ? false : 'y'}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.5 }}
+              onDragEnd={(_, info) => {
+                if (info.offset.y > 120 || info.velocity.y > 600) setIsExpanded(false)
+              }}
               className={clsx(
-                'rounded-2xl fold:p-3 p-4 sm:p-5 fold:space-y-4 space-y-5',
-                'bg-[color:var(--surface-secondary)] ring-1 ring-[color:var(--border-strong)]',
-                'shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]',
+                'fixed bottom-0 left-0 right-0 z-[var(--z-overlay)]',
+                'bg-surface-primary rounded-t-3xl sm:rounded-3xl',
+                'ring-1 ring-[color:var(--border-default)] el-dialog',
+                'overflow-hidden flex flex-col max-h-[85vh]',
+                'pb-[env(safe-area-inset-bottom,0px)]',
+                'sm:max-w-xl sm:mx-auto sm:mb-4 sm:left-1/2 sm:-translate-x-1/2 sm:right-auto sm:w-[calc(100%-2rem)]',
               )}
             >
+              {/* Drag handle */}
+              <div className="sm:hidden sheet-handle w-full" aria-hidden="true" />
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 pt-2 sm:pt-5 pb-3 border-b border-[color:var(--border-subtle)]">
+                <div className="inline-flex items-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4 text-[color:var(--color-primary-600)]" />
+                  <h2 id="filter-sheet-title" className="text-title2 font-bold text-heading">
+                    필터
+                  </h2>
+                  {activeFilterCount > 0 && (
+                    <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-[color:var(--color-primary-600)] text-white tabular-nums">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(false)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
+                  aria-label="필터 닫기"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Scrollable content */}
+              <div
+                className={clsx(
+                  'flex-1 overflow-y-auto fold:p-3 p-4 sm:p-5 fold:space-y-4 space-y-5',
+                )}
+              >
               {/* Sort + Date range row — lg 이상에서만 2열 (그 이하는 각 섹션 전폭 사용) */}
               {(onSortByChange || onDateRangeChange) && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -578,18 +616,20 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                 </Section>
               )}
 
-              {/* Footer actions */}
+              </div>
+
+              {/* Footer actions — fixed bottom of sheet */}
               {onReset && (
-                <div className="pt-3 -mx-4 sm:-mx-5 px-4 sm:px-5 border-t border-base flex items-center justify-between gap-3">
+                <div className="flex-shrink-0 px-5 py-3 border-t border-[color:var(--border-default)] bg-surface-primary flex items-center justify-between gap-3">
                   <button
                     type="button"
                     onClick={onReset}
                     disabled={activeFilterCount === 0}
                     className={clsx(
-                      'flex items-center gap-1.5 text-caption font-semibold transition-colors',
+                      'inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-caption font-semibold transition-colors',
                       activeFilterCount > 0
-                        ? 'text-status-danger hover:text-red-700 dark:hover:text-red-300'
-                        : 'text-disabled cursor-not-allowed'
+                        ? 'text-status-danger hover:bg-status-danger-soft'
+                        : 'text-disabled cursor-not-allowed',
                     )}
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
@@ -598,14 +638,14 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                   <button
                     type="button"
                     onClick={() => setIsExpanded(false)}
-                    className="px-4 h-9 rounded-xl bg-[color:var(--color-primary-500)] text-white text-caption font-semibold hover:bg-[color:var(--color-primary-600)] transition-colors shadow-[0_2px_8px_color-mix(in_oklch,var(--color-primary-500)_22%,transparent)]"
+                    className="px-5 py-2.5 rounded-full bg-[color:var(--color-primary-600)] text-white text-caption font-bold hover:bg-[color:var(--color-primary-700)] transition-colors shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]"
                   >
-                    닫기
+                    적용
                   </button>
                 </div>
               )}
-            </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>

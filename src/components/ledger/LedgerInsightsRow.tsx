@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { BudgetRingCard } from './insights/BudgetRingCard'
 import { TopCategoryCard } from './insights/TopCategoryCard'
+import { CategoryDonutCard } from './insights/CategoryDonutCard'
 import { SubscriptionCard } from './insights/SubscriptionCard'
 import { UpcomingBillsCard } from './insights/UpcomingBillsCard'
 import { BudgetDetailSheet } from './BudgetDetailSheet'
@@ -39,6 +40,15 @@ export function LedgerInsightsRow({
             month={month}
             type={type}
             onClick={onCategoryFilter}
+          />
+        </div>
+        <div className="snap-start">
+          <CategoryDonutCard
+            transactions={transactions}
+            categories={categories}
+            month={month}
+            type={type}
+            onCategorySelect={onCategoryFilter}
           />
         </div>
         <div className="snap-start">
