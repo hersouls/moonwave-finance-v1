@@ -2,29 +2,29 @@ import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { staggerContainer, staggerItem, reducedStaggerContainer, reducedStaggerItem, motionVariants } from '@/lib/motionConfig'
 import { useLocation } from 'react-router-dom'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useBudgetStore } from '@/stores/budgetStore'
 import { useTransactionFilters } from '@/hooks/useTransactionFilters'
+import { useDailyExpenses } from '@/hooks/useDailyExpenses'
+import { useMonthlyTrend } from '@/hooks/useCategoryTrend'
 import { useSyncListener } from '@/hooks/useSyncListener'
-import { TransactionCard } from './TransactionCard'
+import { LedgerHero } from './LedgerHero'
+import { LedgerInsightsRow } from './LedgerInsightsRow'
+import { QuickRecordStrip } from './QuickRecordStrip'
+import { TransactionListGrouped } from './TransactionListGrouped'
 import { TransactionFormModal } from './TransactionFormModal'
 import { TransactionWizard } from './TransactionWizard'
 import { TransactionFilters } from './TransactionFilters'
-import { MonthlySummary } from './MonthlySummary'
-import { CategoryBreakdown } from './CategoryBreakdown'
 import { LedgerEmptyState } from './LedgerEmptyState'
-import { BudgetOverviewCard } from '@/components/budget/BudgetOverviewCard'
 import { PageSegmentControl } from '@/components/layout/PageSegmentControl'
 import { FAB } from '@/components/ui/FAB'
-import { IconButton } from '@/components/ui/Button'
 import { SkeletonCard } from '@/components/ui/Skeleton'
-import { formatMonthLabel, getPreviousMonth, getNextMonth } from '@/lib/dateUtils'
 import { ErrorEmptyState } from '@/components/ui/EmptyState'
 import { useSwipe } from '@/hooks/useSwipe'
 import { LEDGER_SEGMENTS } from '@/lib/ledgerConstants'
+import { getNextMonth, getPreviousMonth } from '@/lib/dateUtils'
 
 export function LedgerPage() {
   const location = useLocation()
@@ -61,6 +61,7 @@ export function LedgerPage() {
   const containerV = motionVariants(shouldReduceMotion, staggerContainer, reducedStaggerContainer)
   const itemV = motionVariants(shouldReduceMotion, staggerItem, reducedStaggerItem)
 
+  // Swipe on Hero area (month navigation)
   const swipeHandlers = useSwipe({
     onSwipeLeft: () => setSelectedMonth(getNextMonth(selectedMonth)),
     onSwipeRight: () => setSelectedMonth(getPreviousMonth(selectedMonth)),
@@ -74,6 +75,10 @@ export function LedgerPage() {
     setSortBy, setDateRange,
     resetFilters, activeFilterCount,
   } = useTransactionFilters(transactions)
+
+  // Hero sparkline data + trend
+  const dailyValues = useDailyExpenses(selectedMonth, transactions, defaultType)
+  const monthlyTrend = useMonthlyTrend(selectedMonth, transactions, defaultType)
 
   // Sync type filter with route
   useEffect(() => {
@@ -102,12 +107,13 @@ export function LedgerPage() {
   if (isLoading) {
     return (
       <div className="fold:p-3 p-4 lg:p-6 space-y-4">
-        <div className="grid grid-cols-3 gap-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-24 bg-[var(--surface-tertiary)] rounded-xl animate-pulse" />
+        <div className="h-[220px] bg-[var(--surface-tertiary)] rounded-3xl animate-pulse" />
+        <div className="flex gap-3 overflow-hidden">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="flex-shrink-0 w-[180px] h-[160px] bg-[var(--surface-tertiary)] rounded-2xl animate-pulse" />
           ))}
         </div>
-        {Array.from({ length: 5 }).map((_, i) => (
+        {Array.from({ length: 3 }).map((_, i) => (
           <SkeletonCard key={i} />
         ))}
       </div>
@@ -122,36 +128,39 @@ export function LedgerPage() {
     )
   }
 
+  const focalAmount = defaultType === 'expense' ? summary.totalExpense : summary.totalIncome
+
   return (
-    <div className="fold:p-3 p-4 lg:p-6 space-y-4">
+    <div className="fold:p-3 p-4 lg:p-6 space-y-5">
       {/* Segment Control */}
       <PageSegmentControl segments={LEDGER_SEGMENTS} />
 
-      {/* Swipe zone: month nav + summary + budget only (excludes filters/list to avoid card swipe-to-edit conflict) */}
-      <div className="space-y-4" {...swipeHandlers}>
-        {/* Month Navigator */}
-        <div className="flex items-center justify-between">
-          <IconButton onClick={() => setSelectedMonth(getPreviousMonth(selectedMonth))} plain size="sm">
-            <ChevronLeft className="w-5 h-5" />
-          </IconButton>
-          <h2 className="text-base font-semibold text-heading">
-            {formatMonthLabel(selectedMonth)}
-          </h2>
-          <IconButton onClick={() => setSelectedMonth(getNextMonth(selectedMonth))} plain size="sm">
-            <ChevronRight className="w-5 h-5" />
-          </IconButton>
-        </div>
-
-        {/* Monthly Summary */}
-        <MonthlySummary
-          totalIncome={summary.totalIncome}
-          totalExpense={summary.totalExpense}
-          netSavings={summary.netSavings}
+      {/* Hero + Swipe for month nav */}
+      <div {...swipeHandlers}>
+        <LedgerHero
+          type={defaultType}
+          selectedMonth={selectedMonth}
+          onMonthChange={setSelectedMonth}
+          totalAmount={focalAmount}
+          income={summary.totalIncome}
+          expense={summary.totalExpense}
+          trend={monthlyTrend}
+          dailyValues={dailyValues}
         />
-
-        {/* Budget Overview (expense view only) */}
-        {defaultType === 'expense' && budgets.length > 0 && <BudgetOverviewCard />}
       </div>
+
+      {/* Insights Row */}
+      <LedgerInsightsRow
+        type={defaultType}
+        month={selectedMonth}
+        transactions={transactions}
+        categories={categories}
+        budgets={budgets}
+        onCategoryFilter={setCategoryFilter}
+      />
+
+      {/* Quick Record Strip */}
+      <QuickRecordStrip />
 
       {/* Type Filter + Advanced Filters */}
       <TransactionFilters
@@ -179,30 +188,19 @@ export function LedgerPage() {
         onReset={resetFilters}
       />
 
-      {/* Category Breakdown */}
-      {transactions.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <CategoryBreakdown transactions={transactions} type="expense" budgets={budgets} />
-          <CategoryBreakdown transactions={transactions} type="income" />
-        </div>
-      )}
-
-      {/* Transaction List */}
+      {/* Transaction List — 날짜 그룹핑 */}
       {filtered.length === 0 ? (
         <LedgerEmptyState />
       ) : (
         <motion.div
-          className="space-y-2"
           variants={containerV}
           initial="hidden"
           animate="visible"
           key={`${selectedMonth}-${defaultType}`}
         >
-          {filtered.map(t => (
-            <motion.div key={t.id} variants={itemV}>
-              <TransactionCard transaction={t} />
-            </motion.div>
-          ))}
+          <motion.div variants={itemV}>
+            <TransactionListGrouped transactions={filtered} />
+          </motion.div>
         </motion.div>
       )}
 
