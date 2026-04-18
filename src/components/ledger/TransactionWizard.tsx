@@ -17,8 +17,9 @@ import { springSnappy, easeOutExpo, durations } from '@/lib/motionConfig'
 import { clsx } from 'clsx'
 import {
   Check, ChevronLeft, ChevronRight, Zap, Landmark, Pencil, MoreHorizontal,
-  Plus, Eraser, X,
+  Plus, Eraser, X, Calendar as CalendarIcon, ChevronDown,
 } from 'lucide-react'
+import { MiniCalendar } from '@/components/ui/MiniCalendar'
 import type { TransactionType, RepeatType, PaymentMethod } from '@/lib/types'
 
 // ─── Types ─────────────────────────────────────────
@@ -40,6 +41,8 @@ interface WizardState {
   isRecurring: boolean
   recurType: RepeatType
   recurEndDate: string
+  showCalendar: boolean
+  showEndDateCalendar: boolean
 }
 
 type WizardAction =
@@ -77,6 +80,8 @@ function getInitialState(initialDate?: string, defaultMemberId?: number | ''): W
     isRecurring: false,
     recurType: 'monthly',
     recurEndDate: '',
+    showCalendar: false,
+    showEndDateCalendar: false,
   }
 }
 
@@ -444,15 +449,15 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                       >
                         <Icon className="w-3.5 h-3.5" style={{ color }} />
                       </div>
-                      <div className="flex flex-col items-start min-w-0">
-                        <span className="text-[11px] text-sub truncate max-w-[96px]">
+                      <div className="flex flex-col items-start min-w-0 max-w-[120px]">
+                        <span className="text-[11px] text-sub truncate w-full">
                           {cat?.name || '미분류'}
                         </span>
-                        <span className="text-caption font-semibold text-heading tabular-nums">
+                        <span className="text-caption font-semibold text-heading tabular-nums truncate w-full">
                           {formatKoreanUnit(tmpl.amount)}원
                         </span>
                       </div>
-                      <span className="text-[10px] text-disabled tabular-nums ml-1">×{tmpl.count}</span>
+                      <span className="text-[10px] text-disabled tabular-nums ml-1 flex-shrink-0">×{tmpl.count}</span>
                     </motion.button>
                   )
                 })}
@@ -481,16 +486,17 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                           memo: `${loan.name} 이자 (잔액 ${loan.currentBalance.toLocaleString('ko-KR')}원 × 연 ${loan.annualRate}%)`,
                         },
                       })}
-                      className="flex-shrink-0 flex flex-col items-start gap-0.5 px-3 py-2 rounded-xl border border-red-200/50 dark:border-red-800/40 bg-red-50/60 dark:bg-red-900/15 hover:bg-red-100/60 dark:hover:bg-red-900/25"
+                      className="flex-shrink-0 flex flex-col items-start gap-0.5 px-3 py-2 rounded-xl border bg-status-danger-soft min-w-0 max-w-[180px]"
+                      style={{ borderColor: 'var(--status-danger-border)' }}
                       whileHover={shouldReduceMotion ? undefined : { y: -2 }}
                       whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
                       transition={springSnappy}
                     >
-                      <span className="text-[11px] text-red-700 dark:text-red-300 truncate max-w-[140px]">
+                      <span className="text-[11px] text-status-danger truncate w-full">
                         {loan.name}
                       </span>
-                      <span className="text-caption font-semibold text-red-800 dark:text-red-200 tabular-nums">
-                        {formatKoreanUnit(interest)}원<span className="text-[10px] text-red-600/70 dark:text-red-400/70 ml-0.5">/월</span>
+                      <span className="text-caption font-semibold text-status-danger tabular-nums truncate w-full">
+                        {formatKoreanUnit(interest)}원<span className="text-[10px] text-status-danger/70 ml-0.5">/월</span>
                       </span>
                     </motion.button>
                   )
@@ -558,7 +564,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
           }}
           transition={{ duration: durations.base, ease: easeOutExpo }}
         >
-          <div className="relative py-4 px-4">
+          <div className="relative py-4 px-10 sm:px-12">
             <input
               id="wizard-amount-input"
               ref={amountRef}
@@ -568,10 +574,14 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               onChange={handleAmountChange}
               placeholder="0"
               aria-label="금액"
-              className="w-full bg-transparent text-center text-financial-fluid tabular-nums text-heading placeholder-[var(--text-disabled)] outline-none"
-              style={{ letterSpacing: '-0.015em' }}
+              className="w-full bg-transparent text-center tabular-nums text-heading placeholder-[var(--text-disabled)] outline-none font-bold"
+              style={{
+                fontSize: 'clamp(24px, 6vw, 40px)',
+                letterSpacing: '-0.015em',
+                lineHeight: 1.2,
+              }}
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg text-disabled font-medium">원</span>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-base text-disabled font-medium">원</span>
           </div>
         </motion.div>
         <AnimatePresence mode="wait">
@@ -671,7 +681,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
       </label>
 
       <motion.div
-        className="grid grid-cols-4 sm:grid-cols-5 gap-2.5 max-h-[280px] overflow-y-auto scrollbar-none"
+        className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-2.5 max-h-[280px] overflow-y-auto scrollbar-none"
         role="radiogroup"
         aria-label="카테고리 선택"
         variants={gridStagger}
@@ -782,7 +792,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
       {/* Date */}
       <div>
         <label className="block text-body3 text-body mb-2">날짜</label>
-        <div className="flex gap-2 mb-2">
+        <div className="flex gap-2 mb-2 flex-wrap">
           {[
             { label: '오늘', value: today },
             { label: '어제', value: yesterday },
@@ -804,12 +814,52 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
             </motion.button>
           ))}
         </div>
-        <input
-          type="date"
-          value={state.date}
-          onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'date', value: e.target.value })}
-          className="input-base"
-        />
+        {/* Date summary trigger — opens MiniCalendar */}
+        <motion.button
+          type="button"
+          onClick={() => dispatch({ type: 'SET_FIELD', field: 'showCalendar', value: !state.showCalendar })}
+          whileTap={shouldReduceMotion ? undefined : { scale: 0.99 }}
+          className={clsx(
+            'w-full flex items-center justify-between gap-2 px-4 py-3 rounded-lg border el-hover',
+            state.showCalendar
+              ? 'border-[color:var(--color-primary-400)] bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20'
+              : 'border-base bg-surface-secondary hover:bg-[var(--hover-bg)]',
+          )}
+          aria-expanded={state.showCalendar}
+        >
+          <span className="inline-flex items-center gap-2 min-w-0">
+            <CalendarIcon className="w-4 h-4 text-sub flex-shrink-0" />
+            <span className="text-body3 text-heading tabular-nums truncate">
+              {formatDate(state.date)}
+            </span>
+          </span>
+          <ChevronDown
+            className={clsx(
+              'w-4 h-4 text-sub flex-shrink-0 transition-transform',
+              state.showCalendar && 'rotate-180',
+            )}
+          />
+        </motion.button>
+        <AnimatePresence>
+          {state.showCalendar && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: durations.base, ease: easeOutExpo }}
+              className="overflow-hidden mt-2"
+            >
+              <MiniCalendar
+                value={state.date}
+                onChange={(d) => {
+                  dispatch({ type: 'SET_FIELD', field: 'date', value: d })
+                  dispatch({ type: 'SET_FIELD', field: 'showCalendar', value: false })
+                }}
+                maxDate={today}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Payment Method */}
@@ -941,12 +991,58 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
             </div>
             <div>
               <label className="block text-body3 text-body mb-1.5">종료일 (선택)</label>
-              <input
-                type="date"
-                value={state.recurEndDate}
-                onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'recurEndDate', value: e.target.value })}
-                className="input-base"
-              />
+              <motion.button
+                type="button"
+                onClick={() => dispatch({ type: 'SET_FIELD', field: 'showEndDateCalendar', value: !state.showEndDateCalendar })}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.99 }}
+                className={clsx(
+                  'w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border el-hover min-h-[44px]',
+                  state.showEndDateCalendar
+                    ? 'border-[color:var(--color-primary-400)] bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20'
+                    : 'border-base bg-surface-secondary hover:bg-[var(--hover-bg)]',
+                )}
+                aria-expanded={state.showEndDateCalendar}
+              >
+                <span className="inline-flex items-center gap-1.5 min-w-0">
+                  <CalendarIcon className="w-3.5 h-3.5 text-sub flex-shrink-0" />
+                  <span className="text-caption text-heading tabular-nums truncate">
+                    {state.recurEndDate ? formatDate(state.recurEndDate) : '무기한'}
+                  </span>
+                </span>
+                {state.recurEndDate && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      dispatch({ type: 'SET_FIELD', field: 'recurEndDate', value: '' })
+                    }}
+                    className="text-caption text-sub hover:text-heading flex-shrink-0"
+                  >
+                    지우기
+                  </span>
+                )}
+              </motion.button>
+              <AnimatePresence>
+                {state.showEndDateCalendar && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: durations.base, ease: easeOutExpo }}
+                    className="overflow-hidden mt-2"
+                  >
+                    <MiniCalendar
+                      value={state.recurEndDate}
+                      onChange={(d) => {
+                        dispatch({ type: 'SET_FIELD', field: 'recurEndDate', value: d })
+                        dispatch({ type: 'SET_FIELD', field: 'showEndDateCalendar', value: false })
+                      }}
+                      minDate={state.date}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         )}
@@ -987,7 +1083,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
           {/* Hero Amount — variant colored */}
           <div
             className={clsx(
-              'relative overflow-hidden py-6 text-center noise-overlay',
+              'relative overflow-hidden py-6 px-4 text-center noise-overlay',
               isExpense ? 'hero-gradient-warning' : 'hero-gradient-success',
             )}
           >
@@ -1000,10 +1096,16 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                 initial={shouldReduceMotion ? undefined : { scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={springSnappy}
-                className="text-financial-fluid text-white tabular-nums tracking-tight"
+                className="text-white tabular-nums tracking-tight break-all"
+                style={{
+                  fontSize: 'clamp(22px, 6vw, 36px)',
+                  lineHeight: 1.15,
+                  fontWeight: 700,
+                  letterSpacing: '-0.015em',
+                }}
               >
                 {state.amount || '0'}
-                <span className="text-lg text-white/60 ml-1">원</span>
+                <span className="text-base text-white/60 ml-1">원</span>
               </motion.p>
             </div>
           </div>
@@ -1011,17 +1113,19 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
           {/* Detail Rows */}
           <div className="divide-y divide-[var(--border-default)] bg-surface-primary">
             {rows.map((row) => (
-              <div key={row.label} className="flex items-center justify-between px-4 py-3">
-                <span className="text-caption text-sub">{row.label}</span>
-                <div className="flex items-center gap-2">
+              <div key={row.label} className="flex items-start justify-between gap-3 px-4 py-3">
+                <span className="text-caption text-sub flex-shrink-0 pt-0.5">{row.label}</span>
+                <div className="flex items-start gap-2 min-w-0 flex-1 justify-end">
                   {row.color && (
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: row.color }} />
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: row.color }} />
                   )}
-                  <span className="text-body3 text-heading">{row.value}</span>
+                  <span className="text-body3 text-heading break-words text-right min-w-0 flex-1" title={row.value}>
+                    {row.value}
+                  </span>
                   <motion.button
                     type="button"
                     onClick={() => dispatch({ type: 'GO_TO_STEP', step: row.step, direction: 'backward' })}
-                    className="p-1 rounded hover:bg-[var(--hover-bg)]"
+                    className="p-1 rounded hover:bg-[var(--hover-bg)] flex-shrink-0 mt-0.5"
                     aria-label={`${row.label} 수정`}
                     whileHover={shouldReduceMotion ? undefined : { scale: 1.15 }}
                     whileTap={shouldReduceMotion ? undefined : { scale: 0.92 }}
@@ -1060,9 +1164,9 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
 
   return (
     <Dialog open={open} onClose={onClose} size="md" noPadding>
-      <div className="px-6 pt-6 sm:px-8 sm:pt-8">
+      <div className="px-4 pt-4 sm:px-8 sm:pt-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
           <h2 className="text-title2 font-semibold text-heading">새 거래 기록</h2>
           <button
             onClick={onClose}
@@ -1082,7 +1186,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
       </div>
 
       {/* Step Content — AnimatePresence wraps */}
-      <div className="px-6 sm:px-8 pb-2 overflow-y-auto max-h-[calc(100dvh-280px)] sm:max-h-[420px]">
+      <div className="px-4 sm:px-8 pb-2 overflow-y-auto overflow-x-hidden max-h-[calc(100dvh-240px)] sm:max-h-[460px]">
         <AnimatePresence mode="wait" custom={state.direction}>
           <motion.div
             key={state.currentStep}
@@ -1099,7 +1203,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
       </div>
 
       {/* Footer */}
-      <div className="px-6 sm:px-8 py-4 sm:py-5 pb-[max(1rem,env(safe-area-inset-bottom,0px))] border-t border-base">
+      <div className="px-4 sm:px-8 py-3 sm:py-5 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] border-t border-base bg-surface-primary">
         <div className="flex items-center justify-between gap-3">
           {state.currentStep > 0 ? (
             <Button
