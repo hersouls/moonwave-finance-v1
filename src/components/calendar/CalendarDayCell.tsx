@@ -56,12 +56,12 @@ const CalendarDayCellBase = forwardRef<HTMLButtonElement, CalendarDayCellProps>(
         ].slice(0, 3)
       : []
 
-    const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const handleEnter = (e: React.SyntheticEvent<HTMLButtonElement>) => {
       if (!onHover || !day.isCurrentMonth || !summary) return
       onHover(day.dateStr, e.currentTarget.getBoundingClientRect())
     }
 
-    const handleMouseLeave = () => {
+    const handleLeave = () => {
       if (!onHover) return
       onHover(null, null)
     }
@@ -71,10 +71,10 @@ const CalendarDayCellBase = forwardRef<HTMLButtonElement, CalendarDayCellProps>(
         ref={ref}
         type="button"
         onClick={onClick}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onFocus={handleMouseEnter}
-        onBlur={handleMouseLeave}
+        onMouseEnter={handleEnter}
+        onMouseLeave={handleLeave}
+        onFocus={handleEnter}
+        onBlur={handleLeave}
         data-date={day.dateStr}
         aria-label={buildAriaLabel(day, summary)}
         aria-current={day.isToday ? 'date' : undefined}
