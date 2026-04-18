@@ -4,7 +4,6 @@ import { Dialog } from '@/components/ui/Dialog'
 import { Select } from '@/components/ui/Select'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
-import { useBudgetStore } from '@/stores/budgetStore'
 import { useLoanStore } from '@/stores/loanStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useConfetti } from '@/hooks/useConfetti'
@@ -26,7 +25,6 @@ import {
   UNCATEGORIZED_LABEL,
 } from '@/lib/ledgerConstants'
 import { useTransactionTemplates } from '@/hooks/useTransactionTemplates'
-import { useBudgetWarning, formatBudgetWarning, getBudgetWarningLevel } from '@/hooks/useBudgetWarning'
 import { clsx } from 'clsx'
 import {
   Check, ChevronLeft, ChevronRight, Zap, Landmark, Pencil, MoreHorizontal,
@@ -263,7 +261,6 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
   const paymentMethodItems = useTransactionStore((s) => s.paymentMethodItems)
   const transactions = useTransactionStore((s) => s.transactions)
   const members = useMemberStore((s) => s.members)
-  const budgets = useBudgetStore((s) => s.budgets)
   const loans = useLoanStore((s) => s.loans)
   const getMonthlyInterest = useLoanStore((s) => s.getMonthlyInterest)
   const loadLoans = useLoanStore((s) => s.loadLoans)
@@ -308,7 +305,6 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
 
   const templates = useTransactionTemplates(transactions)
 
-  const budgetWarning = useBudgetWarning(state.type, state.categoryId, budgets, transactions)
 
   const itemsForType = useMemo(() => {
     if (!state.paymentMethod || state.paymentMethod === 'cash') return []
@@ -857,27 +853,6 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
         </motion.button>
       </motion.div>
 
-      {/* Budget Warning */}
-      <AnimatePresence>
-        {budgetWarning && (
-          <motion.div
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: durations.fast }}
-            className={clsx(
-              'px-3 py-2.5 rounded-lg text-caption',
-              getBudgetWarningLevel(budgetWarning) === 'over'
-                ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
-                : getBudgetWarningLevel(budgetWarning) === 'warning'
-                  ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
-                  : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400',
-            )}
-          >
-            {formatBudgetWarning(budgetWarning)}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 
@@ -1257,19 +1232,6 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
           ))}
         </div>
 
-        {/* Budget Warning */}
-        {budgetWarning && (
-          <div className={clsx(
-            'px-4 py-3 rounded-2xl text-caption font-medium',
-            getBudgetWarningLevel(budgetWarning) === 'over'
-              ? 'bg-status-danger-soft text-status-danger'
-              : getBudgetWarningLevel(budgetWarning) === 'warning'
-                ? 'bg-status-warning-soft text-status-warning'
-                : 'bg-status-success-soft text-status-success',
-          )}>
-            {formatBudgetWarning(budgetWarning)}
-          </div>
-        )}
       </div>
     )
   }

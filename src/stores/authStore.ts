@@ -52,7 +52,6 @@ async function reloadStoresAfterSync() {
   const { useTransactionStore } = await import('@/stores/transactionStore')
   const { useAssetStore } = await import('@/stores/assetStore')
   const { useMemberStore } = await import('@/stores/memberStore')
-  const { useBudgetStore } = await import('@/stores/budgetStore')
   const { useGoalStore } = await import('@/stores/goalStore')
   const { useDailyValueStore } = await import('@/stores/dailyValueStore')
   const { useLoanStore } = await import('@/stores/loanStore')
@@ -63,7 +62,6 @@ async function reloadStoresAfterSync() {
     useTransactionStore.getState().loadCategories(),
     useAssetStore.getState().loadAll(),
     useMemberStore.getState().loadMembers(),
-    useBudgetStore.getState().loadBudgets(),
     useGoalStore.getState().loadGoals(),
     useDailyValueStore.getState().loadValues(),
     useLoanStore.getState().loadLoans(),

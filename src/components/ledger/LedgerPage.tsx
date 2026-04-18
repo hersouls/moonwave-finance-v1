@@ -5,7 +5,6 @@ import { useLocation } from 'react-router-dom'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useUIStore } from '@/stores/uiStore'
-import { useBudgetStore } from '@/stores/budgetStore'
 import { useTransactionFilters } from '@/hooks/useTransactionFilters'
 import { useDailyExpenses } from '@/hooks/useDailyExpenses'
 import { useMonthlyTrend } from '@/hooks/useCategoryTrend'
@@ -55,10 +54,6 @@ export function LedgerPage() {
 
   const editingTransaction = editingId ? transactions.find(t => t.id === editingId) : undefined
 
-  // Budget
-  const loadBudgets = useBudgetStore((s) => s.loadBudgets)
-  const budgets = useBudgetStore((s) => s.budgets)
-
   const shouldReduceMotion = useReducedMotion()
   const containerV = motionVariants(shouldReduceMotion, staggerContainer, reducedStaggerContainer)
   const itemV = motionVariants(shouldReduceMotion, staggerItem, reducedStaggerItem)
@@ -101,10 +96,6 @@ export function LedgerPage() {
 
   useEffect(() => { loadData() }, [])
   useSyncListener(loadData, ['transactions', 'transactionCategories', 'paymentMethodItems'])
-
-  useEffect(() => {
-    loadBudgets(selectedMonth)
-  }, [selectedMonth, loadBudgets])
 
   if (isLoading) {
     return (
@@ -171,7 +162,6 @@ export function LedgerPage() {
               month={selectedMonth}
               transactions={transactions}
               categories={categories}
-              budgets={budgets}
               onCategoryFilter={setCategoryFilter}
             />
           </div>
@@ -229,7 +219,6 @@ export function LedgerPage() {
             month={selectedMonth}
             transactions={transactions}
             categories={categories}
-            budgets={budgets}
             onCategoryFilter={setCategoryFilter}
           />
         </div>

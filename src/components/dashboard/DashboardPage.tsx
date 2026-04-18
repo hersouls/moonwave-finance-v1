@@ -14,7 +14,6 @@ import { Plus, ArrowRight } from 'lucide-react'
 import { useAssetStore } from '@/stores/assetStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useMemberStore } from '@/stores/memberStore'
-import { useBudgetStore } from '@/stores/budgetStore'
 import { useGoalStore } from '@/stores/goalStore'
 import { useSubscriptionStore } from '@/stores/subscriptionStore'
 import { useTransactionStore } from '@/stores/transactionStore'
@@ -27,7 +26,6 @@ import { AssetAllocationChart } from './AssetAllocationChart'
 import { DailyChangeChart } from './DailyChangeChart'
 import { MemberSummaryCards } from './MemberSummaryCards'
 import { DashboardSkeleton } from './DashboardSkeleton'
-import { BudgetOverviewCard } from '@/components/budget/BudgetOverviewCard'
 import { SubscriptionWidget } from './SubscriptionWidget'
 import { GoalCard } from '@/components/goals/GoalCard'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -48,7 +46,6 @@ export function DashboardPage() {
   const loadAll = useAssetStore((s) => s.loadAll)
   const loadValues = useDailyValueStore((s) => s.loadValues)
   const loadMembers = useMemberStore((s) => s.loadMembers)
-  const loadBudgets = useBudgetStore((s) => s.loadBudgets)
   const loadGoals = useGoalStore((s) => s.loadGoals)
   const loadSubscriptions = useSubscriptionStore((s) => s.loadSubscriptions)
   const loadTransactions = useTransactionStore((s) => s.loadAll)
@@ -65,7 +62,7 @@ export function DashboardPage() {
     setError(null)
     setIsLoading(true)
     try {
-      await Promise.all([loadAll(), loadValues(), loadMembers(), loadBudgets(), loadGoals(), loadSubscriptions(), loadTransactions()])
+      await Promise.all([loadAll(), loadValues(), loadMembers(), loadGoals(), loadSubscriptions(), loadTransactions()])
     } catch {
       setError('데이터를 불러오는데 실패했습니다.')
     } finally {
@@ -205,7 +202,6 @@ export function DashboardPage() {
       <motion.div variants={itemV}><SubscriptionWidget /></motion.div>
 
       {/* Budget Overview */}
-      <motion.div variants={itemV}><BudgetOverviewCard /></motion.div>
 
       {/* Charts */}
       <motion.div variants={itemV} className="grid grid-cols-1 lg:grid-cols-2 gap-4">

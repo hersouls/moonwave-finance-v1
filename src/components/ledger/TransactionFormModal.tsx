@@ -3,7 +3,6 @@ import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/
 import { Button } from '@/components/ui/Button'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
-import { useBudgetStore } from '@/stores/budgetStore'
 import { useLoanStore } from '@/stores/loanStore'
 import { getTodayString } from '@/lib/dateUtils'
 import { PAYMENT_METHOD_OPTIONS } from '@/utils/paymentMethod'
@@ -11,7 +10,6 @@ import { formatKoreanUnit } from '@/utils/format'
 import { useToastStore } from '@/stores/toastStore'
 import { RECUR_OPTIONS, LOAN_INTEREST_CATEGORY_NAME, UNCATEGORIZED_LABEL } from '@/lib/ledgerConstants'
 import { useTransactionTemplates } from '@/hooks/useTransactionTemplates'
-import { useBudgetWarning, formatBudgetWarning, getBudgetWarningLevel } from '@/hooks/useBudgetWarning'
 import { clsx } from 'clsx'
 import { Select } from '@/components/ui/Select'
 import { Landmark } from 'lucide-react'
@@ -31,7 +29,6 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
   const categories = useTransactionStore((s) => s.categories)
   const paymentMethodItems = useTransactionStore((s) => s.paymentMethodItems)
   const members = useMemberStore((s) => s.members)
-  const budgets = useBudgetStore((s) => s.budgets)
   const transactions = useTransactionStore((s) => s.transactions)
   const loans = useLoanStore((s) => s.loans)
   const getMonthlyInterest = useLoanStore((s) => s.getMonthlyInterest)
@@ -62,7 +59,6 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
 
   const templates = useTransactionTemplates(transactions, mode === 'create')
 
-  const budgetWarning = useBudgetWarning(type, categoryId, budgets, transactions)
 
   useEffect(() => {
     if (open) loadLoans()
@@ -333,20 +329,6 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
               placeholder="카테고리 선택"
             />
           </div>
-
-          {/* Budget Warning */}
-          {budgetWarning && (
-            <div className={clsx(
-              'px-3 py-2 rounded-lg text-caption',
-              getBudgetWarningLevel(budgetWarning) === 'over'
-                ? 'bg-status-danger-soft text-status-danger'
-                : getBudgetWarningLevel(budgetWarning) === 'warning'
-                  ? 'bg-status-warning-soft text-status-warning'
-                  : 'bg-status-success-soft text-status-success'
-            )}>
-              {formatBudgetWarning(budgetWarning, false)}
-            </div>
-          )}
 
           {/* Date */}
           <div>
