@@ -1,48 +1,123 @@
-/* 01_Foundation Typography Scale */
-/* Font family: existing Pretendard maintained */
+/* ===============================================
+ * Typography Tokens — v2 "Obsidian" Refined
+ * Font: Pretendard Variable (systematic scale)
+ * =============================================== */
 :root {
-  /* Font Weights */
+  /* ── Font Weights (5 tiers) ─────────────────── */
+  --font-weight-regular: 400;
   --font-weight-medium: 500;
+  --font-weight-semibold: 600;
   --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
 
-  /* Line Heights */
-  --line-height-tight: 148%;
-  --line-height-relaxed: 170%;
+  /* ── Line Heights (4 tiers) ─────────────────── */
+  --line-height-tight: 1.2;      /* 120% — display, large hero */
+  --line-height-snug: 1.35;      /* 135% — headings */
+  --line-height-normal: 1.5;     /* 150% — body, reading */
+  --line-height-relaxed: 1.7;    /* 170% — long-form body */
 
-  /* Type Scale — size / weight */
+  /* Legacy percent aliases (kept for backward compat) */
+  --line-height-148: 148%;
+  --line-height-170: 170%;
+
+  /* ── Letter Spacing ─────────────────────────── */
+  --letter-tight: -0.02em;
+  --letter-snug: -0.01em;
+  --letter-normal: 0;
+  --letter-wide: 0.02em;
+
+  /* ── Type Scale — size / weight / line-height ─ */
+
+  /* Display (hero headlines, marketing) */
+  --typo-display1-size: 32px;
+  --typo-display1-weight: 800;
+  --typo-display1-line-height: var(--line-height-tight);
+  --typo-display2-size: 28px;
+  --typo-display2-weight: 700;
+  --typo-display2-line-height: var(--line-height-tight);
+
+  /* Heading */
+  --typo-heading1-size: 26px;
+  --typo-heading1-weight: 700;
+  --typo-heading1-line-height: var(--line-height-snug);
+
   --typo-heading2-size: 24px;
   --typo-heading2-weight: 700;
-  --typo-heading2-line-height: 148%;
+  --typo-heading2-line-height: var(--line-height-snug);
 
+  --typo-heading3-size: 22px;
+  --typo-heading3-weight: 700;
+  --typo-heading3-line-height: var(--line-height-snug);
+
+  /* Title */
   --typo-title1-size: 20px;
   --typo-title1-weight: 700;
-  --typo-title1-line-height: 148%;
+  --typo-title1-line-height: var(--line-height-snug);
 
   --typo-title2-size: 18px;
   --typo-title2-weight: 700;
-  --typo-title2-line-height: 148%;
+  --typo-title2-line-height: var(--line-height-snug);
 
+  --typo-title3-size: 17px;
+  --typo-title3-weight: 600;
+  --typo-title3-line-height: var(--line-height-snug);
+
+  /* Body */
   --typo-body1-size: 16px;
   --typo-body1-weight: 500;
-  --typo-body1-line-height: 170%;
+  --typo-body1-line-height: var(--line-height-relaxed);
 
   --typo-body1-bold-size: 16px;
   --typo-body1-bold-weight: 700;
-  --typo-body1-bold-line-height: 170%;
+  --typo-body1-bold-line-height: var(--line-height-relaxed);
 
   --typo-body2-size: 15px;
   --typo-body2-weight: 500;
-  --typo-body2-line-height: 170%;
+  --typo-body2-line-height: var(--line-height-relaxed);
 
   --typo-body2-bold-size: 15px;
   --typo-body2-bold-weight: 700;
-  --typo-body2-bold-line-height: 170%;
+  --typo-body2-bold-line-height: var(--line-height-relaxed);
+
+  --typo-body3-size: 14px;
+  --typo-body3-weight: 500;
+  --typo-body3-line-height: var(--line-height-snug);
+
+  --typo-body3-semi-size: 14px;
+  --typo-body3-semi-weight: 600;
+  --typo-body3-semi-line-height: var(--line-height-snug);
+
+  --typo-body3-bold-size: 14px;
+  --typo-body3-bold-weight: 700;
+  --typo-body3-bold-line-height: var(--line-height-snug);
+
+  /* Label */
+  --typo-label1-size: 15px;
+  --typo-label1-weight: 600;
+  --typo-label1-line-height: var(--line-height-snug);
+
+  --typo-label2-size: 14px;
+  --typo-label2-weight: 600;
+  --typo-label2-line-height: var(--line-height-snug);
 
   --typo-label3-size: 13px;
   --typo-label3-weight: 700;
-  --typo-label3-line-height: 148%;
+  --typo-label3-line-height: var(--line-height-snug);
 
   --typo-label3-medium-size: 13px;
   --typo-label3-medium-weight: 500;
-  --typo-label3-medium-line-height: 148%;
+  --typo-label3-medium-line-height: var(--line-height-snug);
+
+  --typo-label4-size: 11px;
+  --typo-label4-weight: 600;
+  --typo-label4-line-height: var(--line-height-snug);
+
+  /* Caption */
+  --typo-caption-size: 12px;
+  --typo-caption-weight: 500;
+  --typo-caption-line-height: var(--line-height-snug);
+
+  --typo-caption-bold-size: 12px;
+  --typo-caption-bold-weight: 700;
+  --typo-caption-bold-line-height: var(--line-height-snug);
 }

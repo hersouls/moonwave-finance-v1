@@ -136,12 +136,29 @@ html {
   font-size: clamp(14px, 0.9375rem + 0.1vw, 15px);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  /* Pretendard OpenType features — ss01 for Korean stylistic variants, cv11 for alt digits */
+  font-feature-settings: 'ss01' 1, 'cv11' 1, 'calt' 1, 'kern' 1;
+  line-height: var(--line-height-normal, 1.5);
+  color: var(--text-primary);
 }
 
 /* Touch feedback optimization */
 body {
   -webkit-tap-highlight-color: transparent;
   background-color: var(--surface-secondary);
+  color: var(--text-primary);
+}
+
+/* Headings inherit KT snug line-height */
+h1, h2, h3, h4, h5, h6 {
+  line-height: var(--line-height-snug, 1.35);
+  letter-spacing: var(--letter-snug, -0.01em);
+}
+
+/* Strong / bold — Pretendard semibold by default */
+strong, b {
+  font-weight: var(--font-weight-semibold, 600);
 }
 
 button,
@@ -226,9 +243,10 @@ select {
   display: none;
 }
 
-/* Tabular numbers for financial data */
+/* Tabular numbers for financial data — global */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'cv11' 1;
 }
 
 /* ========================================

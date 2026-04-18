@@ -41,7 +41,7 @@ export function ToastContainer() {
               )}
             >
               <Icon className="w-4 h-4 flex-shrink-0" />
-              <span className="text-sm flex-1">{toast.message}</span>
+              <span className="text-body3 flex-1">{toast.message}</span>
               <button
                 onClick={() => removeToast(toast.id)}
                 className="touch-target-icon text-white/60 hover:text-white/90 -mr-2 flex-shrink-0"

@@ -37,10 +37,10 @@ export function AssetLiabilityBreakdown({ stats }: AssetLiabilityBreakdownProps)
             <span className={clsx(
               'text-caption px-2 py-0.5 rounded-full font-medium',
               debtRatio < 30
-                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                ? 'bg-status-success-soft text-status-success'
                 : debtRatio < 60
-                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                ? 'bg-status-warning-soft text-status-warning'
+                : 'bg-status-danger-soft text-status-danger'
             )}>
               {formatPercent(debtRatio)}
             </span>

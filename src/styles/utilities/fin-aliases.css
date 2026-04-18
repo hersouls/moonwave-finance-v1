@@ -366,15 +366,114 @@
   pointer-events: none;
 }
 
-/* ── FIN Typography Aliases ────────────────────── */
-.text-heading2 { font-size: 24px; font-weight: 700; line-height: 1.48; }
-.text-title1 { font-size: 20px; font-weight: 700; line-height: 1.48; }
-.text-title2 { font-size: 18px; font-weight: 700; line-height: 1.48; }
-.text-body1 { font-size: 16px; font-weight: 500; line-height: 1.70; }
-.text-body1-bold { font-size: 16px; font-weight: 700; line-height: 1.70; }
-.text-body2 { font-size: 15px; font-weight: 700; line-height: 1.48; }
-.text-body3 { font-size: 14px; font-weight: 500; line-height: 1.48; }
-.text-body3-semi { font-size: 14px; font-weight: 600; line-height: 1.48; }
-.text-body3-bold { font-size: 14px; font-weight: 700; line-height: 1.48; }
-.text-caption { font-size: 12px; font-weight: 500; line-height: 1.48; }
-.text-caption-bold { font-size: 12px; font-weight: 700; line-height: 1.48; }
+/* ── FIN Typography Aliases — token-driven ───── */
+.text-display1 {
+  font-size: var(--typo-display1-size);
+  font-weight: var(--typo-display1-weight);
+  line-height: var(--typo-display1-line-height);
+  letter-spacing: var(--letter-tight);
+}
+.text-display2 {
+  font-size: var(--typo-display2-size);
+  font-weight: var(--typo-display2-weight);
+  line-height: var(--typo-display2-line-height);
+  letter-spacing: var(--letter-tight);
+}
+.text-heading1 {
+  font-size: var(--typo-heading1-size);
+  font-weight: var(--typo-heading1-weight);
+  line-height: var(--typo-heading1-line-height);
+  letter-spacing: var(--letter-snug);
+}
+.text-heading2 {
+  font-size: var(--typo-heading2-size);
+  font-weight: var(--typo-heading2-weight);
+  line-height: var(--typo-heading2-line-height);
+  letter-spacing: var(--letter-snug);
+}
+.text-heading3 {
+  font-size: var(--typo-heading3-size);
+  font-weight: var(--typo-heading3-weight);
+  line-height: var(--typo-heading3-line-height);
+  letter-spacing: var(--letter-snug);
+}
+.text-title1 {
+  font-size: var(--typo-title1-size);
+  font-weight: var(--typo-title1-weight);
+  line-height: var(--typo-title1-line-height);
+}
+.text-title2 {
+  font-size: var(--typo-title2-size);
+  font-weight: var(--typo-title2-weight);
+  line-height: var(--typo-title2-line-height);
+}
+.text-title3 {
+  font-size: var(--typo-title3-size);
+  font-weight: var(--typo-title3-weight);
+  line-height: var(--typo-title3-line-height);
+}
+.text-body1 {
+  font-size: var(--typo-body1-size);
+  font-weight: var(--typo-body1-weight);
+  line-height: var(--typo-body1-line-height);
+}
+.text-body1-bold {
+  font-size: var(--typo-body1-bold-size);
+  font-weight: var(--typo-body1-bold-weight);
+  line-height: var(--typo-body1-bold-line-height);
+}
+.text-body2 {
+  font-size: var(--typo-body2-size);
+  font-weight: var(--typo-body2-weight);
+  line-height: var(--typo-body2-line-height);
+}
+.text-body2-bold {
+  font-size: var(--typo-body2-bold-size);
+  font-weight: var(--typo-body2-bold-weight);
+  line-height: var(--typo-body2-bold-line-height);
+}
+.text-body3 {
+  font-size: var(--typo-body3-size);
+  font-weight: var(--typo-body3-weight);
+  line-height: var(--typo-body3-line-height);
+}
+.text-body3-semi {
+  font-size: var(--typo-body3-semi-size);
+  font-weight: var(--typo-body3-semi-weight);
+  line-height: var(--typo-body3-semi-line-height);
+}
+.text-body3-bold {
+  font-size: var(--typo-body3-bold-size);
+  font-weight: var(--typo-body3-bold-weight);
+  line-height: var(--typo-body3-bold-line-height);
+}
+.text-label1 {
+  font-size: var(--typo-label1-size);
+  font-weight: var(--typo-label1-weight);
+  line-height: var(--typo-label1-line-height);
+}
+.text-label2 {
+  font-size: var(--typo-label2-size);
+  font-weight: var(--typo-label2-weight);
+  line-height: var(--typo-label2-line-height);
+}
+.text-label3 {
+  font-size: var(--typo-label3-size);
+  font-weight: var(--typo-label3-weight);
+  line-height: var(--typo-label3-line-height);
+}
+.text-label4 {
+  font-size: var(--typo-label4-size);
+  font-weight: var(--typo-label4-weight);
+  line-height: var(--typo-label4-line-height);
+}
+.text-caption {
+  font-size: var(--typo-caption-size);
+  font-weight: var(--typo-caption-weight);
+  line-height: var(--typo-caption-line-height);
+}
+.text-caption-bold {
+  font-size: var(--typo-caption-bold-size);
+  font-weight: var(--typo-caption-bold-weight);
+  line-height: var(--typo-caption-bold-line-height);
+}

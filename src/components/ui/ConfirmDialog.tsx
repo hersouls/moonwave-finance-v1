@@ -49,7 +49,7 @@ export function ConfirmDialog({
             <Icon className="w-5 h-5" />
           </div>
           <div className="flex-1">
-            <p className="text-sm text-sub whitespace-pre-line">
+            <p className="text-body3 text-sub whitespace-pre-line">
               {description}
             </p>
           </div>

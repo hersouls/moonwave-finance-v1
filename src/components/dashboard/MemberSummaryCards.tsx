@@ -39,17 +39,17 @@ export function MemberSummaryCards() {
               <div className="mt-3">
                 <div className="flex h-2 rounded-full overflow-hidden bg-surface-tertiary">
                   <div
-                    className="bg-emerald-500 transition-all"
-                    style={{ width: `${assetPct}%` }}
+                    className="transition-all"
+                    style={{ width: `${assetPct}%`, backgroundColor: 'var(--value-positive)' }}
                   />
                   <div
-                    className="bg-red-500 transition-all"
-                    style={{ width: `${100 - assetPct}%` }}
+                    className="transition-all"
+                    style={{ width: `${100 - assetPct}%`, backgroundColor: 'var(--value-negative)' }}
                   />
                 </div>
                 <div className="mt-1.5 flex justify-between text-caption text-sub">
-                  <span>자산 <Amount value={mb.totalAssets} size="caption" className="text-status-success font-medium" unit="" /></span>
-                  <span>부채 <Amount value={mb.totalLiabilities} size="caption" className="text-status-danger font-medium" unit="" /></span>
+                  <span>자산 <Amount value={mb.totalAssets} size="caption" className="text-value-positive font-medium" unit="" /></span>
+                  <span>부채 <Amount value={mb.totalLiabilities} size="caption" className="text-value-negative font-medium" unit="" /></span>
                 </div>
               </div>
             </Card>

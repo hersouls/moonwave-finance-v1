@@ -30,7 +30,7 @@ export function UndoToast() {
       )}
     >
       <div className="toast-base">
-        <span className="text-sm">{currentToast.label}</span>
+        <span className="text-body3">{currentToast.label}</span>
         <button
           type="button"
           onClick={async () => {

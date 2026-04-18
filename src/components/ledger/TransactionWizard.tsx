@@ -1039,10 +1039,10 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
           <div className={clsx(
             'px-3 py-2.5 rounded-lg text-caption',
             budgetWarning.percent > 100
-              ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+              ? 'bg-status-danger-soft text-status-danger'
               : budgetWarning.percent >= 80
-                ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
-                : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400',
+                ? 'bg-status-warning-soft text-status-warning'
+                : 'bg-status-success-soft text-status-success',
           )}>
             {budgetWarning.percent > 100
               ? `예산 ${formatKoreanUnit(budgetWarning.budgetAmount)}원 중 ${formatKoreanUnit(budgetWarning.used)}원 사용 (${formatKoreanUnit(Math.abs(budgetWarning.remaining))}원 초과!)`

@@ -40,7 +40,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <h1 className="text-title1 text-heading mb-2">
               오류가 발생했습니다
             </h1>
-            <p className="text-sm text-sub mb-6 leading-relaxed">
+            <p className="text-body3 text-sub mb-6 leading-relaxed">
               {this.state.error?.message || '예상치 못한 오류가 발생했습니다. 다시 시도해 주세요.'}
             </p>
             <div className="flex gap-3 justify-center">

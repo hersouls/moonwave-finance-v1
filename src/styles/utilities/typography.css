@@ -1,8 +1,38 @@
 /* Foundation Typography Utility Classes */
+
+.typo-display1 {
+  font-size: var(--typo-display1-size);
+  font-weight: var(--typo-display1-weight);
+  line-height: var(--typo-display1-line-height);
+  letter-spacing: var(--letter-tight);
+}
+
+.typo-display2 {
+  font-size: var(--typo-display2-size);
+  font-weight: var(--typo-display2-weight);
+  line-height: var(--typo-display2-line-height);
+  letter-spacing: var(--letter-tight);
+}
+
+.typo-heading1 {
+  font-size: var(--typo-heading1-size);
+  font-weight: var(--typo-heading1-weight);
+  line-height: var(--typo-heading1-line-height);
+  letter-spacing: var(--letter-snug);
+}
+
 .typo-heading2 {
   font-size: var(--typo-heading2-size);
   font-weight: var(--typo-heading2-weight);
   line-height: var(--typo-heading2-line-height);
+  letter-spacing: var(--letter-snug);
+}
+
+.typo-heading3 {
+  font-size: var(--typo-heading3-size);
+  font-weight: var(--typo-heading3-weight);
+  line-height: var(--typo-heading3-line-height);
+  letter-spacing: var(--letter-snug);
 }
 
 .typo-title1 {
@@ -15,6 +45,12 @@
   font-size: var(--typo-title2-size);
   font-weight: var(--typo-title2-weight);
   line-height: var(--typo-title2-line-height);
+}
+
+.typo-title3 {
+  font-size: var(--typo-title3-size);
+  font-weight: var(--typo-title3-weight);
+  line-height: var(--typo-title3-line-height);
 }
 
 .typo-body1 {
@@ -41,6 +77,36 @@
   line-height: var(--typo-body2-bold-line-height);
 }
 
+.typo-body3 {
+  font-size: var(--typo-body3-size);
+  font-weight: var(--typo-body3-weight);
+  line-height: var(--typo-body3-line-height);
+}
+
+.typo-body3-semi {
+  font-size: var(--typo-body3-semi-size);
+  font-weight: var(--typo-body3-semi-weight);
+  line-height: var(--typo-body3-semi-line-height);
+}
+
+.typo-body3-bold {
+  font-size: var(--typo-body3-bold-size);
+  font-weight: var(--typo-body3-bold-weight);
+  line-height: var(--typo-body3-bold-line-height);
+}
+
+.typo-label1 {
+  font-size: var(--typo-label1-size);
+  font-weight: var(--typo-label1-weight);
+  line-height: var(--typo-label1-line-height);
+}
+
+.typo-label2 {
+  font-size: var(--typo-label2-size);
+  font-weight: var(--typo-label2-weight);
+  line-height: var(--typo-label2-line-height);
+}
+
 .typo-label3 {
   font-size: var(--typo-label3-size);
   font-weight: var(--typo-label3-weight);
@@ -51,4 +117,40 @@
   font-size: var(--typo-label3-medium-size);
   font-weight: var(--typo-label3-medium-weight);
   line-height: var(--typo-label3-medium-line-height);
+}
+
+.typo-label4 {
+  font-size: var(--typo-label4-size);
+  font-weight: var(--typo-label4-weight);
+  line-height: var(--typo-label4-line-height);
+}
+
+.typo-caption {
+  font-size: var(--typo-caption-size);
+  font-weight: var(--typo-caption-weight);
+  line-height: var(--typo-caption-line-height);
+}
+
+.typo-caption-bold {
+  font-size: var(--typo-caption-bold-size);
+  font-weight: var(--typo-caption-bold-weight);
+  line-height: var(--typo-caption-bold-line-height);
+}
+
+/* ── Letter-spacing helpers ───────────────────── */
+.tracking-tight { letter-spacing: var(--letter-tight); }
+.tracking-snug { letter-spacing: var(--letter-snug); }
+.tracking-normal { letter-spacing: var(--letter-normal); }
+.tracking-wide { letter-spacing: var(--letter-wide); }
+
+/* ── Tabular nums for financial data ──────────── */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'cv11' 1;
+}
+
+.financial-value {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'cv11' 1;
+  letter-spacing: var(--letter-snug);
 }
