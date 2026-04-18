@@ -76,10 +76,11 @@ export function Dialog({ open, onClose, children, size = 'lg', noPadding = false
             transition
             className={clsx(
               'row-start-2 w-full min-w-0 rounded-t-2xl bg-surface-primary elevation-4 ring-1 ring-[var(--border-default)] el-dialog',
+              'overflow-hidden', // 내부 자식이 rounded 모서리를 덮는 문제 방지
               noPadding
                 ? 'pb-[env(safe-area-inset-bottom,0px)]'
                 : 'p-6 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] sm:p-8 sm:pb-8',
-              'sm:mb-auto sm:rounded-xl',
+              'sm:mb-auto sm:rounded-2xl',
               sizeStyles[size],
               'transition duration-300 data-[closed]:translate-y-12 data-[closed]:opacity-0 data-[enter]:ease-out data-[leave]:ease-in',
               'sm:data-[closed]:translate-y-0 sm:data-[closed]:scale-95 sm:data-[closed]:data-[enter]:duration-300 sm:data-[closed]:data-[leave]:duration-200'
