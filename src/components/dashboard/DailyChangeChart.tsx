@@ -1,15 +1,32 @@
 import { useMemo } from 'react'
 import { Bar } from 'react-chartjs-2'
 import '@/lib/chartConfig'
-import { commonBarOptions, getGridColor, getTextColor, formatChartLabel, premiumTooltip, premiumAnimation } from '@/lib/chartConfig'
+import {
+  commonBarOptions,
+  getGridColor,
+  getTextColor,
+  formatChartLabel,
+  premiumTooltip,
+  premiumAnimation,
+  getPositiveColor,
+  getNegativeColor,
+} from '@/lib/chartConfig'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useAssetStore } from '@/stores/assetStore'
 import { getMonthDates } from '@/lib/dateUtils'
 import { Card } from '@/components/ui/Card'
+import { ChartA11ySummary } from '@/components/ui/ChartA11ySummary'
 import { formatKoreanUnit } from '@/utils/format'
 
-function isDark() {
-  return document.documentElement.classList.contains('dark')
+/** Apply a faint alpha for non-hover state by converting oklch/hex to rgba with 0.75 */
+function withAlpha(color: string, alpha = 0.75): string {
+  // oklch() supports / alpha natively
+  if (color.startsWith('oklch')) {
+    // replace trailing `)` with ` / alpha)`; keep any existing alpha if present
+    return color.includes('/') ? color : color.replace(/\)$/, ` / ${alpha})`)
+  }
+  // fallback: color-mix with transparent
+  return `color-mix(in srgb, ${color} ${Math.round(alpha * 100)}%, transparent)`
 }
 
 export function DailyChangeChart() {
@@ -40,9 +57,10 @@ export function DailyChangeChart() {
     const hasData = changes.some(v => v !== 0)
     if (!hasData) return null
 
-    const dark = isDark()
-    const positiveColor = dark ? 'rgba(52, 211, 153, 0.75)' : 'rgba(16, 185, 129, 0.75)'
-    const negativeColor = dark ? 'rgba(248, 113, 113, 0.75)' : 'rgba(239, 68, 68, 0.75)'
+    const positiveBase = getPositiveColor()
+    const negativeBase = getNegativeColor()
+    const positiveColor = withAlpha(positiveBase, 0.75)
+    const negativeColor = withAlpha(negativeBase, 0.75)
 
     // Compute average for reference line
     const nonZeroChanges = changes.filter(c => c !== 0)
@@ -56,7 +74,7 @@ export function DailyChangeChart() {
             label: '일별 변동',
             data: changes,
             backgroundColor: changes.map(c => c >= 0 ? positiveColor : negativeColor),
-            hoverBackgroundColor: changes.map(c => c >= 0 ? (dark ? '#34d399' : '#10b981') : (dark ? '#f87171' : '#ef4444')),
+            hoverBackgroundColor: changes.map(c => c >= 0 ? positiveBase : negativeBase),
             borderRadius: 4,
             borderSkipped: false as const,
           },
@@ -78,7 +96,18 @@ export function DailyChangeChart() {
           </span>
         )}
       </div>
-      <div className="h-52">
+      <ChartA11ySummary
+        title="일별 순자산 변동"
+        description={`${selectedMonth} 일별 변동폭. 평균 ${formatKoreanUnit(Math.round(chartData.avg))}원.`}
+        rows={chartData.data.labels.map((label: string, i: number) => {
+          const v = (chartData.data.datasets[0].data as number[])[i]
+          return {
+            label,
+            value: `${v >= 0 ? '+' : ''}${formatKoreanUnit(v)}원`,
+          }
+        })}
+      />
+      <div className="h-52" aria-hidden="true">
         <Bar
           data={chartData.data}
           options={{

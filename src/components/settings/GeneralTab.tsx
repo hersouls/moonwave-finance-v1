@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Sun, Moon, Monitor, Info, HelpCircle, FileText } from 'lucide-react'
+import { Sun, Moon, Monitor, Info, HelpCircle, FileText, Minimize2, Maximize2, Square } from 'lucide-react'
 import { clsx } from 'clsx'
 import { COLOR_PALETTES, BACKUP_CONFIG, UI_DELAYS } from '@/utils/constants'
 import { useUIStore } from '@/stores/uiStore'
@@ -7,7 +7,13 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { Button } from '@/components/ui/Button'
 import { ToggleSwitch } from './ToggleSwitch'
 import { formatRelativeTime } from '@/utils/format'
-import type { Settings, ThemeMode, ColorPalette } from '@/lib/types'
+import type { Settings, ThemeMode, ColorPalette, Density } from '@/lib/types'
+
+const DENSITY_OPTIONS: { value: Density; label: string; description: string; icon: typeof Minimize2 }[] = [
+  { value: 'compact', label: '컴팩트', description: '더 많은 정보', icon: Minimize2 },
+  { value: 'comfortable', label: '표준', description: '기본 밀도', icon: Square },
+  { value: 'spacious', label: '넓게', description: '여유로운 여백', icon: Maximize2 },
+]
 
 interface GeneralTabProps {
   draft: Settings
@@ -26,6 +32,14 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
   const closeSettingsModal = useUIStore((s) => s.closeSettingsModal)
   const exchangeRate = useSettingsStore((s) => s.settings.exchangeRate)
   const setExchangeRate = useSettingsStore((s) => s.setExchangeRate)
+  const setDensity = useSettingsStore((s) => s.setDensity)
+  const toggleOledMode = useSettingsStore((s) => s.toggleOledMode)
+  const toggleHideAmounts = useSettingsStore((s) => s.toggleHideAmounts)
+  const toggleTimeBasedTheme = useSettingsStore((s) => s.toggleTimeBasedTheme)
+  const density = useSettingsStore((s) => s.settings.density) ?? 'comfortable'
+  const oledMode = useSettingsStore((s) => !!s.settings.oledMode)
+  const hideAmounts = useSettingsStore((s) => !!s.settings.hideAmounts)
+  const timeBasedTheme = useSettingsStore((s) => !!s.settings.timeBasedTheme)
   const [rateInput, setRateInput] = useState(String(exchangeRate?.usdToKrw ?? 1350))
 
   const handleOpenFAQ = () => {
@@ -77,6 +91,64 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
             시스템 설정에 따라 자동으로 변경됩니다
           </p>
         )}
+      </section>
+
+      {/* Display Density — v2 */}
+      <section>
+        <h3 className="text-body3-semi text-heading mb-3">표시 밀도</h3>
+        <div className="grid grid-cols-3 gap-3">
+          {DENSITY_OPTIONS.map(({ value, label, description, icon: Icon }) => (
+            <button
+              key={value}
+              onClick={() => setDensity(value)}
+              className={clsx(
+                'flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 transition-all',
+                density === value
+                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                  : 'border-base hover:bg-[var(--hover-bg)]'
+              )}
+              aria-pressed={density === value}
+            >
+              <Icon className={clsx(
+                'w-5 h-5',
+                density === value ? 'text-primary-600 dark:text-primary-400' : 'text-sub'
+              )} />
+              <span className={clsx(
+                'text-body3',
+                density === value ? 'text-primary-700 dark:text-primary-300' : 'text-sub'
+              )}>
+                {label}
+              </span>
+              <span className="text-caption text-disabled">{description}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Premium Display Options — v2 */}
+      <section>
+        <h3 className="text-body3-semi text-heading mb-3">화면 옵션</h3>
+        <div className="p-4 bg-surface-secondary rounded-xl space-y-4">
+          <ToggleSwitch
+            checked={oledMode}
+            onChange={() => toggleOledMode()}
+            label="AMOLED 절약 모드"
+            description="다크 모드에서 순수 블랙 배경으로 전환합니다"
+            disabled={draft.theme !== 'dark' && draft.theme !== 'system'}
+          />
+          <ToggleSwitch
+            checked={timeBasedTheme}
+            onChange={() => toggleTimeBasedTheme()}
+            label="시간대 자동 테마"
+            description="아침/낮/저녁/밤에 따라 색상 톤을 자동 조정합니다"
+          />
+          <ToggleSwitch
+            checked={hideAmounts}
+            onChange={() => toggleHideAmounts()}
+            label="금액 숨기기"
+            description="모든 금액을 가립니다. 호버하면 일시적으로 표시됩니다"
+          />
+        </div>
       </section>
 
       {/* Color Palette */}

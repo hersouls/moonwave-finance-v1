@@ -7,6 +7,7 @@ import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useAssetStore } from '@/stores/assetStore'
 import { getMonthDates } from '@/lib/dateUtils'
 import { Card } from '@/components/ui/Card'
+import { ChartA11ySummary } from '@/components/ui/ChartA11ySummary'
 import { formatKoreanUnit } from '@/utils/format'
 
 export function NetWorthTrendChart() {
@@ -44,12 +45,12 @@ export function NetWorthTrendChart() {
       {
         label: '순자산',
         data: netWorths,
-        borderColor: getChartColor('income').line,
+        borderColor: getChartColor('netWorth').line,
         backgroundColor: (ctx) => {
           const chart = ctx.chart
           const { ctx: context, chartArea } = chart
-          if (!chartArea) return 'rgba(16, 185, 129, 0.1)'
-          const c = getChartColor('income').fill
+          if (!chartArea) return 'rgba(59, 130, 246, 0.1)'
+          const c = getChartColor('netWorth').fill
           return createLineGradientRGBA(context, chartArea, c[0], c[1], c[2], 0.2, 0.01)
         },
         fill: true,
@@ -58,7 +59,7 @@ export function NetWorthTrendChart() {
         pointHoverRadius: 5,
         pointHoverBackgroundColor: '#fff',
         pointHoverBorderWidth: 2,
-        pointHoverBorderColor: getChartColor('income').line,
+        pointHoverBorderColor: getChartColor('netWorth').line,
         borderWidth: 2.5,
       },
     ],
@@ -66,10 +67,22 @@ export function NetWorthTrendChart() {
 
   if (!hasData) return null
 
+  const firstNonZero = netWorths.find((v) => v !== 0) ?? 0
+  const lastValue = netWorths[netWorths.length - 1] ?? 0
+  const change = lastValue - firstNonZero
+
   return (
     <Card className="card-pad-lg">
       <h3 className="text-body3-semi text-heading mb-4">순자산 추이</h3>
-      <div className="h-52">
+      <ChartA11ySummary
+        title="순자산 추이"
+        description={`${selectedMonth} 기간 동안의 일별 순자산 변화. 현재 ${formatKoreanUnit(lastValue)}원, 기간 내 변동 ${change >= 0 ? '+' : ''}${formatKoreanUnit(change)}원.`}
+        rows={dates.map((d, i) => ({
+          label: d,
+          value: `${formatKoreanUnit(netWorths[i])}원`,
+        }))}
+      />
+      <div className="h-52" aria-hidden="true">
         <Line
           ref={chartRef}
           data={chartData}

@@ -1,0 +1,39 @@
+/* ===============================================
+ * Density System — compact / comfortable / spacious
+ * Scales spacing, font-size, touch targets together
+ * Apply via <html data-density="compact|comfortable|spacious">
+ * =============================================== */
+
+:root {
+  /* Scale multipliers */
+  --density-scale: 1;
+  --density-spacing-scale: 1;
+  --density-font-scale: 1;
+  --density-radius-scale: 1;
+  --density-touch-scale: 1;
+
+  /* Computed density spacing (used by components that opt-in) */
+  --density-space-1: calc(4px * var(--density-spacing-scale));
+  --density-space-2: calc(8px * var(--density-spacing-scale));
+  --density-space-3: calc(12px * var(--density-spacing-scale));
+  --density-space-4: calc(16px * var(--density-spacing-scale));
+  --density-space-6: calc(24px * var(--density-spacing-scale));
+  --density-space-8: calc(32px * var(--density-spacing-scale));
+
+  /* Touch targets */
+  --density-touch-target: calc(44px * var(--density-touch-scale));
+}
+
+html[data-density="compact"] {
+  --density-spacing-scale: 0.82;
+  --density-font-scale: 0.94;
+  --density-radius-scale: 0.9;
+  --density-touch-scale: 0.92;
+}
+
+html[data-density="spacious"] {
+  --density-spacing-scale: 1.18;
+  --density-font-scale: 1.06;
+  --density-radius-scale: 1.1;
+  --density-touch-scale: 1.1;
+}

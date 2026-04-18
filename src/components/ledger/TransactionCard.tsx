@@ -8,6 +8,7 @@ import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useUIStore } from '@/stores/uiStore'
 import { formatKRW } from '@/utils/format'
+import { Amount } from '@/components/ui/Amount'
 import { formatDate } from '@/lib/dateUtils'
 import { getPaymentMethodLabel } from '@/utils/paymentMethod'
 import type { Transaction } from '@/lib/types'
@@ -131,12 +132,16 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
 
             {/* Amount */}
             <div className="text-right flex-shrink-0">
-              <p className={clsx(
-                'text-sm font-bold tabular-nums',
-                isIncome ? 'text-status-success' : 'text-status-danger'
-              )}>
-                {isIncome ? '+' : '-'}{formatKRW(transaction.amount)}
-              </p>
+              <Amount
+                as="p"
+                value={isIncome ? transaction.amount : -transaction.amount}
+                format="change"
+                size="emphasis"
+                className={clsx(
+                  'font-bold',
+                  isIncome ? 'text-status-success' : 'text-status-danger',
+                )}
+              />
             </div>
 
             {/* Desktop-only edit/delete buttons */}

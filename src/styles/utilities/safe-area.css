@@ -1,0 +1,39 @@
+/* ===============================================
+ * Safe Area Utilities — iOS notch, home indicator, 좌우
+ * =============================================== */
+
+.safe-top {
+  padding-top: max(env(safe-area-inset-top, 0px), var(--spacing-4, 16px));
+}
+
+.safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--spacing-4, 16px));
+}
+
+.safe-x {
+  padding-inline-start: max(env(safe-area-inset-left, 0px), var(--spacing-4, 16px));
+  padding-inline-end: max(env(safe-area-inset-right, 0px), var(--spacing-4, 16px));
+}
+
+.safe-inset {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+/* Only add safe area (no min) — for inner elements already spaced */
+.pt-safe-only { padding-top: env(safe-area-inset-top, 0px); }
+.pb-safe-only { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.pl-safe-only { padding-left: env(safe-area-inset-left, 0px); }
+.pr-safe-only { padding-right: env(safe-area-inset-right, 0px); }
+
+/* Fixed position with safe insets */
+.inset-safe {
+  inset-block-start: env(safe-area-inset-top, 0px);
+  inset-block-end: env(safe-area-inset-bottom, 0px);
+  inset-inline-start: env(safe-area-inset-left, 0px);
+  inset-inline-end: env(safe-area-inset-right, 0px);
+}
+
+/* skip-link styles live in index.css (pre-existing) */

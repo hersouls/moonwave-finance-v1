@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { formatKoreanUnit, formatPercent } from '@/utils/format'
+import { Amount } from '@/components/ui/Amount'
 import type { Transaction, Budget } from '@/lib/types'
 
 interface CategoryBreakdownProps {
@@ -55,9 +56,7 @@ export function CategoryBreakdown({ transactions, type, budgets }: CategoryBreak
                 <span className="text-sm text-body">{b.name}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-body3 text-heading tabular-nums">
-                  {formatKoreanUnit(b.total)}
-                </span>
+                <Amount value={b.total} size="emphasis" className="text-heading" unit="" />
                 <span className="text-caption text-disabled w-10 text-right tabular-nums">
                   {formatPercent(b.percentage, 0)}
                 </span>

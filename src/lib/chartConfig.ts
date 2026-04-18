@@ -29,32 +29,66 @@ function isDark(): boolean {
   return document.documentElement.classList.contains('dark')
 }
 
+/** Read a CSS custom property from :root; fallback if unavailable (SSR/test). */
+function cssVar(name: string, fallback: string): string {
+  if (typeof window === 'undefined') return fallback
+  try {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+    return v || fallback
+  } catch {
+    return fallback
+  }
+}
+
 export function getGridColor(): string {
-  return isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
+  return cssVar('--chart-grid-color', isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)')
 }
 
 export function getTextColor(): string {
-  return isDark() ? '#a1a1aa' : '#71717a'
+  return cssVar('--chart-label-color', isDark() ? '#a1a1aa' : '#71717a')
+}
+
+export function getAxisColor(): string {
+  return cssVar('--chart-axis-color', isDark() ? '#71717a' : '#a1a1aa')
 }
 
 export function getTooltipBg(): string {
-  return isDark() ? '#18181b' : '#ffffff'
+  // Fallback to solid; CSS variable is translucent (glassmorphism)
+  return cssVar('--chart-tooltip-bg', isDark() ? '#18181b' : '#ffffff')
 }
 
 export function getTooltipBorder(): string {
-  return isDark() ? '#3f3f46' : '#e4e4e7'
+  return cssVar('--chart-tooltip-border', isDark() ? '#3f3f46' : '#e4e4e7')
 }
 
 export function getTooltipText(): string {
-  return isDark() ? '#fafafa' : '#18181b'
+  return cssVar('--chart-tooltip-text', isDark() ? '#fafafa' : '#18181b')
 }
 
-// ─── Premium Tooltip Config ───────────────────────
+// ─── Data-Viz Series (palette-aware via CSS vars) ──
+export function getChartSeries(index: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8): string {
+  const fallbacks: Record<number, string> = {
+    1: '#3b82f6', 2: '#10b981', 3: '#f59e0b', 4: '#ef4444',
+    5: '#8b5cf6', 6: '#06b6d4', 7: '#ec4899', 8: '#a16207',
+  }
+  return cssVar(`--chart-series-${index}`, fallbacks[index])
+}
+
+export function getPositiveColor(): string {
+  return cssVar('--viz-positive', isDark() ? '#34d399' : '#10b981')
+}
+
+export function getNegativeColor(): string {
+  return cssVar('--viz-negative', isDark() ? '#f87171' : '#ef4444')
+}
+
+// ─── Premium Tooltip Config (동적 생성) ───────────
+// Chart.js는 options를 run-time에 해석하므로, getter로 감싸면 최신 CSS 변수 반영
 export const premiumTooltip = {
-  backgroundColor: getTooltipBg(),
-  titleColor: getTooltipText(),
-  bodyColor: getTooltipText(),
-  borderColor: getTooltipBorder(),
+  get backgroundColor() { return getTooltipBg() },
+  get titleColor() { return getTooltipText() },
+  get bodyColor() { return getTooltipText() },
+  get borderColor() { return getTooltipBorder() },
   borderWidth: 1,
   cornerRadius: 10,
   padding: { top: 10, bottom: 10, left: 14, right: 14 },
@@ -124,7 +158,7 @@ export function getChartColor(key: ChartColorKey): { line: string; fill: readonl
   return isDark() ? chartColors.dark[key] : chartColors[key]
 }
 
-// ─── Common Options ───────────────────────────────
+// ─── Common Options (getter로 다크모드/팔레트 동적 반영) ─
 export const commonLineOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -145,15 +179,18 @@ export const commonLineOptions = {
     x: {
       grid: { display: false },
       ticks: {
-        color: getTextColor(),
+        get color() { return getTextColor() },
         font: { family: "'Pretendard', sans-serif", size: 11 },
       },
       border: { display: false },
     },
     y: {
-      grid: { color: getGridColor(), lineWidth: 0.5 },
+      grid: {
+        get color() { return getGridColor() },
+        lineWidth: 0.5,
+      },
       ticks: {
-        color: getTextColor(),
+        get color() { return getTextColor() },
         font: { family: "'Pretendard', sans-serif", size: 11 },
         callback: function(value: number | string) {
           const num = typeof value === 'string' ? parseFloat(value) : value

@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowRight, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { useTransactionStore } from '@/stores/transactionStore'
-import { formatKoreanUnit } from '@/utils/format'
 import { useCountUp } from '@/hooks/useCountUp'
+import { Amount } from '@/components/ui/Amount'
 import { clsx } from 'clsx'
 
 export function LedgerSummaryCard() {
@@ -49,9 +49,12 @@ export function LedgerSummaryCard() {
             <TrendingUp className="w-4 h-4 text-status-success" />
             <span className="text-sm text-sub">수입</span>
           </div>
-          <span className="text-body3-semi text-status-success tabular-nums">
-            +{formatKoreanUnit(animatedIncome)}
-          </span>
+          <Amount
+            value={animatedIncome}
+            format="change"
+            size="emphasis"
+            className="text-status-success"
+          />
         </div>
 
         <div className="flex items-center justify-between">
@@ -59,9 +62,12 @@ export function LedgerSummaryCard() {
             <TrendingDown className="w-4 h-4 text-status-danger" />
             <span className="text-sm text-sub">지출</span>
           </div>
-          <span className="text-body3-semi text-status-danger tabular-nums">
-            -{formatKoreanUnit(animatedExpense)}
-          </span>
+          <Amount
+            value={-animatedExpense}
+            format="change"
+            size="emphasis"
+            className="text-status-danger"
+          />
         </div>
 
         <div className="border-t border-base pt-3 flex items-center justify-between">
@@ -69,14 +75,15 @@ export function LedgerSummaryCard() {
             <Minus className="w-4 h-4 text-disabled" />
             <span className="text-body3 text-body">잔액</span>
           </div>
-          <span className={clsx(
-            'text-sm font-bold tabular-nums',
-            animatedSavings >= 0
-              ? 'text-status-success'
-              : 'text-status-danger'
-          )}>
-            {animatedSavings >= 0 ? '+' : ''}{formatKoreanUnit(animatedSavings)}
-          </span>
+          <Amount
+            value={animatedSavings}
+            format="change"
+            size="emphasis"
+            className={clsx(
+              'font-bold',
+              animatedSavings >= 0 ? 'text-status-success' : 'text-status-danger',
+            )}
+          />
         </div>
       </div>
     </Card>

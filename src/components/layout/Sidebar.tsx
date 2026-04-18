@@ -145,7 +145,7 @@ export function Sidebar() {
           'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
           active
             ? 'bg-accent-primary text-accent-primary el-sidebar-active'
-            : 'text-sub hover:bg-[var(--hover-bg)]'
+            : 'text-sub hover:bg-[var(--hover-bg)] el-hover'
         )}
         role="menuitem"
         aria-current={active ? 'page' : undefined}
@@ -194,7 +194,7 @@ export function Sidebar() {
                 'w-full flex items-center justify-center px-3 py-2.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                 isGroupActive
                   ? 'bg-accent-primary text-accent-primary el-sidebar-active'
-                  : 'text-sub hover:bg-[var(--hover-bg)]'
+                  : 'text-sub hover:bg-[var(--hover-bg)] el-hover'
               )}
               role="menuitem"
             >
@@ -213,7 +213,7 @@ export function Sidebar() {
             'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
             isGroupActive
               ? 'text-accent-primary'
-              : 'text-sub hover:bg-[var(--hover-bg)]'
+              : 'text-sub hover:bg-[var(--hover-bg)] el-hover'
           )}
           aria-expanded={isExpanded}
         >
@@ -274,6 +274,7 @@ export function Sidebar() {
     <aside
       className={clsx(
         'hidden lg:flex flex-col fixed h-screen bg-surface-secondary border-r border-base transition-all duration-300 z-[var(--z-sidebar)]',
+        'el-sidebar-edge',
         isSidebarOpen ? 'w-64' : 'w-16'
       )}
       role="complementary"

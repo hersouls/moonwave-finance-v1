@@ -5,6 +5,7 @@ import { premiumTooltip, premiumAnimation } from '@/lib/chartConfig'
 import { useCategoryBreakdown } from '@/hooks/useAssetStats'
 import { formatKoreanUnit, formatPercent } from '@/utils/format'
 import { Card } from '@/components/ui/Card'
+import { ChartA11ySummary } from '@/components/ui/ChartA11ySummary'
 import { useAssetStats } from '@/hooks/useAssetStats'
 import { useCountUp } from '@/hooks/useCountUp'
 
@@ -36,7 +37,16 @@ export function AssetAllocationChart() {
   return (
     <Card className="card-pad-lg">
       <h3 className="text-body3-semi text-heading mb-4">자산 구성</h3>
-      <div className="flex items-center gap-6">
+      <ChartA11ySummary
+        title="자산 구성"
+        description={`총 자산 ${formatKoreanUnit(stats.totalAssets)}원이 ${breakdown.length}개 카테고리에 분산되어 있습니다.`}
+        rows={breakdown.map((b) => ({
+          label: b.categoryName,
+          value: `${formatKoreanUnit(b.total)}원`,
+          extra: formatPercent(b.percentage, 0),
+        }))}
+      />
+      <div className="flex items-center gap-6" aria-hidden="true">
         <div className="relative w-36 h-36 flex-shrink-0">
           <Doughnut
             data={chartData}

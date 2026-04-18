@@ -1,6 +1,14 @@
 import { useEffect, useState, useMemo } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { staggerContainer, staggerItem, reducedStaggerContainer, reducedStaggerItem, motionVariants } from '@/lib/motionConfig'
+import {
+  staggerContainer,
+  staggerItem,
+  reducedStaggerContainer,
+  reducedStaggerItem,
+  motionVariants,
+  heroContainer,
+  heroItem,
+} from '@/lib/motionConfig'
 import { useNavigate } from 'react-router-dom'
 import { Plus, ArrowRight } from 'lucide-react'
 import { useAssetStore } from '@/stores/assetStore'
@@ -11,7 +19,7 @@ import { useGoalStore } from '@/stores/goalStore'
 import { useSubscriptionStore } from '@/stores/subscriptionStore'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useAssetStats, useCategoryBreakdown } from '@/hooks/useAssetStats'
-import { NetWorthCard } from './NetWorthCard'
+import { HeroMetricCard } from '@/components/ui/HeroMetricCard'
 import { AssetLiabilityBreakdown } from './AssetLiabilityBreakdown'
 import { LedgerSummaryCard } from './LedgerSummaryCard'
 import { NetWorthTrendChart } from './NetWorthTrendChart'
@@ -24,10 +32,13 @@ import { SubscriptionWidget } from './SubscriptionWidget'
 import { GoalCard } from '@/components/goals/GoalCard'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Card } from '@/components/ui/Card'
+import { Amount } from '@/components/ui/Amount'
 import { useUIStore } from '@/stores/uiStore'
-import { formatKoreanUnit, formatPercent } from '@/utils/format'
+import { formatPercent } from '@/utils/format'
 import { ErrorEmptyState } from '@/components/ui/EmptyState'
 import { useSyncListener } from '@/hooks/useSyncListener'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
+import { PullToRefreshIndicator } from '@/components/ui/PullToRefreshIndicator'
 
 export function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -65,9 +76,13 @@ export function DashboardPage() {
   const shouldReduceMotion = useReducedMotion()
   const containerV = motionVariants(shouldReduceMotion, staggerContainer, reducedStaggerContainer)
   const itemV = motionVariants(shouldReduceMotion, staggerItem, reducedStaggerItem)
+  const heroContainerV = motionVariants(shouldReduceMotion, heroContainer, reducedStaggerContainer)
+  const heroItemV = motionVariants(shouldReduceMotion, heroItem, reducedStaggerItem)
 
   useEffect(() => { loadData() }, [])
   useSyncListener(loadData)
+
+  const ptr = usePullToRefresh({ onRefresh: loadData })
 
   if (isLoading) return (
     <AnimatePresence mode="wait">
@@ -117,15 +132,68 @@ export function DashboardPage() {
     )
   }
 
+  // 월초 대비 자산/부채 변화 (stats.dailyChange 는 순자산 기준이므로 근사치로 사용)
+  const assetTrend = stats.totalAssets - (stats.totalAssets - stats.monthlyChange - stats.totalLiabilities)
+  const liabilityTrend = 0 // 표시 전용 플레이스홀더; 미래 훅에서 주입 가능
+
   return (
     <motion.div
       className="p-4 lg:p-6 space-y-6"
       variants={containerV}
       initial="hidden"
       animate="visible"
+      style={{
+        transform: ptr.distance > 0 ? `translateY(${ptr.distance * 0.6}px)` : undefined,
+        transition: ptr.pulling ? undefined : 'transform 220ms var(--ease-out-expo, ease)',
+      }}
     >
-      {/* Net Worth Hero */}
-      <motion.div variants={itemV}><NetWorthCard stats={stats} /></motion.div>
+      <PullToRefreshIndicator
+        distance={ptr.distance}
+        progress={ptr.progress}
+        refreshing={ptr.refreshing}
+      />
+      {/* ── Hero Row: 3-card financial snapshot ─────────────── */}
+      <motion.section
+        variants={heroContainerV}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 lg:grid-cols-3 gap-4"
+        aria-label="재무 요약"
+      >
+        <motion.div variants={heroItemV} onClick={() => navigate('/assets')} className="cursor-pointer">
+          <HeroMetricCard
+            label="순자산"
+            value={stats.netWorth}
+            variant="primary"
+            spotlight
+            layoutId="hero-networth"
+            deltas={[
+              { value: stats.dailyChange, label: '오늘' },
+              { value: stats.monthlyChange, label: '이번달' },
+            ]}
+          />
+        </motion.div>
+
+        <motion.div variants={heroItemV}>
+          <HeroMetricCard
+            label="총자산"
+            value={stats.totalAssets}
+            variant="success"
+            deltas={[
+              { value: assetTrend, label: '이번달' },
+            ]}
+          />
+        </motion.div>
+
+        <motion.div variants={heroItemV}>
+          <HeroMetricCard
+            label="총부채"
+            value={stats.totalLiabilities}
+            variant={stats.totalLiabilities > stats.totalAssets * 0.5 ? 'warning' : 'accent'}
+            deltas={stats.totalLiabilities > 0 ? [{ value: liabilityTrend, label: '이번달' }] : undefined}
+          />
+        </motion.div>
+      </motion.section>
 
       {/* 3-Pillar Summary: Asset + Ledger */}
       <motion.div variants={itemV} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -166,9 +234,7 @@ export function DashboardPage() {
                 <div key={bd.categoryId} className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: bd.categoryColor }} />
                   <span className="text-sm text-body flex-1 truncate">{bd.categoryName}</span>
-                  <span className="text-body3 text-heading tabular-nums">
-                    {formatKoreanUnit(bd.total)}
-                  </span>
+                  <Amount value={bd.total} size="emphasis" className="text-heading" />
                   <span className="text-caption text-disabled w-12 text-right tabular-nums">
                     {formatPercent(bd.percentage, 0)}
                   </span>
@@ -195,9 +261,7 @@ export function DashboardPage() {
                 <div key={bd.categoryId} className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: bd.categoryColor }} />
                   <span className="text-sm text-body flex-1 truncate">{bd.categoryName}</span>
-                  <span className="text-body3 text-heading tabular-nums">
-                    {formatKoreanUnit(bd.total)}
-                  </span>
+                  <Amount value={bd.total} size="emphasis" className="text-heading" />
                   <span className="text-caption text-disabled w-12 text-right tabular-nums">
                     {formatPercent(bd.percentage, 0)}
                   </span>

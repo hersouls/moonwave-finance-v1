@@ -3,12 +3,23 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { Card } from '@/components/ui/Card'
 import { IconButton } from '@/components/ui/Button'
 import { formatKoreanUnit } from '@/utils/format'
+import { useSettingsStore } from '@/stores/settingsStore'
+import { clsx } from 'clsx'
 import type { FinancialGoal } from '@/lib/types'
 
 interface GoalCardProps {
   goal: FinancialGoal
   onEdit?: () => void
   onDelete?: () => void
+}
+
+function GoalAmount({ current, target }: { current: number; target: number }) {
+  const hideAmounts = useSettingsStore((s) => !!s.settings.hideAmounts)
+  return (
+    <p className={clsx('text-caption text-sub mt-1 tabular-nums', hideAmounts && 'amount-masked')}>
+      {formatKoreanUnit(current)} / {formatKoreanUnit(target)}
+    </p>
+  )
 }
 
 export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
@@ -67,9 +78,7 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
             <Target className="w-3.5 h-3.5 flex-shrink-0" style={{ color: goal.color }} />
             <h4 className="text-body3-semi text-heading truncate">{goal.name}</h4>
           </div>
-          <p className="text-caption text-sub mt-1 tabular-nums">
-            {formatKoreanUnit(goal.currentAmount)} / {formatKoreanUnit(goal.targetAmount)}
-          </p>
+          <GoalAmount current={goal.currentAmount} target={goal.targetAmount} />
           {!goal.isCompleted && (
             <p className="text-caption text-disabled mt-0.5">
               D-{daysLeft}

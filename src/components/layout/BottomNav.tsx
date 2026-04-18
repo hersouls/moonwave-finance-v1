@@ -45,7 +45,7 @@ export function BottomNav() {
               <button
                 onClick={() => handleNavigate(item.id)}
                 className={clsx(
-                  'nav-bottom-item relative w-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500',
+                  'nav-bottom-item relative w-full flex flex-col items-center justify-center gap-0.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--ring-focus)]',
                   isActive
                     ? 'text-primary-600 dark:text-primary-400'
                     : 'text-disabled hover:text-primary-600'
@@ -54,8 +54,36 @@ export function BottomNav() {
                 aria-current={isActive ? 'page' : undefined}
                 aria-label={`${item.label}${isActive ? ' (현재 페이지)' : ''}`}
               >
-                <Icon className="w-5 h-5 fold:w-4 fold:h-4" aria-hidden="true" />
-                <span className="nav-bottom-label bottom-nav-label fold:hidden">{item.label}</span>
+                <span className="relative inline-flex items-center justify-center w-9 h-9 fold:w-7 fold:h-7">
+                  {isActive && (
+                    <motion.span
+                      layoutId="bottomNavBlob"
+                      aria-hidden="true"
+                      className="absolute inset-0 rounded-full bg-primary-500/10 dark:bg-primary-400/15"
+                      style={{ boxShadow: 'var(--el-glow-soft)' }}
+                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  <motion.span
+                    initial={false}
+                    animate={{ scale: isActive ? 1.08 : 1 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                    className="relative z-10 inline-flex"
+                  >
+                    <Icon
+                      className={clsx('w-5 h-5 fold:w-4 fold:h-4', isActive ? 'stroke-[2]' : 'stroke-[1.5]')}
+                      aria-hidden="true"
+                    />
+                  </motion.span>
+                </span>
+                <span
+                  className={clsx(
+                    'nav-bottom-label bottom-nav-label fold:hidden',
+                    isActive ? 'font-semibold' : 'font-medium'
+                  )}
+                >
+                  {item.label}
+                </span>
                 {isActive && (
                   <motion.span
                     layoutId="bottomNavIndicator"

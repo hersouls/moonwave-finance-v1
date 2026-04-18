@@ -3,7 +3,8 @@ import { ChevronRight } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useAssetStore } from '@/stores/assetStore'
-import { formatKoreanUnit, formatChange } from '@/utils/format'
+import { formatChange } from '@/utils/format'
+import { Amount } from '@/components/ui/Amount'
 import { clsx } from 'clsx'
 
 interface LiabilityItemCardProps {
@@ -44,10 +45,12 @@ export function LiabilityItemCard({ itemId, name, categoryId }: LiabilityItemCar
               {name}
             </span>
           </div>
-          <p className="text-title2 text-status-danger tabular-nums">
-            {formatKoreanUnit(latestValue)}
-            <span className="text-caption text-disabled ml-1">원</span>
-          </p>
+          <Amount
+            as="p"
+            value={latestValue}
+            size="title"
+            className="text-status-danger"
+          />
           {change !== 0 && (
             <p className={clsx(
               'text-caption tabular-nums mt-0.5',

@@ -1,7 +1,7 @@
 import { PiggyBank } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { Amount } from '@/components/ui/Amount'
 import { BudgetProgressBar } from './BudgetProgressBar'
-import { formatKoreanUnit } from '@/utils/format'
 import { useBudgetStore } from '@/stores/budgetStore'
 
 export function BudgetOverviewCard() {
@@ -23,21 +23,33 @@ export function BudgetOverviewCard() {
         <div className="grid grid-cols-3 gap-2 text-center">
           <div>
             <p className="text-caption text-sub">예산</p>
-            <p className="text-body3-semi text-heading tabular-nums">
-              {formatKoreanUnit(totalBudget)}
-            </p>
+            <Amount
+              as="p"
+              value={totalBudget}
+              size="emphasis"
+              className="text-heading block"
+              unit=""
+            />
           </div>
           <div>
             <p className="text-caption text-sub">사용</p>
-            <p className="text-body3-semi text-status-danger tabular-nums">
-              {formatKoreanUnit(totalUsed)}
-            </p>
+            <Amount
+              as="p"
+              value={totalUsed}
+              size="emphasis"
+              className="text-status-danger block"
+              unit=""
+            />
           </div>
           <div>
             <p className="text-caption text-sub">남은 금액</p>
-            <p className={`text-body3-semi tabular-nums ${remaining >= 0 ? 'text-status-success' : 'text-status-danger'}`}>
-              {formatKoreanUnit(remaining)}
-            </p>
+            <Amount
+              as="p"
+              value={remaining}
+              size="emphasis"
+              className={`block ${remaining >= 0 ? 'text-status-success' : 'text-status-danger'}`}
+              unit=""
+            />
           </div>
         </div>
       </div>

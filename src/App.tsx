@@ -16,6 +16,7 @@ import { OfflineBanner } from './components/ui/OfflineBanner'
 import { AppLoadingScreen } from './components/ui/AppLoadingScreen'
 import { SearchModal } from './components/search/SearchModal'
 import { AnimatedOutlet } from './components/ui/AnimatedOutlet'
+import { SkipLink } from './components/ui/SkipLink'
 import { OnboardingWizard } from './components/onboarding/OnboardingWizard'
 import { useSettingsStore } from './stores/settingsStore'
 import { useUIStore } from './stores/uiStore'
@@ -26,6 +27,7 @@ import { showBillingNotifications } from './services/notificationService'
 import { useOnlineStatus } from './hooks/useOnlineStatus'
 import { useAutoSync } from './hooks/useAutoSync'
 import { ensureDefaultCategories } from './services/database'
+import { startTimePeriodWatcher } from './lib/timeTheme'
 
 export default function App() {
   const [isInitialized, setIsInitialized] = useState(false)
@@ -33,8 +35,14 @@ export default function App() {
   const isSidebarOpen = useUIStore((s) => s.isSidebarOpen)
   const hasCompletedOnboarding = useSettingsStore((s) => s.settings.hasCompletedOnboarding)
   const setHasCompletedOnboarding = useSettingsStore((s) => s.setHasCompletedOnboarding)
+  const timeBasedTheme = useSettingsStore((s) => !!s.settings.timeBasedTheme)
   const isOnline = useOnlineStatus()
   useAutoSync()
+
+  useEffect(() => {
+    const dispose = startTimePeriodWatcher(timeBasedTheme)
+    return dispose
+  }, [timeBasedTheme])
 
   useEffect(() => {
     const initApp = async () => {
@@ -94,11 +102,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-surface-secondary flex flex-col">
+      <SkipLink />
       {!isOnline && <OfflineBanner />}
       <Sidebar />
       <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'}`}>
         <Header />
-        <main id="main-content" className="flex-1 pb-20 lg:pb-6">
+        <main id="main-content" tabIndex={-1} className="flex-1 pb-20 lg:pb-6" role="main" aria-label="본문">
           <AnimatedOutlet />
         </main>
         <Footer />

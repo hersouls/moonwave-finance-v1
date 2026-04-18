@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { ArrowLeft, Pencil, Trash2, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import { useAssetStore } from '@/stores/assetStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
@@ -8,6 +9,7 @@ import { IconButton, Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { formatKRW, formatChange } from '@/utils/format'
+import { Amount } from '@/components/ui/Amount'
 import { getMonthDates, formatMonthLabel, getPreviousMonth, getNextMonth } from '@/lib/dateUtils'
 import { clsx } from 'clsx'
 import { format } from 'date-fns'
@@ -203,23 +205,33 @@ export function AssetDetailPage() {
       </div>
 
       {/* Current Value Summary */}
-      <Card className="card-pad-lg">
-        <span className="text-sm text-sub">현재 가치</span>
-        <p className="text-heading2 text-heading tabular-nums mt-1">
-          {formatKRW(latestValue)}
-        </p>
-        {latestValue !== prevValue && (
-          <p className={clsx(
-            'text-sm tabular-nums mt-1',
-            latestValue > prevValue ? 'text-status-success' : 'text-status-danger'
-          )}>
-            {formatChange(latestValue - prevValue)}
-          </p>
-        )}
-        {item.memo && (
-          <p className="text-sm text-sub mt-2">{item.memo}</p>
-        )}
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 24, mass: 0.8 }}
+      >
+        <Card className="card-pad-lg el-card-elevated surface-inset-top">
+          <span className="text-sm text-sub">현재 가치</span>
+          <Amount
+            as="p"
+            value={latestValue}
+            format="krw"
+            size="title"
+            className="text-heading mt-1 block"
+          />
+          {latestValue !== prevValue && (
+            <p className={clsx(
+              'text-sm tabular-nums mt-1',
+              latestValue > prevValue ? 'text-status-success' : 'text-status-danger'
+            )}>
+              {formatChange(latestValue - prevValue)}
+            </p>
+          )}
+          {item.memo && (
+            <p className="text-sm text-sub mt-2">{item.memo}</p>
+          )}
+        </Card>
+      </motion.div>
 
       {/* Severance Pay Recalculation */}
       {isSeverancePay && (() => {

@@ -18,6 +18,12 @@
 @import './tokens/icon.css';
 @import './tokens/components.css';
 
+/* 01b_Foundation-v2 (additive, additive only) */
+@import './tokens/motion.css';
+@import './tokens/blur.css';
+@import './tokens/surfaces.css';
+@import './tokens/density.css';
+
 /* 02_Button */
 @import './tokens/button.css';
 
@@ -57,6 +63,9 @@
 /* Category Colors */
 @import './tokens/category-colors.css';
 
+/* Data Visualization */
+@import './tokens/data-viz.css';
+
 /* Edge Lighting */
 @import './tokens/edge-lighting.css';
 
@@ -67,9 +76,12 @@
 
 /* 01_Foundation */
 @import './utilities/typography.css';
+@import './utilities/typography-fluid.css';
 @import './utilities/elevation.css';
 @import './utilities/divider.css';
 @import './utilities/icon.css';
+@import './utilities/surfaces.css';
+@import './utilities/safe-area.css';
 
 /* 02_Button */
 @import './utilities/button.css';
@@ -109,6 +121,12 @@
 
 /* Edge Lighting */
 @import './utilities/edge-lighting.css';
+
+/* Hero Effects — variants, aurora, spotlight, skeleton wave */
+@import './utilities/hero-effects.css';
+
+/* Container Queries — inline-size based layout */
+@import './utilities/container-queries.css';
 
 /* FIN-specific class aliases (card-base, input-base, nav-tabs, etc.) */
 @import './utilities/fin-aliases.css';

@@ -4,7 +4,7 @@ import { MoreVertical, Pencil, Pause, Play, XCircle, Trash2 } from 'lucide-react
 import { Card } from '@/components/ui/Card'
 import { useSubscriptionStore } from '@/stores/subscriptionStore'
 import { useUIStore } from '@/stores/uiStore'
-import { formatSubscriptionAmount } from '@/utils/format'
+import { Amount } from '@/components/ui/Amount'
 import { getDaysUntilBilling, formatBillingSchedule } from '@/lib/dateUtils'
 import { SUBSCRIPTION_CATEGORIES } from '@/utils/constants'
 import type { Subscription } from '@/lib/types'
@@ -115,9 +115,23 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
 
         {/* Amount */}
         <div className="text-right flex-shrink-0">
-          <p className="text-sm font-bold tabular-nums text-heading">
-            {formatSubscriptionAmount(subscription.amount, subscription.currency)}
-          </p>
+          {subscription.currency === 'USD' ? (
+            <Amount
+              as="p"
+              value={subscription.amount}
+              format="usd"
+              size="emphasis"
+              className="text-heading font-bold"
+            />
+          ) : (
+            <Amount
+              as="p"
+              value={subscription.amount}
+              format="krw"
+              size="emphasis"
+              className="text-heading font-bold"
+            />
+          )}
           <p className="text-caption text-disabled">{cycleLabel}</p>
         </div>
 

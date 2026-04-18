@@ -1,0 +1,42 @@
+/* ===============================================
+ * Surface Depth System — 4-Layer Stack
+ * -1 Sunken · 0 Base · +1 Raised · +2 Floating · +3 Hero
+ * =============================================== */
+
+:root {
+  /* 4-layer surface stack (additive to existing semantic-colors) */
+  --surface-layer--1: var(--surface-sunken);
+  --surface-layer-0: var(--surface-primary);
+  --surface-layer-1: var(--surface-secondary);
+  --surface-layer-2: var(--surface-elevated);
+  --surface-layer-3: color-mix(in oklch, var(--surface-primary) 60%, var(--color-primary-50));
+
+  /* Haze — translucent version of base for layered compositions */
+  --surface-haze: color-mix(in srgb, var(--surface-primary) 85%, transparent);
+  --surface-haze-heavy: color-mix(in srgb, var(--surface-primary) 70%, transparent);
+
+  /* Hairline — 보다 절제된 1px 경계선 */
+  --hairline-color: color-mix(in srgb, var(--border-default) 60%, transparent);
+  --hairline: 1px solid var(--hairline-color);
+  --hairline-strong: 1px solid var(--border-strong);
+  --hairline-accent: 1px solid color-mix(in oklch, var(--color-primary-400) 30%, transparent);
+
+  /* Inset highlight — top edge luminous line (glass-like depth) */
+  --surface-inset-top: inset 0 1px 0 0 oklch(1 0 0 / 0.04);
+  --surface-inset-top-strong: inset 0 1px 0 0 oklch(1 0 0 / 0.08);
+}
+
+.dark {
+  --surface-layer-3: color-mix(in oklch, var(--surface-primary) 70%, var(--color-primary-800));
+  --surface-haze: color-mix(in srgb, var(--surface-primary) 75%, transparent);
+  --surface-haze-heavy: color-mix(in srgb, var(--surface-primary) 60%, transparent);
+  --hairline-color: color-mix(in srgb, var(--border-default) 70%, transparent);
+  --hairline-accent: 1px solid color-mix(in oklch, var(--color-primary-400) 45%, transparent);
+  --surface-inset-top: inset 0 1px 0 0 oklch(1 0 0 / 0.06);
+  --surface-inset-top-strong: inset 0 1px 0 0 oklch(1 0 0 / 0.12);
+}
+
+html.dark[data-oled="true"] {
+  --surface-layer-3: color-mix(in oklch, #000 60%, var(--color-primary-900));
+  --hairline-color: #1a1a1a;
+}

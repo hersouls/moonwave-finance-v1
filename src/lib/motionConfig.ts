@@ -22,6 +22,51 @@ export const springStiff: Transition = {
   mass: 0.5,
 }
 
+// ─── v2.0 Spring Presets (명명 규칙: 의도 기반) ────────
+export const springSnappy: Transition = {
+  type: 'spring',
+  stiffness: 320,
+  damping: 24,
+  mass: 0.8,
+}
+
+export const springPrecise: Transition = {
+  type: 'spring',
+  stiffness: 500,
+  damping: 30,
+  mass: 1,
+}
+
+export const springSoft: Transition = {
+  type: 'spring',
+  stiffness: 120,
+  damping: 18,
+  mass: 1,
+}
+
+export const springs = {
+  gentle: springGentle,
+  snappy: springSnappy,
+  bouncy: springBouncy,
+  stiff: springStiff,
+  precise: springPrecise,
+  soft: springSoft,
+} as const
+
+// ─── Easing (CSS 토큰과 sync) ─────────────────────
+export const easeOutExpo = [0.16, 1, 0.3, 1] as const
+export const easeOutBack = [0.34, 1.56, 0.64, 1] as const
+export const easeInOutCirc = [0.85, 0, 0.15, 1] as const
+
+// ─── Durations ────────────────────────────────────
+export const durations = {
+  instant: 0.08,
+  fast: 0.16,
+  base: 0.24,
+  slow: 0.36,
+  slower: 0.52,
+} as const
+
 // ─── Stagger Container ───────────────────────────
 export const staggerContainer: Variants = {
   hidden: {},
@@ -118,4 +163,46 @@ export function motionVariants(
   reduced: Variants
 ): Variants {
   return shouldReduce ? reduced : full
+}
+
+// ─── Route Transition Variants ────────────────────
+export const routeTransition: Variants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: durations.base, ease: easeOutExpo },
+  },
+  exit: {
+    opacity: 0,
+    y: -4,
+    transition: { duration: durations.fast, ease: easeOutExpo },
+  },
+}
+
+export const reducedRouteTransition: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.1 } },
+  exit: { opacity: 0, transition: { duration: 0.08 } },
+}
+
+// ─── Hero Entry (hero cards stagger) ──────────────
+export const heroContainer: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.05,
+    },
+  },
+}
+
+export const heroItem: Variants = {
+  hidden: { opacity: 0, y: 20, scale: 0.98 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: springSnappy,
+  },
 }

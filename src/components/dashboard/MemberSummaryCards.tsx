@@ -1,6 +1,6 @@
 import { useMemberBreakdown } from '@/hooks/useAssetStats'
 import { Card } from '@/components/ui/Card'
-import { formatKoreanUnit } from '@/utils/format'
+import { Amount } from '@/components/ui/Amount'
 import { clsx } from 'clsx'
 
 export function MemberSummaryCards() {
@@ -9,9 +9,9 @@ export function MemberSummaryCards() {
   if (breakdown.length === 0) return null
 
   return (
-    <div>
+    <div className="member-cards-container">
       <h3 className="text-body3-semi text-heading mb-3">구성원별 현황</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="member-cards-grid grid gap-3">
         {breakdown.map((mb) => {
           const total = mb.totalAssets + mb.totalLiabilities
           const assetPct = total > 0 ? (mb.totalAssets / total) * 100 : 50
@@ -28,15 +28,12 @@ export function MemberSummaryCards() {
                 <span className="text-body3 text-heading">{mb.memberName}</span>
               </div>
 
-              <p className={clsx(
-                'text-title1 tabular-nums',
-                mb.netWorth >= 0
-                  ? 'text-heading'
-                  : 'text-status-danger'
-              )}>
-                {formatKoreanUnit(mb.netWorth)}
-                <span className="text-caption text-disabled ml-1">원</span>
-              </p>
+              <Amount
+                as="p"
+                value={mb.netWorth}
+                size="title"
+                className={clsx(mb.netWorth >= 0 ? 'text-heading' : 'text-status-danger')}
+              />
 
               {/* Asset/Liability bar */}
               <div className="mt-3">
@@ -51,8 +48,8 @@ export function MemberSummaryCards() {
                   />
                 </div>
                 <div className="mt-1.5 flex justify-between text-caption text-sub">
-                  <span>자산 <span className="text-status-success font-medium tabular-nums">{formatKoreanUnit(mb.totalAssets)}</span></span>
-                  <span>부채 <span className="text-status-danger font-medium tabular-nums">{formatKoreanUnit(mb.totalLiabilities)}</span></span>
+                  <span>자산 <Amount value={mb.totalAssets} size="caption" className="text-status-success font-medium" unit="" /></span>
+                  <span>부채 <Amount value={mb.totalLiabilities} size="caption" className="text-status-danger font-medium" unit="" /></span>
                 </div>
               </div>
             </Card>

@@ -208,6 +208,7 @@ export interface Loan {
 // ─── Settings Types ────────────────────────────────
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type ColorPalette = 'default' | 'ocean' | 'rose' | 'purple' | 'forest'
+export type Density = 'compact' | 'comfortable' | 'spacious'
 
 export interface UserProfile {
   name: string
@@ -241,6 +242,14 @@ export interface Settings {
     usdToKrw: number
     lastUpdated?: string
   }
+  /** v2 UI — display density (compact/comfortable/spacious) */
+  density?: Density
+  /** v2 UI — AMOLED 순수 블랙 모드 (dark mode + oled) */
+  oledMode?: boolean
+  /** v2 UI — 금액 마스킹 (●●● 표시) */
+  hideAmounts?: boolean
+  /** v2 UI — 시간대 자동 테마 적용 */
+  timeBasedTheme?: boolean
 }
 
 // ─── Computed Types ────────────────────────────────

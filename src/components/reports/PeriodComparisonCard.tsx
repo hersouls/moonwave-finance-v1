@@ -2,6 +2,7 @@ import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { usePeriodComparison } from '@/hooks/usePeriodComparison'
 import { formatKoreanUnit, formatPercent } from '@/utils/format'
+import { Amount } from '@/components/ui/Amount'
 import { formatMonthLabel } from '@/lib/dateUtils'
 import { clsx } from 'clsx'
 
@@ -33,18 +34,14 @@ export function PeriodComparisonCard() {
 
       {/* Summary row */}
       <div className="grid grid-cols-2 gap-3 mb-5">
-        <div className="p-3 bg-surface-secondary rounded-lg">
+        <div className="p-3 bg-surface-secondary rounded-lg el-card-elevated surface-inset-top">
           <p className="text-caption text-sub mb-1">총 지출</p>
-          <p className="text-sm font-bold text-heading tabular-nums">
-            {formatKoreanUnit(totalExpense.current)}
-          </p>
+          <Amount as="p" value={totalExpense.current} size="emphasis" className="text-heading font-bold block" unit="" />
           <DeltaBadge delta={totalExpense.delta} percent={totalExpense.deltaPercent} isExpense />
         </div>
-        <div className="p-3 bg-surface-secondary rounded-lg">
+        <div className="p-3 bg-surface-secondary rounded-lg el-card-elevated surface-inset-top">
           <p className="text-caption text-sub mb-1">총 수입</p>
-          <p className="text-sm font-bold text-heading tabular-nums">
-            {formatKoreanUnit(totalIncome.current)}
-          </p>
+          <Amount as="p" value={totalIncome.current} size="emphasis" className="text-heading font-bold block" unit="" />
           <DeltaBadge delta={totalIncome.delta} percent={totalIncome.deltaPercent} />
         </div>
       </div>

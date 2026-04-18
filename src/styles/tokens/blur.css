@@ -1,0 +1,25 @@
+/* ===============================================
+ * Backdrop Blur Scale
+ * Used by glassmorphism, overlays, bottom sheets
+ * =============================================== */
+
+:root {
+  --blur-xs: 4px;
+  --blur-sm: 8px;
+  --blur-md: 12px;
+  --blur-lg: 16px;
+  --blur-xl: 24px;
+  --blur-2xl: 32px;
+  --blur-3xl: 48px;
+
+  /* Saturation presets (paired with blur) */
+  --blur-saturate-subtle: 1.2;
+  --blur-saturate-standard: 1.5;
+  --blur-saturate-vivid: 1.8;
+
+  /* Composed filters */
+  --backdrop-glass: blur(var(--blur-lg)) saturate(var(--blur-saturate-standard));
+  --backdrop-glass-heavy: blur(var(--blur-xl)) saturate(var(--blur-saturate-vivid));
+  --backdrop-glass-frosted: blur(var(--blur-2xl)) saturate(var(--blur-saturate-vivid));
+  --backdrop-glass-subtle: blur(var(--blur-md)) saturate(var(--blur-saturate-subtle));
+}

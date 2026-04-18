@@ -45,8 +45,9 @@
   --surface-muted: #e4e4e7;
   --surface-glass: rgba(255, 255, 255, 0.5);
 
-  /* Ring */
-  --ring-focus: #ffffff;
+  /* Ring — accent color for keyboard focus (not background!) */
+  --ring-focus: var(--color-primary-600);
+  --ring-offset: #ffffff;
 }
 
 .dark {
@@ -84,7 +85,8 @@
   --surface-muted: #3f3f46;
   --surface-glass: rgba(9, 9, 11, 0.5);
 
-  --ring-focus: #27272a;
+  --ring-focus: var(--color-primary-400);
+  --ring-offset: #09090b;
 }
 
 /* OLED Pure Black Mode — AMOLED 배터리 절약 */
@@ -105,5 +107,6 @@ html.dark[data-oled="true"] {
   --surface-muted: #262626;
   --surface-glass: rgba(0, 0, 0, 0.7);
 
-  --ring-focus: #1a1a1a;
+  --ring-focus: var(--color-primary-300);
+  --ring-offset: #000000;
 }

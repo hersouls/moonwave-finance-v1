@@ -1,0 +1,32 @@
+/* ===============================================
+ * Surface Utility Classes — 4-layer stack applied
+ * =============================================== */
+
+.surface-sunken    { background-color: var(--surface-layer--1); }
+.surface-base      { background-color: var(--surface-layer-0); }
+.surface-raised    { background-color: var(--surface-layer-1); }
+.surface-floating  { background-color: var(--surface-layer-2); }
+.surface-hero      { background-color: var(--surface-layer-3); }
+
+.surface-haze {
+  background-color: var(--surface-haze);
+  backdrop-filter: var(--backdrop-glass);
+  -webkit-backdrop-filter: var(--backdrop-glass);
+}
+
+.surface-haze-heavy {
+  background-color: var(--surface-haze-heavy);
+  backdrop-filter: var(--backdrop-glass-heavy);
+  -webkit-backdrop-filter: var(--backdrop-glass-heavy);
+}
+
+.hairline           { border: var(--hairline); }
+.hairline-t         { border-top: var(--hairline); }
+.hairline-b         { border-bottom: var(--hairline); }
+.hairline-l         { border-left: var(--hairline); }
+.hairline-r         { border-right: var(--hairline); }
+.hairline-strong    { border: var(--hairline-strong); }
+.hairline-accent    { border: var(--hairline-accent); }
+
+.surface-inset-top        { box-shadow: var(--surface-inset-top); }
+.surface-inset-top-strong { box-shadow: var(--surface-inset-top-strong); }

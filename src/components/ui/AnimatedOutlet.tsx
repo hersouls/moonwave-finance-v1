@@ -1,6 +1,7 @@
 import { useLocation, useOutlet } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { cloneElement } from 'react'
+import { easeOutExpo, durations } from '@/lib/motionConfig'
 
 export function AnimatedOutlet() {
   const location = useLocation()
@@ -16,8 +17,8 @@ export function AnimatedOutlet() {
         exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
         transition={
           shouldReduceMotion
-            ? { duration: 0.15 }
-            : { type: 'spring', stiffness: 380, damping: 30, mass: 0.8 }
+            ? { duration: durations.fast }
+            : { duration: durations.base, ease: easeOutExpo }
         }
       >
         {outlet && cloneElement(outlet, { key: location.pathname })}

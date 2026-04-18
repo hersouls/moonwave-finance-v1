@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ThemeMode, ColorPalette, Settings, NotificationSettings } from '@/lib/types'
+import type { ThemeMode, ColorPalette, Settings, NotificationSettings, Density } from '@/lib/types'
 
 interface SettingsState {
   settings: Settings
@@ -18,6 +18,10 @@ interface SettingsState {
   toggleHighContrast: () => void
   updateNotificationSettings: (updates: Partial<NotificationSettings>) => void
   setExchangeRate: (rate: number) => void
+  setDensity: (density: Density) => void
+  toggleOledMode: () => void
+  toggleHideAmounts: () => void
+  toggleTimeBasedTheme: () => void
 }
 
 let themeListenerAdded = false
@@ -34,6 +38,21 @@ export function applyColorPalette(palette: ColorPalette) {
   } else {
     root.setAttribute('data-palette', palette)
   }
+}
+
+export function applyDensity(density: Density | undefined) {
+  const root = document.documentElement
+  if (!density || density === 'comfortable') {
+    root.removeAttribute('data-density')
+  } else {
+    root.setAttribute('data-density', density)
+  }
+}
+
+export function applyOledMode(enabled: boolean) {
+  const root = document.documentElement
+  if (enabled) root.setAttribute('data-oled', 'true')
+  else root.removeAttribute('data-oled')
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -107,10 +126,28 @@ export const useSettingsStore = create<SettingsState>()(
           newSettings.exchangeRate = { usdToKrw: 1350 }
           hasChanges = true
         }
+        if (newSettings.density === undefined) {
+          newSettings.density = 'comfortable'
+          hasChanges = true
+        }
+        if (newSettings.oledMode === undefined) {
+          newSettings.oledMode = false
+          hasChanges = true
+        }
+        if (newSettings.hideAmounts === undefined) {
+          newSettings.hideAmounts = false
+          hasChanges = true
+        }
+        if (newSettings.timeBasedTheme === undefined) {
+          newSettings.timeBasedTheme = false
+          hasChanges = true
+        }
         if (hasChanges) set({ settings: newSettings })
 
         applyTheme(theme)
         applyColorPalette(colorPalette)
+        applyDensity(newSettings.density)
+        applyOledMode(!!newSettings.oledMode)
 
         if (!themeListenerAdded) {
           themeListenerAdded = true
@@ -195,6 +232,27 @@ export const useSettingsStore = create<SettingsState>()(
             },
           },
         }))
+      },
+
+      setDensity: (density) => {
+        set((state) => ({ settings: { ...state.settings, density } }))
+        applyDensity(density)
+      },
+
+      toggleOledMode: () => {
+        set((state) => {
+          const next = !state.settings.oledMode
+          applyOledMode(next)
+          return { settings: { ...state.settings, oledMode: next } }
+        })
+      },
+
+      toggleHideAmounts: () => {
+        set((state) => ({ settings: { ...state.settings, hideAmounts: !state.settings.hideAmounts } }))
+      },
+
+      toggleTimeBasedTheme: () => {
+        set((state) => ({ settings: { ...state.settings, timeBasedTheme: !state.settings.timeBasedTheme } }))
       },
     }),
     {

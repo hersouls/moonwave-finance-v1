@@ -7,7 +7,7 @@ import { useAssetStore } from '@/stores/assetStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { calculateDailyNetWorth } from '@/services/assetAnalytics'
 import { getCurrentMonthString, getPreviousMonth, getNextMonth, formatMonthLabel } from '@/lib/dateUtils'
-import { formatKoreanUnit } from '@/utils/format'
+import { Amount } from '@/components/ui/Amount'
 import { Card } from '@/components/ui/Card'
 
 export function DailyNetWorthChart() {
@@ -103,23 +103,17 @@ export function DailyNetWorthChart() {
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
             <span className="text-sub">순자산</span>
-            <span className="text-heading font-medium tabular-nums">
-              {formatKoreanUnit(snapshots[snapshots.length - 1].netWorth)}
-            </span>
+            <Amount value={snapshots[snapshots.length - 1].netWorth} size="caption" className="text-heading font-medium" unit="" />
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
             <span className="text-sub">자산</span>
-            <span className="text-heading font-medium tabular-nums">
-              {formatKoreanUnit(snapshots[snapshots.length - 1].totalAssets)}
-            </span>
+            <Amount value={snapshots[snapshots.length - 1].totalAssets} size="caption" className="text-heading font-medium" unit="" />
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
             <span className="text-sub">부채</span>
-            <span className="text-heading font-medium tabular-nums">
-              {formatKoreanUnit(snapshots[snapshots.length - 1].totalLiabilities)}
-            </span>
+            <Amount value={snapshots[snapshots.length - 1].totalLiabilities} size="caption" className="text-heading font-medium" unit="" />
           </div>
         </div>
       )}

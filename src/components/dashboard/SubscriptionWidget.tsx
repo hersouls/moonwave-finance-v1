@@ -1,10 +1,13 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
+import { clsx } from 'clsx'
 import { Card } from '@/components/ui/Card'
+import { Amount } from '@/components/ui/Amount'
 import { useSubscriptionStore } from '@/stores/subscriptionStore'
-import { formatKRW, formatUSD, formatSubscriptionAmount } from '@/utils/format'
+import { formatKRW, formatUSD } from '@/utils/format'
 import { getDaysUntilBilling } from '@/lib/dateUtils'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 export function SubscriptionWidget() {
   const navigate = useNavigate()
@@ -15,6 +18,7 @@ export function SubscriptionWidget() {
   const monthlyKRW = useMemo(() => store.getState().getMonthlyTotalKRW(), [subscriptions])
   const monthlyUSD = useMemo(() => store.getState().getMonthlyTotalUSD(), [subscriptions])
   const upcoming = useMemo(() => store.getState().getUpcomingBills(7), [subscriptions])
+  const hideAmounts = useSettingsStore((s) => !!s.settings.hideAmounts)
 
   if (active.length === 0) return null
 
@@ -31,10 +35,10 @@ export function SubscriptionWidget() {
       </div>
 
       <div className="mb-3">
-        <p className="text-title2 text-heading tabular-nums">
+        <p className={clsx('text-title2 text-heading tabular-nums', hideAmounts && 'amount-masked')}>
           월 {formatKRW(monthlyCombined)}
         </p>
-        <p className="text-caption text-sub">
+        <p className={clsx('text-caption text-sub', hideAmounts && 'amount-masked')}>
           (원화 {formatKRW(monthlyKRW)}
           {monthlyUSD > 0 && ` + 달러 ${formatUSD(monthlyUSD)}`})
         </p>
@@ -47,7 +51,7 @@ export function SubscriptionWidget() {
             {upcoming.slice(0, 3).map((sub) => {
               const daysLeft = getDaysUntilBilling(sub.billingDay, sub.cycle, sub.billingMonth, sub.startDate, sub.customCycleDays)
               return (
-                <div key={sub.id} className="flex items-center gap-2">
+                <div key={sub.id} className="flex items-center gap-2 el-hover rounded-md -mx-1 px-1">
                   <div
                     className="w-2 h-2 rounded-full flex-shrink-0"
                     style={{ backgroundColor: sub.color }}
@@ -55,9 +59,11 @@ export function SubscriptionWidget() {
                   <span className="text-sm text-body flex-1 truncate">
                     {sub.name}
                   </span>
-                  <span className="text-body3 text-heading tabular-nums">
-                    {formatSubscriptionAmount(sub.amount, sub.currency)}
-                  </span>
+                  {sub.currency === 'USD' ? (
+                    <Amount value={sub.amount} format="usd" size="emphasis" className="text-heading" />
+                  ) : (
+                    <Amount value={sub.amount} format="krw" size="emphasis" className="text-heading" unit="" />
+                  )}
                   <span className="text-caption text-disabled w-10 text-right">
                     D-{daysLeft}
                   </span>

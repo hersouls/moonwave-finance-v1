@@ -1,0 +1,60 @@
+/* ===============================================
+ * Container Queries — 내부 폭 기반 레이아웃 분기
+ * 사이드바 on/off 로 변하는 카드 내부 레이아웃 자동 조정
+ * =============================================== */
+
+/* ─────────────────────────────────────────────
+ * Member Cards Grid — 구성원별 현황 카드 그리드
+ * Container 폭 기반 1/2/3 컬럼 분기
+ * ───────────────────────────────────────────── */
+.member-cards-container {
+  container-type: inline-size;
+  container-name: memberGrid;
+}
+
+.member-cards-grid {
+  grid-template-columns: 1fr;
+}
+
+@container memberGrid (min-width: 480px) {
+  .member-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container memberGrid (min-width: 760px) {
+  .member-cards-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Fallback: 구형 브라우저 (Container Query 미지원) 에서 기본 반응형 */
+@supports not (container-type: inline-size) {
+  .member-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 600px) {
+    .member-cards-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .member-cards-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────
+ * Generic card-container helper
+ * ───────────────────────────────────────────── */
+.card-container {
+  container-type: inline-size;
+  container-name: card;
+}
+
+@container card (min-width: 480px) {
+  .card-responsive-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

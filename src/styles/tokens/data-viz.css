@@ -1,0 +1,50 @@
+/* ===============================================
+ * Data Visualization Tokens
+ * Chart.js 시리즈 색상 + 툴팁 + 그리드
+ * =============================================== */
+
+:root {
+  /* 8-series sequence — palette-aware (primary + harmonious accents) */
+  --chart-series-1: var(--color-primary-500);
+  --chart-series-2: oklch(0.62 0.18 145);   /* green */
+  --chart-series-3: oklch(0.75 0.16 75);    /* amber */
+  --chart-series-4: oklch(0.58 0.22 25);    /* red */
+  --chart-series-5: oklch(0.60 0.18 290);   /* purple */
+  --chart-series-6: oklch(0.60 0.14 200);   /* teal */
+  --chart-series-7: oklch(0.68 0.18 340);   /* pink */
+  --chart-series-8: oklch(0.55 0.10 50);    /* brown */
+
+  /* Chart grid / axis */
+  --chart-grid-color: color-mix(in srgb, var(--border-default) 60%, transparent);
+  --chart-axis-color: var(--text-tertiary);
+  --chart-label-color: var(--text-secondary);
+
+  /* Tooltip */
+  --chart-tooltip-bg: var(--surface-haze-heavy, rgba(255, 255, 255, 0.9));
+  --chart-tooltip-border: var(--border-default);
+  --chart-tooltip-text: var(--text-primary);
+  --chart-tooltip-shadow: var(--shadow-3);
+
+  /* Financial semantic colors */
+  --viz-positive: oklch(0.62 0.18 145);
+  --viz-negative: oklch(0.58 0.22 25);
+  --viz-neutral: var(--text-tertiary);
+  --viz-highlight: var(--color-primary-500);
+}
+
+.dark {
+  --chart-series-1: var(--color-primary-400);
+  --chart-series-2: oklch(0.70 0.18 145);
+  --chart-series-3: oklch(0.80 0.16 75);
+  --chart-series-4: oklch(0.65 0.22 25);
+  --chart-series-5: oklch(0.70 0.18 290);
+  --chart-series-6: oklch(0.70 0.14 200);
+  --chart-series-7: oklch(0.75 0.18 340);
+  --chart-series-8: oklch(0.65 0.10 50);
+
+  --chart-grid-color: color-mix(in srgb, var(--border-default) 80%, transparent);
+  --chart-tooltip-bg: color-mix(in srgb, var(--surface-primary) 90%, transparent);
+
+  --viz-positive: oklch(0.72 0.18 145);
+  --viz-negative: oklch(0.70 0.22 25);
+}

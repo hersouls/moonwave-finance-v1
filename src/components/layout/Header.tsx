@@ -58,7 +58,7 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-[var(--z-header)] bg-[var(--surface-elevated)] glass-heavy border-b border-base el-header">
+    <header className="sticky top-0 z-[var(--z-header)] bg-[var(--surface-elevated)] glass-heavy border-b border-base el-header pt-safe-only">
       <nav className="flex items-center justify-between nav-header nav-header-inset">
         <div className="flex items-center gap-3">
           {isDetailPage ? (
@@ -74,7 +74,7 @@ export function Header() {
             <img src="/icons/icon-192.png" alt="FIN" className="w-8 h-8 rounded-lg" />
             <span className="font-bold text-heading">FIN</span>
           </Link>
-          <h2 className="hidden lg:block text-title2 text-heading">{getPageTitle()}</h2>
+          <h2 className="hidden lg:block text-h2-fluid text-heading">{getPageTitle()}</h2>
         </div>
         <div className="flex-1" />
         <div className="nav-header-actions">

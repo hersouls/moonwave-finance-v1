@@ -37,10 +37,10 @@ export default function OAuthCallback() {
     }, [navigate])
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-zinc-50 dark:bg-zinc-900">
-            <div className="text-center">
+        <div className="aurora-bg flex items-center justify-center min-h-screen bg-surface-secondary">
+            <div className="text-center relative z-10">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-4" />
-                <p className="text-zinc-600 dark:text-zinc-400">Google 인증 처리 중...</p>
+                <p className="text-body-fluid text-sub">Google 인증 처리 중...</p>
             </div>
         </div>
     )

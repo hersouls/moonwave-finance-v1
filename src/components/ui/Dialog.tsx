@@ -7,7 +7,7 @@ import {
 } from '@headlessui/react'
 import { clsx } from 'clsx'
 import { X } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useRef, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react'
 
 interface DialogProps {
   open: boolean
@@ -16,6 +16,33 @@ interface DialogProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl'
   noPadding?: boolean
   role?: 'dialog' | 'alertdialog'
+}
+
+/**
+ * Hook: touch drag-to-dismiss handler for the sheet handle (mobile only).
+ * Returns pointer handlers to attach to the handle.
+ */
+function useSheetDismissGesture(onDismiss: () => void) {
+  const state = useRef<{ startY: number; startT: number } | null>(null)
+  const onPointerDown = (e: ReactPointerEvent<HTMLElement>) => {
+    if (e.pointerType !== 'touch') return
+    state.current = { startY: e.clientY, startT: performance.now() }
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+  }
+  const onPointerUp = (e: ReactPointerEvent<HTMLElement>) => {
+    if (!state.current) return
+    const dy = e.clientY - state.current.startY
+    const dt = performance.now() - state.current.startT
+    const velocity = dy / Math.max(dt, 1) // px/ms
+    state.current = null
+    if (dy > 60 || (dy > 20 && velocity > 0.6)) {
+      onDismiss()
+    }
+  }
+  const onPointerCancel = () => {
+    state.current = null
+  }
+  return { onPointerDown, onPointerUp, onPointerCancel }
 }
 
 const sizeStyles = {
@@ -31,12 +58,14 @@ const sizeStyles = {
 }
 
 export function Dialog({ open, onClose, children, size = 'lg', noPadding = false, role }: DialogProps) {
+  const dismiss = useSheetDismissGesture(onClose)
   return (
     <HeadlessDialog open={open} onClose={onClose} className="relative z-[var(--z-overlay)]" role={role}>
       <DialogBackdrop
         transition
         className={clsx(
-          'fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-[2px]',
+          'fixed inset-0 bg-black/40 dark:bg-black/60',
+          'backdrop-blur-[12px] saturate-[1.4]',
           'transition data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in'
         )}
       />
@@ -56,8 +85,16 @@ export function Dialog({ open, onClose, children, size = 'lg', noPadding = false
               'sm:data-[closed]:translate-y-0 sm:data-[closed]:scale-95 sm:data-[closed]:data-[enter]:duration-300 sm:data-[closed]:data-[leave]:duration-200'
             )}
           >
-            {/* Mobile drag handle indicator */}
-            <div className="sm:hidden sheet-handle" aria-hidden="true" />
+            {/* Mobile drag handle — tap or swipe-down to dismiss */}
+            <button
+              type="button"
+              className="sm:hidden sheet-handle w-full touch-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring-focus)] rounded-full"
+              aria-label="시트 닫기"
+              onClick={onClose}
+              onPointerDown={dismiss.onPointerDown}
+              onPointerUp={dismiss.onPointerUp}
+              onPointerCancel={dismiss.onPointerCancel}
+            />
             {children}
           </DialogPanel>
         </div>
