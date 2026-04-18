@@ -5,8 +5,10 @@ export interface CalendarDay {
   date: Date
   dateStr: string
   day: number
+  dayOfWeek: number // 0=Sun ~ 6=Sat
   isCurrentMonth: boolean
   isToday: boolean
+  isWeekend: boolean
 }
 
 export function useCalendar(initialMonth?: string) {
@@ -24,13 +26,18 @@ export function useCalendar(initialMonth?: string) {
     const calStart = startOfWeek(monthStart, { weekStartsOn: 0 })
     const calEnd = endOfWeek(monthEnd, { weekStartsOn: 0 })
 
-    return eachDayOfInterval({ start: calStart, end: calEnd }).map(date => ({
-      date,
-      dateStr: format(date, 'yyyy-MM-dd'),
-      day: date.getDate(),
-      isCurrentMonth: isSameMonth(date, currentDate),
-      isToday: isToday(date),
-    }))
+    return eachDayOfInterval({ start: calStart, end: calEnd }).map(date => {
+      const dow = date.getDay()
+      return {
+        date,
+        dateStr: format(date, 'yyyy-MM-dd'),
+        day: date.getDate(),
+        dayOfWeek: dow,
+        isCurrentMonth: isSameMonth(date, currentDate),
+        isToday: isToday(date),
+        isWeekend: dow === 0 || dow === 6,
+      }
+    })
   }, [currentDate])
 
   const monthLabel = useMemo(() => {

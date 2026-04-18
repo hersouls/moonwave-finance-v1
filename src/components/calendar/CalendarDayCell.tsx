@@ -1,51 +1,221 @@
+import { forwardRef, memo } from 'react'
 import { clsx } from 'clsx'
+import { RefreshCw } from 'lucide-react'
 import { formatKoreanUnit } from '@/utils/format'
 import type { CalendarDay } from '@/hooks/useCalendar'
 import type { DaySummary } from '@/lib/calendarUtils'
+import type { TransactionCategory } from '@/lib/types'
 
 interface CalendarDayCellProps {
   day: CalendarDay
   summary?: DaySummary
   isSelected: boolean
+  isFocused?: boolean
+  isPeakExpense?: boolean
+  isPeakIncome?: boolean
+  maxExpense?: number
+  maxIncome?: number
+  density?: 'compact' | 'detailed'
+  categories: TransactionCategory[]
   onClick: () => void
+  onHover?: (dateStr: string | null, rect: DOMRect | null) => void
 }
 
-export function CalendarDayCell({ day, summary, isSelected, onClick }: CalendarDayCellProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={clsx(
-        'relative flex flex-col items-center p-1 rounded-lg text-sm transition-colors min-h-[3.5rem] lg:min-h-[4.5rem]',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
-        day.isCurrentMonth
-          ? 'text-heading'
-          : 'text-disabled',
-        day.isToday && 'ring-2 ring-primary-400 dark:ring-primary-600',
-        isSelected && 'bg-primary-100 dark:bg-primary-900/30',
-        !isSelected && day.isCurrentMonth && 'hover:bg-[var(--hover-bg)]',
-      )}
-    >
-      <span className={clsx(
-        'text-caption',
-        day.isToday && 'text-primary-600 dark:text-primary-400 font-bold',
-      )}>
-        {day.day}
-      </span>
+const CalendarDayCellBase = forwardRef<HTMLButtonElement, CalendarDayCellProps>(
+  function CalendarDayCell(
+    {
+      day,
+      summary,
+      isSelected,
+      isFocused,
+      isPeakExpense,
+      isPeakIncome,
+      maxExpense = 0,
+      maxIncome = 0,
+      density = 'compact',
+      categories,
+      onClick,
+      onHover,
+    },
+    ref,
+  ) {
+    const isDetailed = density === 'detailed'
 
-      {summary && day.isCurrentMonth && (
-        <div className="mt-0.5 space-y-0.5 w-full px-0.5">
-          {summary.income > 0 && (
-            <p className="text-[10px] text-status-success tabular-nums truncate text-center leading-tight">
-              +{formatKoreanUnit(summary.income)}
-            </p>
-          )}
-          {summary.expense > 0 && (
-            <p className="text-[10px] text-status-danger tabular-nums truncate text-center leading-tight">
-              -{formatKoreanUnit(summary.expense)}
-            </p>
+    const expenseRatio = maxExpense > 0 && summary ? Math.min(1, summary.expense / maxExpense) : 0
+    const incomeRatio = maxIncome > 0 && summary ? Math.min(1, summary.income / maxIncome) : 0
+
+    // Top 3 category colors for visual accent (expense-first, then income)
+    const dotColors = summary
+      ? [
+          ...summary.expenseCategories.slice(0, 3).map((e) =>
+            resolveColor(e.categoryId, categories, '#ef4444'),
+          ),
+          ...summary.incomeCategories.slice(0, Math.max(0, 3 - summary.expenseCategories.length)).map((e) =>
+            resolveColor(e.categoryId, categories, '#10b981'),
+          ),
+        ].slice(0, 3)
+      : []
+
+    const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (!onHover || !day.isCurrentMonth || !summary) return
+      onHover(day.dateStr, e.currentTarget.getBoundingClientRect())
+    }
+
+    const handleMouseLeave = () => {
+      if (!onHover) return
+      onHover(null, null)
+    }
+
+    return (
+      <button
+        ref={ref}
+        type="button"
+        onClick={onClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onFocus={handleMouseEnter}
+        onBlur={handleMouseLeave}
+        data-date={day.dateStr}
+        aria-label={buildAriaLabel(day, summary)}
+        aria-current={day.isToday ? 'date' : undefined}
+        aria-pressed={isSelected}
+        tabIndex={isFocused ? 0 : -1}
+        className={clsx(
+          'group relative flex flex-col items-stretch rounded-lg text-sm transition-all',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+          isDetailed
+            ? 'min-h-[84px] xl:min-h-[104px] 2xl:min-h-[120px] p-1.5 gap-1'
+            : 'min-h-[56px] lg:min-h-[72px] p-1 gap-0.5',
+          day.isCurrentMonth ? 'text-heading' : 'text-disabled opacity-60',
+          day.isToday && 'ring-2 ring-primary-400 dark:ring-primary-600',
+          isSelected && 'bg-primary-100 dark:bg-primary-900/30 ring-1 ring-primary-500',
+          !isSelected && day.isCurrentMonth && 'hover:bg-[var(--hover-bg)] hover:shadow-sm',
+          isPeakExpense && !isSelected && 'ring-1 ring-red-400/60 dark:ring-red-500/50',
+          isPeakIncome && !isSelected && !isPeakExpense && 'ring-1 ring-emerald-400/60 dark:ring-emerald-500/50',
+        )}
+      >
+        {/* Header row: day number, indicators */}
+        <div className="flex items-center justify-between gap-1">
+          <span
+            className={clsx(
+              isDetailed ? 'text-xs font-medium' : 'text-caption',
+              day.isToday && 'text-primary-600 dark:text-primary-400 font-bold',
+              day.dayOfWeek === 0 && day.isCurrentMonth && !day.isToday && 'text-red-500/80',
+              day.dayOfWeek === 6 && day.isCurrentMonth && !day.isToday && 'text-blue-500/80',
+            )}
+          >
+            {day.day}
+          </span>
+          {summary && day.isCurrentMonth && (
+            <div className="flex items-center gap-1">
+              {summary.hasRecurring && (
+                <RefreshCw
+                  className={clsx(
+                    isDetailed ? 'w-3 h-3' : 'w-2.5 h-2.5',
+                    'text-primary-500 dark:text-primary-400',
+                  )}
+                  aria-hidden
+                />
+              )}
+              {isDetailed && summary.count > 1 && (
+                <span className="text-[10px] tabular-nums text-sub bg-[var(--surface-tertiary)] rounded-full px-1.5 leading-[14px]">
+                  {summary.count}
+                </span>
+              )}
+            </div>
           )}
         </div>
-      )}
-    </button>
-  )
+
+        {/* Amounts */}
+        {summary && day.isCurrentMonth && (
+          <div
+            className={clsx(
+              'flex flex-col w-full',
+              isDetailed ? 'gap-0.5' : 'gap-[1px]',
+            )}
+          >
+            {summary.income > 0 && (
+              <p
+                className={clsx(
+                  'tabular-nums truncate leading-tight',
+                  isDetailed ? 'text-[11px] text-right' : 'text-[10px] text-center',
+                  'text-status-success',
+                  isPeakIncome && 'font-semibold',
+                )}
+              >
+                +{formatKoreanUnit(summary.income)}
+              </p>
+            )}
+            {summary.expense > 0 && (
+              <p
+                className={clsx(
+                  'tabular-nums truncate leading-tight',
+                  isDetailed ? 'text-[11px] text-right' : 'text-[10px] text-center',
+                  'text-status-danger',
+                  isPeakExpense && 'font-semibold',
+                )}
+              >
+                -{formatKoreanUnit(summary.expense)}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Detailed extras: magnitude bars + category dots */}
+        {isDetailed && summary && day.isCurrentMonth && (summary.expense > 0 || summary.income > 0) && (
+          <div className="mt-auto flex flex-col gap-1">
+            {(summary.expense > 0 || summary.income > 0) && (
+              <div className="flex items-end gap-[3px] h-1.5" aria-hidden>
+                {summary.income > 0 && (
+                  <div
+                    className="flex-1 rounded-sm bg-emerald-400/80 dark:bg-emerald-500/70"
+                    style={{ height: `${Math.max(15, incomeRatio * 100)}%` }}
+                  />
+                )}
+                {summary.expense > 0 && (
+                  <div
+                    className="flex-1 rounded-sm bg-red-400/80 dark:bg-red-500/70"
+                    style={{ height: `${Math.max(15, expenseRatio * 100)}%` }}
+                  />
+                )}
+              </div>
+            )}
+            {dotColors.length > 0 && (
+              <div className="flex items-center justify-end gap-[3px]" aria-hidden>
+                {dotColors.map((color, i) => (
+                  <span
+                    key={i}
+                    className="block w-1.5 h-1.5 rounded-full ring-1 ring-white/60 dark:ring-black/30"
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </button>
+    )
+  },
+)
+
+export const CalendarDayCell = memo(CalendarDayCellBase)
+
+function resolveColor(
+  categoryId: number | null,
+  categories: TransactionCategory[],
+  fallback: string,
+): string {
+  if (categoryId == null) return fallback
+  return categories.find((c) => c.id === categoryId)?.color ?? fallback
+}
+
+function buildAriaLabel(day: CalendarDay, summary?: DaySummary): string {
+  const parts = [`${day.day}일`]
+  if (day.isToday) parts.push('오늘')
+  if (summary) {
+    if (summary.income > 0) parts.push(`수입 ${formatKoreanUnit(summary.income)}원`)
+    if (summary.expense > 0) parts.push(`지출 ${formatKoreanUnit(summary.expense)}원`)
+    parts.push(`거래 ${summary.count}건`)
+  }
+  return parts.join(', ')
 }
