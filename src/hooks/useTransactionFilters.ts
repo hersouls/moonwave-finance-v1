@@ -1,6 +1,9 @@
 import { useMemo, useState, useCallback } from 'react'
 import type { Transaction, TransactionType, PaymentMethod } from '@/lib/types'
 
+export type TransactionSortBy = 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc'
+export type TransactionDateRange = 'all' | '7d' | '30d' | '90d'
+
 interface TransactionFilters {
   type: TransactionType | 'all'
   memberId: number | null
@@ -9,6 +12,8 @@ interface TransactionFilters {
   paymentMethod: PaymentMethod | null
   minAmount: number | null
   maxAmount: number | null
+  sortBy: TransactionSortBy
+  dateRange: TransactionDateRange
 }
 
 const DEFAULT_FILTERS: TransactionFilters = {
@@ -19,6 +24,15 @@ const DEFAULT_FILTERS: TransactionFilters = {
   paymentMethod: null,
   minAmount: null,
   maxAmount: null,
+  sortBy: 'date-desc',
+  dateRange: 'all',
+}
+
+function daysAgoISO(days: number): string {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() - days)
+  return d.toISOString().split('T')[0]
 }
 
 export function useTransactionFilters(transactions: Transaction[]) {
@@ -49,8 +63,23 @@ export function useTransactionFilters(transactions: Transaction[]) {
     if (filters.maxAmount !== null) {
       result = result.filter(t => t.amount <= filters.maxAmount!)
     }
+    if (filters.dateRange !== 'all') {
+      const days = filters.dateRange === '7d' ? 7 : filters.dateRange === '30d' ? 30 : 90
+      const cutoff = daysAgoISO(days)
+      result = result.filter(t => t.date >= cutoff)
+    }
 
-    return result.sort((a, b) => b.date.localeCompare(a.date))
+    switch (filters.sortBy) {
+      case 'date-asc':
+        return result.sort((a, b) => a.date.localeCompare(b.date))
+      case 'amount-desc':
+        return result.sort((a, b) => b.amount - a.amount || b.date.localeCompare(a.date))
+      case 'amount-asc':
+        return result.sort((a, b) => a.amount - b.amount || b.date.localeCompare(a.date))
+      case 'date-desc':
+      default:
+        return result.sort((a, b) => b.date.localeCompare(a.date))
+    }
   }, [transactions, filters])
 
   const summary = useMemo(() => {
@@ -67,6 +96,16 @@ export function useTransactionFilters(transactions: Transaction[]) {
     }
   }, [transactions])
 
+  const typeCounts = useMemo(() => {
+    let income = 0
+    let expense = 0
+    for (const t of transactions) {
+      if (t.type === 'income') income++
+      else expense++
+    }
+    return { all: transactions.length, income, expense }
+  }, [transactions])
+
   const activeFilterCount = useMemo(() => {
     let count = 0
     if (filters.memberId !== null) count++
@@ -74,11 +113,13 @@ export function useTransactionFilters(transactions: Transaction[]) {
     if (filters.paymentMethod !== null) count++
     if (filters.minAmount !== null) count++
     if (filters.maxAmount !== null) count++
+    if (filters.dateRange !== 'all') count++
+    if (filters.searchQuery) count++
     return count
   }, [filters])
 
   const resetFilters = useCallback(() => {
-    setFilters({ ...DEFAULT_FILTERS })
+    setFilters(f => ({ ...DEFAULT_FILTERS, type: f.type }))
   }, [])
 
   return {
@@ -91,8 +132,11 @@ export function useTransactionFilters(transactions: Transaction[]) {
     setPaymentMethodFilter: (paymentMethod: PaymentMethod | null) => setFilters(f => ({ ...f, paymentMethod })),
     setMinAmount: (minAmount: number | null) => setFilters(f => ({ ...f, minAmount })),
     setMaxAmount: (maxAmount: number | null) => setFilters(f => ({ ...f, maxAmount })),
+    setSortBy: (sortBy: TransactionSortBy) => setFilters(f => ({ ...f, sortBy })),
+    setDateRange: (dateRange: TransactionDateRange) => setFilters(f => ({ ...f, dateRange })),
     resetFilters,
     activeFilterCount,
+    typeCounts,
     filtered,
     summary,
   }

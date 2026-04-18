@@ -13,6 +13,20 @@ import { PAYMENT_METHOD_OPTIONS, getPaymentMethodLabel } from '@/utils/paymentMe
 import { formatKoreanUnit } from '@/utils/format'
 import { getCategoryIcon } from '@/utils/categoryIcons'
 import { springSnappy, easeOutExpo, durations } from '@/lib/motionConfig'
+import {
+  WIZARD_STEPS as STEPS,
+  WIZARD_MAX_STEP,
+  AMOUNT_PRESETS,
+  RECUR_OPTIONS,
+  RECUR_LABEL_MAP,
+  LOAN_INTEREST_CATEGORY_NAME,
+  PAYMENT_METHOD_ITEMS_SCROLL_THRESHOLD,
+  WIZARD_SUCCESS_CLOSE_MS,
+  UNCATEGORIZED_COLOR,
+  UNCATEGORIZED_LABEL,
+} from '@/lib/ledgerConstants'
+import { useTransactionTemplates } from '@/hooks/useTransactionTemplates'
+import { useBudgetWarning, formatBudgetWarning, getBudgetWarningLevel } from '@/hooks/useBudgetWarning'
 import { clsx } from 'clsx'
 import {
   Check, ChevronLeft, ChevronRight, Zap, Landmark, Pencil, MoreHorizontal,
@@ -87,7 +101,7 @@ function getInitialState(initialDate?: string, defaultMemberId?: number | ''): W
 function wizardReducer(state: WizardState, action: WizardAction): WizardState {
   switch (action.type) {
     case 'NEXT_STEP':
-      return { ...state, currentStep: Math.min(state.currentStep + 1, 3), direction: 'forward' }
+      return { ...state, currentStep: Math.min(state.currentStep + 1, WIZARD_MAX_STEP), direction: 'forward' }
     case 'PREV_STEP':
       return { ...state, currentStep: Math.max(state.currentStep - 1, 0), direction: 'backward' }
     case 'GO_TO_STEP':
@@ -111,7 +125,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
         memo: action.data.memo || '',
         paymentMethod: action.data.paymentMethod || '',
         memberId: action.data.memberId ?? state.memberId,
-        currentStep: 3,
+        currentStep: WIZARD_MAX_STEP,
         direction: 'forward',
       }
     case 'APPLY_LOAN':
@@ -121,7 +135,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
         amount: action.data.amount.toLocaleString('ko-KR'),
         categoryId: action.data.categoryId,
         memo: action.data.memo,
-        currentStep: 3,
+        currentStep: WIZARD_MAX_STEP,
         direction: 'forward',
       }
     case 'ADD_AMOUNT': {
@@ -143,13 +157,6 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
 }
 
 // ─── Step Indicator (morph progress) ───────────────
-
-const STEPS = [
-  { label: '금액' },
-  { label: '카테고리' },
-  { label: '상세' },
-  { label: '확인' },
-] as const
 
 function StepIndicator({ currentStep }: { currentStep: number }) {
   return (
@@ -239,15 +246,6 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
   )
 }
 
-// ─── Amount quick-add chips ────────────────────────
-
-const AMOUNT_PRESETS: { label: string; delta: number }[] = [
-  { label: '+1천', delta: 1_000 },
-  { label: '+1만', delta: 10_000 },
-  { label: '+10만', delta: 100_000 },
-  { label: '+100만', delta: 1_000_000 },
-]
-
 // ─── Main Component ────────────────────────────────
 
 interface TransactionWizardProps {
@@ -305,26 +303,9 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
     [categories, state.type],
   )
 
-  const templates = useMemo(() => {
-    const freqMap = new Map<string, { count: number; type: TransactionType; categoryId: number | null; amount: number; memo?: string; paymentMethod?: PaymentMethod; memberId: number | null }>()
-    for (const t of transactions) {
-      const key = `${t.type}|${t.categoryId}|${t.amount}|${t.memo || ''}`
-      const existing = freqMap.get(key)
-      if (existing) existing.count++
-      else freqMap.set(key, { count: 1, type: t.type, categoryId: t.categoryId, amount: t.amount, memo: t.memo, paymentMethod: t.paymentMethod, memberId: t.memberId })
-    }
-    return Array.from(freqMap.values()).filter(t => t.count >= 2).sort((a, b) => b.count - a.count).slice(0, 5)
-  }, [transactions])
+  const templates = useTransactionTemplates(transactions)
 
-  const budgetWarning = useMemo(() => {
-    if (state.type !== 'expense' || !state.categoryId) return null
-    const budget = budgets.find(b => b.categoryId === state.categoryId)
-    if (!budget) return null
-    const used = transactions.filter(t => t.type === 'expense' && t.categoryId === state.categoryId).reduce((sum, t) => sum + t.amount, 0)
-    const remaining = budget.amount - used
-    const percent = budget.amount > 0 ? (used / budget.amount) * 100 : 0
-    return { budgetAmount: budget.amount, used, remaining, percent }
-  }, [state.type, state.categoryId, budgets, transactions])
+  const budgetWarning = useBudgetWarning(state.type, state.categoryId, budgets, transactions)
 
   const itemsForType = useMemo(() => {
     if (!state.paymentMethod || state.paymentMethod === 'cash') return []
@@ -364,7 +345,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
       // Success animation, then close
       dispatch({ type: 'SET_SUCCESS', value: true })
       if (!shouldReduceMotion) subtleSuccess()
-      setTimeout(() => onClose(), 620)
+      setTimeout(() => onClose(), WIZARD_SUCCESS_CLOSE_MS)
     } catch {
       useToastStore.getState().addToast('거래 저장에 실패했습니다.', 'error')
       dispatch({ type: 'SET_SUBMITTING', value: false })
@@ -380,10 +361,10 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
       const inAmount = target === amountRef.current
       const inInput = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA'
       if (e.key === 'Enter' && (inAmount || !inInput)) {
-        if (state.currentStep < 3 && canProceed) {
+        if (state.currentStep < WIZARD_MAX_STEP && canProceed) {
           e.preventDefault()
           dispatch({ type: 'NEXT_STEP' })
-        } else if (state.currentStep === 3 && !state.isSubmitting) {
+        } else if (state.currentStep === WIZARD_MAX_STEP && !state.isSubmitting) {
           e.preventDefault()
           handleSubmit()
         }
@@ -436,7 +417,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                 {templates.map((tmpl, i) => {
                   const cat = tmpl.categoryId ? categories.find(c => c.id === tmpl.categoryId) : null
                   const Icon = getCategoryIcon(cat?.icon)
-                  const color = cat?.color || '#71717a'
+                  const color = cat?.color || UNCATEGORIZED_COLOR
                   return (
                     <motion.button
                       key={i}
@@ -459,7 +440,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                       </div>
                       <div className="flex flex-col items-start min-w-0 max-w-[120px]">
                         <span className="text-[11px] text-sub truncate w-full leading-tight">
-                          {cat?.name || '미분류'}
+                          {cat?.name || UNCATEGORIZED_LABEL}
                         </span>
                         <span className="text-body3 font-bold text-heading tabular-nums truncate w-full leading-tight">
                           {formatKoreanUnit(tmpl.amount)}원
@@ -481,7 +462,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               <div className="flex gap-2.5 overflow-x-auto scrollbar-none pb-1 -mx-1 px-1">
                 {activeLoans.map(loan => {
                   const interest = getMonthlyInterest(loan)
-                  const interestCat = categories.find(c => c.type === 'expense' && c.name.includes('대출이자'))
+                  const interestCat = categories.find(c => c.type === 'expense' && c.name.includes(LOAN_INTEREST_CATEGORY_NAME))
                   return (
                     <motion.button
                       key={loan.id}
@@ -842,17 +823,14 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
             transition={{ duration: durations.fast }}
             className={clsx(
               'px-3 py-2.5 rounded-lg text-caption',
-              budgetWarning.percent > 100
+              getBudgetWarningLevel(budgetWarning) === 'over'
                 ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
-                : budgetWarning.percent >= 80
+                : getBudgetWarningLevel(budgetWarning) === 'warning'
                   ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
                   : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400',
             )}
           >
-            {budgetWarning.percent > 100
-              ? `예산 ${formatKoreanUnit(budgetWarning.budgetAmount)}원 중 ${formatKoreanUnit(budgetWarning.used)}원 사용 (${formatKoreanUnit(Math.abs(budgetWarning.remaining))}원 초과!)`
-              : `예산 ${formatKoreanUnit(budgetWarning.budgetAmount)}원 중 ${formatKoreanUnit(budgetWarning.used)}원 사용 (${formatKoreanUnit(budgetWarning.remaining)}원 남음)`
-            }
+            {formatBudgetWarning(budgetWarning)}
           </motion.div>
         )}
       </AnimatePresence>
@@ -980,7 +958,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                   <div
                     className={clsx(
                       'flex flex-wrap gap-2',
-                      itemsForType.length > 6 && 'max-h-[140px] overflow-y-auto scrollbar-none pr-1',
+                      itemsForType.length > PAYMENT_METHOD_ITEMS_SCROLL_THRESHOLD && 'max-h-[140px] overflow-y-auto scrollbar-none pr-1',
                     )}
                   >
                     {itemsForType.map(item => (
@@ -1016,7 +994,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                       직접 입력
                     </motion.button>
                   </div>
-                  {itemsForType.length > 6 && (
+                  {itemsForType.length > PAYMENT_METHOD_ITEMS_SCROLL_THRESHOLD && (
                     <p className="text-[10px] text-disabled mt-2 text-center">
                       스크롤하여 더 보기
                     </p>
@@ -1079,12 +1057,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               <Select
                 value={state.recurType}
                 onChange={(v) => dispatch({ type: 'SET_FIELD', field: 'recurType', value: v as RepeatType })}
-                options={[
-                  { value: 'monthly', label: '매월' },
-                  { value: 'weekly', label: '매주' },
-                  { value: 'daily', label: '매일' },
-                  { value: 'yearly', label: '매년' },
-                ]}
+                options={RECUR_OPTIONS}
               />
             </div>
             <div>
@@ -1155,11 +1128,11 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
     const member = state.memberId ? members.find(m => m.id === state.memberId) : null
     const payLabel = state.paymentMethod ? getPaymentMethodLabel(state.paymentMethod) : ''
     const payDetail = state.paymentMethodDetail ? ` · ${state.paymentMethodDetail}` : ''
-    const recurLabels: Record<string, string> = { monthly: '매월', weekly: '매주', daily: '매일', yearly: '매년' }
+    const recurLabels = RECUR_LABEL_MAP
 
     const rows: { label: string; value: string; step: number; color?: string }[] = [
       { label: '유형', value: state.type === 'expense' ? '지출' : '수입', step: 0 },
-      { label: '카테고리', value: cat?.name || '미분류', step: 1, color: cat?.color },
+      { label: '카테고리', value: cat?.name || UNCATEGORIZED_LABEL, step: 1, color: cat?.color },
       { label: '날짜', value: formatDate(state.date), step: 2 },
       { label: '구성원', value: member?.name || '미지정', step: 0 },
       { label: '거래수단', value: payLabel ? `${payLabel}${payDetail}` : '미지정', step: 2 },
@@ -1245,16 +1218,13 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
         {budgetWarning && (
           <div className={clsx(
             'px-4 py-3 rounded-2xl text-caption font-medium',
-            budgetWarning.percent > 100
+            getBudgetWarningLevel(budgetWarning) === 'over'
               ? 'bg-status-danger-soft text-status-danger'
-              : budgetWarning.percent >= 80
+              : getBudgetWarningLevel(budgetWarning) === 'warning'
                 ? 'bg-status-warning-soft text-status-warning'
                 : 'bg-status-success-soft text-status-success',
           )}>
-            {budgetWarning.percent > 100
-              ? `예산 ${formatKoreanUnit(budgetWarning.budgetAmount)}원 중 ${formatKoreanUnit(budgetWarning.used)}원 사용 (${formatKoreanUnit(Math.abs(budgetWarning.remaining))}원 초과!)`
-              : `예산 ${formatKoreanUnit(budgetWarning.budgetAmount)}원 중 ${formatKoreanUnit(budgetWarning.used)}원 사용 (${formatKoreanUnit(budgetWarning.remaining)}원 남음)`
-            }
+            {formatBudgetWarning(budgetWarning)}
           </div>
         )}
       </div>

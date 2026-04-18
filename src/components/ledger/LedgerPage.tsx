@@ -24,12 +24,7 @@ import { SkeletonCard } from '@/components/ui/Skeleton'
 import { formatMonthLabel, getPreviousMonth, getNextMonth } from '@/lib/dateUtils'
 import { ErrorEmptyState } from '@/components/ui/EmptyState'
 import { useSwipe } from '@/hooks/useSwipe'
-
-const LEDGER_SEGMENTS = [
-  { id: 'expense', label: '지출', path: '/ledger/expense' },
-  { id: 'income', label: '수입', path: '/ledger/income' },
-  { id: 'calendar', label: '캘린더', path: '/ledger/calendar' },
-]
+import { LEDGER_SEGMENTS } from '@/lib/ledgerConstants'
 
 export function LedgerPage() {
   const location = useLocation()
@@ -72,10 +67,11 @@ export function LedgerPage() {
   })
 
   const {
-    filtered, summary, filters,
+    filtered, summary, filters, typeCounts,
     setTypeFilter, setSearchQuery,
-    setMemberFilter, setPaymentMethodFilter,
+    setMemberFilter, setCategoryFilter, setPaymentMethodFilter,
     setMinAmount, setMaxAmount,
+    setSortBy, setDateRange,
     resetFilters, activeFilterCount,
   } = useTransactionFilters(transactions)
 
@@ -158,17 +154,24 @@ export function LedgerPage() {
       <TransactionFilters
         activeType={filters.type}
         onTypeChange={setTypeFilter}
+        typeCounts={typeCounts}
         searchQuery={filters.searchQuery}
         onSearchChange={setSearchQuery}
         members={members}
         categories={categories}
         memberFilter={filters.memberId}
         onMemberChange={setMemberFilter}
+        categoryFilter={filters.categoryId}
+        onCategoryChange={setCategoryFilter}
         paymentMethodFilter={filters.paymentMethod}
         onPaymentMethodChange={setPaymentMethodFilter}
         minAmount={filters.minAmount}
         maxAmount={filters.maxAmount}
         onAmountRangeChange={(min, max) => { setMinAmount(min); setMaxAmount(max) }}
+        sortBy={filters.sortBy}
+        onSortByChange={setSortBy}
+        dateRange={filters.dateRange}
+        onDateRangeChange={setDateRange}
         activeFilterCount={activeFilterCount}
         onReset={resetFilters}
       />

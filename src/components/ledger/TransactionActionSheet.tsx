@@ -4,6 +4,7 @@ import { clsx } from 'clsx'
 import { Amount } from '@/components/ui/Amount'
 import type { Transaction, TransactionCategory, Member } from '@/lib/types'
 import { formatDate } from '@/lib/dateUtils'
+import { SHEET_DRAG_CLOSE, UNCATEGORIZED_LABEL } from '@/lib/ledgerConstants'
 
 interface Props {
   open: boolean
@@ -65,7 +66,7 @@ export function TransactionActionSheet({
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.5 }}
             onDragEnd={(_, info) => {
-              if (info.offset.y > 120 || info.velocity.y > 600) onClose()
+              if (info.offset.y > SHEET_DRAG_CLOSE.OFFSET_Y || info.velocity.y > SHEET_DRAG_CLOSE.VELOCITY_Y) onClose()
             }}
             className={clsx(
               'fixed bottom-0 left-0 right-0 z-[var(--z-overlay)]',
@@ -91,7 +92,7 @@ export function TransactionActionSheet({
                       />
                     )}
                     <span className="text-body2-bold text-heading truncate">
-                      {category?.name || '미분류'}
+                      {category?.name || UNCATEGORIZED_LABEL}
                     </span>
                     {member && (
                       <span

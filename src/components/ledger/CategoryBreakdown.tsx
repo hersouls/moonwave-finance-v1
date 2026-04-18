@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { formatKoreanUnit, formatPercent } from '@/utils/format'
 import { Amount } from '@/components/ui/Amount'
+import { UNCATEGORIZED_COLOR, UNCATEGORIZED_LABEL } from '@/lib/ledgerConstants'
 import type { Transaction, Budget } from '@/lib/types'
 
 interface CategoryBreakdownProps {
@@ -30,8 +31,8 @@ export function CategoryBreakdown({ transactions, type, budgets }: CategoryBreak
         const budget = catId && budgets ? budgets.find(b => b.categoryId === catId) : null
         return {
           categoryId: catId,
-          name: cat?.name || '미분류',
-          color: cat?.color || '#71717a',
+          name: cat?.name || UNCATEGORIZED_LABEL,
+          color: cat?.color || UNCATEGORIZED_COLOR,
           total,
           percentage: grandTotal > 0 ? (total / grandTotal) * 100 : 0,
           budget: budget?.amount ?? null,

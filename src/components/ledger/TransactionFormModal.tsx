@@ -9,6 +9,9 @@ import { getTodayString } from '@/lib/dateUtils'
 import { PAYMENT_METHOD_OPTIONS } from '@/utils/paymentMethod'
 import { formatKoreanUnit } from '@/utils/format'
 import { useToastStore } from '@/stores/toastStore'
+import { RECUR_OPTIONS, LOAN_INTEREST_CATEGORY_NAME, UNCATEGORIZED_LABEL } from '@/lib/ledgerConstants'
+import { useTransactionTemplates } from '@/hooks/useTransactionTemplates'
+import { useBudgetWarning, formatBudgetWarning, getBudgetWarningLevel } from '@/hooks/useBudgetWarning'
 import { clsx } from 'clsx'
 import { Select } from '@/components/ui/Select'
 import { Landmark } from 'lucide-react'
@@ -57,38 +60,9 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
     return paymentMethodItems.filter(i => i.type === paymentMethod && i.isActive)
   }, [paymentMethod, paymentMethodItems])
 
-  // Recent templates: top 5 frequent transaction patterns from last 3 months
-  const templates = useMemo(() => {
-    if (mode !== 'create') return []
-    const allTxns = transactions
-    const freqMap = new Map<string, { count: number; type: TransactionType; categoryId: number | null; amount: number; memo?: string; paymentMethod?: PaymentMethod; memberId: number | null }>()
-    for (const t of allTxns) {
-      const key = `${t.type}|${t.categoryId}|${t.amount}|${t.memo || ''}`
-      const existing = freqMap.get(key)
-      if (existing) {
-        existing.count++
-      } else {
-        freqMap.set(key, { count: 1, type: t.type, categoryId: t.categoryId, amount: t.amount, memo: t.memo, paymentMethod: t.paymentMethod, memberId: t.memberId })
-      }
-    }
-    return Array.from(freqMap.values())
-      .filter(t => t.count >= 2)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5)
-  }, [transactions, mode])
+  const templates = useTransactionTemplates(transactions, mode === 'create')
 
-  // Budget warning for selected category
-  const budgetWarning = useMemo(() => {
-    if (type !== 'expense' || !categoryId) return null
-    const budget = budgets.find(b => b.categoryId === categoryId)
-    if (!budget) return null
-    const used = transactions
-      .filter(t => t.type === 'expense' && t.categoryId === categoryId)
-      .reduce((sum, t) => sum + t.amount, 0)
-    const remaining = budget.amount - used
-    const percent = budget.amount > 0 ? (used / budget.amount) * 100 : 0
-    return { budgetAmount: budget.amount, used, remaining, percent }
-  }, [type, categoryId, budgets, transactions])
+  const budgetWarning = useBudgetWarning(type, categoryId, budgets, transactions)
 
   useEffect(() => {
     if (open) loadLoans()
@@ -101,7 +75,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
     setType('expense')
     setAmount(interest.toLocaleString('ko-KR'))
     // Find "대출이자" category
-    const interestCat = categories.find(c => c.type === 'expense' && c.name.includes('대출이자'))
+    const interestCat = categories.find(c => c.type === 'expense' && c.name.includes(LOAN_INTEREST_CATEGORY_NAME))
     if (interestCat?.id) setCategoryId(interestCat.id)
     setMemo(`${loan.name} 이자 (잔액 ${loan.currentBalance.toLocaleString('ko-KR')}원 × 연 ${loan.annualRate}%)`)
   }
@@ -225,7 +199,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                       onClick={() => applyTemplate(tmpl)}
                       className="flex-shrink-0 px-3 py-1.5 rounded-lg text-caption bg-surface-tertiary text-body hover:bg-[var(--hover-bg)] transition-colors"
                     >
-                      {cat?.name || '미분류'} {formatKoreanUnit(tmpl.amount)}
+                      {cat?.name || UNCATEGORIZED_LABEL} {formatKoreanUnit(tmpl.amount)}
                     </button>
                   )
                 })}
@@ -364,16 +338,13 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
           {budgetWarning && (
             <div className={clsx(
               'px-3 py-2 rounded-lg text-caption',
-              budgetWarning.percent > 100
+              getBudgetWarningLevel(budgetWarning) === 'over'
                 ? 'bg-status-danger-soft text-status-danger'
-                : budgetWarning.percent >= 80
+                : getBudgetWarningLevel(budgetWarning) === 'warning'
                   ? 'bg-status-warning-soft text-status-warning'
                   : 'bg-status-success-soft text-status-success'
             )}>
-              {budgetWarning.percent > 100
-                ? `예산 ${formatKoreanUnit(budgetWarning.budgetAmount)} 중 ${formatKoreanUnit(budgetWarning.used)} 사용 (${formatKoreanUnit(Math.abs(budgetWarning.remaining))} 초과!)`
-                : `예산 ${formatKoreanUnit(budgetWarning.budgetAmount)} 중 ${formatKoreanUnit(budgetWarning.used)} 사용 (${formatKoreanUnit(budgetWarning.remaining)} 남음)`
-              }
+              {formatBudgetWarning(budgetWarning, false)}
             </div>
           )}
 
@@ -490,12 +461,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                     <Select
                       value={recurType}
                       onChange={(v) => setRecurType(v as RepeatType)}
-                      options={[
-                        { value: 'monthly', label: '매월' },
-                        { value: 'weekly', label: '매주' },
-                        { value: 'daily', label: '매일' },
-                        { value: 'yearly', label: '매년' },
-                      ]}
+                      options={RECUR_OPTIONS}
                     />
                   </div>
                   <div>

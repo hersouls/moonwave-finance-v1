@@ -35,11 +35,11 @@ const AMOUNT_PRESETS: { label: string; min: number | null; max: number | null }[
   { label: '50만+', min: 500_000, max: null },
 ]
 
-const SORT_OPTIONS: { value: TransactionSortBy; label: string }[] = [
-  { value: 'date-desc', label: '최신순' },
-  { value: 'date-asc', label: '오래된순' },
-  { value: 'amount-desc', label: '금액 높은순' },
-  { value: 'amount-asc', label: '금액 낮은순' },
+const SORT_OPTIONS: { value: TransactionSortBy; label: string; ariaLabel: string }[] = [
+  { value: 'date-desc', label: '최신순', ariaLabel: '최신순' },
+  { value: 'date-asc', label: '오래된순', ariaLabel: '오래된순' },
+  { value: 'amount-desc', label: '금액↓', ariaLabel: '금액 높은순' },
+  { value: 'amount-asc', label: '금액↑', ariaLabel: '금액 낮은순' },
 ]
 
 const DATE_RANGE_OPTIONS: { value: TransactionDateRange; label: string }[] = [
@@ -372,7 +372,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                   {onSortByChange && (
                     <Section icon={ArrowUpDown} label="정렬">
                       <SegmentedChips
-                        options={SORT_OPTIONS.map(o => ({ value: o.value, label: o.label }))}
+                        options={SORT_OPTIONS.map(o => ({ value: o.value, label: o.label, ariaLabel: o.ariaLabel }))}
                         value={sortBy}
                         onChange={(v) => onSortByChange(v as TransactionSortBy)}
                       />
@@ -665,7 +665,7 @@ function AllChip({ active, onClick }: { active: boolean; onClick: () => void }) 
 function SegmentedChips<T extends string>({
   options, value, onChange,
 }: {
-  options: { value: T; label: string }[]
+  options: { value: T; label: string; ariaLabel?: string }[]
   value: T
   onChange: (v: T) => void
 }) {
@@ -679,20 +679,21 @@ function SegmentedChips<T extends string>({
             type="button"
             onClick={() => onChange(opt.value)}
             className={clsx(
-              'relative flex-1 h-8 rounded-lg text-[12px] font-semibold transition-colors',
+              'relative flex-1 min-w-0 h-8 px-1 rounded-lg text-[11px] xs:text-[12px] font-semibold transition-colors tabular-nums',
               isActive ? 'text-heading' : 'text-sub hover:text-body'
             )}
             aria-pressed={isActive}
+            aria-label={opt.ariaLabel ?? opt.label}
           >
             {isActive && (
               <motion.span
-                layoutId={`seg-${opt.label}`}
+                layoutId={`seg-${opt.value}`}
                 className="absolute inset-0 rounded-lg bg-surface-primary ring-1 ring-base shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
                 transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                 aria-hidden
               />
             )}
-            <span className="relative z-[1]">{opt.label}</span>
+            <span className="relative z-[1] block truncate whitespace-nowrap leading-8">{opt.label}</span>
           </button>
         )
       })}
