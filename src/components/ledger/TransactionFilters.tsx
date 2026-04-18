@@ -224,7 +224,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
       <div
         role="tablist"
         aria-label="거래 타입"
-        className="relative flex items-center p-1.5 rounded-2xl bg-surface-tertiary ring-1 ring-base shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+        className="relative flex items-center p-1.5 rounded-2xl bg-[color:var(--surface-muted)] ring-1 ring-[color:var(--border-strong)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)]"
       >
         {TYPE_TABS.map(tab => {
           const isActive = activeType === tab.id
@@ -670,7 +670,7 @@ function SegmentedChips<T extends string>({
   onChange: (v: T) => void
 }) {
   return (
-    <div className="flex gap-1 p-1.5 rounded-xl bg-surface-tertiary ring-1 ring-base">
+    <div className="flex gap-1 p-1.5 rounded-xl bg-[color:var(--surface-muted)] ring-1 ring-[color:var(--border-strong)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)]">
       {options.map(opt => {
         const isActive = value === opt.value
         return (
