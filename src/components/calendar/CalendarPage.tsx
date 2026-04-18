@@ -97,30 +97,33 @@ export function CalendarPage() {
   }
 
   return (
-    <div className="p-4 lg:p-6 space-y-4" {...swipeHandlers}>
-      {/* Month Navigator */}
-      <div className="flex items-center justify-between">
-        <IconButton onClick={goToPreviousMonth} plain size="sm">
-          <ChevronLeft className="w-5 h-5" />
-        </IconButton>
-        <button
-          onClick={goToToday}
-          className="text-base font-semibold text-heading hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-        >
-          {monthLabel}
-        </button>
-        <IconButton onClick={goToNextMonth} plain size="sm">
-          <ChevronRight className="w-5 h-5" />
-        </IconButton>
-      </div>
+    <div className="p-4 lg:p-6 space-y-4">
+      {/* Swipe zone: month nav + grid only (excludes transaction list to avoid gesture conflict with card swipe-to-edit/delete) */}
+      <div className="space-y-4" {...swipeHandlers}>
+        {/* Month Navigator */}
+        <div className="flex items-center justify-between">
+          <IconButton onClick={goToPreviousMonth} plain size="sm">
+            <ChevronLeft className="w-5 h-5" />
+          </IconButton>
+          <button
+            onClick={goToToday}
+            className="text-base font-semibold text-heading hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+          >
+            {monthLabel}
+          </button>
+          <IconButton onClick={goToNextMonth} plain size="sm">
+            <ChevronRight className="w-5 h-5" />
+          </IconButton>
+        </div>
 
-      {/* Calendar Grid */}
-      <CalendarGrid
-        days={days}
-        summaries={summaries}
-        selectedDate={selectedDate}
-        onSelectDate={setSelectedDate}
-      />
+        {/* Calendar Grid */}
+        <CalendarGrid
+          days={days}
+          summaries={summaries}
+          selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
+        />
+      </div>
 
       {/* Selected Day Transactions */}
       {selectedDate && (

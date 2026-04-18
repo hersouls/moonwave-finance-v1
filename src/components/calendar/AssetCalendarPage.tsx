@@ -88,89 +88,92 @@ export function AssetCalendarPage() {
   }
 
   return (
-    <div className="p-4 lg:p-6 space-y-4" {...swipeHandlers}>
+    <div className="p-4 lg:p-6 space-y-4">
       {/* Segment Control */}
       <PageSegmentControl segments={ASSET_SEGMENTS} />
 
-      {/* Month Navigator */}
-      <div className="flex items-center justify-between">
-        <IconButton onClick={goToPreviousMonth} plain size="sm">
-          <ChevronLeft className="w-5 h-5" />
-        </IconButton>
-        <button
-          onClick={goToToday}
-          className="text-base font-semibold text-heading hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-        >
-          {monthLabel}
-        </button>
-        <IconButton onClick={goToNextMonth} plain size="sm">
-          <ChevronRight className="w-5 h-5" />
-        </IconButton>
-      </div>
-
-      {/* Monthly Summary */}
-      {monthSummary && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Card className="card-pad-sm">
-            <p className="text-caption text-sub">순자산</p>
-            <p className="text-sm font-bold text-heading tabular-nums">
-              {formatKoreanUnit(monthSummary.netWorth)}
-            </p>
-          </Card>
-          <Card className="card-pad-sm">
-            <p className="text-caption text-sub">총 자산</p>
-            <p className="text-sm font-bold text-status-success tabular-nums">
-              {formatKoreanUnit(monthSummary.totalAssets)}
-            </p>
-          </Card>
-          <Card className="card-pad-sm">
-            <p className="text-caption text-sub">총 부채</p>
-            <p className="text-sm font-bold text-status-danger tabular-nums">
-              {formatKoreanUnit(monthSummary.totalLiabilities)}
-            </p>
-          </Card>
-          <Card className="card-pad-sm">
-            <p className="text-caption text-sub">월간 변동</p>
-            <p className={clsx(
-              'text-sm font-bold tabular-nums',
-              monthSummary.monthChange >= 0
-                ? 'text-status-success'
-                : 'text-status-danger'
-            )}>
-              {monthSummary.monthChange >= 0 ? '+' : ''}{formatKoreanUnit(monthSummary.monthChange)}
-            </p>
-          </Card>
-        </div>
-      )}
-
-      {/* Calendar Grid */}
-      <div className="bg-surface-primary rounded-xl p-3">
-        {/* Weekday headers */}
-        <div className="grid grid-cols-7 mb-2">
-          {WEEKDAYS.map((d, i) => (
-            <div
-              key={d}
-              className={clsx(
-                'text-center text-caption py-1',
-                i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-disabled'
-              )}
-            >
-              {d}
-            </div>
-          ))}
+      {/* Swipe zone: month nav + grid only (excludes detail card to keep inner interactions clean) */}
+      <div className="space-y-4" {...swipeHandlers}>
+        {/* Month Navigator */}
+        <div className="flex items-center justify-between">
+          <IconButton onClick={goToPreviousMonth} plain size="sm">
+            <ChevronLeft className="w-5 h-5" />
+          </IconButton>
+          <button
+            onClick={goToToday}
+            className="text-base font-semibold text-heading hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+          >
+            {monthLabel}
+          </button>
+          <IconButton onClick={goToNextMonth} plain size="sm">
+            <ChevronRight className="w-5 h-5" />
+          </IconButton>
         </div>
 
-        {/* Calendar days */}
-        <div className="grid grid-cols-7 gap-px">
-          {days.map((day) => (
-            <AssetDayCell
-              key={day.dateStr}
-              day={day}
-              data={netWorthMap.get(day.dateStr)}
-              isSelected={selectedDate === day.dateStr}
-              onSelect={() => setSelectedDate(day.dateStr === selectedDate ? null : day.dateStr)}
-            />
-          ))}
+        {/* Monthly Summary */}
+        {monthSummary && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Card className="card-pad-sm">
+              <p className="text-caption text-sub">순자산</p>
+              <p className="text-sm font-bold text-heading tabular-nums">
+                {formatKoreanUnit(monthSummary.netWorth)}
+              </p>
+            </Card>
+            <Card className="card-pad-sm">
+              <p className="text-caption text-sub">총 자산</p>
+              <p className="text-sm font-bold text-status-success tabular-nums">
+                {formatKoreanUnit(monthSummary.totalAssets)}
+              </p>
+            </Card>
+            <Card className="card-pad-sm">
+              <p className="text-caption text-sub">총 부채</p>
+              <p className="text-sm font-bold text-status-danger tabular-nums">
+                {formatKoreanUnit(monthSummary.totalLiabilities)}
+              </p>
+            </Card>
+            <Card className="card-pad-sm">
+              <p className="text-caption text-sub">월간 변동</p>
+              <p className={clsx(
+                'text-sm font-bold tabular-nums',
+                monthSummary.monthChange >= 0
+                  ? 'text-status-success'
+                  : 'text-status-danger'
+              )}>
+                {monthSummary.monthChange >= 0 ? '+' : ''}{formatKoreanUnit(monthSummary.monthChange)}
+              </p>
+            </Card>
+          </div>
+        )}
+
+        {/* Calendar Grid */}
+        <div className="bg-surface-primary rounded-xl p-3">
+          {/* Weekday headers */}
+          <div className="grid grid-cols-7 mb-2">
+            {WEEKDAYS.map((d, i) => (
+              <div
+                key={d}
+                className={clsx(
+                  'text-center text-caption py-1',
+                  i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-disabled'
+                )}
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar days */}
+          <div className="grid grid-cols-7 gap-px">
+            {days.map((day) => (
+              <AssetDayCell
+                key={day.dateStr}
+                day={day}
+                data={netWorthMap.get(day.dateStr)}
+                isSelected={selectedDate === day.dateStr}
+                onSelect={() => setSelectedDate(day.dateStr === selectedDate ? null : day.dateStr)}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
