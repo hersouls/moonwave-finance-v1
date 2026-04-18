@@ -1,7 +1,6 @@
 import { useReducer, useEffect, useMemo, useRef, useCallback } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Dialog } from '@/components/ui/Dialog'
-import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
@@ -415,17 +414,17 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
   // ─── Step 0: Amount + Type + Member ────────────
 
   const renderStep0 = () => (
-    <div className="space-y-5">
-      {/* Quick Start — mini cards */}
+    <div className="space-y-6">
+      {/* Quick Start — mini cards (KT style) */}
       {(templates.length > 0 || activeLoans.length > 0) && (
-        <div className="space-y-3 pb-4 border-b border-base">
+        <div className="space-y-3 pb-5 border-b border-base">
           {templates.length > 0 && (
             <div>
-              <label className="flex items-center gap-1 text-caption text-sub mb-2">
-                <Zap className="w-3.5 h-3.5" />
+              <label className="flex items-center gap-1.5 text-caption text-sub mb-2.5 font-medium">
+                <Zap className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" />
                 빠른 입력
               </label>
-              <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1 -mx-1 px-1">
+              <div className="flex gap-2.5 overflow-x-auto scrollbar-none pb-1 -mx-1 px-1">
                 {templates.map((tmpl, i) => {
                   const cat = tmpl.categoryId ? categories.find(c => c.id === tmpl.categoryId) : null
                   const Icon = getCategoryIcon(cat?.icon)
@@ -436,28 +435,29 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                       type="button"
                       onClick={() => dispatch({ type: 'APPLY_TEMPLATE', data: tmpl })}
                       className={clsx(
-                        'flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border border-base',
-                        'bg-surface-secondary hover:bg-[var(--hover-bg)] el-hover',
+                        'flex-shrink-0 flex items-center gap-2.5 pl-2.5 pr-3.5 py-2.5 rounded-2xl',
+                        'bg-surface-primary ring-1 ring-base hover:ring-[color:var(--color-primary-300)]',
+                        'shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] el-hover transition-all',
                       )}
                       whileHover={shouldReduceMotion ? undefined : { y: -2 }}
                       whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
                       transition={springSnappy}
                     >
                       <div
-                        className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: `${color}18` }}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: `${color}1a` }}
                       >
-                        <Icon className="w-3.5 h-3.5" style={{ color }} />
+                        <Icon className="w-4 h-4" style={{ color }} />
                       </div>
                       <div className="flex flex-col items-start min-w-0 max-w-[120px]">
-                        <span className="text-[11px] text-sub truncate w-full">
+                        <span className="text-[11px] text-sub truncate w-full leading-tight">
                           {cat?.name || '미분류'}
                         </span>
-                        <span className="text-caption font-semibold text-heading tabular-nums truncate w-full">
+                        <span className="text-body3 font-bold text-heading tabular-nums truncate w-full leading-tight">
                           {formatKoreanUnit(tmpl.amount)}원
                         </span>
                       </div>
-                      <span className="text-[10px] text-disabled tabular-nums ml-1 flex-shrink-0">×{tmpl.count}</span>
+                      <span className="text-[10px] text-disabled tabular-nums font-semibold px-1.5 py-0.5 rounded-full bg-surface-tertiary flex-shrink-0">×{tmpl.count}</span>
                     </motion.button>
                   )
                 })}
@@ -466,11 +466,11 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
           )}
           {activeLoans.length > 0 && (
             <div>
-              <label className="flex items-center gap-1 text-caption text-sub mb-2">
-                <Landmark className="w-3.5 h-3.5" />
+              <label className="flex items-center gap-1.5 text-caption text-sub mb-2.5 font-medium">
+                <Landmark className="w-3.5 h-3.5 text-status-danger" />
                 대출이자 불러오기
               </label>
-              <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1 -mx-1 px-1">
+              <div className="flex gap-2.5 overflow-x-auto scrollbar-none pb-1 -mx-1 px-1">
                 {activeLoans.map(loan => {
                   const interest = getMonthlyInterest(loan)
                   const interestCat = categories.find(c => c.type === 'expense' && c.name.includes('대출이자'))
@@ -486,17 +486,18 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                           memo: `${loan.name} 이자 (잔액 ${loan.currentBalance.toLocaleString('ko-KR')}원 × 연 ${loan.annualRate}%)`,
                         },
                       })}
-                      className="flex-shrink-0 flex flex-col items-start gap-0.5 px-3 py-2 rounded-xl border bg-status-danger-soft min-w-0 max-w-[180px]"
-                      style={{ borderColor: 'var(--status-danger-border)' }}
+                      className="flex-shrink-0 flex flex-col items-start gap-0.5 px-3.5 py-2.5 rounded-2xl bg-status-danger-soft ring-1 min-w-0 max-w-[200px] shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all"
+                      style={{ boxShadow: 'inset 0 0 0 1px var(--status-danger-border)' }}
                       whileHover={shouldReduceMotion ? undefined : { y: -2 }}
                       whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
                       transition={springSnappy}
                     >
-                      <span className="text-[11px] text-status-danger truncate w-full">
+                      <span className="text-[11px] text-status-danger truncate w-full leading-tight">
                         {loan.name}
                       </span>
-                      <span className="text-caption font-semibold text-status-danger tabular-nums truncate w-full">
-                        {formatKoreanUnit(interest)}원<span className="text-[10px] text-status-danger/70 ml-0.5">/월</span>
+                      <span className="text-body3 font-bold text-status-danger tabular-nums truncate w-full leading-tight">
+                        {formatKoreanUnit(interest)}원
+                        <span className="text-[10px] opacity-70 ml-0.5 font-medium">/월</span>
                       </span>
                     </motion.button>
                   )
@@ -507,10 +508,14 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
         </div>
       )}
 
-      {/* Type Toggle */}
+      {/* Type Toggle — pill segment (KT style) */}
       <div>
-        <label className="block text-body3 text-body mb-2">유형</label>
-        <div className="flex gap-2" role="radiogroup" aria-label="거래 유형">
+        <label className="block text-label2 text-sub mb-2.5">유형</label>
+        <div
+          className="relative inline-flex w-full p-1 rounded-full bg-surface-tertiary"
+          role="radiogroup"
+          aria-label="거래 유형"
+        >
           {(['expense', 'income'] as const).map((t) => {
             const active = state.type === t
             return (
@@ -521,17 +526,27 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                 aria-checked={active}
                 onClick={() => dispatch({ type: 'SET_TYPE', value: t })}
                 className={clsx(
-                  'flex-1 py-2.5 px-4 rounded-lg text-body3 font-medium',
-                  active
-                    ? t === 'expense'
-                      ? 'bg-status-danger text-red-700 dark:text-red-400 ring-1 ring-red-200 dark:ring-red-800'
-                      : 'bg-status-success text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-800'
-                    : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]',
+                  'relative flex-1 py-3 px-4 rounded-full text-body3 font-semibold z-10 transition-colors',
+                  active ? 'text-white' : 'text-sub hover:text-heading',
                 )}
                 whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
-                animate={{ scale: active ? 1.015 : 1 }}
                 transition={springSnappy}
               >
+                {active && (
+                  <motion.span
+                    layoutId="wizard-type-pill"
+                    className="absolute inset-0 rounded-full -z-10"
+                    style={{
+                      backgroundColor: t === 'expense'
+                        ? 'var(--value-negative)'
+                        : 'var(--value-positive)',
+                      boxShadow: t === 'expense'
+                        ? '0 4px 14px color-mix(in srgb, var(--value-negative) 30%, transparent)'
+                        : '0 4px 14px color-mix(in srgb, var(--value-positive) 30%, transparent)',
+                    }}
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
+                )}
                 {t === 'expense' ? '지출' : '수입'}
               </motion.button>
             )
@@ -539,32 +554,41 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
         </div>
       </div>
 
-      {/* Hero Amount Input */}
+      {/* Hero Amount Input — KT-style display */}
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <label htmlFor="wizard-amount-input" className="text-body3 text-body">금액</label>
+        <div className="flex items-center justify-between mb-2.5">
+          <label htmlFor="wizard-amount-input" className="text-label2 text-sub">금액</label>
           {numAmount > 0 && (
-            <button
+            <motion.button
               type="button"
               onClick={() => dispatch({ type: 'CLEAR_AMOUNT' })}
               className="inline-flex items-center gap-1 text-caption text-sub hover:text-heading transition-colors"
               aria-label="금액 지우기"
+              whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
             >
               <Eraser className="w-3.5 h-3.5" />
               지우기
-            </button>
+            </motion.button>
           )}
         </div>
         <motion.div
-          className="wizard-amount-wrap rounded-xl border-2 border-base focus-within:border-primary-400 dark:focus-within:border-primary-400 focus-within:wizard-amount-glow"
+          className={clsx(
+            'rounded-2xl px-5 py-6 transition-colors',
+            numAmount > 0
+              ? 'bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/25 ring-1 ring-[color:var(--color-primary-300)]/60'
+              : 'bg-surface-tertiary ring-1 ring-base',
+          )}
           animate={{
             boxShadow: numAmount > 0
-              ? '0 8px 32px var(--glow-primary)'
+              ? '0 12px 40px color-mix(in srgb, var(--color-primary-500) 18%, transparent)'
               : '0 0 0 0 transparent',
           }}
           transition={{ duration: durations.base, ease: easeOutExpo }}
         >
-          <div className="relative py-4 px-10 sm:px-12">
+          <p className="text-caption text-sub mb-1.5 font-medium">
+            {state.type === 'expense' ? '지출 금액' : '수입 금액'}
+          </p>
+          <div className="relative">
             <input
               id="wizard-amount-input"
               ref={amountRef}
@@ -574,65 +598,76 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               onChange={handleAmountChange}
               placeholder="0"
               aria-label="금액"
-              className="w-full bg-transparent text-center tabular-nums text-heading placeholder-[var(--text-disabled)] outline-none font-bold"
+              className={clsx(
+                'w-full bg-transparent tabular-nums outline-none font-extrabold pr-10',
+                numAmount > 0 ? 'text-heading' : 'text-disabled',
+              )}
               style={{
-                fontSize: 'clamp(24px, 6vw, 40px)',
-                letterSpacing: '-0.015em',
-                lineHeight: 1.2,
+                fontSize: 'clamp(28px, 8vw, 42px)',
+                letterSpacing: '-0.025em',
+                lineHeight: 1.15,
               }}
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-base text-disabled font-medium">원</span>
-          </div>
-        </motion.div>
-        <AnimatePresence mode="wait">
-          {numAmount > 0 && (
-            <motion.p
-              key="preview"
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: durations.fast }}
-              className="mt-1.5 text-center text-caption text-disabled tabular-nums"
+            <span
+              className={clsx(
+                'absolute right-0 bottom-1 font-semibold tabular-nums',
+                numAmount > 0 ? 'text-heading' : 'text-disabled',
+              )}
+              style={{ fontSize: 'clamp(18px, 4.5vw, 24px)' }}
             >
-              {formatKoreanUnit(numAmount)}원
-            </motion.p>
-          )}
-        </AnimatePresence>
+              원
+            </span>
+          </div>
+          <AnimatePresence mode="wait">
+            {numAmount > 0 && (
+              <motion.p
+                key="preview"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: durations.fast }}
+                className="mt-2 text-caption text-[color:var(--color-primary-700)] dark:text-[color:var(--color-primary-300)] tabular-nums font-medium"
+              >
+                {formatKoreanUnit(numAmount)}원
+              </motion.p>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
-        {/* Amount quick-add chips */}
+        {/* Amount quick-add chips — pill form */}
         <div className="mt-3 grid grid-cols-4 gap-2" role="group" aria-label="빠른 금액 추가">
           {AMOUNT_PRESETS.map((p) => (
             <motion.button
               key={p.delta}
               type="button"
               onClick={() => dispatch({ type: 'ADD_AMOUNT', delta: p.delta })}
-              className="py-2 px-1 rounded-lg text-caption font-medium bg-surface-tertiary text-body hover:bg-[var(--hover-bg)] el-hover inline-flex items-center justify-center gap-0.5"
+              className="py-2.5 px-1 rounded-full text-caption font-semibold bg-surface-tertiary text-heading hover:bg-[var(--hover-bg)] ring-1 ring-base hover:ring-[color:var(--color-primary-300)] el-hover inline-flex items-center justify-center gap-0.5 transition-all"
               whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
               transition={springSnappy}
               aria-label={`금액 ${p.label.replace('+', '')} 추가`}
             >
-              <Plus className="w-3 h-3 opacity-70" />
+              <Plus className="w-3 h-3 opacity-60" />
               {p.label.replace('+', '')}
             </motion.button>
           ))}
         </div>
       </div>
 
-      {/* Member */}
+      {/* Member — pill chips */}
       {members.length > 0 && (
         <div>
-          <label className="block text-body3 text-body mb-2">구성원</label>
-          <div className="flex gap-2" role="group" aria-label="구성원 선택">
+          <label className="block text-label2 text-sub mb-2.5">구성원</label>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="구성원 선택">
             {members.length <= 4 ? (
               <>
                 <motion.button
                   type="button"
                   onClick={() => dispatch({ type: 'SET_FIELD', field: 'memberId', value: '' })}
                   className={clsx(
-                    'px-3 py-2 rounded-lg text-body3',
+                    'px-4 py-2.5 rounded-full text-body3 font-medium ring-1',
                     state.memberId === ''
-                      ? 'bg-[var(--surface-tertiary)] text-heading ring-1 ring-[var(--border-default)]'
-                      : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]',
+                      ? 'bg-surface-primary text-heading ring-[color:var(--border-strong)] shadow-sm'
+                      : 'bg-surface-tertiary text-sub ring-transparent hover:bg-[var(--hover-bg)]',
                   )}
                   whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
                 >
@@ -644,14 +679,16 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                     type="button"
                     onClick={() => dispatch({ type: 'SET_FIELD', field: 'memberId', value: m.id! })}
                     className={clsx(
-                      'flex-1 py-2 px-4 rounded-lg text-body3',
+                      'flex-1 py-2.5 px-4 rounded-full text-body3 font-medium ring-1 min-w-[68px]',
                       state.memberId === m.id
-                        ? 'text-white ring-1'
-                        : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]',
+                        ? 'text-white ring-transparent'
+                        : 'bg-surface-tertiary text-sub ring-transparent hover:bg-[var(--hover-bg)]',
                     )}
-                    style={state.memberId === m.id ? { backgroundColor: m.color, boxShadow: `0 0 0 1px ${m.color}` } : undefined}
+                    style={state.memberId === m.id
+                      ? { backgroundColor: m.color, boxShadow: `0 4px 14px color-mix(in srgb, ${m.color} 30%, transparent)` }
+                      : undefined}
                     whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
-                    animate={{ scale: state.memberId === m.id ? 1.02 : 1 }}
+                    animate={{ scale: state.memberId === m.id ? 1.03 : 1 }}
                     transition={springSnappy}
                   >
                     {m.name}
@@ -675,13 +712,16 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
   // ─── Step 1: Category ──────────────────────────
 
   const renderStep1 = () => (
-    <div className="space-y-4">
-      <label className="block text-body3 text-body">
-        {state.type === 'expense' ? '지출' : '수입'} 카테고리
-      </label>
+    <div className="space-y-5">
+      <div>
+        <label className="block text-label2 text-sub mb-1">
+          {state.type === 'expense' ? '지출' : '수입'} 카테고리
+        </label>
+        <p className="text-caption text-disabled">아이콘을 선택하세요</p>
+      </div>
 
       <motion.div
-        className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-2.5 max-h-[280px] overflow-y-auto scrollbar-none"
+        className="grid grid-cols-3 xs:grid-cols-4 sm:grid-cols-5 gap-2.5 sm:gap-3 max-h-[320px] overflow-y-auto scrollbar-none -mx-1 px-1 py-1"
         role="radiogroup"
         aria-label="카테고리 선택"
         variants={gridStagger}
@@ -700,28 +740,33 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               variants={gridItem}
               onClick={() => dispatch({ type: 'SET_FIELD', field: 'categoryId', value: isSelected ? '' : cat.id! })}
               whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
-              whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+              whileHover={shouldReduceMotion ? undefined : { y: -3 }}
               animate={{ scale: isSelected ? 1.04 : 1 }}
               transition={springSnappy}
               className={clsx(
-                'flex flex-col items-center gap-1.5 p-2.5 sm:p-3 rounded-xl border',
-                isSelected ? 'border-transparent' : 'bg-surface-secondary border-base hover:border-[var(--border-default)]',
+                'flex flex-col items-center justify-center gap-2 px-2 py-3.5 sm:py-4 rounded-2xl ring-1 transition-all min-h-[88px]',
+                isSelected ? 'ring-transparent' : 'bg-surface-primary ring-base hover:ring-[color:var(--border-strong)]',
               )}
               style={isSelected ? {
-                backgroundColor: `${cat.color}14`,
-                borderColor: `${cat.color}40`,
-                boxShadow: `0 0 16px -4px ${cat.color}30`,
-              } : undefined}
+                backgroundColor: cat.color,
+                boxShadow: `0 8px 24px -4px color-mix(in srgb, ${cat.color} 40%, transparent), inset 0 1px 0 0 rgba(255,255,255,0.15)`,
+              } : { boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
             >
               <div
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: isSelected ? `${cat.color}20` : `${cat.color}12` }}
+                className={clsx(
+                  'w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center',
+                  isSelected && 'bg-white/20',
+                )}
+                style={!isSelected ? { backgroundColor: `${cat.color}15` } : undefined}
               >
-                <Icon className="w-4.5 h-4.5 sm:w-5 sm:h-5" style={{ color: cat.color }} />
+                <Icon
+                  className="w-5 h-5 sm:w-5 sm:h-5"
+                  style={{ color: isSelected ? '#ffffff' : cat.color }}
+                />
               </div>
               <span className={clsx(
-                'text-[11px] sm:text-caption truncate max-w-full font-medium',
-                isSelected ? 'text-heading' : 'text-sub',
+                'text-caption truncate max-w-full font-semibold leading-tight',
+                isSelected ? 'text-white' : 'text-heading',
               )}>
                 {cat.name}
               </span>
@@ -737,19 +782,20 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
           variants={gridItem}
           onClick={() => dispatch({ type: 'SET_FIELD', field: 'categoryId', value: '' })}
           whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
-          whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+          whileHover={shouldReduceMotion ? undefined : { y: -3 }}
           transition={springSnappy}
           className={clsx(
-            'flex flex-col items-center gap-1.5 p-2.5 sm:p-3 rounded-xl border',
+            'flex flex-col items-center justify-center gap-2 px-2 py-3.5 sm:py-4 rounded-2xl ring-1 transition-all min-h-[88px]',
             state.categoryId === ''
-              ? 'bg-surface-tertiary border-[var(--border-default)]'
-              : 'bg-surface-secondary border-base',
+              ? 'bg-surface-tertiary ring-[color:var(--border-strong)]'
+              : 'bg-surface-primary ring-base',
           )}
+          style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
         >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center bg-surface-tertiary">
-            <MoreHorizontal className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-disabled" />
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center bg-surface-tertiary">
+            <MoreHorizontal className="w-5 h-5 text-disabled" />
           </div>
-          <span className="text-[11px] sm:text-caption truncate max-w-full font-medium text-sub">
+          <span className="text-caption truncate max-w-full font-semibold text-sub leading-tight">
             미분류
           </span>
         </motion.button>
@@ -788,11 +834,11 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
   const yesterday = getYesterdayString()
 
   const renderStep2 = () => (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Date */}
       <div>
-        <label className="block text-body3 text-body mb-2">날짜</label>
-        <div className="flex gap-2 mb-2 flex-wrap">
+        <label className="block text-label2 text-sub mb-2.5">거래일</label>
+        <div className="flex gap-2 mb-3 flex-wrap">
           {[
             { label: '오늘', value: today },
             { label: '어제', value: yesterday },
@@ -804,10 +850,10 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
               transition={springSnappy}
               className={clsx(
-                'px-3 py-1.5 rounded-lg text-caption font-medium',
+                'px-4 py-2 rounded-full text-caption font-semibold ring-1',
                 state.date === chip.value
-                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 ring-1 ring-primary-300 dark:ring-primary-700'
-                  : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]',
+                  ? 'bg-[color:var(--color-primary-600)] text-white ring-transparent shadow-[0_4px_14px_color-mix(in_srgb,var(--color-primary-500)_28%,transparent)]'
+                  : 'bg-surface-tertiary text-sub ring-transparent hover:bg-[var(--hover-bg)]',
               )}
             >
               {chip.label}
@@ -820,16 +866,18 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
           onClick={() => dispatch({ type: 'SET_FIELD', field: 'showCalendar', value: !state.showCalendar })}
           whileTap={shouldReduceMotion ? undefined : { scale: 0.99 }}
           className={clsx(
-            'w-full flex items-center justify-between gap-2 px-4 py-3 rounded-lg border el-hover',
+            'w-full flex items-center justify-between gap-2 px-4 py-3.5 rounded-2xl ring-1 transition-all',
             state.showCalendar
-              ? 'border-[color:var(--color-primary-400)] bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20'
-              : 'border-base bg-surface-secondary hover:bg-[var(--hover-bg)]',
+              ? 'ring-[color:var(--color-primary-400)] bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20'
+              : 'ring-base bg-surface-primary hover:bg-[var(--hover-bg)] shadow-[0_1px_3px_rgba(0,0,0,0.04)]',
           )}
           aria-expanded={state.showCalendar}
         >
-          <span className="inline-flex items-center gap-2 min-w-0">
-            <CalendarIcon className="w-4 h-4 text-sub flex-shrink-0" />
-            <span className="text-body3 text-heading tabular-nums truncate">
+          <span className="inline-flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/30 flex items-center justify-center flex-shrink-0">
+              <CalendarIcon className="w-4 h-4 text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]" />
+            </div>
+            <span className="text-body3 text-heading font-semibold tabular-nums truncate">
               {formatDate(state.date)}
             </span>
           </span>
@@ -864,7 +912,9 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
 
       {/* Payment Method */}
       <div>
-        <label className="block text-body3 text-body mb-2">거래수단 (선택)</label>
+        <label className="block text-label2 text-sub mb-2.5">
+          거래수단 <span className="text-disabled font-normal">(선택)</span>
+        </label>
         <div className="grid grid-cols-3 gap-2">
           {PAYMENT_METHOD_OPTIONS.map(opt => (
             <motion.button
@@ -874,10 +924,10 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
               transition={springSnappy}
               className={clsx(
-                'py-2 px-2 rounded-lg text-caption text-center',
+                'py-2.5 px-2 rounded-full text-caption font-semibold text-center ring-1',
                 state.paymentMethod === opt.value
-                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 ring-1 ring-primary-300 dark:ring-primary-700'
-                  : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]',
+                  ? 'bg-[color:var(--color-primary-600)] text-white ring-transparent shadow-[0_4px_14px_color-mix(in_srgb,var(--color-primary-500)_28%,transparent)]'
+                  : 'bg-surface-tertiary text-sub ring-transparent hover:bg-[var(--hover-bg)]',
               )}
             >
               {opt.label}
@@ -944,7 +994,9 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
 
       {/* Memo */}
       <div>
-        <label htmlFor="wizard-memo" className="block text-body3 text-body mb-1.5">메모 (선택)</label>
+        <label htmlFor="wizard-memo" className="block text-label2 text-sub mb-2.5">
+          메모 <span className="text-disabled font-normal">(선택)</span>
+        </label>
         <input
           id="wizard-memo"
           type="text"
@@ -956,15 +1008,16 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
       </div>
 
       {/* Recurring */}
-      <div>
-        <label className="flex items-center gap-2 cursor-pointer">
+      <div className="rounded-2xl bg-surface-primary ring-1 ring-base px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <label className="flex items-center gap-3 cursor-pointer select-none">
           <input
             type="checkbox"
             checked={state.isRecurring}
             onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'isRecurring', value: e.target.checked })}
             className="check"
           />
-          <span className="text-body3 text-body">반복 거래</span>
+          <span className="text-body3 text-heading font-semibold">반복 거래</span>
+          <span className="ml-auto text-caption text-disabled">매주/매월 자동 기록</span>
         </label>
       </div>
       <AnimatePresence>
@@ -1076,72 +1129,77 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
     }
 
     const isExpense = state.type === 'expense'
+    const dateLabel = formatDate(state.date)
 
     return (
-      <div className="space-y-4">
-        <div className="rounded-2xl overflow-hidden el-card-elevated">
-          {/* Hero Amount — variant colored */}
-          <div
+      <div className="space-y-5">
+        {/* Hero — KT-style left-aligned display */}
+        <div className="rounded-3xl bg-surface-primary ring-1 ring-base shadow-[0_4px_16px_rgba(0,0,0,0.04)] px-5 sm:px-6 py-6">
+          <p className="text-label2 text-sub mb-1.5">
+            {dateLabel}  {isExpense ? '지출 금액' : '수입 금액'}
+          </p>
+          <motion.p
+            key={state.amount}
+            initial={shouldReduceMotion ? undefined : { y: 6, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={springSnappy}
             className={clsx(
-              'relative overflow-hidden py-6 px-4 text-center noise-overlay',
-              isExpense ? 'hero-gradient-warning' : 'hero-gradient-success',
+              'tabular-nums break-all font-extrabold',
+              isExpense ? 'text-value-negative' : 'text-value-positive',
             )}
+            style={{
+              fontSize: 'clamp(28px, 8vw, 42px)',
+              letterSpacing: '-0.025em',
+              lineHeight: 1.15,
+            }}
           >
-            <div className="relative z-10">
-              <p className="text-white/70 text-caption mb-1">
-                {isExpense ? '지출' : '수입'}
-              </p>
-              <motion.p
-                key={state.amount}
-                initial={shouldReduceMotion ? undefined : { scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={springSnappy}
-                className="text-white tabular-nums tracking-tight break-all"
-                style={{
-                  fontSize: 'clamp(22px, 6vw, 36px)',
-                  lineHeight: 1.15,
-                  fontWeight: 700,
-                  letterSpacing: '-0.015em',
-                }}
-              >
-                {state.amount || '0'}
-                <span className="text-base text-white/60 ml-1">원</span>
-              </motion.p>
-            </div>
-          </div>
+            {state.amount || '0'}
+            <span
+              className="ml-1 font-semibold opacity-80"
+              style={{ fontSize: 'clamp(18px, 4.5vw, 24px)' }}
+            >
+              원
+            </span>
+          </motion.p>
+        </div>
 
-          {/* Detail Rows */}
-          <div className="divide-y divide-[var(--border-default)] bg-surface-primary">
-            {rows.map((row) => (
-              <div key={row.label} className="flex items-start justify-between gap-3 px-4 py-3">
-                <span className="text-caption text-sub flex-shrink-0 pt-0.5">{row.label}</span>
-                <div className="flex items-start gap-2 min-w-0 flex-1 justify-end">
-                  {row.color && (
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: row.color }} />
-                  )}
-                  <span className="text-body3 text-heading break-words text-right min-w-0 flex-1" title={row.value}>
-                    {row.value}
-                  </span>
-                  <motion.button
-                    type="button"
-                    onClick={() => dispatch({ type: 'GO_TO_STEP', step: row.step, direction: 'backward' })}
-                    className="p-1 rounded hover:bg-[var(--hover-bg)] flex-shrink-0 mt-0.5"
-                    aria-label={`${row.label} 수정`}
-                    whileHover={shouldReduceMotion ? undefined : { scale: 1.15 }}
-                    whileTap={shouldReduceMotion ? undefined : { scale: 0.92 }}
-                  >
-                    <Pencil className="w-3.5 h-3.5 text-disabled hover:text-heading" />
-                  </motion.button>
-                </div>
+        {/* Detail Rows — KT-style dashed divider + label/value */}
+        <div className="rounded-3xl bg-surface-primary ring-1 ring-base shadow-[0_4px_16px_rgba(0,0,0,0.04)] px-5 sm:px-6 py-2">
+          {rows.map((row, i) => (
+            <div
+              key={row.label}
+              className={clsx(
+                'flex items-start justify-between gap-3 py-3.5',
+                i > 0 && 'border-t border-dashed border-[color:var(--border-default)]',
+              )}
+            >
+              <span className="text-body3 text-sub flex-shrink-0 font-medium pt-0.5">{row.label}</span>
+              <div className="flex items-start gap-2 min-w-0 flex-1 justify-end">
+                {row.color && (
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5 ring-2 ring-white dark:ring-surface-secondary" style={{ backgroundColor: row.color }} />
+                )}
+                <span className="text-body3 text-heading font-semibold break-words text-right min-w-0 flex-1" title={row.value}>
+                  {row.value}
+                </span>
+                <motion.button
+                  type="button"
+                  onClick={() => dispatch({ type: 'GO_TO_STEP', step: row.step, direction: 'backward' })}
+                  className="p-1.5 rounded-lg hover:bg-[var(--hover-bg)] flex-shrink-0 -mt-0.5 -mr-1"
+                  aria-label={`${row.label} 수정`}
+                  whileHover={shouldReduceMotion ? undefined : { scale: 1.12 }}
+                  whileTap={shouldReduceMotion ? undefined : { scale: 0.92 }}
+                >
+                  <Pencil className="w-3.5 h-3.5 text-disabled hover:text-heading" />
+                </motion.button>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
 
         {/* Budget Warning */}
         {budgetWarning && (
           <div className={clsx(
-            'px-3 py-2.5 rounded-lg text-caption',
+            'px-4 py-3 rounded-2xl text-caption font-medium',
             budgetWarning.percent > 100
               ? 'bg-status-danger-soft text-status-danger'
               : budgetWarning.percent >= 80
@@ -1202,50 +1260,69 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
         </AnimatePresence>
       </div>
 
-      {/* Footer */}
-      <div className="px-4 sm:px-8 py-3 sm:py-5 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] border-t border-base bg-surface-primary">
+      {/* Footer — KT-style large pill buttons */}
+      <div className="px-4 sm:px-8 py-3 sm:py-4 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] border-t border-base bg-surface-primary">
         <div className="flex items-center justify-between gap-3">
           {state.currentStep > 0 ? (
-            <Button
-              variant="ghost"
-              size="md"
+            <motion.button
+              type="button"
               onClick={() => dispatch({ type: 'PREV_STEP' })}
               disabled={state.isSubmitting || state.isSuccess}
+              whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
+              className="inline-flex items-center gap-1 px-5 py-3 rounded-full text-body3 font-semibold text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors disabled:opacity-40"
             >
               <ChevronLeft className="w-4 h-4 -ml-1" />
               이전
-            </Button>
+            </motion.button>
           ) : (
-            <Button variant="secondary" size="md" onClick={onClose}>
+            <motion.button
+              type="button"
+              onClick={onClose}
+              whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
+              className="px-5 py-3 rounded-full text-body3 font-semibold text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
+            >
               취소
-            </Button>
+            </motion.button>
           )}
 
           {state.currentStep < 3 ? (
-            <Button
-              variant="primary"
-              size="md"
+            <motion.button
+              type="button"
               onClick={() => dispatch({ type: 'NEXT_STEP' })}
               disabled={!canProceed}
+              whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
+              className={clsx(
+                'inline-flex items-center gap-1 px-7 py-3.5 rounded-full text-body3 font-bold text-white transition-all min-w-[120px] justify-center',
+                canProceed
+                  ? 'bg-[color:var(--color-primary-600)] hover:bg-[color:var(--color-primary-700)] shadow-[0_4px_16px_color-mix(in_srgb,var(--color-primary-500)_30%,transparent)] hover:shadow-[0_8px_24px_color-mix(in_srgb,var(--color-primary-500)_40%,transparent)]'
+                  : 'bg-surface-muted text-disabled cursor-not-allowed',
+              )}
             >
               다음
               <ChevronRight className="w-4 h-4 -mr-1" />
-            </Button>
+            </motion.button>
           ) : (
-            <Button
-              variant="primary"
-              size="md"
+            <motion.button
+              type="button"
               onClick={handleSubmit}
               disabled={state.isSubmitting || state.isSuccess || numAmount <= 0}
-              className={clsx(state.isSuccess && 'el-success')}
+              whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
+              animate={state.isSuccess ? { scale: [1, 1.05, 1] } : undefined}
+              className={clsx(
+                'inline-flex items-center gap-1.5 px-7 py-3.5 rounded-full text-body3 font-bold text-white transition-all min-w-[132px] justify-center',
+                state.isSuccess
+                  ? 'bg-[color:var(--value-positive)]'
+                  : 'bg-[color:var(--color-primary-600)] hover:bg-[color:var(--color-primary-700)] shadow-[0_4px_16px_color-mix(in_srgb,var(--color-primary-500)_30%,transparent)] hover:shadow-[0_8px_24px_color-mix(in_srgb,var(--color-primary-500)_40%,transparent)]',
+                (state.isSubmitting || numAmount <= 0) && 'opacity-60 cursor-not-allowed',
+              )}
             >
               {state.isSuccess ? (
-                <span className="inline-flex items-center gap-1">
+                <>
                   <Check className="w-4 h-4" />
                   저장됨
-                </span>
+                </>
               ) : state.isSubmitting ? '저장 중...' : '기록하기'}
-            </Button>
+            </motion.button>
           )}
         </div>
       </div>

@@ -6,13 +6,13 @@ import { useCalendar } from '@/hooks/useCalendar'
 import { springSnappy } from '@/lib/motionConfig'
 
 interface MiniCalendarProps {
-  /** Currently selected date (yyyy-MM-dd). Undefined = today. */
+  /** Currently selected date (yyyy-MM-dd). */
   value: string
   /** Fired when user picks a date. */
   onChange: (dateStr: string) => void
-  /** Optional: hide cells outside current month (default false, shows dim) */
+  /** Hide cells outside current month (default false → dim). */
   hideOtherMonths?: boolean
-  /** Optional: restrict dates (e.g. disable future). */
+  /** Restrict dates (yyyy-MM-dd). */
   maxDate?: string
   minDate?: string
   className?: string
@@ -21,8 +21,8 @@ interface MiniCalendarProps {
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
 
 /**
- * Compact calendar for wizard/picker use-cases.
- * Month header + 7×6 grid. Tap a cell to emit yyyy-MM-dd.
+ * Premium popover calendar for picker use-cases.
+ * Glass-card with dashed divider, rounded-full selected dot.
  */
 export function MiniCalendar({
   value,
@@ -33,11 +33,8 @@ export function MiniCalendar({
   className,
 }: MiniCalendarProps) {
   const shouldReduceMotion = useReducedMotion()
-  // Initialize calendar to the month of the value (or today)
   const initialMonth = useMemo(() => {
-    if (value && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      return value.slice(0, 7)
-    }
+    if (value && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value.slice(0, 7)
     return undefined
   }, [value])
 
@@ -46,46 +43,52 @@ export function MiniCalendar({
   return (
     <div
       className={clsx(
-        'rounded-xl border border-base bg-surface-primary p-3',
+        'rounded-3xl bg-surface-primary ring-1 ring-base shadow-[0_4px_16px_rgba(0,0,0,0.04)] p-4 sm:p-5',
         className,
       )}
       role="group"
       aria-label="날짜 선택 달력"
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <button
+      <div className="flex items-center justify-between mb-4">
+        <motion.button
           type="button"
           onClick={goToPreviousMonth}
           aria-label="이전 달"
-          className="touch-target-icon rounded-lg text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
+          className="w-9 h-9 rounded-full flex items-center justify-center text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
+          whileTap={shouldReduceMotion ? undefined : { scale: 0.9 }}
         >
           <ChevronLeft className="w-4 h-4" />
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           type="button"
           onClick={goToToday}
-          className="text-body3 font-semibold text-heading px-3 py-1 rounded-lg hover:bg-[var(--hover-bg)] transition-colors tabular-nums"
+          className="text-body3-semi text-heading px-4 py-1.5 rounded-full hover:bg-[var(--hover-bg)] transition-colors tabular-nums"
+          whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
         >
           {monthLabel}
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           type="button"
           onClick={goToNextMonth}
           aria-label="다음 달"
-          className="touch-target-icon rounded-lg text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
+          className="w-9 h-9 rounded-full flex items-center justify-center text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
+          whileTap={shouldReduceMotion ? undefined : { scale: 0.9 }}
         >
           <ChevronRight className="w-4 h-4" />
-        </button>
+        </motion.button>
       </div>
 
+      {/* Dashed divider */}
+      <div className="border-t border-dashed border-[color:var(--border-default)] mb-3" />
+
       {/* Weekday labels */}
-      <div className="grid grid-cols-7 gap-0.5 mb-1">
+      <div className="grid grid-cols-7 gap-0.5 mb-1.5">
         {WEEKDAY_LABELS.map((label, i) => (
           <div
             key={label}
             className={clsx(
-              'text-center text-[11px] py-1 font-medium',
+              'text-center text-[11px] py-1.5 font-semibold',
               i === 0 && 'text-value-negative',
               i === 6 && 'text-[color:var(--color-primary-500)] dark:text-[color:var(--color-primary-400)]',
               i !== 0 && i !== 6 && 'text-sub',
@@ -115,21 +118,24 @@ export function MiniCalendar({
               aria-disabled={isDisabled || undefined}
               disabled={isDisabled}
               onClick={() => !isDisabled && onChange(d.dateStr)}
-              whileTap={shouldReduceMotion || isDisabled ? undefined : { scale: 0.9 }}
+              whileTap={shouldReduceMotion || isDisabled ? undefined : { scale: 0.88 }}
               transition={springSnappy}
               className={clsx(
-                'relative aspect-square flex items-center justify-center rounded-lg text-caption tabular-nums font-medium transition-colors',
-                isSelected && 'bg-primary-500 text-white el-strong',
-                !isSelected && d.isToday && 'ring-1 ring-primary-500 text-primary-700 dark:text-primary-300',
-                !isSelected && !d.isToday && !baseDim && weekday === 0 && 'text-value-negative',
-                !isSelected && !d.isToday && !baseDim && weekday === 6 && 'text-[color:var(--color-primary-500)] dark:text-[color:var(--color-primary-400)]',
-                !isSelected && !d.isToday && !baseDim && weekday !== 0 && weekday !== 6 && 'text-heading',
-                !isSelected && baseDim && 'text-disabled/60',
-                !isSelected && 'hover:bg-[var(--hover-bg)]',
-                isDisabled && 'opacity-40 cursor-not-allowed',
+                'relative aspect-square flex items-center justify-center rounded-full text-caption tabular-nums font-semibold transition-all',
+                'min-h-[38px]',
+                isSelected && 'bg-[color:var(--color-primary-600)] text-white shadow-[0_6px_18px_color-mix(in_srgb,var(--color-primary-500)_40%,transparent)] scale-[1.02]',
+                !isSelected && d.isToday && 'bg-[color:var(--color-primary-50)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/30 dark:text-[color:var(--color-primary-300)]',
+                !isSelected && !d.isToday && !baseDim && weekday === 0 && 'text-value-negative hover:bg-[var(--hover-bg)]',
+                !isSelected && !d.isToday && !baseDim && weekday === 6 && 'text-[color:var(--color-primary-500)] dark:text-[color:var(--color-primary-400)] hover:bg-[var(--hover-bg)]',
+                !isSelected && !d.isToday && !baseDim && weekday !== 0 && weekday !== 6 && 'text-heading hover:bg-[var(--hover-bg)]',
+                !isSelected && baseDim && 'text-disabled/50',
+                isDisabled && 'opacity-30 cursor-not-allowed',
               )}
             >
               {d.day}
+              {!isSelected && d.isToday && (
+                <span className="absolute bottom-1 w-1 h-1 rounded-full bg-[color:var(--color-primary-500)] dark:bg-[color:var(--color-primary-400)]" aria-hidden="true" />
+              )}
             </motion.button>
           )
         })}
