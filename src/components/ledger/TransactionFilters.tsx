@@ -366,9 +366,9 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                 'shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]',
               )}
             >
-              {/* Sort + Date range row */}
+              {/* Sort + Date range row — lg 이상에서만 2열 (그 이하는 각 섹션 전폭 사용) */}
               {(onSortByChange || onDateRangeChange) && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {onSortByChange && (
                     <Section icon={ArrowUpDown} label="정렬">
                       <SegmentedChips
@@ -551,19 +551,23 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                       })}
                     </ChipScroller>
 
-                    {/* Manual inputs */}
-                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2.5 sm:gap-3">
-                      <AmountField
-                        label="최소"
-                        value={minAmount}
-                        onChange={(v) => onAmountRangeChange(v, maxAmount ?? null)}
-                      />
-                      <span className="text-body3 text-sub font-semibold select-none" aria-hidden="true">~</span>
-                      <AmountField
-                        label="최대"
-                        value={maxAmount}
-                        onChange={(v) => onAmountRangeChange(minAmount ?? null, v)}
-                      />
+                    {/* Manual inputs — min-w-0 로 input 자체 최소폭 해제 + gap 확대 */}
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 sm:gap-4">
+                      <div className="min-w-0">
+                        <AmountField
+                          label="최소"
+                          value={minAmount}
+                          onChange={(v) => onAmountRangeChange(v, maxAmount ?? null)}
+                        />
+                      </div>
+                      <span className="text-body3 text-sub font-bold select-none px-0.5" aria-hidden="true">~</span>
+                      <div className="min-w-0">
+                        <AmountField
+                          label="최대"
+                          value={maxAmount}
+                          onChange={(v) => onAmountRangeChange(minAmount ?? null, v)}
+                        />
+                      </div>
                     </div>
                     {(minAmount !== null || maxAmount !== null) && (
                       <p className="text-[11px] text-sub tabular-nums">
