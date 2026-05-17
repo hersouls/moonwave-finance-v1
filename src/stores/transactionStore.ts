@@ -3,7 +3,6 @@ import { devtools } from 'zustand/middleware'
 import type { Transaction, TransactionCategory, TransactionType, RepeatPattern, PaymentMethod, PaymentMethodItem, SubscriptionCategoryType } from '@/lib/types'
 import * as db from '@/services/database'
 import { processRecurringTransactions } from '@/services/recurringEngine'
-import { processSubscriptionTransactions } from '@/services/subscriptionEngine'
 import { useUndoStore } from './undoStore'
 import { useToastStore } from './toastStore'
 import { getCurrentMonthString } from '@/lib/dateUtils'
@@ -93,13 +92,15 @@ export const useTransactionStore = create<TransactionState>()(
             db.getAllPaymentMethodItems(),
           ])
           set({ transactions, categories, paymentMethodItems, isLoading: false })
-          // Process recurring + subscription transactions silently in the background
-          Promise.all([
-            processRecurringTransactions(),
-            processSubscriptionTransactions(),
-          ]).then(([recurCreated, subCreated]) => {
-            if (recurCreated > 0 || subCreated > 0) get().loadTransactions()
-          }).catch(() => {})
+          // Process recurring transactions silently in the background.
+          // Subscription auto-generation is intentionally disabled: SubscriptionPage
+          // now detects subscriptions from the existing ledger (subscriptionDetection.ts),
+          // so we no longer push synthetic expense rows from db.subscriptions.
+          processRecurringTransactions()
+            .then((recurCreated) => {
+              if (recurCreated > 0) get().loadTransactions()
+            })
+            .catch(() => {})
         } catch (err) {
           console.error('Failed to load ledger data:', err)
           useToastStore.getState().addToast('거래 데이터를 불러오는데 실패했습니다.', 'error')

@@ -211,10 +211,26 @@ export function detectSubscriptions(
     if (group.length < minCount) continue
     const txns = [...group].sort((a, b) => a.date.localeCompare(b.date))
 
-    // 2) Compute interval stats
+    // 1.5) Cluster transactions by date — multiple same-day charges from the
+    //      same merchant (e.g., several insurance policies billed together)
+    //      count as ONE billing cycle. Without this, "next payment" would
+    //      show the per-charge average instead of the actual per-cycle sum
+    //      the user will see leave their account.
+    type Cluster = { date: string; amount: number }
+    const clusters: Cluster[] = []
+    for (const t of txns) {
+      const last = clusters[clusters.length - 1]
+      if (last && last.date === t.date) {
+        last.amount += t.amount
+      } else {
+        clusters.push({ date: t.date, amount: t.amount })
+      }
+    }
+
+    // 2) Compute interval stats — from CLUSTER dates, not individual txns
     const intervals: number[] = []
-    for (let i = 1; i < txns.length; i++) {
-      intervals.push(daysBetween(txns[i - 1].date, txns[i].date))
+    for (let i = 1; i < clusters.length; i++) {
+      intervals.push(daysBetween(clusters[i - 1].date, clusters[i].date))
     }
     const avgInterval = intervals.length > 0
       ? intervals.reduce((a, b) => a + b, 0) / intervals.length
@@ -228,15 +244,15 @@ export function detectSubscriptions(
     const cycleMatch = detectCycle(avgInterval)
     const cycle: DetectedCycle = cycleMatch?.cycle ?? 'irregular'
 
-    // 4) Amount stats
-    const amounts = txns.map(t => t.amount)
+    // 4) Amount stats — per-CYCLE (cluster) totals, not per-transaction
+    const amounts = clusters.map(c => c.amount)
     const avgAmount = amounts.reduce((a, b) => a + b, 0) / amounts.length
     const amountVar = amounts.reduce((sum, x) => sum + (x - avgAmount) ** 2, 0) / amounts.length
     const amountCV = avgAmount > 0 ? Math.sqrt(amountVar) / avgAmount : 0
     const medianAmount = median(amounts)
     const minAmount = Math.min(...amounts)
     const maxAmount = Math.max(...amounts)
-    const totalSpent = amounts.reduce((a, b) => a + b, 0)
+    const totalSpent = txns.reduce((a, b) => a + b.amount, 0)
 
     // 5) Confidence scoring
     //    high  = clear cycle + stable amount + ≥3 payments
@@ -254,7 +270,12 @@ export function detectSubscriptions(
     if (cycle === 'irregular' && (amountCV > 0.35 || txns.length < 3)) continue
 
     const lastTxn = txns[txns.length - 1]
-    const expectedNextDays = cycleMatch?.expectedDays ?? Math.round(avgInterval) ?? 30
+    // Fallback chain: matched cycle window > avg cluster interval > 30 days.
+    // The `?? 30` only fires when both fields are null/undefined, so when only
+    // a single cluster exists (avgInterval === 0) we explicitly fall back to
+    // monthly instead of estimating the next date to be the same day.
+    const expectedNextDays = cycleMatch?.expectedDays
+      ?? (avgInterval > 0 ? Math.round(avgInterval) : 30)
     const nextEstimatedDate = estimateNextDate(lastTxn.date, expectedNextDays)
     const lastMs = new Date(lastTxn.date + 'T00:00:00').getTime()
     const nextMs = new Date(nextEstimatedDate + 'T00:00:00').getTime()

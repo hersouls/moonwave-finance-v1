@@ -60,6 +60,13 @@ export interface CategorySuggestion {
   confidence: CategoryConfidence
   /** Why this match was chosen (for debugging / UI tooltip) */
   reason?: string
+  /**
+   * Suggested subscription-type label inferred from the matched keyword rule
+   * (e.g., 'ai' for Claude/Vercel, 'cloud' for Google Cloud/Supabase). The
+   * bulk `subscriptionCategoryOverride` in ImportOptions takes priority over
+   * this per-row value when both are set.
+   */
+  subscriptionCategory?: SubscriptionCategoryType
 }
 
 export interface AnalyzedRow extends ParsedRow {
@@ -213,6 +220,13 @@ interface KeywordRule {
   keywords: string[]
   /** Reason text for UI display */
   reason?: string
+  /**
+   * Optional subscription-type label for the matched merchant. Used to
+   * automatically classify SaaS expenses (e.g., 'ai' for Claude/Vercel,
+   * 'cloud' for Google Cloud/Supabase) without requiring the user to tag
+   * each row manually.
+   */
+  subscriptionCategory?: SubscriptionCategoryType
 }
 
 const KEYWORD_RULES: KeywordRule[] = [
@@ -293,11 +307,32 @@ const KEYWORD_RULES: KeywordRule[] = [
     reason: '숙박/여행 키워드',
     keywords: ['호텔', '온천', '리조트', '펜션', '게스트하우스', '모텔', '에어비앤비', 'AIRBNB'],
   },
-  // AI/SaaS 구독 서비스 — '구독료' 우선, 없으면 '투자'로 폴백
+  // AI 구독 서비스 — 거래 카테고리는 '구독료' (폴백 '투자'), 구독 분류는 'ai'
   {
     categoryName: ['구독료', '투자'],
-    reason: 'AI/SaaS 구독 키워드',
-    keywords: ['CLAUDE.AI', 'ANTHROPIC', 'OPENAI', 'CHATGPT', 'CURSOR', 'VERCEL', 'SUPABASE', '구글클라우드', 'GOOGLE CLOUD', 'AWS', 'AZURE', 'GITHUB'],
+    reason: 'AI 구독 키워드',
+    subscriptionCategory: 'ai',
+    keywords: [
+      'CLAUDE.AI', 'CLAUDE', 'ANTHROPIC',
+      'OPENAI', 'CHATGPT',
+      'CURSOR',
+      'VERCEL',
+      'PERPLEXITY', 'MIDJOURNEY', 'COPILOT',
+    ],
+  },
+  // 클라우드/인프라 구독 — 거래 카테고리는 '구독료' (폴백 '투자'), 구독 분류는 'cloud'
+  {
+    categoryName: ['구독료', '투자'],
+    reason: '클라우드/인프라 구독 키워드',
+    subscriptionCategory: 'cloud',
+    keywords: [
+      '구글클라우드', 'GOOGLE CLOUD', 'GCP',
+      'SUPABASE',
+      'AWS', '아마존웹서비스', 'AMAZON WEB',
+      'AZURE',
+      'GITHUB',
+      'CLOUDFLARE',
+    ],
   },
 ]
 
@@ -400,6 +435,7 @@ export function suggestCategory(
             categoryId: cat.id,
             confidence: 'medium',
             reason: rule.reason || `${name} 키워드 매칭`,
+            subscriptionCategory: rule.subscriptionCategory,
           }
         }
       }
@@ -545,6 +581,11 @@ export async function importStatement(
       const memberId = options.memberMap?.[row.cardSuffix] ?? null
       const effectiveDate = overrideDate ?? row.date
 
+      // Bulk UI override wins when set; otherwise use per-row rule suggestion
+      // (e.g., Claude/Vercel → 'ai', Supabase/구글클라우드 → 'cloud').
+      const subscriptionCategory =
+        options.subscriptionCategoryOverride ?? row.suggestion.subscriptionCategory
+
       const txn: Omit<Transaction, 'id'> = {
         syncId: crypto.randomUUID(),
         type: 'expense',
@@ -556,7 +597,7 @@ export async function importStatement(
         paymentMethod: options.paymentMethod,
         paymentMethodDetail: options.paymentMethodDetail,
         paymentMethodItemId: options.paymentMethodItemId,
-        subscriptionCategory: options.subscriptionCategoryOverride,
+        subscriptionCategory,
         isRecurring: false,
         createdAt: now,
         updatedAt: now,

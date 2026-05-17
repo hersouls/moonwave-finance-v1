@@ -102,6 +102,7 @@ export const DEFAULT_TRANSACTION_CATEGORIES = {
 export const SUBSCRIPTION_CATEGORIES = [
   { value: 'entertainment' as const, label: '엔터테인먼트', icon: 'Tv', color: '#EF4444' },
   { value: 'productivity' as const, label: '생산성', icon: 'Laptop', color: '#3B82F6' },
+  { value: 'ai' as const, label: 'AI', icon: 'Sparkles', color: '#A855F7' },
   { value: 'cloud' as const, label: '클라우드', icon: 'Cloud', color: '#06B6D4' },
   { value: 'music' as const, label: '음악', icon: 'Music', color: '#10B981' },
   { value: 'news' as const, label: '뉴스/미디어', icon: 'Newspaper', color: '#F59E0B' },

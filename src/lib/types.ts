@@ -154,7 +154,7 @@ export type SubscriptionCycle =
   | 'weekly' | 'biweekly' | 'monthly'
   | 'quarterly' | 'semi-annual' | 'yearly' | 'custom'
 export type SubscriptionCategoryType =
-  | 'entertainment' | 'productivity' | 'cloud' | 'music'
+  | 'entertainment' | 'productivity' | 'ai' | 'cloud' | 'music'
   | 'news' | 'education' | 'health' | 'shopping' | 'finance' | 'other'
 
 export interface PauseHistoryEntry {
