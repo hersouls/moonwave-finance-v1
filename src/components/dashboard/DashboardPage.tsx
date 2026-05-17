@@ -15,7 +15,6 @@ import { useAssetStore } from '@/stores/assetStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useGoalStore } from '@/stores/goalStore'
-import { useSubscriptionStore } from '@/stores/subscriptionStore'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useAssetStats, useCategoryBreakdown } from '@/hooks/useAssetStats'
 import { HeroMetricCard } from '@/components/ui/HeroMetricCard'
@@ -47,7 +46,6 @@ export function DashboardPage() {
   const loadValues = useDailyValueStore((s) => s.loadValues)
   const loadMembers = useMemberStore((s) => s.loadMembers)
   const loadGoals = useGoalStore((s) => s.loadGoals)
-  const loadSubscriptions = useSubscriptionStore((s) => s.loadSubscriptions)
   const loadTransactions = useTransactionStore((s) => s.loadAll)
   const items = useAssetStore((s) => s.items)
   const goals = useGoalStore((s) => s.goals)
@@ -62,7 +60,7 @@ export function DashboardPage() {
     setError(null)
     setIsLoading(true)
     try {
-      await Promise.all([loadAll(), loadValues(), loadMembers(), loadGoals(), loadSubscriptions(), loadTransactions()])
+      await Promise.all([loadAll(), loadValues(), loadMembers(), loadGoals(), loadTransactions()])
     } catch {
       setError('데이터를 불러오는데 실패했습니다.')
     } finally {

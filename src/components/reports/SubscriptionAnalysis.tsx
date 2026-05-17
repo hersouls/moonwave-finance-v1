@@ -1,72 +1,48 @@
 import { useMemo } from 'react'
 import { Doughnut, Bar } from 'react-chartjs-2'
 import { Card } from '@/components/ui/Card'
-import { useSubscriptionStore } from '@/stores/subscriptionStore'
-import { useSettingsStore } from '@/stores/settingsStore'
-import { formatSubscriptionAmount, formatKoreanUnit } from '@/utils/format'
+import { useSubscriptionData } from '@/hooks/useSubscriptionData'
+import { formatKRW, formatKoreanUnit } from '@/utils/format'
 import { commonBarOptions } from '@/lib/chartConfig'
-import { SUBSCRIPTION_CATEGORIES } from '@/utils/constants'
+import type { DetectedCycle } from '@/services/subscriptionDetection'
 
-const CATEGORY_COLORS = [
-  '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-  '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16',
-]
-
-function getMonthlyAmount(sub: { cycle: string; amount: number; customCycleDays?: number }): number {
-  switch (sub.cycle) {
-    case 'weekly': return sub.amount * (52 / 12)
-    case 'biweekly': return sub.amount * (26 / 12)
-    case 'monthly': return sub.amount
-    case 'quarterly': return sub.amount / 3
-    case 'semi-annual': return sub.amount / 6
-    case 'yearly': return sub.amount / 12
-    case 'custom': return sub.customCycleDays ? sub.amount * (365 / sub.customCycleDays / 12) : sub.amount
-    default: return sub.amount
-  }
+const CYCLE_LABEL: Record<DetectedCycle, string> = {
+  weekly: '주간',
+  biweekly: '격주',
+  monthly: '월간',
+  quarterly: '분기',
+  'semi-annual': '반기',
+  yearly: '연간',
+  irregular: '비정기',
 }
 
+const CYCLE_ORDER: DetectedCycle[] = ['weekly', 'biweekly', 'monthly', 'quarterly', 'semi-annual', 'yearly', 'irregular']
+
 export function SubscriptionAnalysis() {
-  const subscriptions = useSubscriptionStore((s) => s.subscriptions)
-  const store = useSubscriptionStore
-  const active = useMemo(() => store.getState().getActive(), [subscriptions])
-  const monthlyKRW = useMemo(() => store.getState().getMonthlyTotalKRW(), [subscriptions])
-  const monthlyUSD = useMemo(() => store.getState().getMonthlyTotalUSD(), [subscriptions])
-  const monthlyCombined = useMemo(() => store.getState().getMonthlyTotalCombinedKRW(), [subscriptions])
-  const yearlyCombined = useMemo(() => store.getState().getYearlyTotalCombinedKRW(), [subscriptions])
-  const exchangeRate = useSettingsStore((s) => s.settings.exchangeRate?.usdToKrw ?? 1350)
+  const { detected, stats } = useSubscriptionData()
 
-  // Category breakdown for doughnut chart
-  const categoryData = useMemo(() => {
-    const map = new Map<string, number>()
-
-    for (const sub of active) {
-      const monthly = getMonthlyAmount(sub)
-      const amountKRW = sub.currency === 'USD' ? monthly * exchangeRate : monthly
-      const current = map.get(sub.category) || 0
-      map.set(sub.category, current + amountKRW)
+  // Cycle distribution for bar chart — counts subscriptions per detected cycle.
+  // Replaces the legacy currency split (which only made sense for the old
+  // KRW/USD Subscription entity model).
+  const cycleData = useMemo(() => {
+    const counts = new Map<DetectedCycle, number>()
+    const monthlySum = new Map<DetectedCycle, number>()
+    for (const sub of detected) {
+      counts.set(sub.cycle, (counts.get(sub.cycle) ?? 0) + 1)
+      monthlySum.set(sub.cycle, (monthlySum.get(sub.cycle) ?? 0) + sub.monthlyEquivalent)
     }
-
-    const entries = [...map.entries()].sort((a, b) => b[1] - a[1])
-    const catLabels = SUBSCRIPTION_CATEGORIES
-
+    const ordered = CYCLE_ORDER.filter((c) => (counts.get(c) ?? 0) > 0)
     return {
-      labels: entries.map(([cat]) => catLabels.find((c) => c.value === cat)?.label ?? cat),
-      data: entries.map(([, amount]) => amount),
-      colors: entries.map((_, i) => CATEGORY_COLORS[i % CATEGORY_COLORS.length]),
+      labels: ordered.map((c) => CYCLE_LABEL[c]),
+      counts: ordered.map((c) => counts.get(c) ?? 0),
+      monthly: ordered.map((c) => monthlySum.get(c) ?? 0),
     }
-  }, [active, exchangeRate])
+  }, [detected])
 
-  // Currency split for bar chart
-  const currencySplit = useMemo(() => ({
-    labels: ['원화 (KRW)', '달러 (USD)'],
-    data: [monthlyKRW, monthlyUSD * exchangeRate],
-    raw: [monthlyKRW, monthlyUSD],
-  }), [monthlyKRW, monthlyUSD, exchangeRate])
-
-  if (active.length === 0) {
+  if (detected.length === 0) {
     return (
       <div className="text-center py-12 text-disabled text-sm">
-        활성 구독이 없습니다.
+        활성 구독이 없습니다. 거래내역에서 구독 분류 라벨을 지정해 보세요.
       </div>
     )
   }
@@ -78,25 +54,25 @@ export function SubscriptionAnalysis() {
         <Card className="text-center">
           <span className="text-caption text-sub">활성 구독</span>
           <p className="text-title2 text-heading mt-1">
-            {active.length}개
+            {detected.length}개
           </p>
         </Card>
         <Card className="text-center">
           <span className="text-caption text-sub">월간 총액</span>
           <p className="text-title2 text-heading tabular-nums mt-1">
-            {formatKoreanUnit(monthlyCombined)}
+            {formatKoreanUnit(stats.totalMonthly)}
           </p>
         </Card>
         <Card className="text-center">
           <span className="text-caption text-sub">연간 총액</span>
           <p className="text-title2 text-heading tabular-nums mt-1">
-            {formatKoreanUnit(yearlyCombined)}
+            {formatKoreanUnit(stats.totalYearly)}
           </p>
         </Card>
         <Card className="text-center">
           <span className="text-caption text-sub">평균 구독료</span>
           <p className="text-title2 text-heading tabular-nums mt-1">
-            {formatKoreanUnit(Math.round(monthlyCombined / active.length))}
+            {formatKoreanUnit(Math.round(stats.totalMonthly / Math.max(1, detected.length)))}
           </p>
         </Card>
       </div>
@@ -106,14 +82,14 @@ export function SubscriptionAnalysis() {
         {/* Category Distribution */}
         <Card className="card-pad-lg">
           <h3 className="text-body3-semi text-heading mb-4">카테고리별 구독</h3>
-          {categoryData.data.length > 0 ? (
+          {stats.byCategory.length > 0 ? (
             <div className="h-64 flex items-center justify-center">
               <Doughnut
                 data={{
-                  labels: categoryData.labels,
+                  labels: stats.byCategory.map((c) => c.name),
                   datasets: [{
-                    data: categoryData.data,
-                    backgroundColor: categoryData.colors,
+                    data: stats.byCategory.map((c) => c.totalMonthly),
+                    backgroundColor: stats.byCategory.map((c) => c.color),
                     borderWidth: 0,
                   }],
                 }}
@@ -135,17 +111,17 @@ export function SubscriptionAnalysis() {
           )}
         </Card>
 
-        {/* Currency Split */}
+        {/* Cycle Distribution */}
         <Card className="card-pad-lg">
-          <h3 className="text-body3-semi text-heading mb-4">통화별 월간 구독료</h3>
+          <h3 className="text-body3-semi text-heading mb-4">주기별 월 환산액</h3>
           <div className="h-64">
             <Bar
               data={{
-                labels: currencySplit.labels,
+                labels: cycleData.labels,
                 datasets: [{
-                  label: '월간 구독료 (원화 환산)',
-                  data: currencySplit.data,
-                  backgroundColor: ['rgba(59, 130, 246, 0.7)', 'rgba(16, 185, 129, 0.7)'],
+                  label: '월 환산 (원)',
+                  data: cycleData.monthly,
+                  backgroundColor: 'rgba(59, 130, 246, 0.7)',
                   borderRadius: 6,
                 }],
               }}
@@ -163,21 +139,12 @@ export function SubscriptionAnalysis() {
       <Card className="card-pad-lg">
         <h3 className="text-body3-semi text-heading mb-4">구독 목록</h3>
         <div className="space-y-2">
-          {active
-            .sort((a, b) => {
-              const aMonthly = getMonthlyAmount(a)
-              const bMonthly = getMonthlyAmount(b)
-              const aKRW = a.currency === 'USD' ? aMonthly * exchangeRate : aMonthly
-              const bKRW = b.currency === 'USD' ? bMonthly * exchangeRate : bMonthly
-              return bKRW - aKRW
-            })
+          {[...detected]
+            .sort((a, b) => b.monthlyEquivalent - a.monthlyEquivalent)
             .map((sub) => {
-              const monthly = getMonthlyAmount(sub)
-              const monthlyKRW = sub.currency === 'USD' ? monthly * exchangeRate : monthly
-              const pct = monthlyCombined > 0 ? (monthlyKRW / monthlyCombined) * 100 : 0
-
+              const pct = stats.totalMonthly > 0 ? (sub.monthlyEquivalent / stats.totalMonthly) * 100 : 0
               return (
-                <div key={sub.id} className="flex items-center gap-3 py-2">
+                <div key={sub.key} className="flex items-center gap-3 py-2">
                   <div
                     className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: sub.color }}
@@ -186,7 +153,7 @@ export function SubscriptionAnalysis() {
                     {sub.name}
                   </span>
                   <span className="text-body3 text-heading tabular-nums">
-                    {formatSubscriptionAmount(monthly, sub.currency)}/월
+                    {formatKRW(sub.monthlyEquivalent)}/월
                   </span>
                   <span className="text-caption text-disabled w-12 text-right tabular-nums">
                     {pct.toFixed(0)}%

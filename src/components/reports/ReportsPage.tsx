@@ -3,7 +3,6 @@ import { BarChart3 } from 'lucide-react'
 import { useAssetStore } from '@/stores/assetStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useMemberStore } from '@/stores/memberStore'
-import { useSubscriptionStore } from '@/stores/subscriptionStore'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useAssetStats } from '@/hooks/useAssetStats'
 import { NetWorthTrendChart } from '@/components/dashboard/NetWorthTrendChart'
@@ -43,7 +42,6 @@ export function ReportsPage() {
   const loadValues = useDailyValueStore((s) => s.loadValues)
   const loadAllValues = useDailyValueStore((s) => s.loadAllValues)
   const loadMembers = useMemberStore((s) => s.loadMembers)
-  const loadSubscriptions = useSubscriptionStore((s) => s.loadSubscriptions)
   const loadTransactions = useTransactionStore((s) => s.loadAll)
   const items = useAssetStore((s) => s.items)
 
@@ -53,7 +51,7 @@ export function ReportsPage() {
     setError(null)
     setIsLoading(true)
     try {
-      await Promise.all([loadAll(), loadValues(), loadAllValues(), loadMembers(), loadSubscriptions(), loadTransactions()])
+      await Promise.all([loadAll(), loadValues(), loadAllValues(), loadMembers(), loadTransactions()])
     } catch {
       setError('데이터를 불러오는데 실패했습니다.')
     } finally {
