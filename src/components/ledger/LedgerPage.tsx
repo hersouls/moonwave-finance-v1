@@ -73,6 +73,7 @@ export function LedgerPage() {
     setMemberFilter, setCategoryFilter, setPaymentMethodFilter,
     setMinAmount, setMaxAmount,
     setSortBy, setDateRange,
+    setSubscriptionCategoryFilter,
     resetFilters, activeFilterCount,
   } = useTransactionFilters(transactions)
 
@@ -199,6 +200,8 @@ export function LedgerPage() {
             onSortByChange={setSortBy}
             dateRange={filters.dateRange}
             onDateRangeChange={setDateRange}
+            subscriptionCategoryFilter={filters.subscriptionCategory}
+            onSubscriptionCategoryChange={setSubscriptionCategoryFilter}
             activeFilterCount={activeFilterCount}
             onReset={resetFilters}
           />

@@ -27,6 +27,9 @@ export function TransactionCreateModal() {
   const [recurType, setRecurType] = useState<RepeatType>('monthly')
   const [recurEndDate, setRecurEndDate] = useState('')
   const [subscriptionCategory, setSubscriptionCategory] = useState<SubscriptionCategoryType | ''>('')
+  // 환급(refund) toggle — when on, the entered amount is stored as a negative
+  // expense so the original spending category nets out the inflow.
+  const [isRefund, setIsRefund] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [amountError, setAmountError] = useState('')
 
@@ -44,8 +47,15 @@ export function TransactionCreateModal() {
       setRecurType('monthly')
       setRecurEndDate('')
       setSubscriptionCategory('')
+      setIsRefund(false)
     }
   }, [isOpen, members])
+
+  // Refund only makes sense on expense rows; flip it off automatically when
+  // the user switches to 수입.
+  useEffect(() => {
+    if (type === 'income') setIsRefund(false)
+  }, [type])
 
   useEffect(() => {
     setCategoryId('')
@@ -60,10 +70,13 @@ export function TransactionCreateModal() {
     setAmountError('')
     setIsSubmitting(true)
     try {
+      // Refund = signed negative amount on an expense row. The original
+      // category aggregation then correctly nets the inflow.
+      const signedAmount = isRefund && type === 'expense' ? -numAmount : numAmount
       await addTransaction({
         memberId: memberId ? (memberId as number) : null,
         type,
-        amount: numAmount,
+        amount: signedAmount,
         categoryId: categoryId ? (categoryId as number) : null,
         date,
         memo: memo.trim() || undefined,
@@ -138,6 +151,24 @@ export function TransactionCreateModal() {
               <p className="text-caption text-status-danger mt-1">{amountError}</p>
             )}
           </div>
+
+          {/* Refund toggle (expense only) */}
+          {type === 'expense' && (
+            <label className="flex items-center justify-between gap-2 cursor-pointer rounded-lg px-3 py-2.5 bg-surface-tertiary">
+              <span className="text-body3 text-body">
+                환급 거래
+                <span className="ml-1.5 text-caption text-sub font-normal">
+                  같은 카테고리에서 받은 환불을 음수로 기록
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                checked={isRefund}
+                onChange={(e) => setIsRefund(e.target.checked)}
+                className="check"
+              />
+            </label>
+          )}
 
           {/* Category */}
           <div>

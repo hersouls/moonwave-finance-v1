@@ -1,8 +1,10 @@
 import { useMemo, useState, useCallback } from 'react'
-import type { Transaction, TransactionType, PaymentMethod } from '@/lib/types'
+import type { Transaction, TransactionType, PaymentMethod, SubscriptionCategoryType } from '@/lib/types'
 
 export type TransactionSortBy = 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc'
 export type TransactionDateRange = 'all' | '7d' | '30d' | '90d'
+// 'none' = subscriptionCategory가 비어있는(일반) 거래만 조회
+export type SubscriptionCategoryFilter = SubscriptionCategoryType | 'none' | null
 
 interface TransactionFilters {
   type: TransactionType | 'all'
@@ -14,6 +16,7 @@ interface TransactionFilters {
   maxAmount: number | null
   sortBy: TransactionSortBy
   dateRange: TransactionDateRange
+  subscriptionCategory: SubscriptionCategoryFilter
 }
 
 const DEFAULT_FILTERS: TransactionFilters = {
@@ -26,6 +29,7 @@ const DEFAULT_FILTERS: TransactionFilters = {
   maxAmount: null,
   sortBy: 'date-desc',
   dateRange: 'all',
+  subscriptionCategory: null,
 }
 
 function daysAgoISO(days: number): string {
@@ -67,6 +71,13 @@ export function useTransactionFilters(transactions: Transaction[]) {
       const days = filters.dateRange === '7d' ? 7 : filters.dateRange === '30d' ? 30 : 90
       const cutoff = daysAgoISO(days)
       result = result.filter(t => t.date >= cutoff)
+    }
+    if (filters.subscriptionCategory !== null) {
+      if (filters.subscriptionCategory === 'none') {
+        result = result.filter(t => !t.subscriptionCategory)
+      } else {
+        result = result.filter(t => t.subscriptionCategory === filters.subscriptionCategory)
+      }
     }
 
     switch (filters.sortBy) {
@@ -115,6 +126,7 @@ export function useTransactionFilters(transactions: Transaction[]) {
     if (filters.maxAmount !== null) count++
     if (filters.dateRange !== 'all') count++
     if (filters.searchQuery) count++
+    if (filters.subscriptionCategory !== null) count++
     return count
   }, [filters])
 
@@ -134,6 +146,8 @@ export function useTransactionFilters(transactions: Transaction[]) {
     setMaxAmount: (maxAmount: number | null) => setFilters(f => ({ ...f, maxAmount })),
     setSortBy: (sortBy: TransactionSortBy) => setFilters(f => ({ ...f, sortBy })),
     setDateRange: (dateRange: TransactionDateRange) => setFilters(f => ({ ...f, dateRange })),
+    setSubscriptionCategoryFilter: (subscriptionCategory: SubscriptionCategoryFilter) =>
+      setFilters(f => ({ ...f, subscriptionCategory })),
     resetFilters,
     activeFilterCount,
     typeCounts,

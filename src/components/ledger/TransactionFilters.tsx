@@ -4,14 +4,23 @@ import {
   Search, SlidersHorizontal, RotateCcw, X, Check,
   Users, Wallet, Coins, Tag, ArrowUpDown, CalendarRange,
   CreditCard, Banknote, Landmark, Receipt, MoreHorizontal,
+  Repeat, Tv, Laptop, Sparkles, Cloud, Music, Newspaper,
+  GraduationCap, Heart, ShoppingBag, MinusCircle,
+  type LucideIcon,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { PAYMENT_METHOD_OPTIONS, getPaymentMethodLabel } from '@/utils/paymentMethod'
 import { getCategoryIcon } from '@/utils/categoryIcons'
 import { formatKoreanUnit } from '@/utils/format'
+import { SUBSCRIPTION_CATEGORIES } from '@/utils/constants'
 import { springSnappy, easeOutExpo, durations } from '@/lib/motionConfig'
-import type { TransactionType, PaymentMethod, Member, TransactionCategory } from '@/lib/types'
-import type { TransactionSortBy, TransactionDateRange } from '@/hooks/useTransactionFilters'
+import type {
+  TransactionType, PaymentMethod, Member, TransactionCategory,
+  SubscriptionCategoryType,
+} from '@/lib/types'
+import type {
+  TransactionSortBy, TransactionDateRange, SubscriptionCategoryFilter,
+} from '@/hooks/useTransactionFilters'
 
 // ─── Config ─────────────────────────────────────────
 
@@ -58,6 +67,24 @@ const PAYMENT_METHOD_ICONS: Record<PaymentMethod, typeof Banknote> = {
   other: MoreHorizontal,
 }
 
+const SUBSCRIPTION_CATEGORY_ICONS: Record<SubscriptionCategoryType, LucideIcon> = {
+  entertainment: Tv,
+  productivity: Laptop,
+  ai: Sparkles,
+  cloud: Cloud,
+  music: Music,
+  news: Newspaper,
+  education: GraduationCap,
+  health: Heart,
+  shopping: ShoppingBag,
+  finance: Landmark,
+  other: MoreHorizontal,
+}
+
+function getSubscriptionCategoryMeta(value: SubscriptionCategoryType) {
+  return SUBSCRIPTION_CATEGORIES.find(c => c.value === value)
+}
+
 // ─── Props ──────────────────────────────────────────
 
 interface TransactionFiltersProps {
@@ -81,6 +108,8 @@ interface TransactionFiltersProps {
   onSortByChange?: (v: TransactionSortBy) => void
   dateRange?: TransactionDateRange
   onDateRangeChange?: (v: TransactionDateRange) => void
+  subscriptionCategoryFilter?: SubscriptionCategoryFilter
+  onSubscriptionCategoryChange?: (v: SubscriptionCategoryFilter) => void
   activeFilterCount?: number
   onReset?: () => void
 }
@@ -106,6 +135,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
     minAmount, maxAmount, onAmountRangeChange,
     sortBy = 'date-desc', onSortByChange,
     dateRange = 'all', onDateRangeChange,
+    subscriptionCategoryFilter = null, onSubscriptionCategoryChange,
     activeFilterCount = 0, onReset,
   } = props
 
@@ -114,7 +144,8 @@ export function TransactionFilters(props: TransactionFiltersProps) {
 
   const hasAdvanced = Boolean(
     onMemberChange || onCategoryChange || onPaymentMethodChange ||
-    onAmountRangeChange || onSortByChange || onDateRangeChange
+    onAmountRangeChange || onSortByChange || onDateRangeChange ||
+    onSubscriptionCategoryChange
   )
 
   const currentCategories = useMemo(() => {
@@ -308,6 +339,27 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                     icon={CalendarRange}
                     label={DATE_RANGE_OPTIONS.find(d => d.value === dateRange)?.label || '기간'}
                     onRemove={() => onDateRangeChange('all')}
+                  />
+                )}
+                {subscriptionCategoryFilter !== null && onSubscriptionCategoryChange && (
+                  <ActivePill
+                    key="sub"
+                    icon={
+                      subscriptionCategoryFilter === 'none'
+                        ? MinusCircle
+                        : SUBSCRIPTION_CATEGORY_ICONS[subscriptionCategoryFilter] || Repeat
+                    }
+                    label={
+                      subscriptionCategoryFilter === 'none'
+                        ? '구독 외'
+                        : getSubscriptionCategoryMeta(subscriptionCategoryFilter)?.label || '구독'
+                    }
+                    color={
+                      subscriptionCategoryFilter === 'none'
+                        ? undefined
+                        : getSubscriptionCategoryMeta(subscriptionCategoryFilter)?.color
+                    }
+                    onRemove={() => onSubscriptionCategoryChange(null)}
                   />
                 )}
                 {onReset && activeFilterCount > 1 && (
@@ -547,6 +599,85 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                           aria-pressed={isActive}
                         >
                           <Icon className="w-3.5 h-3.5" />
+                          {opt.label}
+                        </motion.button>
+                      )
+                    })}
+                  </ChipScroller>
+                </Section>
+              )}
+
+              {/* Subscription category filter */}
+              {onSubscriptionCategoryChange && (
+                <Section icon={Repeat} label="구독 분류">
+                  <ChipScroller>
+                    <AllChip
+                      active={subscriptionCategoryFilter === null}
+                      onClick={() => onSubscriptionCategoryChange(null)}
+                    />
+                    {/* 구독 외(일반 거래) */}
+                    {(() => {
+                      const isActive = subscriptionCategoryFilter === 'none'
+                      return (
+                        <motion.button
+                          key="__none__"
+                          type="button"
+                          onClick={() => onSubscriptionCategoryChange(isActive ? null : 'none')}
+                          className={clsx(
+                            'flex-shrink-0 flex items-center gap-2 pl-2.5 pr-3.5 h-9 rounded-2xl text-caption font-semibold transition-all',
+                            isActive
+                              ? 'bg-[color:var(--surface-inverse,#1f2937)] text-white shadow-[0_4px_12px_rgba(0,0,0,0.18)]'
+                              : 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]'
+                          )}
+                          whileHover={shouldReduceMotion ? undefined : { y: -1 }}
+                          whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
+                          transition={springSnappy}
+                          aria-pressed={isActive}
+                        >
+                          <span
+                            className={clsx(
+                              'w-6 h-6 rounded-lg flex items-center justify-center',
+                              isActive ? 'bg-white/22' : 'bg-surface-tertiary',
+                            )}
+                            style={isActive ? { backgroundColor: 'rgba(255,255,255,0.22)' } : undefined}
+                          >
+                            <MinusCircle className="w-3.5 h-3.5" />
+                          </span>
+                          구독 외
+                        </motion.button>
+                      )
+                    })()}
+                    {SUBSCRIPTION_CATEGORIES.map(opt => {
+                      const Icon = SUBSCRIPTION_CATEGORY_ICONS[opt.value] || Repeat
+                      const isActive = subscriptionCategoryFilter === opt.value
+                      return (
+                        <motion.button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => onSubscriptionCategoryChange(isActive ? null : opt.value)}
+                          className={clsx(
+                            'flex-shrink-0 flex items-center gap-2 pl-2.5 pr-3.5 h-9 rounded-2xl text-caption font-semibold transition-all',
+                            isActive
+                              ? 'text-white shadow-[0_4px_12px_rgba(0,0,0,0.12)]'
+                              : 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]'
+                          )}
+                          style={isActive ? { backgroundColor: opt.color } : undefined}
+                          whileHover={shouldReduceMotion ? undefined : { y: -1 }}
+                          whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
+                          transition={springSnappy}
+                          aria-pressed={isActive}
+                        >
+                          <span
+                            className="w-6 h-6 rounded-lg flex items-center justify-center"
+                            style={{
+                              backgroundColor: isActive ? 'rgba(255,255,255,0.22)' : `${opt.color}1a`,
+                            }}
+                          >
+                            <Icon
+                              className="w-3.5 h-3.5"
+                              style={{ color: isActive ? '#fff' : opt.color }}
+                            />
+                          </span>
                           {opt.label}
                         </motion.button>
                       )

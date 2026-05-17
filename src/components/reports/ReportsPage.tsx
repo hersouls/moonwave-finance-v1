@@ -16,6 +16,11 @@ import { PeriodComparisonCard } from './PeriodComparisonCard'
 import { DailyNetWorthChart } from './DailyNetWorthChart'
 import { SubscriptionAnalysis } from './SubscriptionAnalysis'
 import { ReportsSkeleton } from './ReportsSkeleton'
+import { LedgerAnalysisHero } from './LedgerAnalysisHero'
+import { LedgerInsightsRow } from './LedgerInsightsRow'
+import { CashFlowTimeline } from './CashFlowTimeline'
+import { CategoryDeepDive } from './CategoryDeepDive'
+import { useLedgerAnalysis, type InsightAnchor } from '@/hooks/useLedgerAnalysis'
 import { EmptyState, ErrorEmptyState } from '@/components/ui/EmptyState'
 import { Tabs } from '@/components/ui/Tabs'
 import { Card } from '@/components/ui/Card'
@@ -140,26 +145,60 @@ export function ReportsPage() {
       )}
 
       {/* Ledger Analysis Tab */}
-      {activeTab === 'ledger' && (
-        <div className="space-y-6">
-          {/* Income/Expense Trend + Savings Rate */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <IncomeExpenseTrendChart />
-            <SavingsRateChart />
-          </div>
-
-          {/* Period Comparison */}
-          <PeriodComparisonCard />
-
-          {/* Member Summary */}
-          <MemberSummaryCards />
-        </div>
-      )}
+      {activeTab === 'ledger' && <LedgerAnalysisTab />}
 
       {/* Subscription Analysis Tab */}
       {activeTab === 'subscription' && (
         <SubscriptionAnalysis />
       )}
+    </div>
+  )
+}
+
+// ════════════════════════════════════════════════════════
+// Ledger Analysis Tab
+// ════════════════════════════════════════════════════════
+//
+// Layered narrative: Hero (3-card month summary) → Smart Insights
+// (auto-detected chips) → CashFlow Timeline (daily burn) → Category
+// Deep-Dive (donut + ranked list). The legacy IncomeExpenseTrend +
+// Savings Rate + PeriodComparison + MemberSummary cards are kept below
+// as supporting context — they answer "how does this month fit into
+// the broader trend" once the user has the snapshot above.
+
+function LedgerAnalysisTab() {
+  const analysis = useLedgerAnalysis()
+
+  const handleAnchor = (anchor: InsightAnchor) => {
+    if (typeof document === 'undefined') return
+    const el = document.getElementById(anchor === 'hero' ? 'ledger-hero' : anchor)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Hero */}
+      <div id="ledger-hero">
+        <LedgerAnalysisHero analysis={analysis} />
+      </div>
+
+      {/* Auto-detected insights */}
+      <LedgerInsightsRow insights={analysis.insights} onAnchor={handleAnchor} />
+
+      {/* Daily cumulative spending */}
+      <CashFlowTimeline analysis={analysis} />
+
+      {/* Category deep-dive */}
+      <CategoryDeepDive analysis={analysis} />
+
+      {/* Supporting: month-over-month context (collapsed visual weight) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <IncomeExpenseTrendChart />
+        <SavingsRateChart />
+      </div>
+
+      <PeriodComparisonCard />
+      <MemberSummaryCards />
     </div>
   )
 }

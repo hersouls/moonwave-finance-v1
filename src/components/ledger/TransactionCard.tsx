@@ -1,6 +1,6 @@
 import { memo, useState, useRef } from 'react'
 import { clsx } from 'clsx'
-import { Trash2, Pencil, RefreshCw, MoreHorizontal } from 'lucide-react'
+import { Trash2, Pencil, RefreshCw, MoreHorizontal, Undo2 } from 'lucide-react'
 import { motion, useMotionValue, useTransform, useReducedMotion } from 'framer-motion'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { TransactionActionSheet } from './TransactionActionSheet'
@@ -38,10 +38,17 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
   const member = (transaction.memberId ? members.find(m => m.id === transaction.memberId) : null) ?? null
   const pmLabel = transaction.paymentMethodDetail || getPaymentMethodLabel(transaction.paymentMethod)
   const isIncome = transaction.type === 'income'
+  // A signed-negative expense represents a refund (e.g., card chargeback).
+  // Treat it like an inflow for display purposes — same category color, but
+  // positive sign and positive-value styling so the user can immediately
+  // distinguish it from an ordinary outflow in the list.
+  const isRefund = !isIncome && transaction.amount < 0
+  const isInflow = isIncome || isRefund
+  const absAmount = Math.abs(transaction.amount)
 
   const CategoryIcon = getCategoryIcon(category?.icon)
   const accentColor = category?.color
-    ?? (isIncome ? 'var(--value-positive)' : 'var(--value-negative)')
+    ?? (isInflow ? 'var(--value-positive)' : 'var(--value-negative)')
 
   const x = useMotionValue(0)
   const actionOpacity = useTransform(x, [-ACTION_WIDTH, -40, 0], [1, 0.5, 0])
@@ -161,11 +168,11 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
                   className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white ring-2 ring-[color:var(--surface-primary)]"
                   style={{
                     lineHeight: 1,
-                    backgroundColor: isIncome ? 'var(--value-positive)' : 'var(--value-negative)',
+                    backgroundColor: isInflow ? 'var(--value-positive)' : 'var(--value-negative)',
                   }}
                   aria-hidden="true"
                 >
-                  {isIncome ? '+' : '−'}
+                  {isInflow ? '+' : '−'}
                 </span>
               </div>
 
@@ -192,6 +199,12 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
                       구독
                     </span>
                   )}
+                  {isRefund && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-status-success-soft text-status-success flex items-center gap-0.5 flex-shrink-0 ring-1 ring-status-success/15">
+                      <Undo2 className="w-2.5 h-2.5" />
+                      환급
+                    </span>
+                  )}
                   {pmLabel && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-tertiary text-sub truncate max-w-[100px] flex-shrink-0 ring-1 ring-base">
                       {pmLabel}
@@ -212,12 +225,12 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
               <div className="text-right flex-shrink-0 flex items-center gap-2">
                 <Amount
                   as="p"
-                  value={isIncome ? transaction.amount : -transaction.amount}
+                  value={isInflow ? absAmount : -absAmount}
                   format="change"
                   size="emphasis"
                   className={clsx(
                     'font-bold tabular-nums',
-                    isIncome ? 'text-value-positive' : 'text-value-negative',
+                    isInflow ? 'text-value-positive' : 'text-value-negative',
                   )}
                 />
 

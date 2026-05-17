@@ -74,6 +74,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
   const [recurType, setRecurType] = useState<RepeatType>('monthly')
   const [recurEndDate, setRecurEndDate] = useState('')
   const [subscriptionCategory, setSubscriptionCategory] = useState<SubscriptionCategoryType | ''>('')
+  const [isRefund, setIsRefund] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
   const [showRecurEndCalendar, setShowRecurEndCalendar] = useState(false)
@@ -125,7 +126,12 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
     setShowRecurEndCalendar(false)
     if (mode === 'edit' && initialData) {
       setType(initialData.type)
-      setAmount(initialData.amount.toLocaleString('ko-KR'))
+      // A stored negative expense amount is a refund. Show its magnitude in
+      // the input and flip the toggle so the user sees the same semantic
+      // representation they recorded with.
+      const isStoredRefund = initialData.type === 'expense' && initialData.amount < 0
+      setAmount(Math.abs(initialData.amount).toLocaleString('ko-KR'))
+      setIsRefund(isStoredRefund)
       setCategoryId(initialData.categoryId ?? '')
       setMemberId(initialData.memberId ?? '')
       setDate(initialData.date)
@@ -140,6 +146,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
     } else {
       setType('expense')
       setAmount('')
+      setIsRefund(false)
       setCategoryId('')
       setMemberId(members[0]?.id || '')
       setDate(initialDate || getTodayString())
@@ -156,6 +163,11 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
 
   useEffect(() => {
     setCategoryId('')
+  }, [type])
+
+  // Refund is expense-only — turn off automatically on type switch.
+  useEffect(() => {
+    if (type === 'income') setIsRefund(false)
   }, [type])
 
   // Reset payment method item when payment method type changes
@@ -189,9 +201,11 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
 
     setIsSubmitting(true)
     try {
+      // Refund = signed-negative expense; income type ignores the toggle.
+      const signedAmount = isRefund && type === 'expense' ? -numAmount : numAmount
       const txnData = {
         type,
-        amount: numAmount,
+        amount: signedAmount,
         categoryId: categoryId ? (categoryId as number) : null,
         memberId: memberId ? (memberId as number) : null,
         date,
@@ -487,6 +501,38 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                 초기화
               </motion.button>
             </div>
+
+            {/* Refund toggle — expense only. ON stores the amount as a signed
+                negative on the original category so net spending tallies right. */}
+            {type === 'expense' && (
+              <motion.label
+                className={clsx(
+                  'mt-2.5 flex items-center justify-between gap-2 cursor-pointer rounded-2xl px-3.5 py-2.5 transition-all ring-1',
+                  isRefund
+                    ? 'bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20 ring-[color:var(--color-primary-300)] dark:ring-[color:var(--color-primary-700)]'
+                    : 'bg-surface-tertiary ring-base',
+                )}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.995 }}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]" />
+                  <span>
+                    <span className="text-body3 font-semibold text-heading block leading-tight">환급 거래</span>
+                    <span className="text-caption text-sub">같은 카테고리에서 받은 환불을 음수로 기록</span>
+                  </span>
+                </span>
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={isRefund}
+                    onChange={(e) => setIsRefund(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-10 h-6 rounded-full bg-surface-secondary ring-1 ring-base peer-checked:bg-[color:var(--color-primary-500)] peer-checked:ring-[color:var(--color-primary-500)] transition-all" />
+                  <div className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform peer-checked:translate-x-4" />
+                </div>
+              </motion.label>
+            )}
           </div>
 
           {/* ─── Category Grid (replaces Select dropdown) ─── */}

@@ -169,7 +169,25 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     try {
       stopRealtimeSync()
       await signOut(auth)
-      set({ user: null, syncStatus: 'idle', lastSyncTime: null, error: null })
+      // Wipe local Dexie data so the previously signed-in user's financial
+      // records aren't visible on this device after logout. Cloud data in
+      // Firestore is preserved and re-merged on next login.
+      try {
+        const { clearAllData } = await import('@/services/database')
+        await clearAllData()
+      } catch (clearErr) {
+        console.error('Failed to clear local data on logout:', clearErr)
+      }
+      set({
+        user: null,
+        syncStatus: 'idle',
+        lastSyncTime: null,
+        error: null,
+        pendingChangesCount: 0,
+      })
+      // Hard reload to reset every in-memory Zustand store and React tree
+      // so no UI keeps rendering stale data from before logout.
+      window.location.reload()
     } catch (err) {
       const message = err instanceof Error ? err.message : '로그아웃에 실패했습니다.'
       set({ error: message })

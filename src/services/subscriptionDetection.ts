@@ -1,12 +1,13 @@
-// ─── Subscription auto-detection from transactions ──────
+// ─── Subscription listing from tagged transactions ──────
 //
-// Scans the user's expense transactions and identifies recurring payment
-// patterns — same/similar merchant + regular interval + stable amount —
-// without requiring any separate "subscription" registration.
+// Lists subscriptions from expense transactions that the user has explicitly
+// tagged with `subscriptionCategory` in the ledger entry form. Transactions
+// without that tag are ignored — there is no automatic pattern detection.
 //
-// The user's ledger is the single source of truth. Anything that looks like
-// it's billed weekly / biweekly / monthly / quarterly / yearly with a stable
-// amount is surfaced as a detected subscription.
+// Same normalized-merchant grouping is preserved so multiple payments of the
+// same subscription roll up into one entry with cycle/interval inferred from
+// the actual payment history. Single-payment subscriptions are shown too,
+// defaulting to a monthly cycle until enough data exists to infer otherwise.
 
 import type { Transaction, TransactionCategory } from '@/lib/types'
 
@@ -180,7 +181,9 @@ function cycleToMonthlyEquivalent(amount: number, cycle: DetectedCycle, avgInter
 // ─── Core detection ─────────────────────────────────────
 
 export interface DetectOptions {
-  /** Minimum payment count to consider as a subscription. Default 2. */
+  /** Minimum payment count to consider as a subscription. Default 1 — a
+   *  single user-tagged payment is enough to surface a subscription, since
+   *  there is no auto-pattern-detection anymore. */
   minCount?: number
   /** Reference date (yyyy-MM-dd). Default = today. Useful for tests. */
   today?: string
@@ -191,14 +194,17 @@ export function detectSubscriptions(
   categories: TransactionCategory[],
   options: DetectOptions = {},
 ): DetectedSubscription[] {
-  const minCount = options.minCount ?? 2
+  const minCount = options.minCount ?? 1
   const todayStr = options.today ?? new Date().toISOString().slice(0, 10)
   const todayMs = new Date(todayStr + 'T00:00:00').getTime()
 
-  // 1) Group expense transactions by normalized merchant key
+  // 1) Group expense transactions the user explicitly tagged with a
+  //    subscriptionCategory. Untagged transactions are excluded entirely —
+  //    nothing surfaces here unless the user opted in via the ledger form.
   const groups = new Map<string, Transaction[]>()
   for (const t of transactions) {
     if (t.type !== 'expense' || !t.memo) continue
+    if (!t.subscriptionCategory) continue
     if (t.amount <= 0) continue
     const key = normalizeMerchantKey(t.memo)
     if (key.length < 2) continue
@@ -240,9 +246,13 @@ export function detectSubscriptions(
       : 0
     const intervalStdDev = Math.sqrt(intervalVar)
 
-    // 3) Cycle detection
+    // 3) Cycle detection. With only a single tagged payment we cannot infer
+    //    an interval, so default to monthly — the overwhelmingly common case
+    //    for the subscriptions users actually tag. Once a second payment is
+    //    tagged, real cycle detection takes over.
     const cycleMatch = detectCycle(avgInterval)
-    const cycle: DetectedCycle = cycleMatch?.cycle ?? 'irregular'
+    const cycle: DetectedCycle = cycleMatch?.cycle
+      ?? (clusters.length < 2 ? 'monthly' : 'irregular')
 
     // 4) Amount stats — per-CYCLE (cluster) totals, not per-transaction
     const amounts = clusters.map(c => c.amount)
@@ -266,8 +276,9 @@ export function detectSubscriptions(
       else confidence = 'low'
     }
 
-    // Filter out clearly irregular non-subscriptions: irregular AND high amount CV
-    if (cycle === 'irregular' && (amountCV > 0.35 || txns.length < 3)) continue
+    // No "looks irregular, skip it" filter anymore: input is pre-filtered to
+    // transactions the user explicitly tagged as subscriptions, so we trust
+    // their intent even when amounts/intervals look erratic.
 
     const lastTxn = txns[txns.length - 1]
     // Fallback chain: matched cycle window > avg cluster interval > 30 days.
@@ -281,7 +292,12 @@ export function detectSubscriptions(
     const nextMs = new Date(nextEstimatedDate + 'T00:00:00').getTime()
     const daysSinceLast = Math.floor((todayMs - lastMs) / 86_400_000)
     const daysUntilNext = Math.floor((nextMs - todayMs) / 86_400_000)
-    const isActive = daysSinceLast <= expectedNextDays * 1.5
+    // Any subscription we detect comes from the user's own ledger transactions
+    // — by definition it's a real recurring expense they're tracking. The
+    // legacy "inactive after 1.5× cycle gap" auto-pause was confusing users
+    // who explicitly logged a payment but saw it classified as 비활성. The
+    // user-controlled `종료` (hidden) flag still applies for genuine cancels.
+    const isActive = true
 
     // Pick the most frequent category/member across the group
     const catIds = txns.map(t => t.categoryId).filter((x): x is number => x != null)

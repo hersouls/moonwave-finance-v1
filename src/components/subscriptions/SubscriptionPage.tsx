@@ -25,7 +25,7 @@ import { useCountUp } from '@/hooks/useCountUp'
 import { useHiddenSubscriptions } from '@/hooks/useHiddenSubscriptions'
 import { getCategoryIcon } from '@/utils/categoryIcons'
 import { formatKoreanUnit } from '@/utils/format'
-import { formatDate } from '@/lib/dateUtils'
+import { formatDate, formatMonthLabel, getCurrentMonthString } from '@/lib/dateUtils'
 import { generateSparklinePath, generateSparklineAreaPath } from '@/utils/sparkline'
 import { springSnappy, durations, easeOutExpo } from '@/lib/motionConfig'
 import {
@@ -53,7 +53,7 @@ export function SubscriptionPage() {
 
   const [activeCycleFilter, setActiveCycleFilter] = useState<DetectedCycle | 'all'>('all')
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
-  const [showInactive, setShowInactive] = useState(false)
+  const [selectedMonth, setSelectedMonth] = useState<string>('all')
   const [showHidden, setShowHidden] = useState(false)
   const hiddenSubs = useHiddenSubscriptions()
 
@@ -86,8 +86,43 @@ export function SubscriptionPage() {
     return detected.filter(s => s.cycle === activeCycleFilter)
   }, [detected, activeCycleFilter])
 
-  const active = filtered.filter(s => s.isActive)
-  const inactive = filtered.filter(s => !s.isActive)
+  // Months for which the user has any expense transactions, newest first.
+  // Capped at 12 so the chip row doesn't grow unbounded; "전체" plus this
+  // covers most planning needs.
+  const availableMonths = useMemo(() => {
+    const set = new Set<string>()
+    for (const t of transactions) {
+      if (t.type !== 'expense') continue
+      set.add(t.date.slice(0, 7))
+    }
+    return Array.from(set).sort().reverse().slice(0, 12)
+  }, [transactions])
+
+  // After the cycle filter, restrict to subscriptions that actually billed
+  // in the selected month. 'all' is a no-op pass-through.
+  const monthFiltered = useMemo(() => {
+    if (selectedMonth === 'all') return filtered
+    return filtered.filter(s => s.transactions.some(t => t.date.startsWith(selectedMonth)))
+  }, [filtered, selectedMonth])
+
+  // When a month is selected, summarize the bills that landed in that
+  // specific month (not the all-time stats which the hero already shows).
+  const monthSummary = useMemo(() => {
+    if (selectedMonth === 'all') return null
+    let totalAmount = 0
+    let paymentCount = 0
+    for (const sub of monthFiltered) {
+      for (const t of sub.transactions) {
+        if (t.date.startsWith(selectedMonth)) {
+          totalAmount += t.amount
+          paymentCount += 1
+        }
+      }
+    }
+    return { subscriptionCount: monthFiltered.length, paymentCount, totalAmount }
+  }, [monthFiltered, selectedMonth])
+
+  const active = monthFiltered
 
   const selectedSub = selectedKey ? detectedAll.find(s => s.key === selectedKey) ?? null : null
 
@@ -101,6 +136,15 @@ export function SubscriptionPage() {
     <div className="fold:p-3 p-4 lg:p-6 space-y-5">
       {/* ─── Hero ─── */}
       <SubscriptionHero stats={stats} detectedCount={detected.length} />
+
+      {/* ─── Month filter chips ─── */}
+      {availableMonths.length > 0 && (
+        <MonthFilterChips
+          value={selectedMonth}
+          onChange={setSelectedMonth}
+          months={availableMonths}
+        />
+      )}
 
       {/* ─── Cycle filter chips ─── */}
       <CycleFilterChips
@@ -117,7 +161,11 @@ export function SubscriptionPage() {
         <SectionTitle
           icon={Layers}
           title="구독 항목"
-          subtitle={`${active.length}개 활성 · 평균 월 ${formatKoreanUnit(stats.totalMonthly / Math.max(1, active.length))}원`}
+          subtitle={
+            monthSummary
+              ? `${formatMonthLabel(selectedMonth)} ${monthSummary.subscriptionCount}건 · 합계 ${formatKoreanUnit(monthSummary.totalAmount)}원`
+              : `${active.length}개 활성 · 평균 월 ${formatKoreanUnit(stats.totalMonthly / Math.max(1, active.length))}원`
+          }
         />
         <div className="space-y-2 mt-3">
           {active.map(sub => (
@@ -130,43 +178,6 @@ export function SubscriptionPage() {
             />
           ))}
         </div>
-
-        {/* Inactive (paused/cancelled) collapsible */}
-        {inactive.length > 0 && (
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={() => setShowInactive(v => !v)}
-              className="flex items-center gap-1.5 text-caption text-sub hover:text-heading transition-colors py-1.5 font-semibold"
-            >
-              {showInactive ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              비활성 ({inactive.length})
-            </button>
-            <AnimatePresence>
-              {showInactive && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: durations.base, ease: easeOutExpo }}
-                  className="overflow-hidden"
-                >
-                  <div className="space-y-2 pt-2 opacity-70">
-                    {inactive.map(sub => (
-                      <SubscriptionItemCard
-                        key={sub.key}
-                        sub={sub}
-                        categories={categories}
-                        members={members}
-                        onClick={() => setSelectedKey(sub.key)}
-                      />
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
 
         {/* Hidden ("종료" 마킹) collapsible */}
         {hiddenList.length > 0 && (
@@ -335,6 +346,55 @@ const CYCLE_LABELS: Record<DetectedCycle | 'all', string> = {
   'semi-annual': '반기',
   yearly: '연간',
   irregular: '비정기',
+}
+
+/**
+ * Horizontally-scrolling month chips for narrowing the subscription list to
+ * bills that landed in one specific month. "전체" preserves the all-time view.
+ * "이번 달" is highlighted as a familiar quick-pick when present.
+ */
+function MonthFilterChips({
+  value, onChange, months,
+}: {
+  value: string
+  onChange: (v: string) => void
+  months: string[]
+}) {
+  const shouldReduceMotion = useReducedMotion()
+  const currentMonth = getCurrentMonthString()
+  const options: { id: string; label: string }[] = [
+    { id: 'all', label: '전체' },
+    ...months.map((m) => ({
+      id: m,
+      label: m === currentMonth ? '이번 달' : formatMonthLabel(m),
+    })),
+  ]
+
+  return (
+    <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 -my-1 py-1">
+      {options.map((opt) => {
+        const isActive = value === opt.id
+        return (
+          <motion.button
+            key={opt.id}
+            type="button"
+            onClick={() => onChange(opt.id)}
+            whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
+            transition={springSnappy}
+            aria-pressed={isActive}
+            className={clsx(
+              'flex-shrink-0 inline-flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold transition-all tabular-nums',
+              isActive
+                ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
+                : 'bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
+            )}
+          >
+            {opt.label}
+          </motion.button>
+        )
+      })}
+    </div>
+  )
 }
 
 function CycleFilterChips({
@@ -1462,12 +1522,12 @@ function EmptyState() {
             <Repeat className="w-9 h-9 text-white" />
           </div>
           <h3 className="text-title2 font-bold text-heading mb-2 tracking-tight">
-            구독 패턴을 감지할 수 없습니다
+            등록된 구독이 없습니다
           </h3>
-          <p className="text-body3 text-sub max-w-[320px] mx-auto leading-relaxed">
-            가계부에 같은 가맹점으로 반복 결제된 거래가 있어야 자동으로 인식됩니다.
+          <p className="text-body3 text-sub max-w-[340px] mx-auto leading-relaxed">
+            거래내역 작성 시 하단의 <span className="font-bold text-heading">구독 분류</span> 라벨을 선택한 거래만 여기에 표시됩니다.
             <br />
-            카드 명세서를 가져오거나 거래를 기록해 보세요.
+            지출관리에서 해당 거래를 열어 구독 분류를 지정해 보세요.
           </p>
         </div>
       </div>
