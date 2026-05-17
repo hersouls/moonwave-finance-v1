@@ -141,6 +141,36 @@ export const useTransactionStore = create<TransactionState>()(
         await db.updateTransaction(id, updates)
         await get().loadTransactions()
 
+        // Learn from user category corrections — when the user changes the
+        // category on a transaction that has a memo (= merchant identifier),
+        // persist the (merchant → category) mapping to merchantAliases so
+        // future card-statement imports for the same merchant resolve
+        // correctly on the first try. Skipped for null-clearing changes
+        // (those carry no positive signal) and for memo-less rows.
+        if (
+          prev
+          && 'categoryId' in updates
+          && updates.categoryId != null
+          && updates.categoryId !== prev.categoryId
+          && prev.memo
+          && prev.memo.trim().length > 0
+        ) {
+          // Fire-and-forget — alias persistence is best-effort.
+          void (async () => {
+            try {
+              const { setAlias } = await import('@/services/merchantAliasService')
+              await setAlias({
+                merchant: prev.memo!,
+                categoryId: updates.categoryId as number,
+                source: 'user-override',
+                sampleMerchant: prev.memo,
+              })
+            } catch (err) {
+              console.warn('[transactionStore] setAlias failed', err)
+            }
+          })()
+        }
+
         if (prev) {
           useUndoStore.getState().pushAction({
             type: 'update',

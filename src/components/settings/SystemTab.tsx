@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Download, Trash2, Smartphone, CheckCircle2 } from 'lucide-react'
+import { Download, Trash2, Smartphone, CheckCircle2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { clearAllData } from '@/services/database'
+import { getApiKey, setApiKey, clearApiKey } from '@/services/aiCategorizeMerchants'
 import { useToastStore } from '@/stores/toastStore'
 import { useUIStore } from '@/stores/uiStore'
 
@@ -18,6 +19,9 @@ export function SystemTab() {
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [isStandalone, setIsStandalone] = useState(false)
+  const [apiKey, setApiKeyInput] = useState<string>('')
+  const [apiKeySaved, setApiKeySaved] = useState<boolean>(false)
+  const [showApiKey, setShowApiKey] = useState<boolean>(false)
 
   useEffect(() => {
     setIsStandalone(
@@ -30,8 +34,38 @@ export function SystemTab() {
       setInstallPrompt(e as BeforeInstallPromptEvent)
     }
     window.addEventListener('beforeinstallprompt', handler)
+
+    const existingKey = getApiKey()
+    if (existingKey) {
+      setApiKeySaved(true)
+      setApiKeyInput(existingKey)
+    }
+
     return () => window.removeEventListener('beforeinstallprompt', handler)
   }, [])
+
+  const handleSaveApiKey = () => {
+    const trimmed = apiKey.trim()
+    if (trimmed.length === 0) {
+      addToast('API 키를 입력해주세요', 'error')
+      return
+    }
+    if (!/^sk-ant-/.test(trimmed)) {
+      addToast('Anthropic API 키 형식이 아닙니다 (sk-ant-...)', 'error')
+      return
+    }
+    setApiKey(trimmed)
+    setApiKeySaved(true)
+    setShowApiKey(false)
+    addToast('AI 분류 키가 저장되었습니다', 'success')
+  }
+
+  const handleClearApiKey = () => {
+    clearApiKey()
+    setApiKeyInput('')
+    setApiKeySaved(false)
+    addToast('AI 분류 키가 제거되었습니다', 'info')
+  }
 
   const handleInstall = async () => {
     if (!installPrompt) return
@@ -97,6 +131,53 @@ export function SystemTab() {
               </div>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* AI Classification */}
+      <section>
+        <h3 className="text-body3-semi text-heading mb-3 flex items-center gap-2">
+          <Sparkles className="w-4 h-4" />
+          AI 카테고리 분류
+        </h3>
+        <div className="p-4 bg-surface-secondary rounded-xl space-y-3">
+          <p className="text-caption text-sub">
+            카드 명세서 가져오기에서 인식 못 한 가맹점을 Claude API로 자동 분류합니다.
+            API 키는 이 디바이스에만 저장되며 클라우드에 동기화되지 않습니다.
+            가맹점 이름과 카테고리 목록만 Anthropic에 전송됩니다(금액/날짜/멤버 정보는 전송 안 됨).
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              type={showApiKey ? 'text' : 'password'}
+              value={apiKey}
+              onChange={(e) => setApiKeyInput(e.target.value)}
+              placeholder="sk-ant-..."
+              className="input flex-1 text-sm"
+              autoComplete="off"
+            />
+            <button
+              type="button"
+              onClick={() => setShowApiKey(v => !v)}
+              className="text-caption text-sub px-2 py-1 hover:underline"
+            >
+              {showApiKey ? '숨김' : '보기'}
+            </button>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-caption text-sub">
+              {apiKeySaved ? '✓ 저장됨 — 카드 명세서 모달에서 "AI 분류" 버튼 사용 가능' : '아직 설정되지 않음'}
+            </span>
+            <div className="flex gap-2">
+              {apiKeySaved && (
+                <Button variant="ghost" size="sm" onClick={handleClearApiKey}>
+                  제거
+                </Button>
+              )}
+              <Button variant="primary" size="sm" onClick={handleSaveApiKey}>
+                저장
+              </Button>
+            </div>
+          </div>
         </div>
       </section>
 

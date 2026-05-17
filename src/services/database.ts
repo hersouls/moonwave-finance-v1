@@ -13,6 +13,7 @@ import type {
   PaymentMethodItem,
   Subscription,
   Loan,
+  MerchantAlias,
   SyncChangeLogEntry,
   SyncTombstone,
 } from '@/lib/types'
@@ -29,6 +30,7 @@ class FinanceDatabase extends Dexie {
   paymentMethodItems!: Table<PaymentMethodItem>
   subscriptions!: Table<Subscription>
   loans!: Table<Loan>
+  merchantAliases!: Table<MerchantAlias>
   syncChangeLog!: Table<SyncChangeLogEntry>
   syncTombstones!: Table<SyncTombstone>
 
@@ -186,6 +188,23 @@ class FinanceDatabase extends Dexie {
     })
 
     // v10: add loans table + "대출이자" expense category for existing users
+    this.version(11).stores({
+      members: '++id, syncId, name, sortOrder',
+      assetCategories: '++id, syncId, name, type, sortOrder',
+      assetItems: '++id, syncId, memberId, categoryId, type, isActive, sortOrder',
+      dailyValues: '++id, syncId, assetItemId, date, [assetItemId+date]',
+      transactionCategories: '++id, syncId, name, type, sortOrder',
+      transactions: '++id, syncId, memberId, type, categoryId, date, isRecurring, recurSourceId, paymentMethod, paymentMethodItemId, subscriptionId',
+      budgets: '++id, syncId, categoryId, month',
+      goals: '++id, syncId, targetDate',
+      paymentMethodItems: '++id, syncId, type, name, sortOrder, linkedAssetItemId',
+      subscriptions: '++id, syncId, currency, category, status, billingDay, cycle, sortOrder, paymentMethodItemId',
+      loans: '++id, syncId, isActive, sortOrder',
+      merchantAliases: '++id, syncId, &merchantKey, categoryId, source, learnedAt, lastUsedAt',
+      syncChangeLog: '++id, tableName, syncId, processed, timestamp, [tableName+syncId]',
+      syncTombstones: '++id, tableName, syncId, deletedAt, [tableName+syncId]',
+    })
+
     this.version(10).stores({
       members: '++id, syncId, name, sortOrder',
       assetCategories: '++id, syncId, name, type, sortOrder',
@@ -235,7 +254,7 @@ export function setSyncWritingFlag(v: boolean) {
 }
 export function getSyncWritingFlag() { return _syncWritingCount > 0 }
 
-type SyncableTableName = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions' | 'loans'
+type SyncableTableName = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions' | 'loans' | 'merchantAliases'
 
 function installChangeTracking() {
   const tables: { table: Table; name: SyncableTableName }[] = [
@@ -250,6 +269,7 @@ function installChangeTracking() {
     { table: db.paymentMethodItems, name: 'paymentMethodItems' },
     { table: db.subscriptions, name: 'subscriptions' },
     { table: db.loans, name: 'loans' },
+    { table: db.merchantAliases, name: 'merchantAliases' },
   ]
 
   for (const { table, name } of tables) {
@@ -853,6 +873,7 @@ export async function clearAllData(): Promise<void> {
   await db.paymentMethodItems.clear()
   await db.subscriptions.clear()
   await db.loans.clear()
+  await db.merchantAliases.clear()
   await db.syncChangeLog.clear()
   await db.syncTombstones.clear()
 

@@ -314,6 +314,32 @@ export interface AuthUser {
   photoURL: string
 }
 
+// ─── Merchant Alias (AI/learned category mapping) ──
+export type MerchantAliasSource = 'user-override' | 'ai-suggestion'
+
+export interface MerchantAlias {
+  id?: number
+  syncId?: string
+  /** Normalized merchant key from normalizeMerchantKey() — unique. */
+  merchantKey: string
+  /** Resolved local category id (FK to transactionCategories). */
+  categoryId: number
+  /** Optional subscription FK when the merchant was AI-classified as a known subscription. */
+  subscriptionId?: number
+  /** Optional subscription category label for keyword-style tagging. */
+  subscriptionCategory?: SubscriptionCategoryType
+  /** Where this alias came from — `user-override` wins over `ai-suggestion` on conflict. */
+  source: MerchantAliasSource
+  /** Optional original merchant name as displayed (for UI debugging). */
+  sampleMerchant?: string
+  /** Number of times this alias has been applied to an imported row. */
+  usageCount: number
+  learnedAt: string
+  lastUsedAt?: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface SyncChangeLogEntry {
   id?: number
   tableName: string

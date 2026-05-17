@@ -9,11 +9,11 @@
 //     top-items bar, per-item monthly evolution
 //   - Per-item detail sheet with payment timeline + cumulative cost graph
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import {
   TrendingUp, TrendingDown, Minus, Calendar as CalendarIcon, Tag,
-  Sparkles, ChevronRight, X, ArrowUpRight, Layers,
+  Sparkles, ChevronRight, ChevronLeft, X, ArrowUpRight, Layers,
   Repeat, Wallet, Receipt, ChevronDown, ChevronUp, EyeOff, RotateCcw,
 } from 'lucide-react'
 import { clsx } from 'clsx'
@@ -88,16 +88,17 @@ export function SubscriptionPage() {
   }, [detected, activeCycleFilter])
 
   // Months for which the user has any expense transactions, newest first.
-  // Capped at 12 so the chip row doesn't grow unbounded; "전체" plus this
-  // covers most planning needs.
-  const availableMonths = useMemo(() => {
+  // `availableMonthsAll` is unbounded (used by the calendar picker to highlight
+  // months with activity); `availableMonths` is capped at 12 for the chip strip.
+  const availableMonthsAll = useMemo(() => {
     const set = new Set<string>()
     for (const t of transactions) {
       if (t.type !== 'expense') continue
       set.add(t.date.slice(0, 7))
     }
-    return Array.from(set).sort().reverse().slice(0, 12)
+    return Array.from(set).sort().reverse()
   }, [transactions])
+  const availableMonths = useMemo(() => availableMonthsAll.slice(0, 12), [availableMonthsAll])
 
   // After the cycle filter, restrict to subscriptions that actually billed
   // in the selected month. 'all' is a no-op pass-through.
@@ -138,12 +139,13 @@ export function SubscriptionPage() {
       {/* ─── Hero ─── */}
       <SubscriptionHero stats={stats} detectedCount={detected.length} />
 
-      {/* ─── Month filter chips ─── */}
+      {/* ─── Month selector (calendar picker + quick chips) ─── */}
       {availableMonths.length > 0 && (
-        <MonthFilterChips
+        <MonthSelector
           value={selectedMonth}
           onChange={setSelectedMonth}
           months={availableMonths}
+          allMonthsWithActivity={availableMonthsAll}
         />
       )}
 
@@ -353,19 +355,35 @@ const CYCLE_LABELS: Record<DetectedCycle | 'all', string> = {
 }
 
 /**
- * Horizontally-scrolling month chips for narrowing the subscription list to
- * bills that landed in one specific month. "전체" preserves the all-time view.
- * "이번 달" is highlighted as a familiar quick-pick when present.
+ * Premium month selector — combines a calendar-style picker (year grid)
+ * with a quick-access chip strip for recent months.
+ *
+ *   ┌──────────────────────────────────────────────────────────┐
+ *   │ [📅 2025년 5월 ▾]  [전체] [이번 달] [4월] [3월] [2월] … │
+ *   └──────────────────────────────────────────────────────────┘
+ *
+ * Click the calendar button → opens a popover with year-by-year navigation
+ * and a 12-month grid; months that actually have payment activity are dotted.
  */
-function MonthFilterChips({
-  value, onChange, months,
+function MonthSelector({
+  value, onChange, months, allMonthsWithActivity,
 }: {
   value: string
   onChange: (v: string) => void
-  months: string[]
+  months: string[]                 // recent (capped) — used for chip strip
+  allMonthsWithActivity: string[]  // unbounded — used to dot the calendar
 }) {
   const shouldReduceMotion = useReducedMotion()
   const currentMonth = getCurrentMonthString()
+  const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const anchorRef = useRef<HTMLButtonElement>(null)
+
+  const displayLabel = value === 'all'
+    ? '전체 기간'
+    : value === currentMonth
+      ? `이번 달 · ${formatMonthLabel(value)}`
+      : formatMonthLabel(value)
+
   const options: { id: string; label: string }[] = [
     { id: 'all', label: '전체' },
     ...months.map((m) => ({
@@ -375,29 +393,351 @@ function MonthFilterChips({
   ]
 
   return (
-    <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 -my-1 py-1">
-      {options.map((opt) => {
-        const isActive = value === opt.id
-        return (
-          <motion.button
-            key={opt.id}
-            type="button"
-            onClick={() => onChange(opt.id)}
-            whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
-            transition={springSnappy}
-            aria-pressed={isActive}
-            className={clsx(
-              'flex-shrink-0 inline-flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold transition-all tabular-nums',
-              isActive
-                ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
-                : 'bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
-            )}
-          >
-            {opt.label}
-          </motion.button>
-        )
-      })}
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Calendar trigger button */}
+        <motion.button
+          ref={anchorRef}
+          type="button"
+          onClick={() => setIsPickerOpen(true)}
+          whileHover={shouldReduceMotion ? undefined : { y: -1 }}
+          whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
+          transition={springSnappy}
+          aria-haspopup="dialog"
+          aria-expanded={isPickerOpen}
+          aria-label="월 선택 캘린더 열기"
+          className={clsx(
+            'inline-flex items-center gap-2 h-9 px-3.5 rounded-2xl text-[12px] font-bold transition-all',
+            value === 'all'
+              ? 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
+              : 'text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]',
+          )}
+          style={
+            value !== 'all'
+              ? {
+                  background:
+                    'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))',
+                }
+              : undefined
+          }
+        >
+          <CalendarIcon className="w-4 h-4" />
+          <span className="tabular-nums">{displayLabel}</span>
+          <ChevronDown className={clsx('w-3.5 h-3.5 transition-transform', isPickerOpen && 'rotate-180')} />
+        </motion.button>
+
+        {/* Quick chips (전체 + 최근 12개월) */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 -my-1 py-1 flex-1 min-w-0">
+          {options.map((opt) => {
+            const isActive = value === opt.id
+            return (
+              <motion.button
+                key={opt.id}
+                type="button"
+                onClick={() => onChange(opt.id)}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
+                transition={springSnappy}
+                aria-pressed={isActive}
+                className={clsx(
+                  'flex-shrink-0 inline-flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold transition-all tabular-nums',
+                  isActive
+                    ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
+                    : 'bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
+                )}
+              >
+                {opt.label}
+              </motion.button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Calendar picker popover */}
+      <MonthCalendarPicker
+        open={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        value={value}
+        onChange={(v) => { onChange(v); setIsPickerOpen(false) }}
+        allMonthsWithActivity={allMonthsWithActivity}
+        anchorRef={anchorRef}
+      />
     </div>
+  )
+}
+
+/**
+ * Calendar-style month picker: a 12-month grid with year navigation.
+ * Anchored below the trigger button on desktop, centered modal on mobile.
+ * Months with payment activity show a primary-color dot. The currently
+ * selected month is filled; today's month carries a ring outline.
+ */
+function MonthCalendarPicker({
+  open, onClose, value, onChange, allMonthsWithActivity, anchorRef,
+}: {
+  open: boolean
+  onClose: () => void
+  value: string                       // 'all' | 'YYYY-MM'
+  onChange: (v: string) => void
+  allMonthsWithActivity: string[]
+  anchorRef: React.RefObject<HTMLButtonElement | null>
+}) {
+  const shouldReduceMotion = useReducedMotion()
+  const currentMonth = getCurrentMonthString()
+  const currentYear = new Date().getFullYear()
+
+  const initialYear = value === 'all' ? currentYear : Number(value.slice(0, 4))
+  const [displayYear, setDisplayYear] = useState<number>(initialYear)
+
+  // Reset display year each time the picker re-opens
+  useEffect(() => {
+    if (open) {
+      setDisplayYear(value === 'all' ? currentYear : Number(value.slice(0, 4)))
+    }
+  }, [open, value, currentYear])
+
+  // ESC closes + body scroll lock
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prev
+    }
+  }, [open, onClose])
+
+  // Click outside the popover closes (desktop only — modal handles its own backdrop)
+  const [isDesktop, setIsDesktop] = useState(false)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mq = window.matchMedia('(min-width: 640px)')
+    const update = () => setIsDesktop(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+
+  // Anchor position (desktop only)
+  const [anchorPos, setAnchorPos] = useState<{ top: number; left: number } | null>(null)
+  useEffect(() => {
+    if (!open || !isDesktop) return
+    const update = () => {
+      const el = anchorRef.current
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      setAnchorPos({ top: r.bottom + 8, left: r.left })
+    }
+    update()
+    window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, true)
+    return () => {
+      window.removeEventListener('resize', update)
+      window.removeEventListener('scroll', update, true)
+    }
+  }, [open, isDesktop, anchorRef])
+
+  // Activity per month: set of 'YYYY-MM' that have transactions
+  const activitySet = useMemo(() => new Set(allMonthsWithActivity), [allMonthsWithActivity])
+
+  // Year range: from earliest activity year to current year (+0 to prevent future years)
+  const earliestYear = allMonthsWithActivity.length > 0
+    ? Number(allMonthsWithActivity[allMonthsWithActivity.length - 1].slice(0, 4))
+    : currentYear
+  const canGoPrev = displayYear > earliestYear
+  const canGoNext = displayYear < currentYear
+
+  if (!open) return null
+
+  const popoverWidth = 320
+
+  return (
+    <AnimatePresence>
+      <>
+        {/* Backdrop — only on mobile (modal) */}
+        {!isDesktop && (
+          <motion.div
+            key="month-picker-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+            className="fixed inset-0 z-[var(--z-overlay)] bg-black/40 dark:bg-black/60 backdrop-blur-[10px]"
+            aria-hidden="true"
+          />
+        )}
+        {/* Desktop: transparent click-catcher behind popover */}
+        {isDesktop && (
+          <div
+            key="month-picker-catcher"
+            onClick={onClose}
+            className="fixed inset-0 z-[var(--z-overlay)]"
+            aria-hidden="true"
+          />
+        )}
+        {/* Popover / Modal panel */}
+        <motion.div
+          key="month-picker"
+          role="dialog"
+          aria-modal="true"
+          aria-label="월 선택"
+          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: isDesktop ? -6 : 12, scale: isDesktop ? 0.98 : 1 }}
+          animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+          exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: isDesktop ? -6 : 12, scale: isDesktop ? 0.98 : 1 }}
+          transition={{ type: 'spring', stiffness: 360, damping: 30 }}
+          className={clsx(
+            'z-[calc(var(--z-overlay)+1)]',
+            'bg-surface-primary el-dialog ring-1 ring-[color:var(--border-default)]',
+            isDesktop
+              ? 'fixed rounded-2xl shadow-[0_18px_44px_-12px_rgba(0,0,0,0.22)]'
+              : 'fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-sm rounded-3xl',
+          )}
+          style={
+            isDesktop && anchorPos
+              ? {
+                  top: anchorPos.top,
+                  left: Math.min(anchorPos.left, window.innerWidth - popoverWidth - 16),
+                  width: popoverWidth,
+                }
+              : undefined
+          }
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Aurora accent header */}
+          <div className="relative overflow-hidden rounded-t-2xl">
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  'radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--color-primary-500) 16%, transparent), transparent 60%)',
+              }}
+            />
+            <div className="relative flex items-center justify-between px-3 pt-3 pb-2">
+              <button
+                type="button"
+                onClick={() => canGoPrev && setDisplayYear((y) => y - 1)}
+                disabled={!canGoPrev}
+                className={clsx(
+                  'w-8 h-8 rounded-full flex items-center justify-center transition-all',
+                  canGoPrev
+                    ? 'text-body hover:text-heading hover:bg-[var(--hover-bg)] ring-1 ring-transparent hover:ring-[color:var(--border-subtle)]'
+                    : 'text-disabled cursor-not-allowed',
+                )}
+                aria-label="이전 연도"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="w-3.5 h-3.5 text-[color:var(--color-primary-600)]" />
+                <h3 className="text-body3 font-bold text-heading tabular-nums">
+                  {displayYear}년
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => canGoNext && setDisplayYear((y) => y + 1)}
+                disabled={!canGoNext}
+                className={clsx(
+                  'w-8 h-8 rounded-full flex items-center justify-center transition-all',
+                  canGoNext
+                    ? 'text-body hover:text-heading hover:bg-[var(--hover-bg)] ring-1 ring-transparent hover:ring-[color:var(--border-subtle)]'
+                    : 'text-disabled cursor-not-allowed',
+                )}
+                aria-label="다음 연도"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* 12-month grid */}
+          <div className="px-3 pb-3 grid grid-cols-3 gap-1.5">
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+              const monthStr = `${displayYear}-${String(m).padStart(2, '0')}`
+              const hasActivity = activitySet.has(monthStr)
+              const isSelected = value === monthStr
+              const isThisMonth = monthStr === currentMonth
+              const isFuture = monthStr > currentMonth
+              const disabled = isFuture
+              return (
+                <motion.button
+                  key={m}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => onChange(monthStr)}
+                  whileTap={shouldReduceMotion || disabled ? undefined : { scale: 0.94 }}
+                  transition={springSnappy}
+                  aria-pressed={isSelected}
+                  className={clsx(
+                    'relative flex flex-col items-center justify-center h-14 rounded-xl text-[12px] font-bold tabular-nums transition-all',
+                    isSelected && 'text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]',
+                    !isSelected && disabled && 'text-disabled bg-transparent cursor-not-allowed',
+                    !isSelected && !disabled && hasActivity && 'bg-surface-primary text-heading ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] hover:bg-[var(--hover-bg)]',
+                    !isSelected && !disabled && !hasActivity && 'bg-surface-tertiary text-sub ring-1 ring-transparent hover:text-heading hover:bg-[var(--hover-bg)]',
+                    !isSelected && isThisMonth && '!ring-[color:var(--color-primary-500)] !ring-2',
+                  )}
+                  style={
+                    isSelected
+                      ? { background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))' }
+                      : undefined
+                  }
+                >
+                  <span>{m}월</span>
+                  {hasActivity && !isSelected && (
+                    <span
+                      className="w-1 h-1 rounded-full mt-0.5"
+                      style={{ backgroundColor: 'var(--color-primary-500)' }}
+                      aria-hidden="true"
+                    />
+                  )}
+                  {isSelected && (
+                    <span className="w-1 h-1 rounded-full mt-0.5 bg-white/70" aria-hidden="true" />
+                  )}
+                  {isThisMonth && !isSelected && (
+                    <span className="absolute top-1 right-1.5 text-[8px] font-bold uppercase tracking-wider text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]">
+                      ★
+                    </span>
+                  )}
+                </motion.button>
+              )
+            })}
+          </div>
+
+          {/* Footer quick actions */}
+          <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-t border-[color:var(--border-subtle)] bg-surface-primary/95">
+            <button
+              type="button"
+              onClick={() => onChange('all')}
+              className={clsx(
+                'inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[11px] font-bold transition-all ring-1',
+                value === 'all'
+                  ? 'bg-[color:var(--color-primary-500)] text-white ring-transparent'
+                  : 'bg-surface-primary text-body ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)]',
+              )}
+            >
+              <Layers className="w-3 h-3" />
+              전체 기간
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange(currentMonth)}
+              className={clsx(
+                'inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[11px] font-bold transition-all ring-1',
+                value === currentMonth
+                  ? 'bg-[color:var(--color-primary-500)] text-white ring-transparent'
+                  : 'bg-surface-primary text-body ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)]',
+              )}
+            >
+              <CalendarIcon className="w-3 h-3" />
+              이번 달로
+            </button>
+          </div>
+        </motion.div>
+      </>
+    </AnimatePresence>
   )
 }
 

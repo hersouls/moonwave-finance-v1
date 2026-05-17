@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { classifyAndPersistAliases, hasApiKey } from '@/services/aiCategorizeMerchants'
 import {
   Sparkles, FileText, ClipboardPaste, Wallet, Users, Check, X,
   ArrowRight, ArrowLeft, AlertTriangle, CreditCard, Banknote,
@@ -75,6 +76,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
   const [showAllRows, setShowAllRows] = useState(false)
   const [importResult, setImportResult] = useState<{ imported: number; skipped: number; totalParsed: number } | null>(null)
   const [importError, setImportError] = useState<string>('')
+  const [aiClassifying, setAiClassifying] = useState(false)
   // Cash-flow alignment: replace every row's statement date with one
   // user-chosen date (typically the card's payment due date). Default on
   // because users importing statements are almost always tracking real
@@ -104,12 +106,12 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
   }, [open, initialText])
 
   // ── Analyze when entering review ─────────────────
-  const handleAnalyze = useCallback(() => {
+  const handleAnalyze = useCallback(async () => {
     if (!text.trim()) {
       addToast('명세서 내용을 붙여넣어 주세요', 'info')
       return
     }
-    const analyzed = analyzeStatement(text, categories, transactions)
+    const analyzed = await analyzeStatement(text, categories, transactions)
     if (analyzed.length === 0) {
       addToast('인식 가능한 거래가 없습니다. 형식을 확인해주세요', 'error')
       return
@@ -153,6 +155,54 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
     if (paymentMethod === 'cash' || !paymentMethod) return []
     return paymentMethodItems.filter(i => i.type === paymentMethod && i.isActive)
   }, [paymentMethod, paymentMethodItems])
+
+  // ── AI fallback: classify low/none-confidence rows via Claude ──
+  // Collects unique merchant strings from rows that the local heuristic
+  // couldn't resolve, sends them in one batched API call, persists results
+  // into merchantAliases, then re-runs analyzeStatement so the suggestions
+  // refresh with the new alias hits.
+  const aiTargets = useMemo(
+    () => rows.filter(r => r.suggestion.confidence === 'none' || r.suggestion.confidence === 'low'),
+    [rows],
+  )
+  const uniqueAiMerchants = useMemo(() => {
+    const seen = new Set<string>()
+    const out: string[] = []
+    for (const r of aiTargets) {
+      if (!seen.has(r.merchant)) { seen.add(r.merchant); out.push(r.merchant) }
+    }
+    return out
+  }, [aiTargets])
+
+  const handleAiClassify = useCallback(async () => {
+    if (uniqueAiMerchants.length === 0) return
+    if (!hasApiKey()) {
+      addToast('설정 → 시스템 → AI 카테고리 분류 에서 API 키를 설정해주세요', 'error')
+      return
+    }
+    setAiClassifying(true)
+    try {
+      const results = await classifyAndPersistAliases({
+        merchants: uniqueAiMerchants,
+        categories,
+      })
+      // Re-analyze with refreshed aliases so the new mappings apply to all
+      // rows (including any duplicates of the just-classified merchant).
+      const refreshed = await analyzeStatement(text, categories, transactions)
+      setRows(refreshed)
+      const resolved = results.filter(r => r.categoryId != null).length
+      addToast(
+        `AI 분류 완료: ${resolved}/${results.length}건 자동 분류 (모두 다음 import부터 자동 적용)`,
+        'success',
+      )
+    } catch (err) {
+      console.error('[AI classify] failed', err)
+      const msg = err instanceof Error ? err.message : 'AI 분류 실패'
+      addToast(msg.slice(0, 120), 'error')
+    } finally {
+      setAiClassifying(false)
+    }
+  }, [uniqueAiMerchants, categories, text, transactions, addToast])
 
   // ── Import handler ────────────────────────────────
   const handleImport = useCallback(async () => {
@@ -305,6 +355,34 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
                           className="text-[11px] font-semibold px-2.5 h-7 rounded-full bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]"
                         >
                           전체 포함
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* AI fallback for unmatched merchants */}
+              {uniqueAiMerchants.length > 0 && (
+                <div className="rounded-2xl p-3 bg-violet-50 dark:bg-violet-900/15 ring-1 ring-violet-200 dark:ring-violet-800">
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 text-violet-600 dark:text-violet-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-caption font-bold text-violet-700 dark:text-violet-300 mb-0.5">
+                        AI 자동 분류 가능 — 미분류·낮은 신뢰도 가맹점 {uniqueAiMerchants.length}곳
+                      </p>
+                      <p className="text-[11px] text-violet-600 dark:text-violet-400 leading-relaxed">
+                        Claude API로 한 번에 분류하고 학습된 매핑을 영구 저장 (다음 import부터 즉시 적용).
+                        {!hasApiKey() && ' API 키는 설정 → 시스템에서 등록.'}
+                      </p>
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={handleAiClassify}
+                          disabled={aiClassifying}
+                          className="text-[11px] font-semibold px-2.5 h-7 rounded-full bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {aiClassifying ? '분류 중…' : 'AI 분류 받기'}
                         </button>
                       </div>
                     </div>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion, type Variants } from 'framer-motion'
 import {
   Search, SlidersHorizontal, RotateCcw, X, Check,
@@ -143,6 +143,30 @@ export function TransactionFilters(props: TransactionFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const shouldReduceMotion = useReducedMotion()
 
+  const [isDesktop, setIsDesktop] = useState(false)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const update = () => setIsDesktop(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+
+  useEffect(() => {
+    if (!isExpanded) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsExpanded(false)
+    }
+    window.addEventListener('keydown', onKey)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [isExpanded])
+
   const hasAdvanced = Boolean(
     onMemberChange || onCategoryChange || onPaymentMethodChange ||
     onAmountRangeChange || onSortByChange || onDateRangeChange ||
@@ -157,7 +181,6 @@ export function TransactionFilters(props: TransactionFiltersProps) {
 
   const selectedMember = memberFilter != null ? members?.find(m => m.id === memberFilter) : null
   const selectedCategory = categoryFilter != null ? categories?.find(c => c.id === categoryFilter) : null
-  const selectedSort = SORT_OPTIONS.find(s => s.value === sortBy)
   const hasAmountRange = minAmount !== null || maxAmount !== null
 
   return (
@@ -385,7 +408,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
         )}
       </AnimatePresence>
 
-      {/* ─── Row 4: Expanded panel → BottomSheet (v2 Prism Phase 3) */}
+      {/* ─── Row 4: Expanded panel → Adaptive Drawer (Mobile BottomSheet · Desktop SideDrawer) */}
       <AnimatePresence initial={false}>
         {isExpanded && hasAdvanced && (
           <>
@@ -400,43 +423,84 @@ export function TransactionFilters(props: TransactionFiltersProps) {
               className="fixed inset-0 z-[var(--z-overlay)] bg-black/40 dark:bg-black/60 backdrop-blur-[12px] saturate-[1.4]"
               aria-hidden="true"
             />
-            {/* Sheet */}
+            {/* Drawer */}
             <motion.div
               key="filter-sheet"
               role="dialog"
               aria-modal="true"
               aria-labelledby="filter-sheet-title"
-              initial={shouldReduceMotion ? { opacity: 0 } : { y: '100%' }}
-              animate={shouldReduceMotion ? { opacity: 1 } : { y: 0 }}
-              exit={shouldReduceMotion ? { opacity: 0 } : { y: '100%' }}
-              transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-              drag={shouldReduceMotion ? false : 'y'}
+              initial={shouldReduceMotion ? { opacity: 0 } : isDesktop ? { x: '102%' } : { y: '100%' }}
+              animate={shouldReduceMotion ? { opacity: 1 } : isDesktop ? { x: 0 } : { y: 0 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : isDesktop ? { x: '102%' } : { y: '100%' }}
+              transition={{ type: 'spring', stiffness: 320, damping: 34 }}
+              drag={shouldReduceMotion || isDesktop ? false : 'y'}
               dragConstraints={{ top: 0, bottom: 0 }}
               dragElastic={{ top: 0, bottom: 0.5 }}
               onDragEnd={(_, info) => {
                 if (info.offset.y > 120 || info.velocity.y > 600) setIsExpanded(false)
               }}
               className={clsx(
-                'fixed bottom-0 left-0 right-0 z-[var(--z-overlay)]',
-                'bg-surface-primary rounded-t-3xl sm:rounded-3xl',
-                'ring-1 ring-[color:var(--border-default)] el-dialog',
-                'overflow-hidden flex flex-col max-h-[85vh]',
-                'pb-[env(safe-area-inset-bottom,0px)]',
-                'sm:max-w-xl sm:mx-auto sm:mb-4 sm:left-1/2 sm:-translate-x-1/2 sm:right-auto sm:w-[calc(100%-2rem)]',
+                'fixed z-[var(--z-overlay)]',
+                'bg-surface-primary el-dialog overflow-hidden flex flex-col',
+                'ring-1 ring-[color:var(--border-default)]',
+                isDesktop
+                  // ── Desktop: right-side full-height drawer ──
+                  ? 'top-0 right-0 bottom-0 w-[480px] xl:w-[540px] max-w-[92vw] h-screen rounded-l-3xl shadow-[-24px_0_56px_-12px_rgba(0,0,0,0.18)]'
+                  // ── Mobile: bottom sheet (floating on sm+) ──
+                  : clsx(
+                      'bottom-0 left-0 right-0 rounded-t-3xl max-h-[85vh]',
+                      'pb-[env(safe-area-inset-bottom,0px)]',
+                      'sm:max-w-xl sm:mx-auto sm:left-1/2 sm:-translate-x-1/2 sm:right-auto sm:w-[calc(100%-2rem)] sm:mb-4 sm:rounded-3xl',
+                    ),
               )}
             >
-              {/* Drag handle */}
-              <div className="sm:hidden sheet-handle w-full" aria-hidden="true" />
+              {/* Drag handle — mobile only */}
+              {!isDesktop && (
+                <div className="sm:hidden sheet-handle w-full" aria-hidden="true" />
+              )}
 
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 pt-2 sm:pt-5 pb-3 border-b border-[color:var(--border-subtle)]">
-                <div className="inline-flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-[color:var(--color-primary-600)]" />
-                  <h2 id="filter-sheet-title" className="text-title2 font-bold text-heading">
-                    필터
-                  </h2>
+              {/* Header — premium gradient on desktop */}
+              <div
+                className={clsx(
+                  'relative flex items-center justify-between px-5 lg:px-6 pt-2 sm:pt-5 lg:pt-6 pb-3 lg:pb-4',
+                  'border-b border-[color:var(--border-subtle)]',
+                )}
+              >
+                {/* Aurora accent on desktop */}
+                {isDesktop && (
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background:
+                        'radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--color-primary-500) 14%, transparent), transparent 60%)',
+                    }}
+                  />
+                )}
+                <div className="relative inline-flex items-center gap-2.5">
+                  <span
+                    className="inline-flex items-center justify-center w-9 h-9 rounded-2xl"
+                    style={{
+                      background:
+                        'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))',
+                      boxShadow:
+                        '0 4px 14px color-mix(in srgb, var(--color-primary-500) 32%, transparent), inset 0 1px 0 0 rgba(255,255,255,0.28)',
+                    }}
+                  >
+                    <SlidersHorizontal className="w-4 h-4 text-white" />
+                  </span>
+                  <div className="flex flex-col">
+                    <h2 id="filter-sheet-title" className="text-title2 font-bold text-heading leading-tight">
+                      필터
+                    </h2>
+                    <p className="text-[11px] text-sub leading-tight">
+                      {activeFilterCount > 0
+                        ? `${activeFilterCount}개 조건 적용 중`
+                        : '거래를 세밀하게 탐색해 보세요'}
+                    </p>
+                  </div>
                   {activeFilterCount > 0 && (
-                    <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-[color:var(--color-primary-600)] text-white tabular-nums">
+                    <span className="ml-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-[color:var(--color-primary-600)] text-white tabular-nums shadow-[0_2px_8px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]">
                       {activeFilterCount}
                     </span>
                   )}
@@ -444,7 +508,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                 <button
                   type="button"
                   onClick={() => setIsExpanded(false)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
+                  className="relative w-9 h-9 rounded-full flex items-center justify-center text-sub hover:text-heading hover:bg-[var(--hover-bg)] ring-1 ring-transparent hover:ring-[color:var(--border-subtle)] transition-all"
                   aria-label="필터 닫기"
                 >
                   <X className="w-4 h-4" />
@@ -454,10 +518,10 @@ export function TransactionFilters(props: TransactionFiltersProps) {
               {/* Scrollable content */}
               <div
                 className={clsx(
-                  'flex-1 overflow-y-auto fold:p-3 p-4 sm:p-5 fold:space-y-4 space-y-5',
+                  'flex-1 overflow-y-auto fold:p-3 p-4 sm:p-5 lg:p-6 fold:space-y-4 space-y-5 lg:space-y-6',
                 )}
               >
-              {/* Sort + Date range row — lg 이상에서만 2열 (그 이하는 각 섹션 전폭 사용) */}
+              {/* Sort + Date range row — 2열 (lg+) */}
               {(onSortByChange || onDateRangeChange) && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {onSortByChange && (
@@ -483,7 +547,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
 
               {/* Category filter */}
               {onCategoryChange && currentCategories.length > 0 && (
-                <Section icon={Tag} label="카테고리" trailing={selectedSort ? null : null}>
+                <Section icon={Tag} label="카테고리">
                   <ChipScroller>
                     <AllChip
                       active={categoryFilter === null}
@@ -750,30 +814,51 @@ export function TransactionFilters(props: TransactionFiltersProps) {
 
               </div>
 
-              {/* Footer actions — fixed bottom of sheet */}
+              {/* Footer actions — fixed bottom of drawer */}
               {onReset && (
-                <div className="flex-shrink-0 px-5 py-3 border-t border-[color:var(--border-default)] bg-surface-primary flex items-center justify-between gap-3">
+                <div
+                  className={clsx(
+                    'flex-shrink-0 flex items-center justify-between gap-3',
+                    'px-5 lg:px-6 py-3 lg:py-4',
+                    'border-t border-[color:var(--border-default)]',
+                    'bg-surface-primary/95 backdrop-blur-md',
+                  )}
+                >
                   <button
                     type="button"
                     onClick={onReset}
                     disabled={activeFilterCount === 0}
                     className={clsx(
-                      'inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-caption font-semibold transition-colors',
+                      'inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-caption font-semibold transition-all ring-1',
                       activeFilterCount > 0
-                        ? 'text-status-danger hover:bg-status-danger-soft'
-                        : 'text-disabled cursor-not-allowed',
+                        ? 'text-status-danger ring-status-danger/30 hover:bg-status-danger-soft hover:ring-status-danger/50'
+                        : 'text-disabled ring-transparent cursor-not-allowed',
                     )}
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    필터 초기화
+                    초기화
+                    {activeFilterCount > 0 && (
+                      <span className="ml-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-status-danger/15 text-[10px] font-bold tabular-nums flex items-center justify-center">
+                        {activeFilterCount}
+                      </span>
+                    )}
                   </button>
-                  <button
+                  <motion.button
                     type="button"
                     onClick={() => setIsExpanded(false)}
-                    className="px-5 py-2.5 rounded-full bg-[color:var(--color-primary-600)] text-white text-caption font-bold hover:bg-[color:var(--color-primary-700)] transition-colors shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]"
+                    whileHover={shouldReduceMotion ? undefined : { y: -1 }}
+                    whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
+                    transition={springSnappy}
+                    className="px-6 lg:px-7 py-2.5 rounded-full text-white text-caption font-bold transition-colors"
+                    style={{
+                      background:
+                        'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))',
+                      boxShadow:
+                        '0 6px 18px color-mix(in srgb, var(--color-primary-500) 32%, transparent), inset 0 1px 0 0 rgba(255,255,255,0.22)',
+                    }}
                   >
-                    적용
-                  </button>
+                    적용하기
+                  </motion.button>
                 </div>
               )}
             </motion.div>
@@ -810,7 +895,15 @@ function Section({
 
 function ChipScroller({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 -my-1 py-1 snap-x">
+    <div
+      className={clsx(
+        'flex gap-2 -mx-1 px-1 -my-1 py-1',
+        // Mobile/Tablet: horizontal scroll w/ snap
+        'overflow-x-auto scrollbar-none snap-x',
+        // Desktop: wrap chips to fully utilize drawer width
+        'lg:flex-wrap lg:overflow-x-visible lg:snap-none',
+      )}
+    >
       {children}
     </div>
   )

@@ -17,7 +17,9 @@
 //   - type      → 'expense' (statements are always expenses)
 
 import { db } from '@/services/database'
-import type { Transaction, TransactionCategory, PaymentMethod, SubscriptionCategoryType } from '@/lib/types'
+import { normalizeMerchantKey } from '@/services/subscriptionDetection'
+import { loadAliasMap, recordAliasUsage } from '@/services/merchantAliasService'
+import type { Transaction, TransactionCategory, PaymentMethod, SubscriptionCategoryType, Subscription, MerchantAlias } from '@/lib/types'
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -67,6 +69,19 @@ export interface CategorySuggestion {
    * this per-row value when both are set.
    */
   subscriptionCategory?: SubscriptionCategoryType
+  /**
+   * When the merchant matches a registered subscription in db.subscriptions,
+   * importStatement links the imported transaction to it via this id so the
+   * dashboard's subscription view picks it up automatically.
+   */
+  subscriptionId?: number
+  /**
+   * Top runner-up categories with their observed share in history. Surfaced
+   * to the import-review UI so the user can pick a close alternative without
+   * opening the full category picker. Only populated when the stats-model
+   * path produced the suggestion.
+   */
+  alternatives?: Array<{ categoryId: number; share: number }>
 }
 
 export interface AnalyzedRow extends ParsedRow {
@@ -338,90 +353,234 @@ const KEYWORD_RULES: KeywordRule[] = [
 
 // ─── Auto-categorization ────────────────────────────────
 
-/**
- * Normalizes a merchant string for matching: removes punctuation, collapses
- * whitespace, keeps Korean letters and ASCII.
- */
-function normalizeMerchant(s: string): string {
-  return s
-    .replace(/\([^)]*\)/g, ' ')      // strip (주), (청라) etc.
-    .replace(/주식회사|㈜/g, ' ')
-    .replace(/[^\p{L}\p{N}\s.]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+// Merchant normalization is shared with subscriptionDetection so the same
+// canonical form is used here, for subscription matching, and for stats
+// aggregation. See `normalizeMerchantKey` in subscriptionDetection.ts —
+// strips parenthesized prefixes, 주식회사/㈜, month prefixes ("04월"),
+// reference numbers ("**65-8093"), punctuation, and lowercases.
+
+// ─── Merchant statistics model (P1.3) ──────────────────
+
+export interface MerchantStats {
+  topCategoryId: number
+  topShare: number
+  total: number
+  alternatives: Array<{ categoryId: number; count: number; share: number }>
 }
 
 /**
- * Suggests a category for a merchant string by:
- *   1) Exact merchant match against the user's history (highest confidence)
- *   2) Normalized merchant prefix match against history
- *   3) Keyword rule match (medium confidence)
- *   4) Falls back to '기타' if user has it (low confidence)
+ * Builds a normalized-merchant → category-frequency model from history.
+ * Categories no longer present in the user's category list are filtered out
+ * so we don't suggest a deleted category. Caller builds this once per import
+ * session and passes it to every `suggestCategory` call.
+ */
+export function buildMerchantStats(
+  history: Transaction[],
+  categories: TransactionCategory[],
+): Map<string, MerchantStats> {
+  const validCatIds = new Set(
+    categories.filter(c => c.type === 'expense' && c.id != null).map(c => c.id!),
+  )
+  const byMerchant = new Map<string, Map<number, number>>()
+  for (const t of history) {
+    if (t.type !== 'expense' || t.categoryId == null || !t.memo) continue
+    if (!validCatIds.has(t.categoryId)) continue
+    const key = normalizeMerchantKey(t.memo)
+    if (!key) continue
+    let tally = byMerchant.get(key)
+    if (!tally) { tally = new Map(); byMerchant.set(key, tally) }
+    tally.set(t.categoryId, (tally.get(t.categoryId) ?? 0) + 1)
+  }
+
+  const out = new Map<string, MerchantStats>()
+  for (const [merchantKey, tally] of byMerchant) {
+    const entries = Array.from(tally.entries())
+      .map(([categoryId, count]) => ({ categoryId, count }))
+      .sort((a, b) => b.count - a.count)
+    const total = entries.reduce((s, e) => s + e.count, 0)
+    if (total === 0) continue
+    const alternatives = entries.map(e => ({ ...e, share: e.count / total }))
+    out.set(merchantKey, {
+      topCategoryId: alternatives[0].categoryId,
+      topShare: alternatives[0].share,
+      total,
+      alternatives,
+    })
+  }
+  return out
+}
+
+// ─── Registered-subscription matcher (P1.1) ─────────────
+
+/**
+ * Tries to match the merchant against the user's registered subscriptions.
+ * Uses the shared normalized-key form so fuzzy variants
+ * ("(주)클로드AI" vs "Claude AI") collapse to the same canonical form.
+ *
+ * `exact` — normalized-key equality (highest confidence).
+ * `contains` — bidirectional substring containment, requires subKey length ≥ 3
+ *              to avoid false positives like sub="AI" matching every merchant
+ *              with the letter combination.
+ *
+ * Cancelled subscriptions are ignored so a long-dead subscription doesn't
+ * keep claiming new transactions.
+ */
+function matchSubscription(
+  merchant: string,
+  subscriptions: Subscription[],
+): { sub: Subscription; how: 'exact' | 'contains' } | null {
+  if (subscriptions.length === 0) return null
+  const merchantKey = normalizeMerchantKey(merchant)
+  if (!merchantKey) return null
+
+  for (const sub of subscriptions) {
+    if (sub.status === 'cancelled') continue
+    const subKey = normalizeMerchantKey(sub.name)
+    if (subKey && subKey === merchantKey) return { sub, how: 'exact' }
+  }
+
+  for (const sub of subscriptions) {
+    if (sub.status === 'cancelled') continue
+    const subKey = normalizeMerchantKey(sub.name)
+    if (!subKey || subKey.length < 3) continue
+    if (merchantKey.includes(subKey) || subKey.includes(merchantKey)) {
+      return { sub, how: 'contains' }
+    }
+  }
+  return null
+}
+
+/**
+ * Suggests a category for a merchant string.
+ *
+ * Priority chain (each tier short-circuits on first hit):
+ *   1) Registered subscription (db.subscriptions) — auto-links subscriptionId
+ *      so dashboards count the import as a real subscription payment.
+ *   2) Merchant statistics model from history — uses the dominant category
+ *      observed for this merchant in the user's past. Confidence scales with
+ *      the dominance share.
+ *   3) Exact normalized-key match in history (for single-occurrence merchants
+ *      that the stats model excludes because it requires ≥2 samples).
+ *   4) Keyword rule match (KEYWORD_RULES constant).
+ *   5) Falls back to '기타' if the user keeps that category.
+ *
+ * Pre-build `stats` once with `buildMerchantStats` and pass it in so the same
+ * O(N) history sweep isn't repeated per row.
  */
 export function suggestCategory(
   merchant: string,
   categories: TransactionCategory[],
   history: Transaction[],
+  subscriptions: Subscription[] = [],
+  stats?: Map<string, MerchantStats>,
+  aliases?: Map<string, MerchantAlias>,
 ): CategorySuggestion {
   const expenseCats = categories.filter(c => c.type === 'expense')
   if (expenseCats.length === 0) return { confidence: 'none' }
 
   const findCatByName = (name: string) => expenseCats.find(c => c.name === name)
+  const findCatById = (id: number) => expenseCats.find(c => c.id === id)
+  const merchantKey = normalizeMerchantKey(merchant)
 
-  // 1) Exact merchant match in user history (highest confidence)
-  const exactHistory = history.find(t =>
-    t.type === 'expense'
-    && t.categoryId != null
-    && t.memo === merchant
-  )
-  if (exactHistory?.categoryId) {
-    return {
-      categoryId: exactHistory.categoryId,
-      confidence: 'high',
-      reason: '이전에 같은 가맹점으로 기록한 카테고리',
-    }
-  }
-
-  // 2) Normalized merchant fuzzy match in history
-  const norm = normalizeMerchant(merchant)
-  if (norm.length >= 2) {
-    // Score each historical record by token overlap
-    const tokens = new Set(norm.toLowerCase().split(/\s+/).filter(t => t.length >= 2))
-    if (tokens.size > 0) {
-      const tally = new Map<number, number>() // categoryId → score
-      for (const t of history) {
-        if (t.type !== 'expense' || t.categoryId == null || !t.memo) continue
-        const histNorm = normalizeMerchant(t.memo).toLowerCase()
-        let hit = 0
-        for (const tk of tokens) {
-          if (histNorm.includes(tk)) hit++
-        }
-        if (hit > 0) {
-          tally.set(t.categoryId, (tally.get(t.categoryId) ?? 0) + hit)
-        }
-      }
-      let best: { id: number; score: number } | null = null
-      for (const [id, score] of tally) {
-        if (!best || score > best.score) best = { id, score }
-      }
-      if (best && best.score >= 2) {
+  // ── 0) Learned alias (highest priority) ──
+  //    User overrides and AI suggestions both flow into the same alias table.
+  //    A direct hit is the strongest signal we have — it's either confirmed by
+  //    the user explicitly or already AI-classified and accepted in the past.
+  if (merchantKey && aliases) {
+    const hit = aliases.get(merchantKey)
+    if (hit) {
+      const cat = findCatById(hit.categoryId)
+      if (cat?.id != null) {
+        const reasonPrefix = hit.source === 'user-override'
+          ? '학습된 사용자 분류'
+          : 'AI 분류 결과 캐시'
         return {
-          categoryId: best.id,
+          categoryId: cat.id,
           confidence: 'high',
-          reason: '유사한 가맹점을 같은 카테고리로 기록한 이력',
-        }
-      }
-      if (best) {
-        return {
-          categoryId: best.id,
-          confidence: 'medium',
-          reason: '비슷한 이름의 거래에서 사용한 카테고리',
+          reason: `${reasonPrefix} (${hit.usageCount}회 사용)`,
+          subscriptionId: hit.subscriptionId,
+          subscriptionCategory: hit.subscriptionCategory,
         }
       }
     }
   }
 
-  // 3) Keyword rule — try each rule's category fallback chain in order;
+  // ── 1) Registered subscription match ──
+  const subMatch = matchSubscription(merchant, subscriptions)
+  if (subMatch) {
+    const { sub, how } = subMatch
+    const linkedCat = sub.linkedTransactionCategoryId != null
+      ? findCatById(sub.linkedTransactionCategoryId)
+      : null
+    if (linkedCat?.id != null) {
+      return {
+        categoryId: linkedCat.id,
+        confidence: how === 'exact' ? 'high' : 'medium',
+        reason: `등록된 구독 "${sub.name}" ${how === 'exact' ? '정확 매칭' : '부분 매칭'}`,
+        subscriptionId: sub.id,
+        subscriptionCategory: sub.category,
+      }
+    }
+    // Subscription matched but no linked category — still tag subscriptionId
+    // so the subscription dashboard counts this transaction.
+    return {
+      confidence: 'medium',
+      reason: `등록된 구독 "${sub.name}" 매칭 (카테고리 연결 안 됨)`,
+      subscriptionId: sub.id,
+      subscriptionCategory: sub.category,
+    }
+  }
+
+  // ── 2) Merchant statistics model ──
+  // Requires the merchant to have appeared ≥ 2 times in history; below that
+  // we prefer the single-hit exact path below since the share metric is
+  // meaningless on n=1.
+  const statsForMerchant = stats?.get(merchantKey)
+  if (statsForMerchant && statsForMerchant.total >= 2) {
+    const cat = findCatById(statsForMerchant.topCategoryId)
+    if (cat?.id != null) {
+      const share = statsForMerchant.topShare
+      const confidence: CategoryConfidence =
+        share >= 0.7 ? 'high' :
+        share >= 0.4 ? 'medium' : 'low'
+      const topCount = statsForMerchant.alternatives[0].count
+      return {
+        categoryId: cat.id,
+        confidence,
+        reason: `이전 거래 ${statsForMerchant.total}건 중 ${cat.name} ${topCount}건 (${Math.round(share * 100)}%)`,
+        alternatives: statsForMerchant.alternatives.slice(1, 4).map(a => ({
+          categoryId: a.categoryId,
+          share: a.share,
+        })),
+      }
+    }
+  }
+
+  // ── 3) Single-hit exact match (normalized-key equality) ──
+  // Catches the case where the merchant appears exactly once before — the
+  // stats model would skip that (total < 2) but a single confident sample is
+  // still better than falling through to keyword rules.
+  if (merchantKey) {
+    const exactHistory = history.find(t =>
+      t.type === 'expense'
+      && t.categoryId != null
+      && t.memo
+      && normalizeMerchantKey(t.memo) === merchantKey,
+    )
+    if (exactHistory?.categoryId) {
+      const cat = findCatById(exactHistory.categoryId)
+      if (cat?.id != null) {
+        return {
+          categoryId: cat.id,
+          confidence: 'high',
+          reason: '이전에 같은 가맹점으로 기록한 카테고리',
+        }
+      }
+    }
+  }
+
+  // ── 4) Keyword rule fallback ──
+  //    Try each rule's category fallback chain in order;
   //    skip the rule if none of its candidate categories exist on this user.
   const upper = merchant.toUpperCase()
   for (const rule of KEYWORD_RULES) {
@@ -478,12 +637,12 @@ export function detectDuplicate(
   )
   if (sameAmount.length === 0) return { level: 'none' }
 
-  const merchantNorm = normalizeMerchant(row.merchant).toLowerCase()
+  const merchantNorm = normalizeMerchantKey(row.merchant)
 
   // ── 2차: 가맹점/지출내용 정확 일치 → exact
   for (const t of sameAmount) {
     if (!t.memo) continue
-    const memoNorm = normalizeMerchant(t.memo).toLowerCase()
+    const memoNorm = normalizeMerchantKey(t.memo)
     if (memoNorm && memoNorm === merchantNorm) {
       return {
         level: 'exact',
@@ -497,7 +656,7 @@ export function detectDuplicate(
   if (merchantNorm.length >= 3) {
     for (const t of sameAmount) {
       if (!t.memo) continue
-      const memoNorm = normalizeMerchant(t.memo).toLowerCase()
+      const memoNorm = normalizeMerchantKey(t.memo)
       if (memoNorm.length >= 3
           && (memoNorm.includes(merchantNorm) || merchantNorm.includes(memoNorm))) {
         return {
@@ -514,7 +673,7 @@ export function detectDuplicate(
     const tokens = merchantNorm.split(/\s+/).filter(t => t.length >= 2)
     for (const t of sameAmount) {
       if (!t.memo) continue
-      const memoNorm = normalizeMerchant(t.memo).toLowerCase()
+      const memoNorm = normalizeMerchantKey(t.memo)
       for (const tk of tokens) {
         if (memoNorm.includes(tk)) {
           return {
@@ -537,16 +696,23 @@ export function detectDuplicate(
 
 // ─── Top-level analyze ──────────────────────────────────
 
-export function analyzeStatement(
+export async function analyzeStatement(
   text: string,
   categories: TransactionCategory[],
   existing: Transaction[],
-): AnalyzedRow[] {
+): Promise<AnalyzedRow[]> {
   const rows = parseShinhanStatement(text)
+  // Load registered subscriptions + learned aliases + history stats once.
+  // O(history + N) total rather than O(N × history).
+  const [subscriptions, aliases] = await Promise.all([
+    db.subscriptions.toArray(),
+    loadAliasMap(),
+  ])
+  const stats = buildMerchantStats(existing, categories)
   return rows.map(row => ({
     ...row,
     duplicate: detectDuplicate(row, existing),
-    suggestion: suggestCategory(row.merchant, categories, existing),
+    suggestion: suggestCategory(row.merchant, categories, existing, subscriptions, stats, aliases),
   }))
 }
 
@@ -581,13 +747,16 @@ export async function importStatement(
       const memberId = options.memberMap?.[row.cardSuffix] ?? null
       const effectiveDate = overrideDate ?? row.date
 
-      // Subscription tagging is strictly opt-in — only the bulk UI override
-      // applies it. The keyword rule's per-row suggestion (Claude → 'ai',
-      // Supabase → 'cloud', etc.) is exposed in CategorySuggestion for
-      // hint UIs but is NOT auto-written to the transaction here; users were
-      // surprised by Claude/OpenAI rows silently appearing as subscriptions
-      // after a card statement import.
-      const subscriptionCategory = options.subscriptionCategoryOverride
+      // Subscription tagging is strictly opt-in for the *keyword*-derived
+      // suggestion (e.g., Claude/Supabase keywords). Users were surprised by
+      // silent tags. BUT a match against `db.subscriptions` (P1.1) is an
+      // explicit registration by the user — for those, both subscriptionId
+      // and subscriptionCategory are auto-applied so the dashboard counts
+      // the imported transaction as a real subscription payment.
+      const matchedSubscriptionId = row.suggestion.subscriptionId
+      const subscriptionCategory =
+        options.subscriptionCategoryOverride
+        ?? (matchedSubscriptionId != null ? row.suggestion.subscriptionCategory : undefined)
 
       const txn: Omit<Transaction, 'id'> = {
         syncId: crypto.randomUUID(),
@@ -600,6 +769,7 @@ export async function importStatement(
         paymentMethod: options.paymentMethod,
         paymentMethodDetail: options.paymentMethodDetail,
         paymentMethodItemId: options.paymentMethodItemId,
+        subscriptionId: matchedSubscriptionId,
         subscriptionCategory,
         isRecurring: false,
         createdAt: now,
@@ -616,6 +786,20 @@ export async function importStatement(
 
   if (toInsert.length > 0) {
     await db.transactions.bulkAdd(toInsert as Transaction[])
+  }
+
+  // Record alias usage for any rows that resolved via the merchant alias path.
+  // Done after bulkAdd so a partial alias-tracking failure can't roll back the
+  // transaction insert. Best-effort.
+  for (const row of rows) {
+    if (skip.has(row.index)) continue
+    if (row.suggestion.reason?.startsWith('학습된 사용자 분류') || row.suggestion.reason?.startsWith('AI 분류 결과 캐시')) {
+      const merchantKey = normalizeMerchantKey(row.merchant)
+      if (merchantKey) {
+        // Fire-and-forget — caller doesn't await individual counter writes
+        void recordAliasUsage(merchantKey)
+      }
+    }
   }
   dates.sort()
 

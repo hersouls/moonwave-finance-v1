@@ -23,13 +23,14 @@ import type {
   PaymentMethodItem,
   Subscription,
   Loan,
+  MerchantAlias,
   SyncChangeLogEntry,
 } from '@/lib/types'
 
-export type SyncableTable = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions' | 'loans'
+export type SyncableTable = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions' | 'loans' | 'merchantAliases'
 
 const BATCH_LIMIT = 499
-const ALL_TABLES: SyncableTable[] = ['members', 'assetCategories', 'assetItems', 'dailyValues', 'transactionCategories', 'transactions', 'budgets', 'goals', 'paymentMethodItems', 'subscriptions', 'loans']
+const ALL_TABLES: SyncableTable[] = ['members', 'assetCategories', 'assetItems', 'dailyValues', 'transactionCategories', 'transactions', 'budgets', 'goals', 'paymentMethodItems', 'subscriptions', 'loans', 'merchantAliases']
 
 // ─── Cloud payload helpers ────────────────────────────────────────
 //
@@ -216,7 +217,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
   try {
     await ensureAndPersistSyncIds()
 
-    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans] = await Promise.all([
+    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans, merchantAliases] = await Promise.all([
       db.members.toArray(),
       db.assetCategories.toArray(),
       db.assetItems.toArray(),
@@ -228,6 +229,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       db.paymentMethodItems.toArray(),
       db.subscriptions.toArray(),
       db.loans.toArray(),
+      db.merchantAliases.toArray(),
     ])
 
     await withRetry(() => Promise.all([
@@ -242,6 +244,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       uploadTable(uid, 'paymentMethodItems', paymentMethodItems.map(ensureSyncId)),
       uploadTable(uid, 'subscriptions', subscriptions.map(ensureSyncId)),
       uploadTable(uid, 'loans', loans.map(ensureSyncId)),
+      uploadTable(uid, 'merchantAliases', merchantAliases.map(ensureSyncId)),
     ]))
 
     // Reconcile: delete Firestore documents that no longer exist locally
@@ -257,6 +260,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       paymentMethodItems: new Set(paymentMethodItems.map(r => r.syncId).filter(Boolean) as string[]),
       subscriptions: new Set(subscriptions.map(r => r.syncId).filter(Boolean) as string[]),
       loans: new Set(loans.map(r => r.syncId).filter(Boolean) as string[]),
+      merchantAliases: new Set(merchantAliases.map(r => r.syncId).filter(Boolean) as string[]),
     }
 
     if (options?.reconcile) {
@@ -279,7 +283,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
 export async function fullDownload(uid: string): Promise<void> {
   useAuthStore.getState().setSyncStatus('syncing')
   try {
-    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans] = await withRetry(() => Promise.all([
+    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans, merchantAliases] = await withRetry(() => Promise.all([
       downloadTable<Record<string, unknown>>(uid, 'members'),
       downloadTable<Record<string, unknown>>(uid, 'assetCategories'),
       downloadTable<Record<string, unknown>>(uid, 'assetItems'),
@@ -291,11 +295,12 @@ export async function fullDownload(uid: string): Promise<void> {
       downloadTable<Record<string, unknown>>(uid, 'paymentMethodItems'),
       downloadTable<Record<string, unknown>>(uid, 'subscriptions'),
       downloadTable<Record<string, unknown>>(uid, 'loans'),
+      downloadTable<Record<string, unknown>>(uid, 'merchantAliases'),
     ]))
 
     // Strip cloud-only fields (__deviceId, __schemaV, *_syncId companions)
     // in place so the Dexie schema isn't polluted by transport metadata.
-    for (const arr of [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans]) {
+    for (const arr of [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans, merchantAliases]) {
       for (const r of arr) {
         for (const k of Object.keys(r)) {
           if (INTERNAL_CLOUD_FIELDS.has(k) || (k.endsWith('_syncId') && k !== 'syncId')) {
@@ -308,7 +313,7 @@ export async function fullDownload(uid: string): Promise<void> {
     syncWritingCount++
     setSyncWritingFlag(true)
     try {
-      await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions, db.loans], async () => {
+      await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions, db.loans, db.merchantAliases], async () => {
         // Clear all tables
         await db.members.clear()
         await db.assetCategories.clear()
@@ -321,6 +326,7 @@ export async function fullDownload(uid: string): Promise<void> {
         await db.paymentMethodItems.clear()
         await db.subscriptions.clear()
         await db.loans.clear()
+        await db.merchantAliases.clear()
 
         // ── Layer 0: Insert independent tables, build ID mappings ──
         const memberIdMap = new Map<number, number>()
@@ -411,6 +417,14 @@ export async function fullDownload(uid: string): Promise<void> {
           delete rec.id
           remapFkField(rec, 'linkedAssetItemId', assetItemIdMap)
           await db.loans.add(rec as unknown as Loan)
+        }
+
+        // ── Merchant aliases (depends on transactionCategories, subscriptions) ──
+        for (const rec of merchantAliases) {
+          delete rec.id
+          remapFkField(rec, 'categoryId', txnCatIdMap)
+          remapFkField(rec, 'subscriptionId', subscriptionIdMap)
+          await db.merchantAliases.add(rec as unknown as MerchantAlias)
         }
       })
     } finally {
@@ -797,7 +811,7 @@ export async function mergeOnLogin(uid: string): Promise<void> {
     const [
       cloudMembers, cloudAssetCategories, cloudAssetItems, cloudDailyValues,
       cloudTransactionCategories, cloudTransactions, cloudBudgets, cloudGoals,
-      cloudPaymentMethodItems, cloudSubscriptions, cloudLoans,
+      cloudPaymentMethodItems, cloudSubscriptions, cloudLoans, cloudMerchantAliases,
     ] = await Promise.all([
       downloadTable<Record<string, unknown>>(uid, 'members'),
       downloadTable<Record<string, unknown>>(uid, 'assetCategories'),
@@ -810,6 +824,7 @@ export async function mergeOnLogin(uid: string): Promise<void> {
       downloadTable<Record<string, unknown>>(uid, 'paymentMethodItems'),
       downloadTable<Record<string, unknown>>(uid, 'subscriptions'),
       downloadTable<Record<string, unknown>>(uid, 'loans'),
+      downloadTable<Record<string, unknown>>(uid, 'merchantAliases'),
     ])
 
     // ── Layer 0: Independent tables (no FK dependencies) ──
@@ -867,6 +882,9 @@ export async function mergeOnLogin(uid: string): Promise<void> {
 
     // ── Loans (depends on assetItems) ──
     await mergeTableWithRemap('loans', cloudLoans)
+
+    // ── Merchant aliases (depends on transactionCategories + subscriptions) ──
+    await mergeTableWithRemap('merchantAliases', cloudMerchantAliases)
 
     // Process tombstones
     await applyCloudTombstones(uid)
@@ -1005,6 +1023,10 @@ const TABLE_FK_DEFS: Partial<Record<SyncableTable, Array<{ field: string; refTab
   ],
   loans: [
     { field: 'linkedAssetItemId', refTable: 'assetItems' },
+  ],
+  merchantAliases: [
+    { field: 'categoryId', refTable: 'transactionCategories' },
+    { field: 'subscriptionId', refTable: 'subscriptions' },
   ],
 }
 
@@ -1167,7 +1189,7 @@ function recordUnmappedFks(
 type DexieTable = typeof db.members | typeof db.assetCategories | typeof db.assetItems |
   typeof db.dailyValues | typeof db.transactionCategories | typeof db.transactions |
   typeof db.budgets | typeof db.goals | typeof db.paymentMethodItems | typeof db.subscriptions |
-  typeof db.loans
+  typeof db.loans | typeof db.merchantAliases
 
 function getLocalTable(tableName: SyncableTable): DexieTable {
   const map: Record<SyncableTable, DexieTable> = {
@@ -1182,6 +1204,7 @@ function getLocalTable(tableName: SyncableTable): DexieTable {
     paymentMethodItems: db.paymentMethodItems,
     subscriptions: db.subscriptions,
     loans: db.loans,
+    merchantAliases: db.merchantAliases,
   }
   return map[tableName]
 }
