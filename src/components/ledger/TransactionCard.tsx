@@ -12,6 +12,7 @@ import { formatKRW } from '@/utils/format'
 import { Amount } from '@/components/ui/Amount'
 import { formatDate } from '@/lib/dateUtils'
 import { getPaymentMethodLabel } from '@/utils/paymentMethod'
+import { getCategoryIcon } from '@/utils/categoryIcons'
 import { TRANSACTION_CARD_SWIPE, UNCATEGORIZED_LABEL } from '@/lib/ledgerConstants'
 import type { Transaction } from '@/lib/types'
 
@@ -37,6 +38,10 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
   const member = (transaction.memberId ? members.find(m => m.id === transaction.memberId) : null) ?? null
   const pmLabel = transaction.paymentMethodDetail || getPaymentMethodLabel(transaction.paymentMethod)
   const isIncome = transaction.type === 'income'
+
+  const CategoryIcon = getCategoryIcon(category?.icon)
+  const accentColor = category?.color
+    ?? (isIncome ? 'var(--value-positive)' : 'var(--value-negative)')
 
   const x = useMotionValue(0)
   const actionOpacity = useTransform(x, [-ACTION_WIDTH, -40, 0], [1, 0.5, 0])
@@ -118,30 +123,47 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
             transition={{ type: 'spring', stiffness: 320, damping: 24 }}
             className={clsx(
               // 단일 소스 card-base (border/bg/radius) + el-card (shadow + glow hover)
-              'w-full text-left card-base el-card',
-              // padding override (기본 16 → 좌우 16 · 상하 14)
-              '!px-4 !py-3.5',
+              'group relative w-full text-left card-base el-card overflow-hidden',
+              // padding override (좌측은 spine을 위해 더 큰 left padding)
+              '!pl-[18px] !pr-4 !py-3.5',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--ring-offset)]',
             )}
             aria-label={`${category?.name || UNCATEGORIZED_LABEL} ${formatKRW(transaction.amount)} 거래 상세`}
           >
+            {/* Left color spine — 카테고리 컬러 식별 */}
+            <span
+              aria-hidden="true"
+              className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-full transition-all group-hover:top-1.5 group-hover:bottom-1.5"
+              style={{
+                background: `linear-gradient(180deg, ${accentColor} 0%, color-mix(in srgb, ${accentColor} 60%, transparent) 100%)`,
+                boxShadow: `0 0 10px color-mix(in srgb, ${accentColor} 40%, transparent)`,
+              }}
+            />
+
             <div className="flex items-center gap-3">
-              {/* Category color indicator with icon */}
-              <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ring-1 ring-white/40"
-                style={{
-                  backgroundColor: category
-                    ? `color-mix(in srgb, ${category.color} 14%, transparent)`
-                    : isIncome
-                      ? 'var(--status-success-bg)'
-                      : 'var(--status-danger-bg)',
-                }}
-              >
-                <span
-                  className="text-base font-bold"
+              {/* Category icon container — gradient + ring + corner sign badge */}
+              <div className="relative flex-shrink-0">
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center"
                   style={{
-                    color: category?.color || (isIncome ? 'var(--value-positive)' : 'var(--value-negative)'),
+                    background: `linear-gradient(135deg, color-mix(in srgb, ${accentColor} 18%, transparent) 0%, color-mix(in srgb, ${accentColor} 8%, transparent) 100%)`,
+                    boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${accentColor} 22%, transparent), inset 0 1px 0 0 rgba(255,255,255,0.4)`,
                   }}
+                >
+                  <CategoryIcon
+                    className="w-5 h-5"
+                    style={{ color: accentColor }}
+                    aria-hidden="true"
+                  />
+                </div>
+                {/* Sign badge — +/- in tiny corner pill */}
+                <span
+                  className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white ring-2 ring-[color:var(--surface-primary)]"
+                  style={{
+                    lineHeight: 1,
+                    backgroundColor: isIncome ? 'var(--value-positive)' : 'var(--value-negative)',
+                  }}
+                  aria-hidden="true"
                 >
                   {isIncome ? '+' : '−'}
                 </span>
@@ -155,20 +177,23 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
                   </span>
                   {member && (
                     <span
-                      className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold text-white flex-shrink-0"
-                      style={{ backgroundColor: member.color }}
+                      className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold text-white flex-shrink-0 ring-1"
+                      style={{
+                        backgroundColor: member.color,
+                        boxShadow: `0 1px 4px color-mix(in srgb, ${member.color} 40%, transparent)`,
+                      }}
                     >
                       {member.name}
                     </span>
                   )}
                   {transaction.subscriptionId && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-status-info-soft text-status-info flex items-center gap-0.5 flex-shrink-0">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-status-info-soft text-status-info flex items-center gap-0.5 flex-shrink-0 ring-1 ring-status-info/15">
                       <RefreshCw className="w-2.5 h-2.5" />
                       구독
                     </span>
                   )}
                   {pmLabel && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-tertiary text-sub truncate max-w-[100px] flex-shrink-0">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-tertiary text-sub truncate max-w-[100px] flex-shrink-0 ring-1 ring-base">
                       {pmLabel}
                     </span>
                   )}

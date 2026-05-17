@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useLoanStore } from '@/stores/loanStore'
-import { getTodayString } from '@/lib/dateUtils'
+import { getTodayString, formatDate } from '@/lib/dateUtils'
 import { PAYMENT_METHOD_OPTIONS } from '@/utils/paymentMethod'
 import { formatKoreanUnit } from '@/utils/format'
 import { useToastStore } from '@/stores/toastStore'
@@ -12,8 +12,17 @@ import { RECUR_OPTIONS, LOAN_INTEREST_CATEGORY_NAME, UNCATEGORIZED_LABEL } from 
 import { useTransactionTemplates } from '@/hooks/useTransactionTemplates'
 import { clsx } from 'clsx'
 import { Select } from '@/components/ui/Select'
-import { Landmark } from 'lucide-react'
+import { Landmark, Calendar as CalendarIcon, ChevronDown } from 'lucide-react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { MiniCalendar } from '@/components/ui/MiniCalendar'
+import { durations, easeOutExpo, springSnappy } from '@/lib/motionConfig'
 import type { Transaction, TransactionType, RepeatType, PaymentMethod } from '@/lib/types'
+
+function getYesterdayString(): string {
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  return d.toISOString().split('T')[0]
+}
 
 interface TransactionFormModalProps {
   mode: 'create' | 'edit'
@@ -48,6 +57,12 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
   const [recurType, setRecurType] = useState<RepeatType>('monthly')
   const [recurEndDate, setRecurEndDate] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [showRecurEndCalendar, setShowRecurEndCalendar] = useState(false)
+  const shouldReduceMotion = useReducedMotion()
+
+  const today = getTodayString()
+  const yesterday = getYesterdayString()
 
   const currentCategories = categories.filter(c => c.type === type)
 
@@ -78,6 +93,8 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
 
   useEffect(() => {
     if (!open) return
+    setShowCalendar(false)
+    setShowRecurEndCalendar(false)
     if (mode === 'edit' && initialData) {
       setType(initialData.type)
       setAmount(initialData.amount.toLocaleString('ko-KR'))
@@ -330,15 +347,75 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
             />
           </div>
 
-          {/* Date */}
+          {/* Date — premium picker */}
           <div>
-            <label className="block text-body3 text-body mb-1.5">날짜</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="input-base"
-            />
+            <label className="block text-body3 text-body mb-2">날짜</label>
+            <div className="flex gap-2 mb-2 flex-wrap">
+              {[
+                { label: '오늘', value: today },
+                { label: '어제', value: yesterday },
+              ].map(chip => (
+                <motion.button
+                  key={chip.value}
+                  type="button"
+                  onClick={() => { setDate(chip.value); setShowCalendar(false) }}
+                  whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
+                  transition={springSnappy}
+                  className={clsx(
+                    'px-4 py-1.5 rounded-full text-caption font-semibold ring-1',
+                    date === chip.value
+                      ? 'bg-[color:var(--color-primary-600)] text-white ring-transparent shadow-[0_4px_14px_color-mix(in_srgb,var(--color-primary-500)_28%,transparent)]'
+                      : 'bg-surface-tertiary text-sub ring-transparent hover:bg-[var(--hover-bg)]',
+                  )}
+                >
+                  {chip.label}
+                </motion.button>
+              ))}
+            </div>
+            <motion.button
+              type="button"
+              onClick={() => setShowCalendar(v => !v)}
+              whileTap={shouldReduceMotion ? undefined : { scale: 0.99 }}
+              className={clsx(
+                'w-full flex items-center justify-between gap-2 px-4 py-3 rounded-2xl ring-1 transition-all',
+                showCalendar
+                  ? 'ring-[color:var(--color-primary-400)] bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20'
+                  : 'ring-base bg-surface-primary hover:bg-[var(--hover-bg)] shadow-[0_1px_3px_rgba(0,0,0,0.04)]',
+              )}
+              aria-expanded={showCalendar}
+              aria-label="달력 열기"
+            >
+              <span className="inline-flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/30 flex items-center justify-center flex-shrink-0">
+                  <CalendarIcon className="w-4 h-4 text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]" />
+                </div>
+                <span className="text-body3 text-heading font-semibold tabular-nums truncate">
+                  {formatDate(date)}
+                </span>
+              </span>
+              <ChevronDown
+                className={clsx(
+                  'w-4 h-4 text-sub flex-shrink-0 transition-transform',
+                  showCalendar && 'rotate-180',
+                )}
+              />
+            </motion.button>
+            <AnimatePresence>
+              {showCalendar && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: durations.base, ease: easeOutExpo }}
+                  className="overflow-hidden mt-2"
+                >
+                  <MiniCalendar
+                    value={date}
+                    onChange={(d) => { setDate(d); setShowCalendar(false) }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Payment Method (거래수단) */}
@@ -448,12 +525,60 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                   </div>
                   <div>
                     <label className="block text-body3 text-body mb-1.5">종료일 (선택)</label>
-                    <input
-                      type="date"
-                      value={recurEndDate}
-                      onChange={(e) => setRecurEndDate(e.target.value)}
-                      className="input-base"
-                    />
+                    <motion.button
+                      type="button"
+                      onClick={() => setShowRecurEndCalendar(v => !v)}
+                      whileTap={shouldReduceMotion ? undefined : { scale: 0.99 }}
+                      className={clsx(
+                        'w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-2xl ring-1 transition-all',
+                        showRecurEndCalendar
+                          ? 'ring-[color:var(--color-primary-400)] bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20'
+                          : 'ring-base bg-surface-primary hover:bg-[var(--hover-bg)]',
+                      )}
+                      aria-expanded={showRecurEndCalendar}
+                    >
+                      <span className="inline-flex items-center gap-2 min-w-0">
+                        <CalendarIcon className="w-4 h-4 text-sub flex-shrink-0" />
+                        <span className={clsx(
+                          'text-body3 tabular-nums truncate',
+                          recurEndDate ? 'text-heading font-semibold' : 'text-disabled',
+                        )}>
+                          {recurEndDate ? formatDate(recurEndDate) : '종료일 없음'}
+                        </span>
+                      </span>
+                      <ChevronDown
+                        className={clsx(
+                          'w-4 h-4 text-sub flex-shrink-0 transition-transform',
+                          showRecurEndCalendar && 'rotate-180',
+                        )}
+                      />
+                    </motion.button>
+                    <AnimatePresence>
+                      {showRecurEndCalendar && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: durations.base, ease: easeOutExpo }}
+                          className="overflow-hidden mt-2 col-span-2"
+                        >
+                          {recurEndDate && (
+                            <button
+                              type="button"
+                              onClick={() => { setRecurEndDate(''); setShowRecurEndCalendar(false) }}
+                              className="mb-2 px-3 py-1.5 rounded-full text-caption font-semibold bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)] transition-colors"
+                            >
+                              종료일 해제
+                            </button>
+                          )}
+                          <MiniCalendar
+                            value={recurEndDate || date}
+                            minDate={date}
+                            onChange={(d) => { setRecurEndDate(d); setShowRecurEndCalendar(false) }}
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
               )}
