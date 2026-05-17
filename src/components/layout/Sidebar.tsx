@@ -62,16 +62,6 @@ const navGroups: NavGroup[] = [
       { id: 'ledger-calendar', label: '캘린더', path: '/ledger/calendar', icon: Calendar },
     ],
   },
-  {
-    id: 'subscriptions',
-    label: '구독',
-    icon: Repeat,
-    children: [
-      { id: 'sub-domestic', label: '국내관리', path: '/subscriptions/domestic' },
-      { id: 'sub-international', label: '국외관리', path: '/subscriptions/international' },
-      { id: 'sub-calendar', label: '캘린더', path: '/subscriptions/calendar', icon: Calendar },
-    ],
-  },
 ]
 
 const standaloneTop: NavStandalone = {
@@ -80,6 +70,10 @@ const standaloneTop: NavStandalone = {
   icon: LayoutDashboard,
   path: '/',
 }
+
+const standaloneMid: NavStandalone[] = [
+  { id: 'subscriptions', label: '구독', icon: Repeat, path: '/subscriptions' },
+]
 
 const standaloneBottom: NavStandalone[] = [
   { id: 'reports', label: '분석', icon: BarChart3, path: '/reports' },
@@ -314,8 +308,11 @@ export function Sidebar() {
           {/* Divider */}
           <li role="separator" className="nav-sidebar-divider" aria-hidden="true" />
 
-          {/* Groups: 자산/가계부/구독 */}
+          {/* Groups: 자산/가계부 */}
           {navGroups.map(renderGroup)}
+
+          {/* Mid standalone: 구독 */}
+          {standaloneMid.map(renderStandaloneLink)}
 
           {/* Divider */}
           <li role="separator" className="nav-sidebar-divider" aria-hidden="true" />

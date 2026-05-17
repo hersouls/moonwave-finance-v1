@@ -30,8 +30,7 @@ export function Header() {
     if (path === '/ledger/income') return '수입관리'
     if (path === '/ledger/calendar') return '가계부 캘린더'
     if (path === '/reports') return '분석'
-    if (path === '/subscriptions/domestic') return '국내 구독'
-    if (path === '/subscriptions/international') return '국외 구독'
+    if (path === '/subscriptions') return '구독 관리'
     if (path === '/profile') return '프로필'
     return '대시보드'
   }

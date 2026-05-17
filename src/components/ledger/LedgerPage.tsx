@@ -19,6 +19,7 @@ import { TransactionFormModal } from './TransactionFormModal'
 import { TransactionWizard } from './TransactionWizard'
 import { TransactionFilters } from './TransactionFilters'
 import { LedgerEmptyState } from './LedgerEmptyState'
+import { CardStatementImportModal } from './CardStatementImportModal'
 import { PageSegmentControl } from '@/components/layout/PageSegmentControl'
 import { FAB } from '@/components/ui/FAB'
 import { SkeletonCard } from '@/components/ui/Skeleton'
@@ -32,6 +33,8 @@ export function LedgerPage() {
   const defaultType = location.pathname === '/ledger/income' ? 'income' : 'expense'
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const [isCardImportOpen, setIsCardImportOpen] = useState(false)
 
   const loadAll = useTransactionStore((s) => s.loadAll)
   const loadMembers = useMemberStore((s) => s.loadMembers)
@@ -169,6 +172,11 @@ export function LedgerPage() {
           {/* Quick Record Strip */}
           <QuickRecordStrip />
 
+          {/* Card statement import — expense view only */}
+          {defaultType === 'expense' && (
+            <CardStatementImportTrigger onOpen={() => setIsCardImportOpen(true)} />
+          )}
+
           {/* Type Filter + Advanced Filters */}
           <TransactionFilters
             activeType={filters.type}
@@ -240,6 +248,81 @@ export function LedgerPage() {
         onClose={closeEdit}
         initialData={editingTransaction}
       />
+
+      {/* Card Statement Import */}
+      <CardStatementImportModal
+        open={isCardImportOpen}
+        onClose={() => setIsCardImportOpen(false)}
+      />
     </div>
+  )
+}
+
+// ─── Premium entry-point trigger card ─────────────────
+function CardStatementImportTrigger({ onOpen }: { onOpen: () => void }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onOpen}
+      whileHover={{ y: -1 }}
+      whileTap={{ scale: 0.995 }}
+      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+      className="relative w-full overflow-hidden rounded-2xl text-left p-4 ring-1 ring-base transition-all el-hover-lift"
+      style={{
+        background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-primary-500) 6%, var(--surface-primary)) 0%, var(--surface-primary) 100%)',
+      }}
+      aria-label="카드 명세서 가져오기"
+    >
+      {/* Aurora accent */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--color-primary-500) 14%, transparent), transparent 60%)',
+        }}
+      />
+      <div className="relative flex items-center gap-3">
+        <div
+          className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+          style={{
+            background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))',
+            boxShadow: '0 4px 14px color-mix(in srgb, var(--color-primary-500) 38%, transparent), inset 0 1px 0 0 rgba(255,255,255,0.3)',
+          }}
+        >
+          <CardStatementIcon className="w-5 h-5 text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-body3 font-bold text-heading flex items-center gap-1.5">
+            카드 명세서 가져오기
+            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[color:var(--color-primary-100)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/40 dark:text-[color:var(--color-primary-300)]">
+              NEW
+            </span>
+          </p>
+          <p className="text-caption text-sub mt-0.5">
+            신한카드 명세서를 붙여넣어 한 번에 등록 · 자동 카테고리 분류
+          </p>
+        </div>
+        <ChevronRightIcon className="w-4 h-4 text-disabled flex-shrink-0" />
+      </div>
+    </motion.button>
+  )
+}
+
+function CardStatementIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      <rect width="20" height="14" x="2" y="5" rx="2" />
+      <line x1="2" y1="10" x2="22" y2="10" />
+      <line x1="6" y1="14" x2="10" y2="14" />
+      <line x1="14" y1="14" x2="18" y2="14" />
+    </svg>
+  )
+}
+
+function ChevronRightIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
   )
 }

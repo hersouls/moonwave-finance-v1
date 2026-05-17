@@ -106,6 +106,21 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           hasSyncedOnLogin = true
           try {
             await mergeOnLogin(authUser.uid)
+            // After cloud merge, top up any missing defaults (idempotent).
+            // Order matters: running this BEFORE merge would create
+            // syncId-bearing local defaults that race with cloud defaults
+            // having identical syncIds — harmless thanks to deterministic
+            // syncIds, but post-merge is cheaper and avoids redundant uploads.
+            const { ensureDefaultCategories } = await import('@/services/database')
+            await ensureDefaultCategories()
+            // One-time cleanup of pre-fix duplicate seed records.
+            // Idempotent and guarded by localStorage; no-op once complete.
+            try {
+              const { dedupSeedCategories } = await import('@/services/dedupMigration')
+              await dedupSeedCategories()
+            } catch (err) {
+              console.error('Dedup migration failed (non-fatal):', err)
+            }
             await reloadStoresAfterSync()
             get().updatePendingCount()
           } catch (err) {

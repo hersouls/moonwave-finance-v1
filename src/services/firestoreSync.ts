@@ -10,6 +10,7 @@ import {
 import { firestore } from '@/lib/firebase'
 import { db, setSyncWritingFlag } from '@/services/database'
 import { useAuthStore } from '@/stores/authStore'
+import { getDeviceId } from '@/lib/deviceId'
 import type {
   Member,
   AssetCategory,
@@ -30,13 +31,67 @@ export type SyncableTable = 'members' | 'assetCategories' | 'assetItems' | 'dail
 const BATCH_LIMIT = 499
 const ALL_TABLES: SyncableTable[] = ['members', 'assetCategories', 'assetItems', 'dailyValues', 'transactionCategories', 'transactions', 'budgets', 'goals', 'paymentMethodItems', 'subscriptions', 'loans']
 
-/** Strip undefined values from an object — Firestore rejects undefined fields */
-function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
-  const result = {} as Record<string, unknown>
+// ─── Cloud payload helpers ────────────────────────────────────────
+//
+// Each cloud document carries the local record fields PLUS:
+//   - `__deviceId`: stable per-install ID of the writer (LWW tiebreaker)
+//   - `__schemaV`: payload version (2 = post-FK-syncId migration)
+//   - `<field>_syncId`: syncId companion for every FK in TABLE_FK_DEFS.
+//      New clients resolve FKs through this; the legacy numeric `<field>Id`
+//      is preserved for old-client back-compat. See INTERNAL_CLOUD_FIELDS
+//      for what gets stripped before writing to Dexie on the receive side.
+
+const CLOUD_SCHEMA_VERSION = 2
+
+/** Names of fields that exist only in the cloud payload — never persisted to Dexie. */
+const INTERNAL_CLOUD_FIELDS = new Set(['__deviceId', '__schemaV'])
+
+/** Builds the outbound cloud payload: drop undefined, stamp deviceId + schema version. */
+function toCloudPayload<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(obj)) {
-    if (value !== undefined) result[key] = value
+    if (value === undefined) continue
+    out[key] = value
   }
-  return result as T
+  out.__deviceId = getDeviceId()
+  out.__schemaV = CLOUD_SCHEMA_VERSION
+  return out
+}
+
+/**
+ * For every FK field of `tableName`, look up the parent's syncId locally and
+ * attach it as a `<field>_syncId` companion. Used on upload so peer devices
+ * can resolve FKs by syncId (definitive) instead of by cloud auto-increment id
+ * (which flips between devices on every write).
+ */
+async function addFkSyncIds(tableName: SyncableTable, record: Record<string, unknown>): Promise<void> {
+  const defs = TABLE_FK_DEFS[tableName]
+  if (!defs) return
+  for (const { field, refTable } of defs) {
+    const fk = record[field]
+    if (typeof fk === 'number') {
+      const parent = await (getLocalTable(refTable) as typeof db.members)
+        .get(fk) as { syncId?: string } | undefined
+      record[`${field}_syncId`] = parent?.syncId ?? null
+    } else if (fk === null || fk === undefined) {
+      record[`${field}_syncId`] = null
+    }
+  }
+}
+
+/**
+ * Strip cloud-only fields and FK syncId companions before writing to Dexie.
+ * Companions are consumed by resolveFksOnRecord before this is called, so by
+ * the time we hit Dexie they should already be removed — this is a safety net.
+ */
+function stripInternalCloudFields(obj: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(obj)) {
+    if (INTERNAL_CLOUD_FIELDS.has(key)) continue
+    if (key.endsWith('_syncId') && key !== 'syncId') continue
+    out[key] = value
+  }
+  return out
 }
 
 function getUserCollectionPath(uid: string, tableName: string): string {
@@ -47,7 +102,12 @@ function getUserDocPath(uid: string, tableName: string, syncId: string): string 
   return `users/${uid}/${tableName}/${syncId}`
 }
 
-// Split records into Firestore batch-safe chunks and upload
+// Split records into Firestore batch-safe chunks and upload.
+//
+// Writes use full-document replace (no merge:true) so that fields cleared
+// locally — which are stripped to `undefined` by toCloudPayload — are
+// actually removed from the cloud doc. With merge:true, cleared fields
+// would survive in the cloud and resurrect on the next peer download.
 async function uploadTable<T extends { syncId?: string }>(
   uid: string,
   tableName: SyncableTable,
@@ -59,8 +119,9 @@ async function uploadTable<T extends { syncId?: string }>(
     const batch = writeBatch(firestore)
     for (const record of chunk) {
       const ref = doc(firestore, getUserDocPath(uid, tableName, record.syncId!))
-      const data = stripUndefined({ ...record } as Record<string, unknown>)
-      batch.set(ref, data, { merge: true })
+      const enriched = { ...record } as Record<string, unknown>
+      await addFkSyncIds(tableName, enriched)
+      batch.set(ref, toCloudPayload(enriched))
     }
     await batch.commit()
   }
@@ -232,6 +293,18 @@ export async function fullDownload(uid: string): Promise<void> {
       downloadTable<Record<string, unknown>>(uid, 'loans'),
     ]))
 
+    // Strip cloud-only fields (__deviceId, __schemaV, *_syncId companions)
+    // in place so the Dexie schema isn't polluted by transport metadata.
+    for (const arr of [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans]) {
+      for (const r of arr) {
+        for (const k of Object.keys(r)) {
+          if (INTERNAL_CLOUD_FIELDS.has(k) || (k.endsWith('_syncId') && k !== 'syncId')) {
+            delete (r as Record<string, unknown>)[k]
+          }
+        }
+      }
+    }
+
     syncWritingCount++
     setSyncWritingFlag(true)
     try {
@@ -375,7 +448,7 @@ async function uploadTombstone(
   const tombstoneId = `${tableName}_${syncId}`
   const ref = doc(firestore, `users/${uid}/syncTombstones/${tombstoneId}`)
   const batch = writeBatch(firestore)
-  batch.set(ref, { tableName, syncId, deletedAt })
+  batch.set(ref, toCloudPayload({ tableName, syncId, deletedAt }))
   await batch.commit()
 }
 
@@ -486,7 +559,15 @@ function remapFkField(
 async function mergeTableWithRemap(
   tableName: SyncableTable,
   cloudRecords: Record<string, unknown>[],
-  remapFks?: (record: Record<string, unknown>) => void
+  /**
+   * Optional natural-key generator for legacy reconciliation.
+   * When a local record lacks `syncId` (e.g., seeded by db.on('populate') in older
+   * builds), this function produces a stable key from name/type fields. If the
+   * same key exists in cloudRecords, the local record adopts that cloud syncId
+   * — preventing duplicates on new-device login.
+   * Return null/empty to skip a particular record.
+   */
+  reconcileByName?: (record: Record<string, unknown>) => string | null,
 ): Promise<void> {
   const localTable = getLocalTable(tableName)
   const localRecords = await (localTable as typeof db.members).toArray()
@@ -495,6 +576,56 @@ async function mergeTableWithRemap(
   for (const rec of cloudRecords) {
     const syncId = rec.syncId as string | undefined
     if (syncId) cloudMap.set(syncId, rec)
+  }
+
+  // ── Natural-key reconciliation: align local seed records to cloud syncIds.
+  //
+  // Fixes the new-device duplicate bug where local default categories — whether
+  // syncId-less (legacy `db.on('populate')`) or deterministic-syncId (new) —
+  // fail to match cloud records that carry a different syncId (typically a
+  // random UUID assigned by an older client's fullUpload). For any local row
+  // whose syncId is absent or NOT present in cloud, we look up a name+type
+  // match in cloud and adopt that cloud syncId. This collapses the two
+  // populations into a single LWW-merged record in the main loop below.
+  if (reconcileByName) {
+    const cloudByName = new Map<string, string>() // natural key → cloud syncId
+    const cloudSyncIdSet = new Set<string>()
+    for (const rec of cloudRecords) {
+      const key = reconcileByName(rec)
+      const syncId = rec.syncId as string | undefined
+      if (syncId) cloudSyncIdSet.add(syncId)
+      if (key && syncId && !cloudByName.has(key)) cloudByName.set(key, syncId)
+    }
+    const adoptions: Array<{ id: number; syncId: string }> = []
+    const claimedSyncIds = new Set<string>()
+    for (const local of localRecords) {
+      const localTyped = local as { id?: number; syncId?: string }
+      if (localTyped.id == null) continue
+      // Skip if local already aligns with a cloud record by syncId.
+      if (localTyped.syncId && cloudSyncIdSet.has(localTyped.syncId)) continue
+      const key = reconcileByName(local as unknown as Record<string, unknown>)
+      if (!key) continue
+      const cloudSyncId = cloudByName.get(key)
+      if (cloudSyncId && !claimedSyncIds.has(cloudSyncId)) {
+        adoptions.push({ id: localTyped.id, syncId: cloudSyncId })
+        claimedSyncIds.add(cloudSyncId)
+      }
+    }
+    if (adoptions.length > 0) {
+      setSyncWritingFlag(true)
+      syncWritingCount++
+      try {
+        for (const { id, syncId } of adoptions) {
+          await (localTable as typeof db.members).update(id, { syncId } as Partial<Member>)
+          // Reflect the change in the in-memory copy used below
+          const ref = localRecords.find(r => (r as { id?: number }).id === id)
+          if (ref) (ref as { syncId?: string }).syncId = syncId
+        }
+      } finally {
+        syncWritingCount = Math.max(0, syncWritingCount - 1)
+        setSyncWritingFlag(false)
+      }
+    }
   }
 
   const localMap = new Map<string, { record: Record<string, unknown>; id: number }>()
@@ -511,24 +642,27 @@ async function mergeTableWithRemap(
         const tombstone = await db.syncTombstones
           .where('[tableName+syncId]').equals([tableName, syncId]).first()
         if (!tombstone) {
-          const toInsert = { ...cloudRec }
+          const toInsert = stripInternalCloudFields(cloudRec)
           delete toInsert.id // Remove cloud id, let Dexie auto-assign
-          if (remapFks) remapFks(toInsert)
+          await resolveFksOnRecord(tableName, toInsert)
           await (localTable as typeof db.members).add(toInsert as unknown as Member)
         }
       }
     }
 
-    // Case 2: Both exist → LWW by updatedAt
+    // Case 2: Both exist → LWW by updatedAt, deviceId as tiebreaker
     for (const [syncId, local] of localMap) {
       const cloudRec = cloudMap.get(syncId)
       if (cloudRec) {
-        const cloudUpdatedAt = (cloudRec.updatedAt as string) || ''
-        const localUpdatedAt = (local.record.updatedAt as string) || ''
-        if (cloudUpdatedAt > localUpdatedAt) {
-          const updates = { ...cloudRec }
+        const cloudDeviceId = cloudRec.__deviceId as string | undefined
+        if (shouldApplyCloudUpdate(
+          cloudRec.updatedAt as string,
+          cloudDeviceId,
+          local.record.updatedAt as string,
+        )) {
+          const updates = stripInternalCloudFields(cloudRec)
           delete updates.id // Don't overwrite local primary key
-          if (remapFks) remapFks(updates)
+          await resolveFksOnRecord(tableName, updates)
           await (localTable as typeof db.members).update(local.id, updates)
         }
       }
@@ -679,72 +813,60 @@ export async function mergeOnLogin(uid: string): Promise<void> {
     ])
 
     // ── Layer 0: Independent tables (no FK dependencies) ──
-    await mergeTableWithRemap('members', cloudMembers)
-    await mergeTableWithRemap('assetCategories', cloudAssetCategories)
-    await mergeTableWithRemap('transactionCategories', cloudTransactionCategories)
+    // Seed-derived tables (members + categories + payment methods) pass a
+    // reconcileByName key so legacy syncId-less local rows (created by
+    // db.on('populate') in older builds) adopt the cloud syncId instead of
+    // being treated as cloud-only and duplicated.
+    const nameTypeKey = (r: Record<string, unknown>): string | null => {
+      const name = r.name as string | undefined
+      const type = r.type as string | undefined
+      return name ? `${name}|${type ?? ''}` : null
+    }
+    const nameOnlyKey = (r: Record<string, unknown>): string | null => {
+      const name = r.name as string | undefined
+      return name || null
+    }
+    await mergeTableWithRemap('members', cloudMembers, nameOnlyKey)
+    await mergeTableWithRemap('assetCategories', cloudAssetCategories, nameTypeKey)
+    await mergeTableWithRemap('transactionCategories', cloudTransactionCategories, nameTypeKey)
     await mergeTableWithRemap('goals', cloudGoals)
 
-    // Build ID mappings: cloudId → localId (via syncId chain)
-    // Also populate module-level fkMappings for real-time sync use
+    // Legacy fkMappings: cloudId → localId. New clients resolve FKs by syncId
+    // (resolveFksOnRecord) and rarely consult fkMappings, but it's still the
+    // fallback when an old-client upload lacks the `*_syncId` companion field.
+    // Rebuild after each layer so children can resolve their parents.
     const localMembers = await db.members.toArray()
-    const memberMap = buildIdMapping(cloudMembers, localMembers)
-    fkMappings['members'] = memberMap
-
+    fkMappings['members'] = buildIdMapping(cloudMembers, localMembers)
     const localAssetCats = await db.assetCategories.toArray()
-    const assetCatMap = buildIdMapping(cloudAssetCategories, localAssetCats)
-    fkMappings['assetCategories'] = assetCatMap
-
+    fkMappings['assetCategories'] = buildIdMapping(cloudAssetCategories, localAssetCats)
     const localTxnCats = await db.transactionCategories.toArray()
-    const txnCatMap = buildIdMapping(cloudTransactionCategories, localTxnCats)
-    fkMappings['transactionCategories'] = txnCatMap
+    fkMappings['transactionCategories'] = buildIdMapping(cloudTransactionCategories, localTxnCats)
 
     // ── Layer 1: First-level dependents ──
-    await mergeTableWithRemap('assetItems', cloudAssetItems, (rec) => {
-      remapFkField(rec, 'memberId', memberMap)
-      remapFkField(rec, 'categoryId', assetCatMap)
-    })
-    await mergeTableWithRemap('budgets', cloudBudgets, (rec) => {
-      remapFkField(rec, 'categoryId', txnCatMap)
-    })
+    await mergeTableWithRemap('assetItems', cloudAssetItems)
+    await mergeTableWithRemap('budgets', cloudBudgets)
 
-    // Build assetItem mapping for layer 2
-    const assetItemMap = buildIdMapping(cloudAssetItems, await db.assetItems.toArray())
-    fkMappings['assetItems'] = assetItemMap
+    fkMappings['assetItems'] = buildIdMapping(cloudAssetItems, await db.assetItems.toArray())
 
     // ── Layer 2: Second-level dependents ──
-    await mergeTableWithRemap('dailyValues', cloudDailyValues, (rec) => {
-      remapFkField(rec, 'assetItemId', assetItemMap)
-    })
-    await mergeTableWithRemap('paymentMethodItems', cloudPaymentMethodItems, (rec) => {
-      remapFkField(rec, 'linkedAssetItemId', assetItemMap)
-    })
+    await mergeTableWithRemap('dailyValues', cloudDailyValues)
+    await mergeTableWithRemap('paymentMethodItems', cloudPaymentMethodItems)
 
-    // Build paymentMethodItem mapping for layer 3
-    const payMethodMap = buildIdMapping(cloudPaymentMethodItems, await db.paymentMethodItems.toArray())
-    fkMappings['paymentMethodItems'] = payMethodMap
+    fkMappings['paymentMethodItems'] = buildIdMapping(
+      cloudPaymentMethodItems,
+      await db.paymentMethodItems.toArray(),
+    )
 
     // ── Layer 3: Third-level dependents ──
-    await mergeTableWithRemap('subscriptions', cloudSubscriptions, (rec) => {
-      remapFkField(rec, 'paymentMethodItemId', payMethodMap)
-      remapFkField(rec, 'linkedTransactionCategoryId', txnCatMap)
-    })
+    await mergeTableWithRemap('subscriptions', cloudSubscriptions)
 
-    // Build subscription mapping for layer 4
-    const subscriptionMap = buildIdMapping(cloudSubscriptions, await db.subscriptions.toArray())
-    fkMappings['subscriptions'] = subscriptionMap
+    fkMappings['subscriptions'] = buildIdMapping(cloudSubscriptions, await db.subscriptions.toArray())
 
     // ── Layer 4: Transactions (depends on members, txnCategories, payMethods, subscriptions) ──
-    await mergeTableWithRemap('transactions', cloudTransactions, (rec) => {
-      remapFkField(rec, 'memberId', memberMap)
-      remapFkField(rec, 'categoryId', txnCatMap)
-      remapFkField(rec, 'paymentMethodItemId', payMethodMap)
-      remapFkField(rec, 'subscriptionId', subscriptionMap)
-    })
+    await mergeTableWithRemap('transactions', cloudTransactions)
 
     // ── Loans (depends on assetItems) ──
-    await mergeTableWithRemap('loans', cloudLoans, (rec) => {
-      remapFkField(rec, 'linkedAssetItemId', assetItemMap)
-    })
+    await mergeTableWithRemap('loans', cloudLoans)
 
     // Process tombstones
     await applyCloudTombstones(uid)
@@ -804,7 +926,7 @@ export async function deleteMultipleFromCloud(uid: string, tableName: SyncableTa
   }
 }
 
-// Upload a single record to Firestore
+// Upload a single record to Firestore. Full-doc replace; see uploadTable.
 export async function uploadSingleRecord<T extends { syncId?: string }>(
   uid: string,
   tableName: SyncableTable,
@@ -814,8 +936,9 @@ export async function uploadSingleRecord<T extends { syncId?: string }>(
   try {
     const batch = writeBatch(firestore)
     const ref = doc(firestore, getUserDocPath(uid, tableName, record.syncId))
-    const data = stripUndefined({ ...record } as Record<string, unknown>)
-    batch.set(ref, data, { merge: true })
+    const enriched = { ...record } as Record<string, unknown>
+    await addFkSyncIds(tableName, enriched)
+    batch.set(ref, toCloudPayload(enriched))
     await batch.commit()
   } catch (err) {
     console.error(`[sync] upload ${tableName}/${record.syncId} failed:`, err)
@@ -827,12 +950,15 @@ export async function uploadSingleRecord<T extends { syncId?: string }>(
 let unsubscribers: Unsubscribe[] = []
 let realtimeSyncPaused = false
 let syncWritingCount = 0
+let lastSnapshotAt = 0
 
 export function pauseRealtimeSync() { realtimeSyncPaused = true }
 export function resumeRealtimeSync() { realtimeSyncPaused = false }
 export function getIsSyncWriting() { return syncWritingCount > 0 }
 export function beginSyncWriting() { syncWritingCount++ }
 export function endSyncWriting() { syncWritingCount = Math.max(0, syncWritingCount - 1) }
+/** Timestamp (ms epoch) of the last Firestore snapshot fire. 0 if no snapshot yet. */
+export function getLastSnapshotAt() { return lastSnapshotAt }
 
 // ─── FK Mapping for Real-time Sync ──────────────────────
 // Maps cloudId → localId per table, updated during merge and real-time sync
@@ -885,16 +1011,57 @@ const TABLE_FK_DEFS: Partial<Record<SyncableTable, Array<{ field: string; refTab
 interface UnmappedFK {
   field: string
   refTable: SyncableTable
-  cloudValue: number
+  // Exactly one of these is set:
+  refSyncId?: string  // new path: parent known by syncId, not yet local
+  cloudValue?: number // legacy path: only cloud auto-id available
 }
 
-function remapCloudFks(tableName: SyncableTable, record: Record<string, unknown>): UnmappedFK[] {
+/**
+ * Resolve FK fields on a downloaded record. Tries syncId companions first
+ * (new uploads), falls back to legacy fkMappings (old client uploads).
+ *
+ * Side effects:
+ *   - Rewrites each FK field in `record` to the local id (or leaves the
+ *     original value if unresolvable so the legacy fkMappings retry still has
+ *     something to work with).
+ *   - Consumes companion fields `<field>_syncId` from `record`.
+ *
+ * Returns the FKs that could not be resolved; callers should queue these for
+ * deferred resolution (see `queuePendingChild`) and/or `scheduleFkRetry`.
+ */
+async function resolveFksOnRecord(
+  tableName: SyncableTable,
+  record: Record<string, unknown>,
+): Promise<UnmappedFK[]> {
   const defs = TABLE_FK_DEFS[tableName]
   if (!defs) return []
   const unmapped: UnmappedFK[] = []
   for (const { field, refTable } of defs) {
-    const mapping = fkMappings[refTable]
+    const syncIdField = `${field}_syncId`
+    const refSyncId = record[syncIdField]
+    if (refSyncId === null) {
+      // Writer explicitly cleared the FK.
+      record[field] = null
+      delete record[syncIdField]
+      continue
+    }
+    if (typeof refSyncId === 'string') {
+      const parent = await (getLocalTable(refTable) as typeof db.members)
+        .where('syncId').equals(refSyncId).first() as { id?: number } | undefined
+      if (parent?.id != null) {
+        record[field] = parent.id
+      } else {
+        // Parent has not arrived locally yet — defer. Drop the cloud value
+        // so a half-broken numeric FK doesn't get written.
+        delete record[field]
+        unmapped.push({ field, refTable, refSyncId })
+      }
+      delete record[syncIdField]
+      continue
+    }
+    // Legacy path: no companion. Use fkMappings (cloudId → localId).
     const value = record[field]
+    const mapping = fkMappings[refTable]
     if (typeof value === 'number' && mapping) {
       if (mapping.has(value)) {
         record[field] = mapping.get(value)!
@@ -904,6 +1071,77 @@ function remapCloudFks(tableName: SyncableTable, record: Record<string, unknown>
     }
   }
   return unmapped
+}
+
+// (legacy remapCloudFks removed — superseded by resolveFksOnRecord)
+
+// ─── Deferred FK resolution queue ──────────────────────────────────
+//
+// When a child snapshot arrives before its parent (real-time sync delivers
+// table snapshots independently), we cannot map the child's FK to a local id.
+// Queue the child by parent's identifier (preferring syncId) and flush when
+// the parent's snapshot eventually arrives.
+
+type PendingChildEntry = {
+  table: SyncableTable
+  localId: number
+  field: string
+}
+
+const pendingChildren = new Map<string, PendingChildEntry[]>()
+
+function queuePendingChild(key: string, entry: PendingChildEntry): void {
+  if (!pendingChildren.has(key)) pendingChildren.set(key, [])
+  pendingChildren.get(key)!.push(entry)
+}
+
+async function flushPendingChildren(
+  refTable: SyncableTable,
+  refSyncId: string | undefined,
+  cloudId: number | undefined,
+  refLocalId: number,
+): Promise<void> {
+  const keys: string[] = []
+  if (refSyncId) keys.push(`${refTable}:syncId:${refSyncId}`)
+  if (cloudId != null) keys.push(`${refTable}:cloudId:${cloudId}`)
+  const tablesTouched = new Set<SyncableTable>()
+  for (const key of keys) {
+    const queue = pendingChildren.get(key)
+    if (!queue || queue.length === 0) continue
+    pendingChildren.delete(key)
+    syncWritingCount++
+    setSyncWritingFlag(true)
+    try {
+      for (const { table, localId, field } of queue) {
+        try {
+          await (getLocalTable(table) as typeof db.members).update(localId, { [field]: refLocalId } as never)
+          tablesTouched.add(table)
+        } catch (err) {
+          console.error(`[sync] flush deferred FK ${table}#${localId}.${field} failed:`, err)
+        }
+      }
+    } finally {
+      syncWritingCount = Math.max(0, syncWritingCount - 1)
+      setSyncWritingFlag(false)
+    }
+  }
+  for (const t of tablesTouched) {
+    window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: t } }))
+  }
+}
+
+function recordUnmappedFks(
+  tableName: SyncableTable,
+  localId: number,
+  unmapped: UnmappedFK[],
+): void {
+  for (const u of unmapped) {
+    if (u.refSyncId) {
+      queuePendingChild(`${u.refTable}:syncId:${u.refSyncId}`, { table: tableName, localId, field: u.field })
+    } else if (u.cloudValue != null) {
+      queuePendingChild(`${u.refTable}:cloudId:${u.cloudValue}`, { table: tableName, localId, field: u.field })
+    }
+  }
 }
 
 type DexieTable = typeof db.members | typeof db.assetCategories | typeof db.assetItems |
@@ -931,9 +1169,14 @@ function getLocalTable(tableName: SyncableTable): DexieTable {
 let syncGeneration = 0
 
 /**
- * Deferred FK retry: when a child record arrives before its parent via real-time sync,
- * FK remapping fails. This schedules a retry after a short delay to allow the parent
- * snapshot to process and populate fkMappings.
+ * Deferred FK retry. When a child record arrives before its parent via
+ * real-time sync, FK resolution fails. The deferred-children queue
+ * (`flushPendingChildren`) handles most of these as soon as the parent's
+ * snapshot lands — this timer is a belt-and-braces fallback in case the
+ * parent snapshot fires for a non-keyed reason or the queue key drifts.
+ *
+ * Retries 6 times with exponential backoff (2s, 4s, 8s, 16s, 32s, 60s).
+ * Logs a warning on permanent failure so orphaned FKs become observable.
  */
 function scheduleFkRetry(
   tableName: SyncableTable,
@@ -942,21 +1185,34 @@ function scheduleFkRetry(
   localTable: DexieTable,
   attempt = 0
 ): void {
-  const MAX_RETRIES = 3
-  const DELAY_MS = 2000
-  if (attempt >= MAX_RETRIES) return
+  const MAX_RETRIES = 6
+  const delays = [2000, 4000, 8000, 16000, 32000, 60000]
+  if (attempt >= MAX_RETRIES) {
+    console.warn(`[sync] FK still unmapped after ${MAX_RETRIES} retries:`, { tableName, localId, unmapped })
+    return
+  }
 
   setTimeout(async () => {
     const updates: Record<string, unknown> = {}
     const stillUnmapped: UnmappedFK[] = []
 
-    for (const { field, refTable, cloudValue } of unmapped) {
-      const mapping = fkMappings[refTable]
-      if (mapping?.has(cloudValue)) {
-        updates[field] = mapping.get(cloudValue)!
-      } else {
-        stillUnmapped.push({ field, refTable, cloudValue })
+    for (const u of unmapped) {
+      const { field, refTable } = u
+      if (u.refSyncId) {
+        const parent = await (getLocalTable(refTable) as typeof db.members)
+          .where('syncId').equals(u.refSyncId).first() as { id?: number } | undefined
+        if (parent?.id != null) {
+          updates[field] = parent.id
+          continue
+        }
+      } else if (u.cloudValue != null) {
+        const mapping = fkMappings[refTable]
+        if (mapping?.has(u.cloudValue)) {
+          updates[field] = mapping.get(u.cloudValue)!
+          continue
+        }
       }
+      stillUnmapped.push(u)
     }
 
     if (Object.keys(updates).length > 0) {
@@ -978,15 +1234,42 @@ function scheduleFkRetry(
     if (stillUnmapped.length > 0) {
       scheduleFkRetry(tableName, localId, stillUnmapped, localTable, attempt + 1)
     }
-  }, DELAY_MS)
+  }, delays[attempt])
+}
+
+/**
+ * Decide whether a cloud version should overwrite the local version, using
+ * updatedAt LWW with deviceId as a deterministic tiebreaker. Without the
+ * tiebreaker, two devices writing at the same millisecond would both skip
+ * each other's updates and stay diverged forever.
+ */
+function shouldApplyCloudUpdate(
+  cloudUpdatedAt: string | undefined,
+  cloudDeviceId: string | undefined,
+  localUpdatedAt: string | undefined,
+): boolean {
+  if (!cloudUpdatedAt) return false
+  const cAt = cloudUpdatedAt
+  const lAt = localUpdatedAt || ''
+  if (cAt > lAt) return true
+  if (cAt < lAt) return false
+  // Equal timestamps — deterministic tiebreak by deviceId. Echo of our own
+  // write (same deviceId) returns false. Higher deviceId wins.
+  const peer = cloudDeviceId || ''
+  const self = getDeviceId()
+  return peer !== '' && peer !== self && peer > self
 }
 
 function subscribeTable(uid: string, tableName: SyncableTable, generation: number, retryCount = 0): void {
   const colRef = collection(firestore, getUserCollectionPath(uid, tableName))
   const unsub = onSnapshot(colRef, async (snapshot) => {
+    lastSnapshotAt = Date.now()
     if (realtimeSyncPaused) return
 
     const localTable = getLocalTable(tableName)
+    // Records whose parent FK resolved successfully (or didn't need resolving)
+    // — collected so we can flush any children pending on them.
+    const settledParents: Array<{ syncId: string; cloudId?: number; localId: number }> = []
 
     syncWritingCount++
     setSyncWritingFlag(true)
@@ -994,33 +1277,37 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
       for (const change of snapshot.docChanges()) {
         const cloudData = change.doc.data()
         const syncId = cloudData.syncId as string | undefined
-
         if (!syncId) continue
 
         try {
           if (change.type === 'added' || change.type === 'modified') {
             const existing = await (localTable as typeof db.members).where('syncId').equals(syncId).first()
+            const cloudDeviceId = cloudData.__deviceId as string | undefined
             if (existing) {
-              const cloudUpdatedAt = cloudData.updatedAt as string
-              if (cloudUpdatedAt && cloudUpdatedAt > (existing.updatedAt || '')) {
-                const updates = { ...cloudData }
-                const cloudId = updates.id as number | undefined
-                delete updates.id // Don't overwrite local primary key
-                const unmapped = remapCloudFks(tableName, updates)
-                await (localTable as typeof db.members).update(existing.id!, updates)
-                updateFkMapping(tableName, cloudId, existing.id!)
-                if (unmapped.length > 0) {
-                  scheduleFkRetry(tableName, existing.id!, unmapped, localTable)
-                }
+              if (!shouldApplyCloudUpdate(cloudData.updatedAt as string, cloudDeviceId, existing.updatedAt)) {
+                continue
+              }
+              const updates = stripInternalCloudFields(cloudData)
+              const cloudId = updates.id as number | undefined
+              delete updates.id // Don't overwrite local primary key
+              const unmapped = await resolveFksOnRecord(tableName, updates)
+              await (localTable as typeof db.members).update(existing.id!, updates)
+              updateFkMapping(tableName, cloudId, existing.id!)
+              settledParents.push({ syncId, cloudId, localId: existing.id! })
+              if (unmapped.length > 0) {
+                recordUnmappedFks(tableName, existing.id!, unmapped)
+                scheduleFkRetry(tableName, existing.id!, unmapped, localTable)
               }
             } else {
-              const toInsert = { ...cloudData }
+              const toInsert = stripInternalCloudFields(cloudData)
               const cloudId = toInsert.id as number | undefined
               delete toInsert.id // Let Dexie auto-assign local id
-              const unmapped = remapCloudFks(tableName, toInsert)
-              const newId = await (localTable as typeof db.members).add(toInsert as Member) as number
+              const unmapped = await resolveFksOnRecord(tableName, toInsert)
+              const newId = await (localTable as typeof db.members).add(toInsert as unknown as Member) as number
               updateFkMapping(tableName, cloudId, newId)
+              settledParents.push({ syncId, cloudId, localId: newId })
               if (unmapped.length > 0) {
+                recordUnmappedFks(tableName, newId, unmapped)
                 scheduleFkRetry(tableName, newId, unmapped, localTable)
               }
             }
@@ -1037,6 +1324,11 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
     } finally {
       syncWritingCount = Math.max(0, syncWritingCount - 1)
       setSyncWritingFlag(false)
+    }
+
+    // Flush any children that were waiting on parents we just settled.
+    for (const p of settledParents) {
+      await flushPendingChildren(tableName, p.syncId, p.cloudId, p.localId)
     }
 
     if (snapshot.docChanges().length > 0) {
@@ -1061,6 +1353,7 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
 function subscribeTombstones(uid: string, generation: number): void {
   const colRef = collection(firestore, `users/${uid}/syncTombstones`)
   const unsub = onSnapshot(colRef, async (snapshot) => {
+    lastSnapshotAt = Date.now()
     if (realtimeSyncPaused) return
 
     syncWritingCount++
@@ -1108,14 +1401,25 @@ function subscribeTombstones(uid: string, generation: number): void {
 
 let activeListenerUid: string | null = null
 
-export function startRealtimeSync(uid: string): void {
-  // Skip if listeners are already active for this user
-  if (activeListenerUid === uid && unsubscribers.length > 0) return
+/**
+ * (Re)start Firestore real-time listeners.
+ *
+ * @param uid   Authenticated user id.
+ * @param force Force a tear-down + re-subscribe even if listeners appear to
+ *              already be active for this uid. Useful when the caller suspects
+ *              the existing listeners have silently gone stale (e.g., after a
+ *              long background sleep). The default no-op-if-active behavior
+ *              is preserved otherwise to avoid replaying the entire initial
+ *              snapshot on every visibility/online event.
+ */
+export function startRealtimeSync(uid: string, force: boolean = false): void {
+  if (!force && activeListenerUid === uid && unsubscribers.length > 0) return
 
   stopRealtimeSync()
   activeListenerUid = uid
   syncGeneration++
   realtimeSyncPaused = false
+  lastSnapshotAt = 0
   const gen = syncGeneration
 
   for (const tableName of ALL_TABLES) {
@@ -1133,4 +1437,5 @@ export function stopRealtimeSync(): void {
     unsub()
   }
   unsubscribers = []
+  pendingChildren.clear()
 }

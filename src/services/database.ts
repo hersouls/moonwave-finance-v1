@@ -303,8 +303,19 @@ function installChangeTracking() {
 
 installChangeTracking()
 
+// Deterministic syncIds for seeded defaults. Used by both `db.on('populate')`
+// (initial seed) and `ensureDefaultCategories` (late-addition top-up) so that
+// every device produces identical syncIds for the same logical default record.
+// This eliminates the new-device duplicate bug at the source.
+const defaultMemberSyncId = (name: string) => `default:member:${name}`
+const defaultAssetCatSyncId = (type: string, name: string) => `default:assetCat:${type}:${name}`
+const defaultTxnCatSyncId = (type: string, name: string) => `default:txnCat:${type}:${name}`
+
 // Ensure default categories exist — called from App.tsx init, NOT from db.on('ready')
-// because async db.on('ready') callbacks cause Dexie deadlock (queries hang forever)
+// because async db.on('ready') callbacks cause Dexie deadlock (queries hang forever).
+//
+// Uses deterministic syncIds (matching `db.on('populate')`) so that late-added
+// defaults converge across devices via syncId equality instead of duplicating.
 export async function ensureDefaultCategories(): Promise<void> {
   const assetCats = await db.assetCategories.toArray()
   if (!assetCats.some((c) => c.name === '부동산')) {
@@ -320,7 +331,7 @@ export async function ensureDefaultCategories(): Promise<void> {
         color: '#D97706',
         icon: 'Home',
         sortOrder: maxSort + 1,
-        syncId: crypto.randomUUID(),
+        syncId: defaultAssetCatSyncId('asset', '부동산'),
         createdAt: now,
         updatedAt: now,
       } as AssetCategory)
@@ -343,7 +354,7 @@ export async function ensureDefaultCategories(): Promise<void> {
         icon: 'Percent',
         isDefault: true,
         sortOrder: maxSort + 1,
-        syncId: crypto.randomUUID(),
+        syncId: defaultTxnCatSyncId('expense', '대출이자'),
         createdAt: now,
         updatedAt: now,
       } as TransactionCategory)
@@ -358,56 +369,63 @@ db.on('populate', () => {
 
   // Default members
   db.members.bulkAdd(
-    DEFAULT_MEMBERS.map((m, i) => ({ ...m, isDefault: true, sortOrder: i, createdAt: now, updatedAt: now }))
+    DEFAULT_MEMBERS.map((m, i) => ({
+      ...m,
+      isDefault: true,
+      sortOrder: i,
+      syncId: defaultMemberSyncId(m.name),
+      createdAt: now,
+      updatedAt: now,
+    }))
   )
 
   // Default asset categories
   db.assetCategories.bulkAdd([
-    { name: '퇴직금', type: 'asset', color: '#6366F1', icon: 'Landmark', sortOrder: 0, createdAt: now, updatedAt: now },
-    { name: '주식', type: 'asset', color: '#3B82F6', icon: 'TrendingUp', sortOrder: 1, createdAt: now, updatedAt: now },
-    { name: '암호화폐', type: 'asset', color: '#F59E0B', icon: 'Bitcoin', sortOrder: 2, createdAt: now, updatedAt: now },
-    { name: '거래소 현금', type: 'asset', color: '#10B981', icon: 'Banknote', sortOrder: 3, createdAt: now, updatedAt: now },
-    { name: '금', type: 'asset', color: '#EAB308', icon: 'Gem', sortOrder: 4, createdAt: now, updatedAt: now },
-    { name: '은행계좌', type: 'asset', color: '#06B6D4', icon: 'Building2', sortOrder: 5, createdAt: now, updatedAt: now },
-    { name: '부동산', type: 'asset', color: '#D97706', icon: 'Home', sortOrder: 6, createdAt: now, updatedAt: now },
-    { name: '기타자산', type: 'asset', color: '#8B5CF6', icon: 'Package', sortOrder: 7, createdAt: now, updatedAt: now },
-    { name: '주택대출', type: 'liability', color: '#EF4444', icon: 'Home', sortOrder: 0, createdAt: now, updatedAt: now },
-    { name: '신용대출', type: 'liability', color: '#F97316', icon: 'CreditCard', sortOrder: 1, createdAt: now, updatedAt: now },
-    { name: '마이너스 대출', type: 'liability', color: '#DC2626', icon: 'MinusCircle', sortOrder: 2, createdAt: now, updatedAt: now },
-    { name: '회사 대출', type: 'liability', color: '#E11D48', icon: 'Building', sortOrder: 3, createdAt: now, updatedAt: now },
-    { name: '개인 대출', type: 'liability', color: '#BE185D', icon: 'Users', sortOrder: 4, createdAt: now, updatedAt: now },
+    { name: '퇴직금', type: 'asset', color: '#6366F1', icon: 'Landmark', sortOrder: 0, syncId: defaultAssetCatSyncId('asset', '퇴직금'), createdAt: now, updatedAt: now },
+    { name: '주식', type: 'asset', color: '#3B82F6', icon: 'TrendingUp', sortOrder: 1, syncId: defaultAssetCatSyncId('asset', '주식'), createdAt: now, updatedAt: now },
+    { name: '암호화폐', type: 'asset', color: '#F59E0B', icon: 'Bitcoin', sortOrder: 2, syncId: defaultAssetCatSyncId('asset', '암호화폐'), createdAt: now, updatedAt: now },
+    { name: '거래소 현금', type: 'asset', color: '#10B981', icon: 'Banknote', sortOrder: 3, syncId: defaultAssetCatSyncId('asset', '거래소 현금'), createdAt: now, updatedAt: now },
+    { name: '금', type: 'asset', color: '#EAB308', icon: 'Gem', sortOrder: 4, syncId: defaultAssetCatSyncId('asset', '금'), createdAt: now, updatedAt: now },
+    { name: '은행계좌', type: 'asset', color: '#06B6D4', icon: 'Building2', sortOrder: 5, syncId: defaultAssetCatSyncId('asset', '은행계좌'), createdAt: now, updatedAt: now },
+    { name: '부동산', type: 'asset', color: '#D97706', icon: 'Home', sortOrder: 6, syncId: defaultAssetCatSyncId('asset', '부동산'), createdAt: now, updatedAt: now },
+    { name: '기타자산', type: 'asset', color: '#8B5CF6', icon: 'Package', sortOrder: 7, syncId: defaultAssetCatSyncId('asset', '기타자산'), createdAt: now, updatedAt: now },
+    { name: '주택대출', type: 'liability', color: '#EF4444', icon: 'Home', sortOrder: 0, syncId: defaultAssetCatSyncId('liability', '주택대출'), createdAt: now, updatedAt: now },
+    { name: '신용대출', type: 'liability', color: '#F97316', icon: 'CreditCard', sortOrder: 1, syncId: defaultAssetCatSyncId('liability', '신용대출'), createdAt: now, updatedAt: now },
+    { name: '마이너스 대출', type: 'liability', color: '#DC2626', icon: 'MinusCircle', sortOrder: 2, syncId: defaultAssetCatSyncId('liability', '마이너스 대출'), createdAt: now, updatedAt: now },
+    { name: '회사 대출', type: 'liability', color: '#E11D48', icon: 'Building', sortOrder: 3, syncId: defaultAssetCatSyncId('liability', '회사 대출'), createdAt: now, updatedAt: now },
+    { name: '개인 대출', type: 'liability', color: '#BE185D', icon: 'Users', sortOrder: 4, syncId: defaultAssetCatSyncId('liability', '개인 대출'), createdAt: now, updatedAt: now },
   ])
 
   // Default transaction categories
   db.transactionCategories.bulkAdd([
     // Income
-    { name: '월급', type: 'income', color: '#10B981', icon: 'Briefcase', isDefault: true, sortOrder: 0, createdAt: now, updatedAt: now },
-    { name: '부수입', type: 'income', color: '#06B6D4', icon: 'Coins', isDefault: true, sortOrder: 1, createdAt: now, updatedAt: now },
-    { name: '투자수익', type: 'income', color: '#8B5CF6', icon: 'TrendingUp', isDefault: true, sortOrder: 2, createdAt: now, updatedAt: now },
-    { name: '다연여행수입', type: 'income', color: '#14B8A6', icon: 'Plane', isDefault: true, sortOrder: 3, createdAt: now, updatedAt: now },
-    { name: '가상화폐수익', type: 'income', color: '#F59E0B', icon: 'Bitcoin', isDefault: true, sortOrder: 4, createdAt: now, updatedAt: now },
-    { name: '주식수익', type: 'income', color: '#22C55E', icon: 'LineChart', isDefault: true, sortOrder: 5, createdAt: now, updatedAt: now },
-    { name: '기타', type: 'income', color: '#71717A', icon: 'MoreHorizontal', isDefault: true, sortOrder: 6, createdAt: now, updatedAt: now },
+    { name: '월급', type: 'income', color: '#10B981', icon: 'Briefcase', isDefault: true, sortOrder: 0, syncId: defaultTxnCatSyncId('income', '월급'), createdAt: now, updatedAt: now },
+    { name: '부수입', type: 'income', color: '#06B6D4', icon: 'Coins', isDefault: true, sortOrder: 1, syncId: defaultTxnCatSyncId('income', '부수입'), createdAt: now, updatedAt: now },
+    { name: '투자수익', type: 'income', color: '#8B5CF6', icon: 'TrendingUp', isDefault: true, sortOrder: 2, syncId: defaultTxnCatSyncId('income', '투자수익'), createdAt: now, updatedAt: now },
+    { name: '다연여행수입', type: 'income', color: '#14B8A6', icon: 'Plane', isDefault: true, sortOrder: 3, syncId: defaultTxnCatSyncId('income', '다연여행수입'), createdAt: now, updatedAt: now },
+    { name: '가상화폐수익', type: 'income', color: '#F59E0B', icon: 'Bitcoin', isDefault: true, sortOrder: 4, syncId: defaultTxnCatSyncId('income', '가상화폐수익'), createdAt: now, updatedAt: now },
+    { name: '주식수익', type: 'income', color: '#22C55E', icon: 'LineChart', isDefault: true, sortOrder: 5, syncId: defaultTxnCatSyncId('income', '주식수익'), createdAt: now, updatedAt: now },
+    { name: '기타', type: 'income', color: '#71717A', icon: 'MoreHorizontal', isDefault: true, sortOrder: 6, syncId: defaultTxnCatSyncId('income', '기타'), createdAt: now, updatedAt: now },
     // Expense
-    { name: '식비', type: 'expense', color: '#F59E0B', icon: 'UtensilsCrossed', isDefault: true, sortOrder: 0, createdAt: now, updatedAt: now },
-    { name: '교통비', type: 'expense', color: '#3B82F6', icon: 'Car', isDefault: true, sortOrder: 1, createdAt: now, updatedAt: now },
-    { name: '주거비', type: 'expense', color: '#8B5CF6', icon: 'Home', isDefault: true, sortOrder: 2, createdAt: now, updatedAt: now },
-    { name: '통신비', type: 'expense', color: '#EC4899', icon: 'Smartphone', isDefault: true, sortOrder: 3, createdAt: now, updatedAt: now },
-    { name: '의료비', type: 'expense', color: '#EF4444', icon: 'Heart', isDefault: true, sortOrder: 4, createdAt: now, updatedAt: now },
-    { name: '교육비', type: 'expense', color: '#6366F1', icon: 'GraduationCap', isDefault: true, sortOrder: 5, createdAt: now, updatedAt: now },
-    { name: '건강', type: 'expense', color: '#EF4444', icon: 'HeartPulse', isDefault: true, sortOrder: 6, createdAt: now, updatedAt: now },
-    { name: '경조사/회비', type: 'expense', color: '#A855F7', icon: 'Gift', isDefault: true, sortOrder: 7, createdAt: now, updatedAt: now },
-    { name: '대출상환', type: 'expense', color: '#DC2626', icon: 'Landmark', isDefault: true, sortOrder: 8, createdAt: now, updatedAt: now },
-    { name: '대출이자', type: 'expense', color: '#B91C1C', icon: 'Percent', isDefault: true, sortOrder: 9, createdAt: now, updatedAt: now },
-    { name: '마트/편의점', type: 'expense', color: '#FB923C', icon: 'ShoppingCart', isDefault: true, sortOrder: 10, createdAt: now, updatedAt: now },
-    { name: '보험', type: 'expense', color: '#0EA5E9', icon: 'Shield', isDefault: true, sortOrder: 11, createdAt: now, updatedAt: now },
-    { name: '부모님', type: 'expense', color: '#EC4899', icon: 'Heart', isDefault: true, sortOrder: 12, createdAt: now, updatedAt: now },
-    { name: '생활용품', type: 'expense', color: '#84CC16', icon: 'Package', isDefault: true, sortOrder: 13, createdAt: now, updatedAt: now },
-    { name: '여행', type: 'expense', color: '#06B6D4', icon: 'Map', isDefault: true, sortOrder: 14, createdAt: now, updatedAt: now },
-    { name: '카드대금', type: 'expense', color: '#F43F5E', icon: 'CreditCard', isDefault: true, sortOrder: 15, createdAt: now, updatedAt: now },
-    { name: '투자', type: 'expense', color: '#6366F1', icon: 'TrendingUp', isDefault: true, sortOrder: 16, createdAt: now, updatedAt: now },
-    { name: '패션/미용', type: 'expense', color: '#E879F9', icon: 'Shirt', isDefault: true, sortOrder: 17, createdAt: now, updatedAt: now },
-    { name: '기타', type: 'expense', color: '#71717A', icon: 'MoreHorizontal', isDefault: true, sortOrder: 18, createdAt: now, updatedAt: now },
+    { name: '식비', type: 'expense', color: '#F59E0B', icon: 'UtensilsCrossed', isDefault: true, sortOrder: 0, syncId: defaultTxnCatSyncId('expense', '식비'), createdAt: now, updatedAt: now },
+    { name: '교통비', type: 'expense', color: '#3B82F6', icon: 'Car', isDefault: true, sortOrder: 1, syncId: defaultTxnCatSyncId('expense', '교통비'), createdAt: now, updatedAt: now },
+    { name: '주거비', type: 'expense', color: '#8B5CF6', icon: 'Home', isDefault: true, sortOrder: 2, syncId: defaultTxnCatSyncId('expense', '주거비'), createdAt: now, updatedAt: now },
+    { name: '통신비', type: 'expense', color: '#EC4899', icon: 'Smartphone', isDefault: true, sortOrder: 3, syncId: defaultTxnCatSyncId('expense', '통신비'), createdAt: now, updatedAt: now },
+    { name: '의료비', type: 'expense', color: '#EF4444', icon: 'Heart', isDefault: true, sortOrder: 4, syncId: defaultTxnCatSyncId('expense', '의료비'), createdAt: now, updatedAt: now },
+    { name: '교육비', type: 'expense', color: '#6366F1', icon: 'GraduationCap', isDefault: true, sortOrder: 5, syncId: defaultTxnCatSyncId('expense', '교육비'), createdAt: now, updatedAt: now },
+    { name: '건강', type: 'expense', color: '#EF4444', icon: 'HeartPulse', isDefault: true, sortOrder: 6, syncId: defaultTxnCatSyncId('expense', '건강'), createdAt: now, updatedAt: now },
+    { name: '경조사/회비', type: 'expense', color: '#A855F7', icon: 'Gift', isDefault: true, sortOrder: 7, syncId: defaultTxnCatSyncId('expense', '경조사/회비'), createdAt: now, updatedAt: now },
+    { name: '대출상환', type: 'expense', color: '#DC2626', icon: 'Landmark', isDefault: true, sortOrder: 8, syncId: defaultTxnCatSyncId('expense', '대출상환'), createdAt: now, updatedAt: now },
+    { name: '대출이자', type: 'expense', color: '#B91C1C', icon: 'Percent', isDefault: true, sortOrder: 9, syncId: defaultTxnCatSyncId('expense', '대출이자'), createdAt: now, updatedAt: now },
+    { name: '마트/편의점', type: 'expense', color: '#FB923C', icon: 'ShoppingCart', isDefault: true, sortOrder: 10, syncId: defaultTxnCatSyncId('expense', '마트/편의점'), createdAt: now, updatedAt: now },
+    { name: '보험', type: 'expense', color: '#0EA5E9', icon: 'Shield', isDefault: true, sortOrder: 11, syncId: defaultTxnCatSyncId('expense', '보험'), createdAt: now, updatedAt: now },
+    { name: '부모님', type: 'expense', color: '#EC4899', icon: 'Heart', isDefault: true, sortOrder: 12, syncId: defaultTxnCatSyncId('expense', '부모님'), createdAt: now, updatedAt: now },
+    { name: '생활용품', type: 'expense', color: '#84CC16', icon: 'Package', isDefault: true, sortOrder: 13, syncId: defaultTxnCatSyncId('expense', '생활용품'), createdAt: now, updatedAt: now },
+    { name: '여행', type: 'expense', color: '#06B6D4', icon: 'Map', isDefault: true, sortOrder: 14, syncId: defaultTxnCatSyncId('expense', '여행'), createdAt: now, updatedAt: now },
+    { name: '카드대금', type: 'expense', color: '#F43F5E', icon: 'CreditCard', isDefault: true, sortOrder: 15, syncId: defaultTxnCatSyncId('expense', '카드대금'), createdAt: now, updatedAt: now },
+    { name: '투자', type: 'expense', color: '#6366F1', icon: 'TrendingUp', isDefault: true, sortOrder: 16, syncId: defaultTxnCatSyncId('expense', '투자'), createdAt: now, updatedAt: now },
+    { name: '패션/미용', type: 'expense', color: '#E879F9', icon: 'Shirt', isDefault: true, sortOrder: 17, syncId: defaultTxnCatSyncId('expense', '패션/미용'), createdAt: now, updatedAt: now },
+    { name: '기타', type: 'expense', color: '#71717A', icon: 'MoreHorizontal', isDefault: true, sortOrder: 18, syncId: defaultTxnCatSyncId('expense', '기타'), createdAt: now, updatedAt: now },
   ])
 })
 
