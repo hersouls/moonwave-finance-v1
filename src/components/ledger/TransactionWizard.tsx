@@ -28,7 +28,7 @@ import { useTransactionTemplates } from '@/hooks/useTransactionTemplates'
 import { clsx } from 'clsx'
 import {
   Check, ChevronLeft, ChevronRight, Zap, Landmark, Pencil, MoreHorizontal,
-  Plus, Eraser, X, Calendar as CalendarIcon, ChevronDown, Calculator,
+  Plus, Eraser, X, Calendar as CalendarIcon, ChevronDown, Calculator, TrendingUp,
 } from 'lucide-react'
 import { MiniCalendar } from '@/components/ui/MiniCalendar'
 import { AmountCalculator } from '@/components/ledger/AmountCalculator'
@@ -56,6 +56,7 @@ interface WizardState {
   showCalendar: boolean
   showEndDateCalendar: boolean
   showCalculator: boolean
+  isRefund: boolean
 }
 
 type WizardAction =
@@ -96,6 +97,7 @@ function getInitialState(initialDate?: string, defaultMemberId?: number | ''): W
     showCalendar: false,
     showEndDateCalendar: false,
     showCalculator: false,
+    isRefund: false,
   }
 }
 
@@ -114,7 +116,8 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
     case 'SET_FIELD':
       return { ...state, [action.field]: action.value }
     case 'SET_TYPE':
-      return { ...state, type: action.value, categoryId: '' }
+      // 수입으로 전환 시 환급 토글은 무효 — 자동 해제
+      return { ...state, type: action.value, categoryId: '', isRefund: action.value === 'expense' ? state.isRefund : false }
     case 'SET_PAYMENT_METHOD':
       return { ...state, paymentMethod: action.value, paymentMethodDetail: '', paymentMethodItemId: '' }
     case 'APPLY_TEMPLATE':
@@ -128,6 +131,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
         memberId: action.data.memberId ?? state.memberId,
         currentStep: WIZARD_MAX_STEP,
         direction: 'forward',
+        isRefund: false,
       }
     case 'APPLY_LOAN':
       return {
@@ -138,6 +142,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
         memo: action.data.memo,
         currentStep: WIZARD_MAX_STEP,
         direction: 'forward',
+        isRefund: false,
       }
     case 'ADD_AMOUNT': {
       const current = Number(state.amount.replace(/,/g, '')) || 0
@@ -326,9 +331,11 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
     if (numAmount <= 0) return
     dispatch({ type: 'SET_SUBMITTING', value: true })
     try {
+      // 환급 = 같은 카테고리에 부호-음수 지출로 저장(수입 유형에는 적용 안 함)
+      const signedAmount = state.isRefund && state.type === 'expense' ? -numAmount : numAmount
       await addTransaction({
         type: state.type,
-        amount: numAmount,
+        amount: signedAmount,
         categoryId: state.categoryId ? (state.categoryId as number) : null,
         memberId: state.memberId ? (state.memberId as number) : null,
         date: state.date,
@@ -700,6 +707,38 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
             </motion.button>
           ))}
         </div>
+
+        {/* 환급 거래 토글 — 지출 유형에서만, 켜면 같은 카테고리에 음수 지출로 기록 */}
+        {state.type === 'expense' && (
+          <motion.label
+            className={clsx(
+              'mt-3 flex items-center justify-between gap-2 cursor-pointer rounded-2xl px-3.5 py-2.5 transition-all ring-1',
+              state.isRefund
+                ? 'bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20 ring-[color:var(--color-primary-300)] dark:ring-[color:var(--color-primary-700)]'
+                : 'bg-surface-tertiary ring-base',
+            )}
+            whileTap={shouldReduceMotion ? undefined : { scale: 0.995 }}
+          >
+            <span className="inline-flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]" />
+              <span>
+                <span className="text-body3 font-semibold text-heading block leading-tight">환급 거래</span>
+                <span className="text-caption text-sub">같은 카테고리에서 받은 환불을 음수로 기록</span>
+              </span>
+            </span>
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={state.isRefund}
+                onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'isRefund', value: e.target.checked })}
+                className="sr-only peer"
+                aria-label="환급 거래 토글"
+              />
+              <div className="w-10 h-6 rounded-full bg-surface-secondary ring-1 ring-base peer-checked:bg-[color:var(--color-primary-500)] peer-checked:ring-[color:var(--color-primary-500)] transition-all" />
+              <div className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform peer-checked:translate-x-4" />
+            </div>
+          </motion.label>
+        )}
       </div>
 
       {/* Member — pill chips */}
@@ -1148,8 +1187,9 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
     const payDetail = state.paymentMethodDetail ? ` · ${state.paymentMethodDetail}` : ''
     const recurLabels = RECUR_LABEL_MAP
 
+    const isRefundExpense = state.isRefund && state.type === 'expense'
     const rows: { label: string; value: string; step: number; color?: string }[] = [
-      { label: '유형', value: state.type === 'expense' ? '지출' : '수입', step: 0 },
+      { label: '유형', value: isRefundExpense ? '지출 (환급)' : state.type === 'expense' ? '지출' : '수입', step: 0 },
       { label: '카테고리', value: cat?.name || UNCATEGORIZED_LABEL, step: 1, color: cat?.color },
       { label: '날짜', value: formatDate(state.date), step: 2 },
       { label: '구성원', value: member?.name || '미지정', step: 0 },
@@ -1172,7 +1212,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
         {/* Hero — KT-style left-aligned display */}
         <div className="rounded-3xl bg-surface-primary ring-1 ring-base shadow-[0_4px_16px_rgba(0,0,0,0.04)] px-5 sm:px-6 py-6">
           <p className="text-label2 text-sub mb-1.5">
-            {dateLabel}  {isExpense ? '지출 금액' : '수입 금액'}
+            {dateLabel}  {isRefundExpense ? '환급 (음수 지출)' : isExpense ? '지출 금액' : '수입 금액'}
           </p>
           <motion.p
             key={state.amount}
@@ -1181,7 +1221,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
             transition={springSnappy}
             className={clsx(
               'tabular-nums break-all font-extrabold',
-              isExpense ? 'text-value-negative' : 'text-value-positive',
+              isRefundExpense ? 'text-value-positive' : isExpense ? 'text-value-negative' : 'text-value-positive',
             )}
             style={{
               fontSize: 'clamp(28px, 8vw, 42px)',
@@ -1189,7 +1229,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               lineHeight: 1.15,
             }}
           >
-            {state.amount || '0'}
+            {isRefundExpense ? '-' : ''}{state.amount || '0'}
             <span
               className="ml-1 font-semibold opacity-80"
               style={{ fontSize: 'clamp(18px, 4.5vw, 24px)' }}
