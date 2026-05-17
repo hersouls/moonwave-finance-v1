@@ -7,7 +7,8 @@ import { useMemberStore } from '@/stores/memberStore'
 import { getTodayString } from '@/lib/dateUtils'
 import { useToastStore } from '@/stores/toastStore'
 import { Select } from '@/components/ui/Select'
-import type { TransactionType, RepeatType } from '@/lib/types'
+import type { TransactionType, RepeatType, SubscriptionCategoryType } from '@/lib/types'
+import { SUBSCRIPTION_CATEGORIES } from '@/utils/constants'
 
 export function TransactionCreateModal() {
   const isOpen = useUIStore((s) => s.isTransactionCreateModalOpen)
@@ -25,6 +26,7 @@ export function TransactionCreateModal() {
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurType, setRecurType] = useState<RepeatType>('monthly')
   const [recurEndDate, setRecurEndDate] = useState('')
+  const [subscriptionCategory, setSubscriptionCategory] = useState<SubscriptionCategoryType | ''>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [amountError, setAmountError] = useState('')
 
@@ -41,6 +43,7 @@ export function TransactionCreateModal() {
       setIsRecurring(false)
       setRecurType('monthly')
       setRecurEndDate('')
+      setSubscriptionCategory('')
     }
   }, [isOpen, members])
 
@@ -66,6 +69,7 @@ export function TransactionCreateModal() {
         memo: memo.trim() || undefined,
         isRecurring,
         recurPattern: isRecurring ? { type: recurType, interval: 1, endDate: recurEndDate || undefined } : undefined,
+        subscriptionCategory: subscriptionCategory || undefined,
       })
       close()
     } catch {
@@ -177,6 +181,17 @@ export function TransactionCreateModal() {
               onChange={(e) => setMemo(e.target.value)}
               placeholder="메모를 입력하세요"
               className="input-base"
+            />
+          </div>
+
+          {/* Subscription category label (optional) */}
+          <div>
+            <label className="block text-body3 text-body mb-1.5">구독 분류 (선택)</label>
+            <Select
+              value={subscriptionCategory}
+              onChange={(v) => setSubscriptionCategory((v as SubscriptionCategoryType) || '')}
+              options={SUBSCRIPTION_CATEGORIES.map(c => ({ value: c.value, label: c.label }))}
+              placeholder="선택 안함"
             />
           </div>
 

@@ -21,7 +21,8 @@ import {
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { MiniCalendar } from '@/components/ui/MiniCalendar'
 import { durations, easeOutExpo, springSnappy } from '@/lib/motionConfig'
-import type { Transaction, TransactionType, RepeatType, PaymentMethod } from '@/lib/types'
+import type { Transaction, TransactionType, RepeatType, PaymentMethod, SubscriptionCategoryType } from '@/lib/types'
+import { SUBSCRIPTION_CATEGORIES } from '@/utils/constants'
 
 const PAYMENT_METHOD_ICONS: Record<PaymentMethod, typeof Banknote> = {
   cash: Banknote,
@@ -72,6 +73,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurType, setRecurType] = useState<RepeatType>('monthly')
   const [recurEndDate, setRecurEndDate] = useState('')
+  const [subscriptionCategory, setSubscriptionCategory] = useState<SubscriptionCategoryType | ''>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
   const [showRecurEndCalendar, setShowRecurEndCalendar] = useState(false)
@@ -134,6 +136,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
       setIsRecurring(initialData.isRecurring)
       setRecurType(initialData.recurPattern?.type || 'monthly')
       setRecurEndDate(initialData.recurPattern?.endDate || '')
+      setSubscriptionCategory(initialData.subscriptionCategory ?? '')
     } else {
       setType('expense')
       setAmount('')
@@ -147,6 +150,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
       setIsRecurring(false)
       setRecurType('monthly')
       setRecurEndDate('')
+      setSubscriptionCategory('')
     }
   }, [open, mode, initialData, initialDate, members])
 
@@ -195,6 +199,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
         paymentMethod: paymentMethod || undefined,
         paymentMethodDetail: paymentMethodDetail.trim() || undefined,
         paymentMethodItemId: paymentMethodItemId ? (paymentMethodItemId as number) : undefined,
+        subscriptionCategory: subscriptionCategory || undefined,
       }
 
       if (mode === 'edit' && initialData?.id) {
@@ -830,6 +835,17 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                 {memo.length}/80
               </span>
             </div>
+          </div>
+
+          {/* ─── Subscription category label (optional) ─── */}
+          <div>
+            <SectionLabel icon={Sparkles} label="구독 분류" optional />
+            <Select
+              value={subscriptionCategory}
+              onChange={(v) => setSubscriptionCategory((v as SubscriptionCategoryType) || '')}
+              options={SUBSCRIPTION_CATEGORIES.map(c => ({ value: c.value, label: c.label }))}
+              placeholder="선택 안함"
+            />
           </div>
 
           {/* Recurring Toggle - create only */}

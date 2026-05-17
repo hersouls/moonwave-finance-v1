@@ -7,6 +7,7 @@ import type {
   DailyValue,
   TransactionCategory,
   Transaction,
+  TransactionType,
   Budget,
   FinancialGoal,
   PaymentMethodItem,
@@ -592,6 +593,69 @@ export async function deleteTransactionCategory(id: number): Promise<void> {
     await db.transactions.where('categoryId').equals(id).modify({ categoryId: null })
     await db.transactionCategories.delete(id)
   })
+}
+
+export interface TransactionCategoryUsage {
+  transactionCount: number
+  transactionTotal: number
+  incomeCount: number
+  incomeTotal: number
+  expenseCount: number
+  expenseTotal: number
+  recurringSourceCount: number
+  budgetCount: number
+  budgetMonths: string[]
+  linkedSubscriptions: { id: number; name: string }[]
+  recentTransactions: { id: number; date: string; amount: number; memo?: string; type: TransactionType }[]
+}
+
+export async function getTransactionCategoryUsage(id: number): Promise<TransactionCategoryUsage> {
+  const [transactions, budgets, subscriptions] = await Promise.all([
+    db.transactions.where('categoryId').equals(id).toArray(),
+    db.budgets.where('categoryId').equals(id).toArray(),
+    db.subscriptions.toArray(),
+  ])
+
+  let incomeCount = 0
+  let incomeTotal = 0
+  let expenseCount = 0
+  let expenseTotal = 0
+  let recurringSourceCount = 0
+  for (const t of transactions) {
+    if (t.type === 'income') {
+      incomeCount += 1
+      incomeTotal += t.amount
+    } else {
+      expenseCount += 1
+      expenseTotal += t.amount
+    }
+    if (t.isRecurring && !t.recurSourceId) recurringSourceCount += 1
+  }
+
+  const recentTransactions = [...transactions]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 5)
+    .map(t => ({ id: t.id!, date: t.date, amount: t.amount, memo: t.memo, type: t.type }))
+
+  const budgetMonths = Array.from(new Set(budgets.map(b => b.month))).sort((a, b) => b.localeCompare(a))
+
+  const linkedSubscriptions = subscriptions
+    .filter(s => s.linkedTransactionCategoryId === id)
+    .map(s => ({ id: s.id!, name: s.name }))
+
+  return {
+    transactionCount: transactions.length,
+    transactionTotal: incomeTotal + expenseTotal,
+    incomeCount,
+    incomeTotal,
+    expenseCount,
+    expenseTotal,
+    recurringSourceCount,
+    budgetCount: budgets.length,
+    budgetMonths,
+    linkedSubscriptions,
+    recentTransactions,
+  }
 }
 
 // ─── PaymentMethodItem CRUD ──────────────────────

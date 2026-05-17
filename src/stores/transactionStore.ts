@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import type { Transaction, TransactionCategory, TransactionType, RepeatPattern, PaymentMethod, PaymentMethodItem } from '@/lib/types'
+import type { Transaction, TransactionCategory, TransactionType, RepeatPattern, PaymentMethod, PaymentMethodItem, SubscriptionCategoryType } from '@/lib/types'
 import * as db from '@/services/database'
 import { processRecurringTransactions } from '@/services/recurringEngine'
 import { processSubscriptionTransactions } from '@/services/subscriptionEngine'
@@ -33,6 +33,7 @@ interface TransactionState {
     paymentMethodItemId?: number
     isRecurring?: boolean
     recurPattern?: RepeatPattern
+    subscriptionCategory?: SubscriptionCategoryType
   }) => Promise<number>
   processRecurring: () => Promise<void>
   updateTransaction: (id: number, updates: Partial<Transaction>) => Promise<void>

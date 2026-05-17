@@ -17,7 +17,7 @@
 //   - type      → 'expense' (statements are always expenses)
 
 import { db } from '@/services/database'
-import type { Transaction, TransactionCategory, PaymentMethod } from '@/lib/types'
+import type { Transaction, TransactionCategory, PaymentMethod, SubscriptionCategoryType } from '@/lib/types'
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -87,6 +87,12 @@ export interface ImportOptions {
    * purchase dates.
    */
   overrideDate?: string
+  /**
+   * Optional subscription-type label applied to every imported row. Lets the
+   * user tag a whole statement (or a SaaS-heavy statement) with one
+   * subscription classification in a single pick.
+   */
+  subscriptionCategoryOverride?: SubscriptionCategoryType
 }
 
 export interface ImportResult {
@@ -195,8 +201,14 @@ function parseAdjustment(line: string): { kind: 'discount' | 'fee' | 'original' 
 // ─── Merchant keyword rules (for auto-categorization) ──
 
 interface KeywordRule {
-  /** Category name to map to (must exist in user's categories) */
-  categoryName: string
+  /**
+   * Category name(s) to map to. If an array, the resolver tries each name in
+   * order and uses the first one that exists in the user's category list. This
+   * lets a single rule degrade gracefully — e.g., SaaS merchants prefer the
+   * '구독료' category but fall back to '투자' for users who haven't created
+   * '구독료' yet.
+   */
+  categoryName: string | string[]
   /** Keyword tokens to match against normalized merchant string */
   keywords: string[]
   /** Reason text for UI display */
@@ -216,6 +228,7 @@ const KEYWORD_RULES: KeywordRule[] = [
       '아이스헌터', '밀키프레소', '맥도날드', '롯데리아', '버거킹', '서브웨이',
       '던킨', '베이커리', '빵', 'KFC', '에스씨케이', '용화', '레이',
       '컬리', '비비고', '아성다이소', '아이스',
+      '음료', '한우', '뚝배기이탈리아',
     ],
   },
   // 교통비 (지하철/버스/택시/KTX/SRT/주유)
@@ -274,9 +287,15 @@ const KEYWORD_RULES: KeywordRule[] = [
     reason: '병원/약국 키워드',
     keywords: ['의원', '병원', '약국', '한의원', '치과', '안과', '피부과', '내과'],
   },
-  // 카드대금: 구독 서비스류는 별도 처리 (구독/투자성 카테고리)
+  // 여행 (숙박/온천)
   {
-    categoryName: '투자',
+    categoryName: '여행',
+    reason: '숙박/여행 키워드',
+    keywords: ['호텔', '온천', '리조트', '펜션', '게스트하우스', '모텔', '에어비앤비', 'AIRBNB'],
+  },
+  // AI/SaaS 구독 서비스 — '구독료' 우선, 없으면 '투자'로 폴백
+  {
+    categoryName: ['구독료', '투자'],
     reason: 'AI/SaaS 구독 키워드',
     keywords: ['CLAUDE.AI', 'ANTHROPIC', 'OPENAI', 'CHATGPT', 'CURSOR', 'VERCEL', 'SUPABASE', '구글클라우드', 'GOOGLE CLOUD', 'AWS', 'AZURE', 'GITHUB'],
   },
@@ -367,17 +386,20 @@ export function suggestCategory(
     }
   }
 
-  // 3) Keyword rule
+  // 3) Keyword rule — try each rule's category fallback chain in order;
+  //    skip the rule if none of its candidate categories exist on this user.
   const upper = merchant.toUpperCase()
   for (const rule of KEYWORD_RULES) {
     for (const kw of rule.keywords) {
-      if (merchant.includes(kw) || upper.includes(kw.toUpperCase())) {
-        const cat = findCatByName(rule.categoryName)
+      if (!merchant.includes(kw) && !upper.includes(kw.toUpperCase())) continue
+      const names = Array.isArray(rule.categoryName) ? rule.categoryName : [rule.categoryName]
+      for (const name of names) {
+        const cat = findCatByName(name)
         if (cat?.id) {
           return {
             categoryId: cat.id,
             confidence: 'medium',
-            reason: rule.reason || `${rule.categoryName} 키워드 매칭`,
+            reason: rule.reason || `${name} 키워드 매칭`,
           }
         }
       }
@@ -534,6 +556,7 @@ export async function importStatement(
         paymentMethod: options.paymentMethod,
         paymentMethodDetail: options.paymentMethodDetail,
         paymentMethodItemId: options.paymentMethodItemId,
+        subscriptionCategory: options.subscriptionCategoryOverride,
         isRecurring: false,
         createdAt: now,
         updatedAt: now,

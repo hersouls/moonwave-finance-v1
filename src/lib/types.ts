@@ -105,6 +105,14 @@ export interface Transaction {
   recurPattern?: RepeatPattern
   recurSourceId?: number
   subscriptionId?: number
+  /**
+   * Optional subscription-type label (entertainment / productivity / cloud / …).
+   * Independent of the user-defined transaction `categoryId` — acts as a
+   * secondary classification so subscription-style expenses can be filtered
+   * across the ledger regardless of which spending category they were
+   * recorded under.
+   */
+  subscriptionCategory?: SubscriptionCategoryType
   createdAt: string
   updatedAt: string
 }

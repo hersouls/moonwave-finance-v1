@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, AlertTriangle, Receipt, Wallet, Repeat, CreditCard } from 'lucide-react'
 import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { clsx } from 'clsx'
 import type { TransactionType, TransactionCategory } from '@/lib/types'
+import { getTransactionCategoryUsage, type TransactionCategoryUsage } from '@/services/database'
+import { formatKRW } from '@/utils/format'
 
 const PRESET_COLORS = [
   '#EF4444', '#F97316', '#F59E0B', '#EAB308',
@@ -26,6 +28,9 @@ export function CategoryManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [deletingCategory, setDeletingCategory] = useState<TransactionCategory | null>(null)
+  const [usage, setUsage] = useState<TransactionCategoryUsage | null>(null)
+  const [isUsageLoading, setIsUsageLoading] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Form state
   const [name, setName] = useState('')
@@ -51,9 +56,27 @@ export function CategoryManagement() {
     setIsDialogOpen(true)
   }
 
-  const openDelete = (cat: TransactionCategory) => {
+  const openDelete = async (cat: TransactionCategory) => {
     setDeletingCategory(cat)
+    setUsage(null)
     setIsDeleteConfirmOpen(true)
+    if (!cat.id) return
+    setIsUsageLoading(true)
+    try {
+      const result = await getTransactionCategoryUsage(cat.id)
+      setUsage(result)
+    } catch (err) {
+      console.error('Failed to load category usage:', err)
+    } finally {
+      setIsUsageLoading(false)
+    }
+  }
+
+  const closeDelete = () => {
+    if (isDeleting) return
+    setIsDeleteConfirmOpen(false)
+    setDeletingCategory(null)
+    setUsage(null)
   }
 
   const handleSave = async () => {
@@ -67,11 +90,16 @@ export function CategoryManagement() {
   }
 
   const handleDelete = async () => {
-    if (deletingCategory?.id) {
+    if (!deletingCategory?.id) return
+    setIsDeleting(true)
+    try {
       await deleteCategory(deletingCategory.id)
+      setIsDeleteConfirmOpen(false)
+      setDeletingCategory(null)
+      setUsage(null)
+    } finally {
+      setIsDeleting(false)
     }
-    setIsDeleteConfirmOpen(false)
-    setDeletingCategory(null)
   }
 
   return (
@@ -184,21 +212,125 @@ export function CategoryManagement() {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)} size="sm">
-        <DialogHeader title="카테고리 삭제" onClose={() => setIsDeleteConfirmOpen(false)} />
+      <Dialog open={isDeleteConfirmOpen} onClose={closeDelete} size="sm">
+        <DialogHeader title="카테고리 삭제" onClose={closeDelete} />
         <DialogBody>
-          <p className="text-sm text-sub">
-            <span className="font-medium text-heading">{deletingCategory?.name}</span>을(를) 삭제하시겠습니까?
-          </p>
-          <p className="mt-2 text-caption text-sub">
-            이 카테고리의 거래는 '미분류'로 변경됩니다.
-          </p>
+          <div className="flex items-center gap-2 mb-3">
+            <div
+              className="w-3 h-3 rounded-full shrink-0"
+              style={{ backgroundColor: deletingCategory?.color }}
+            />
+            <p className="text-sm text-sub">
+              <span className="font-medium text-heading">{deletingCategory?.name}</span>
+              {' '}카테고리에 포함된 정보입니다.
+            </p>
+          </div>
+
+          {isUsageLoading && (
+            <div className="py-6 text-center text-caption text-sub">사용 정보를 불러오는 중…</div>
+          )}
+
+          {!isUsageLoading && usage && (
+            <div className="space-y-2.5">
+              {/* Summary cards */}
+              <div className="grid grid-cols-2 gap-2">
+                <UsageStat
+                  icon={<Receipt className="w-3.5 h-3.5" />}
+                  label="거래"
+                  value={`${usage.transactionCount}건`}
+                  sub={usage.transactionCount > 0 ? formatKRW(usage.transactionTotal) : undefined}
+                />
+                <UsageStat
+                  icon={<Wallet className="w-3.5 h-3.5" />}
+                  label="예산"
+                  value={`${usage.budgetCount}건`}
+                  sub={usage.budgetMonths.length > 0 ? `최근 ${usage.budgetMonths[0]}` : undefined}
+                />
+                <UsageStat
+                  icon={<Repeat className="w-3.5 h-3.5" />}
+                  label="반복 거래"
+                  value={`${usage.recurringSourceCount}건`}
+                />
+                <UsageStat
+                  icon={<CreditCard className="w-3.5 h-3.5" />}
+                  label="연결 구독"
+                  value={`${usage.linkedSubscriptions.length}건`}
+                  sub={usage.linkedSubscriptions[0]?.name}
+                />
+              </div>
+
+              {/* Income / Expense split when both exist */}
+              {usage.transactionCount > 0 && usage.incomeCount > 0 && usage.expenseCount > 0 && (
+                <div className="flex gap-2 text-caption">
+                  <span className="value-positive">수입 {usage.incomeCount}건 · {formatKRW(usage.incomeTotal)}</span>
+                  <span className="text-disabled">|</span>
+                  <span className="value-negative">지출 {usage.expenseCount}건 · {formatKRW(usage.expenseTotal)}</span>
+                </div>
+              )}
+
+              {/* Recent transactions preview */}
+              {usage.recentTransactions.length > 0 && (
+                <div className="rounded-lg bg-surface-secondary px-3 py-2">
+                  <div className="text-caption text-sub mb-1.5">최근 거래</div>
+                  <ul className="space-y-1">
+                    {usage.recentTransactions.map(t => (
+                      <li key={t.id} className="flex items-center gap-2 text-caption">
+                        <span className="text-disabled tabular-nums shrink-0">{t.date.slice(5)}</span>
+                        <span className="flex-1 truncate text-body">{t.memo || '(메모 없음)'}</span>
+                        <span className={clsx('tabular-nums shrink-0', t.type === 'income' ? 'value-positive' : 'value-negative')}>
+                          {t.type === 'income' ? '+' : '-'}{formatKRW(t.amount)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Linked subscription warning */}
+              {usage.linkedSubscriptions.length > 0 && (
+                <div className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-3 py-2">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                  <div className="text-caption text-amber-700 dark:text-amber-300">
+                    구독 <span className="font-medium">{usage.linkedSubscriptions.map(s => s.name).join(', ')}</span>의 연결 카테고리가 해제됩니다.
+                  </div>
+                </div>
+              )}
+
+              {/* Result summary */}
+              <div className="rounded-lg bg-surface-secondary px-3 py-2 text-caption text-sub">
+                {usage.transactionCount === 0 && usage.budgetCount === 0 && usage.linkedSubscriptions.length === 0 ? (
+                  <span>이 카테고리에 연결된 데이터가 없어 안전하게 삭제할 수 있습니다.</span>
+                ) : (
+                  <ul className="space-y-0.5 list-disc list-inside">
+                    {usage.transactionCount > 0 && <li>거래 {usage.transactionCount}건은 <span className="text-heading font-medium">미분류</span>로 변경됩니다.</li>}
+                    {usage.budgetCount > 0 && <li>이 카테고리에 설정된 <span className="text-heading font-medium">예산 {usage.budgetCount}건</span>은 함께 삭제되지 않으니 예산관리에서 확인하세요.</li>}
+                    {usage.linkedSubscriptions.length > 0 && <li>연결된 구독은 카테고리 연결이 해제됩니다.</li>}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
         </DialogBody>
         <DialogFooter>
-          <Button variant="secondary" onClick={() => setIsDeleteConfirmOpen(false)}>취소</Button>
-          <Button variant="danger" onClick={handleDelete}>삭제</Button>
+          <Button variant="secondary" onClick={closeDelete} disabled={isDeleting}>취소</Button>
+          <Button variant="danger" onClick={handleDelete} disabled={isDeleting || isUsageLoading}>
+            {isDeleting ? '삭제 중…' : '삭제'}
+          </Button>
         </DialogFooter>
       </Dialog>
+    </div>
+  )
+}
+
+function UsageStat({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-lg bg-surface-secondary px-3 py-2">
+      <div className="flex items-center gap-1.5 text-caption text-sub mb-0.5">
+        {icon}
+        {label}
+      </div>
+      <div className="text-sm font-medium text-heading tabular-nums">{value}</div>
+      {sub && <div className="text-caption text-disabled truncate">{sub}</div>}
     </div>
   )
 }

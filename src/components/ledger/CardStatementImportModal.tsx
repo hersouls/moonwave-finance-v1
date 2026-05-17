@@ -8,12 +8,15 @@ import {
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { Dialog, DialogBody, DialogFooter } from '@/components/ui/Dialog'
+import { MiniCalendar } from '@/components/ui/MiniCalendar'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useToastStore } from '@/stores/toastStore'
 import { getCategoryIcon } from '@/utils/categoryIcons'
 import { PAYMENT_METHOD_OPTIONS } from '@/utils/paymentMethod'
+import { SUBSCRIPTION_CATEGORIES } from '@/utils/constants'
 import { formatDate, getTodayString } from '@/lib/dateUtils'
+import { parseISO, format, addMonths, endOfMonth, setDate as setDayOfMonth } from 'date-fns'
 import { durations, easeOutExpo, springSnappy } from '@/lib/motionConfig'
 import {
   analyzeStatement,
@@ -21,7 +24,7 @@ import {
   type AnalyzedRow,
   type DuplicateLevel,
 } from '@/services/cardStatementImport'
-import type { PaymentMethod } from '@/lib/types'
+import type { PaymentMethod, SubscriptionCategoryType } from '@/lib/types'
 
 interface Props {
   open: boolean
@@ -78,6 +81,8 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
   // cash outflow, not accrual-basis purchase dates.
   const [useOverrideDate, setUseOverrideDate] = useState(true)
   const [overrideDate, setOverrideDate] = useState<string>(getTodayString())
+  // Optional bulk subscription-type label applied to every imported row.
+  const [subscriptionCategory, setSubscriptionCategory] = useState<SubscriptionCategoryType | ''>('')
 
   // Reset state on open
   useEffect(() => {
@@ -95,6 +100,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
     setImportError('')
     setUseOverrideDate(true)
     setOverrideDate(getTodayString())
+    setSubscriptionCategory('')
   }, [open, initialText])
 
   // ── Analyze when entering review ─────────────────
@@ -162,6 +168,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
         memberMap: Object.keys(memberMap).length > 0 ? memberMap : undefined,
         skipIndexes,
         overrideDate: useOverrideDate && overrideDate ? overrideDate : undefined,
+        subscriptionCategoryOverride: subscriptionCategory || undefined,
       })
       setImportResult({ imported: result.imported, skipped: result.skipped, totalParsed: result.totalParsed })
       await reloadTransactions()
@@ -171,7 +178,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
       setStep('review')
       addToast('가져오기에 실패했습니다', 'error')
     }
-  }, [rows, paymentMethod, paymentMethodItemId, paymentMethodItems, memberMap, skipIndexes, useOverrideDate, overrideDate, reloadTransactions, addToast])
+  }, [rows, paymentMethod, paymentMethodItemId, paymentMethodItems, memberMap, skipIndexes, useOverrideDate, overrideDate, subscriptionCategory, reloadTransactions, addToast])
 
   const handleClose = () => {
     if (step === 'importing') return
@@ -265,6 +272,12 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
                   onChange={setMemberMap}
                 />
               )}
+
+              {/* Bulk subscription-type label (optional) */}
+              <SubscriptionCategoryPicker
+                value={subscriptionCategory}
+                onChange={setSubscriptionCategory}
+              />
 
               {/* Duplicate filter actions */}
               {stats.dupTotal > 0 && (
@@ -632,12 +645,40 @@ function ReviewSummary({
   )
 }
 
+const KOREAN_DOW = ['일', '월', '화', '수', '목', '금', '토'] as const
+
+/**
+ * Returns common card payment-day shortcuts so the user can land on a sensible
+ * date in one tap instead of navigating the calendar. Picks reflect typical
+ * Korean credit-card billing cycles (25일 is the most common payment day).
+ */
+function buildBillingQuickPicks(todayStr: string): { id: string; label: string; date: string }[] {
+  const today = parseISO(todayStr)
+  const this25 = setDayOfMonth(today, 25)
+  const next25 = setDayOfMonth(addMonths(today, 1), 25)
+  const thisEnd = endOfMonth(today)
+  const fmt = (d: Date) => format(d, 'yyyy-MM-dd')
+  return [
+    { id: 'today', label: '오늘', date: todayStr },
+    { id: 'this-25', label: '이번달 25일', date: fmt(this25) },
+    { id: 'next-25', label: '다음달 25일', date: fmt(next25) },
+    { id: 'this-end', label: '이번달 말일', date: fmt(thisEnd) },
+  ]
+}
+
 /**
  * Bulk replace each row's statement date with one user-chosen date — typically
  * the credit card's payment due date. This is essential when the user tracks
  * daily cash flow (cash-basis) rather than purchase activity (accrual-basis):
  * the cash actually leaves the account on the payment date, not on each
  * individual transaction date.
+ *
+ * UI structure:
+ *   1) Header: title + on/off pill toggle
+ *   2) Hero: large selected date with weekday + relative label (오늘/내일/N일 후)
+ *   3) Quick picks: today / this-month-25 / next-month-25 / this-month-end
+ *   4) Inline MiniCalendar — keyed by yyyy-MM so picks across months auto-flip
+ *   5) Footer description text
  */
 function BillingDatePicker({
   enabled, date, onToggle, onChange,
@@ -648,10 +689,15 @@ function BillingDatePicker({
   onChange: (v: string) => void
 }) {
   const shouldReduceMotion = useReducedMotion()
+  const today = useMemo(() => getTodayString(), [])
+  const quickPicks = useMemo(() => buildBillingQuickPicks(today), [today])
+  const selected = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? parseISO(date) : null
+  const dow = selected ? KOREAN_DOW[selected.getDay()] : ''
+
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <label htmlFor="cs-override-date" className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sub">
+        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sub">
           <CalendarIcon className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" />
           지급일 일괄 설정
         </label>
@@ -672,39 +718,101 @@ function BillingDatePicker({
           {enabled ? '사용' : '사용 안 함'}
         </motion.button>
       </div>
-      <motion.div
-        animate={{ opacity: enabled ? 1 : 0.55 }}
-        transition={{ duration: durations.fast, ease: easeOutExpo }}
-        className={clsx(
-          'rounded-2xl p-3.5 transition-all',
-          enabled
-            ? 'bg-surface-primary ring-1 ring-[color:var(--color-primary-300)] shadow-[0_0_0_4px_color-mix(in_oklch,var(--color-primary-500)_8%,transparent)]'
-            : 'bg-surface-tertiary ring-1 ring-base',
+
+      <AnimatePresence initial={false} mode="wait">
+        {enabled ? (
+          <motion.div
+            key="on"
+            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+            transition={{ duration: durations.fast, ease: easeOutExpo }}
+            className="space-y-2.5"
+          >
+            {/* Hero — selected date */}
+            <div
+              className="rounded-2xl p-4 ring-1 ring-[color:var(--color-primary-300)] dark:ring-[color:var(--color-primary-700)]"
+              style={{
+                background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-primary-500) 10%, var(--surface-primary)), color-mix(in srgb, var(--color-primary-500) 3%, var(--surface-primary)))',
+                boxShadow: '0 0 0 4px color-mix(in oklch, var(--color-primary-500) 7%, transparent)',
+              }}
+            >
+              {selected ? (
+                <div className="flex items-end justify-between gap-3 flex-wrap">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] mb-0.5">
+                      카드 대금 지급일
+                    </p>
+                    <p className="text-title2 font-extrabold text-heading tabular-nums leading-tight">
+                      {format(selected, 'yyyy년 M월 d일')}
+                      <span className="ml-1.5 text-body3 font-bold text-sub">({dow})</span>
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full bg-surface-primary/80 backdrop-blur-sm ring-1 ring-base text-[11px] font-semibold text-sub tabular-nums">
+                    <CalendarIcon className="w-3 h-3" />
+                    {formatDate(date)}
+                  </span>
+                </div>
+              ) : (
+                <p className="text-body3 text-status-danger font-semibold">
+                  날짜를 선택해주세요.
+                </p>
+              )}
+            </div>
+
+            {/* Quick picks */}
+            <div className="flex flex-wrap gap-1.5">
+              {quickPicks.map((p) => {
+                const isActive = date === p.date
+                return (
+                  <motion.button
+                    key={p.id}
+                    type="button"
+                    onClick={() => onChange(p.date)}
+                    whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
+                    transition={springSnappy}
+                    aria-pressed={isActive}
+                    className={clsx(
+                      'inline-flex items-center gap-1 px-3 h-7 rounded-full text-[11px] font-bold transition-all',
+                      isActive
+                        ? 'bg-[color:var(--color-primary-100)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/40 dark:text-[color:var(--color-primary-300)] ring-1 ring-[color:var(--color-primary-300)] dark:ring-[color:var(--color-primary-700)]'
+                        : 'bg-surface-tertiary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
+                    )}
+                  >
+                    {isActive && <Check className="w-3 h-3" strokeWidth={3} />}
+                    {p.label}
+                  </motion.button>
+                )
+              })}
+            </div>
+
+            {/* Inline calendar — keyed by month so picks across months auto-flip */}
+            <MiniCalendar
+              key={date.slice(0, 7) || 'cal'}
+              value={date}
+              onChange={onChange}
+              className="!p-3 sm:!p-4"
+            />
+
+            <p className="text-[11px] text-sub leading-relaxed">
+              명세서의 거래일을 무시하고 위 날짜로 모든 거래를 등록합니다. 카드 대금 지급일에 맞춰 일별 현금흐름을 정확히 확인할 수 있어요.
+            </p>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="off"
+            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+            transition={{ duration: durations.fast, ease: easeOutExpo }}
+            className="rounded-2xl p-3.5 bg-surface-tertiary ring-1 ring-base"
+          >
+            <p className="text-[11px] text-sub leading-relaxed">
+              명세서에 적힌 거래일을 그대로 사용합니다.
+            </p>
+          </motion.div>
         )}
-      >
-        <input
-          id="cs-override-date"
-          type="date"
-          value={date}
-          onChange={(e) => onChange(e.target.value)}
-          disabled={!enabled}
-          className={clsx(
-            'w-full h-11 px-3 rounded-xl text-body3 font-semibold text-heading tabular-nums outline-none transition-all',
-            'bg-surface-secondary ring-1 ring-base focus:ring-[color:var(--color-primary-400)] focus:bg-surface-primary',
-            'disabled:opacity-60 disabled:cursor-not-allowed',
-          )}
-        />
-        <p className="text-[11px] text-sub mt-2 leading-relaxed">
-          {enabled
-            ? '명세서의 거래일을 무시하고 위 날짜로 모든 거래를 등록합니다. 카드 대금 지급일에 맞춰 일별 현금흐름을 정확히 확인할 수 있어요.'
-            : '명세서에 적힌 거래일을 그대로 사용합니다.'}
-        </p>
-        {enabled && !date && (
-          <p className="text-[11px] text-status-danger mt-1.5 font-semibold">
-            날짜를 선택해주세요.
-          </p>
-        )}
-      </motion.div>
+      </AnimatePresence>
     </div>
   )
 }
@@ -861,6 +969,77 @@ function MemberMappingPicker({
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Bulk subscription-type label picker. Lets the user tag every imported row
+ * with a single SubscriptionCategoryType (e.g., productivity, cloud) in one
+ * pick — useful for SaaS-heavy statements. Optional; empty means "no label".
+ */
+function SubscriptionCategoryPicker({
+  value, onChange,
+}: {
+  value: SubscriptionCategoryType | ''
+  onChange: (v: SubscriptionCategoryType | '') => void
+}) {
+  const shouldReduceMotion = useReducedMotion()
+  return (
+    <div>
+      <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sub mb-2">
+        <Sparkles className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" />
+        구독 분류 일괄 라벨
+        <span className="font-normal text-disabled normal-case">선택</span>
+      </label>
+      <div className="flex flex-wrap gap-1.5">
+        <motion.button
+          type="button"
+          onClick={() => onChange('')}
+          whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
+          transition={springSnappy}
+          aria-pressed={value === ''}
+          className={clsx(
+            'inline-flex items-center gap-1 px-3 h-7 rounded-full text-[11px] font-semibold transition-all',
+            value === ''
+              ? 'bg-surface-primary text-heading ring-1 ring-[color:var(--border-strong)]'
+              : 'bg-surface-secondary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
+          )}
+        >
+          미지정
+        </motion.button>
+        {SUBSCRIPTION_CATEGORIES.map((opt) => {
+          const isActive = value === opt.value
+          return (
+            <motion.button
+              key={opt.value}
+              type="button"
+              onClick={() => onChange(opt.value)}
+              whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
+              transition={springSnappy}
+              aria-pressed={isActive}
+              className={clsx(
+                'inline-flex items-center gap-1.5 pl-1 pr-2.5 h-7 rounded-full text-[11px] font-bold transition-all',
+                isActive ? 'text-white' : 'text-sub',
+              )}
+              style={
+                isActive
+                  ? {
+                      background: `linear-gradient(135deg, ${opt.color}, color-mix(in srgb, ${opt.color} 75%, black))`,
+                      boxShadow: `0 2px 8px color-mix(in srgb, ${opt.color} 38%, transparent)`,
+                    }
+                  : { background: 'var(--surface-secondary)', boxShadow: 'inset 0 0 0 1px var(--border-default)' }
+              }
+            >
+              <span
+                className="w-4 h-4 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : opt.color }}
+              />
+              {opt.label}
+            </motion.button>
+          )
+        })}
       </div>
     </div>
   )
