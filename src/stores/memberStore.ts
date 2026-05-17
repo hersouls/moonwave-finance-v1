@@ -2,8 +2,44 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import type { Member } from '@/lib/types'
 import * as db from '@/services/database'
+import { db as rawDb } from '@/services/database'
 import { useUndoStore } from './undoStore'
 import { useToastStore } from './toastStore'
+
+/**
+ * Counts the records that a member is referenced by — mirrors the cascade
+ * performed by `db.deleteMember`. Used to surface the blast radius in the UI
+ * before the user confirms a deletion.
+ */
+export interface MemberUsage {
+  transactions: number
+  assetItems: number
+  dailyValues: number
+  loans: number
+}
+
+export async function getMemberUsage(memberId: number): Promise<MemberUsage> {
+  const [allTransactions, assetItems] = await Promise.all([
+    db.getAllTransactions(),
+    db.getAssetItemsByMember(memberId),
+  ])
+
+  let dailyValues = 0
+  let loans = 0
+  for (const item of assetItems) {
+    if (item.id == null) continue
+    const [dvCount, loanCount] = await Promise.all([
+      rawDb.dailyValues.where('assetItemId').equals(item.id).count(),
+      rawDb.loans.where('linkedAssetItemId').equals(item.id).count(),
+    ])
+    dailyValues += dvCount
+    loans += loanCount
+  }
+
+  const transactions = allTransactions.filter(t => t.memberId === memberId).length
+
+  return { transactions, assetItems: assetItems.length, dailyValues, loans }
+}
 
 interface MemberState {
   members: Member[]

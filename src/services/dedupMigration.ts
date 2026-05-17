@@ -13,7 +13,10 @@
 
 import { db } from './database'
 
-const DEDUP_FLAG_KEY = 'fin:dedup:seed-categories:v1'
+// Bump the version suffix to force this migration to re-run on every device
+// the next time the user signs in. v2 was bumped to clean up duplicate
+// members/categories left over from the pre-FK-syncId-fix sync bug.
+const DEDUP_FLAG_KEY = 'fin:dedup:seed-categories:v2'
 
 export interface DedupResult {
   txnCatsRemoved: number

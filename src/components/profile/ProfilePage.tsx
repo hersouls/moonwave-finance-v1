@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { User, Users, Database, Download, Upload, Trash2, Plus, Edit3, FileSpreadsheet, Cloud, CloudOff, Loader2, CheckCircle2, AlertCircle, FlaskConical } from 'lucide-react'
+import { User, Users, Database, Download, Upload, Trash2, Plus, Edit3, FileSpreadsheet, Cloud, CloudOff, Loader2, CheckCircle2, AlertCircle, AlertTriangle, FlaskConical, Receipt, Wallet, LineChart, Landmark } from 'lucide-react'
+import type { Member } from '@/lib/types'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useAuthStore, type SyncStatus } from '@/stores/authStore'
-import { useMemberStore } from '@/stores/memberStore'
+import { useMemberStore, getMemberUsage, type MemberUsage } from '@/stores/memberStore'
 import { Card } from '@/components/ui/Card'
 import { Button, IconButton } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -29,7 +30,11 @@ export function ProfilePage() {
   const setLastBackupDate = useSettingsStore((s) => s.setLastBackupDate)
 
   const [showResetConfirm, setShowResetConfirm] = useState(false)
-  const [memberToDelete, setMemberToDelete] = useState<{ id: number; name: string } | null>(null)
+  const [memberToDelete, setMemberToDelete] = useState<Member | null>(null)
+  const [memberUsage, setMemberUsage] = useState<MemberUsage | null>(null)
+  const [usageLoading, setUsageLoading] = useState(false)
+  const [confirmDefaultDelete, setConfirmDefaultDelete] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [isSeeding, setIsSeeding] = useState(false)
   const [showMemberModal, setShowMemberModal] = useState(false)
   const [editingMember, setEditingMember] = useState<{ id: number; name: string; color: string } | null>(null)
@@ -39,6 +44,40 @@ export function ProfilePage() {
   useEffect(() => {
     loadMembers()
   }, [])
+
+  // Fetch the blast radius (linked transactions / assets / etc.) whenever the
+  // delete dialog opens for a different member. Resets when it closes so the
+  // next deletion starts clean.
+  useEffect(() => {
+    if (!memberToDelete?.id) {
+      setMemberUsage(null)
+      setConfirmDefaultDelete(false)
+      return
+    }
+    let cancelled = false
+    setUsageLoading(true)
+    getMemberUsage(memberToDelete.id)
+      .then((usage) => { if (!cancelled) setMemberUsage(usage) })
+      .catch(() => { if (!cancelled) setMemberUsage(null) })
+      .finally(() => { if (!cancelled) setUsageLoading(false) })
+    return () => { cancelled = true }
+  }, [memberToDelete?.id])
+
+  const closeDeleteDialog = () => {
+    if (isDeleting) return
+    setMemberToDelete(null)
+  }
+
+  const performDelete = async () => {
+    if (!memberToDelete?.id) return
+    setIsDeleting(true)
+    try {
+      await deleteMember(memberToDelete.id)
+      setMemberToDelete(null)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   const handleExportBackup = async () => {
     try {
@@ -255,14 +294,12 @@ export function ProfilePage() {
                   )}
                 </div>
                 <div className="flex gap-1">
-                  <IconButton onClick={() => openEditMember({ id: m.id!, name: m.name, color: m.color })} plain size="sm">
+                  <IconButton onClick={() => openEditMember({ id: m.id!, name: m.name, color: m.color })} plain size="sm" aria-label={`${m.name} 수정`}>
                     <Edit3 className="w-4 h-4" />
                   </IconButton>
-                  {!m.isDefault && (
-                    <IconButton onClick={() => setMemberToDelete({ id: m.id!, name: m.name })} color="danger" plain size="sm">
-                      <Trash2 className="w-4 h-4" />
-                    </IconButton>
-                  )}
+                  <IconButton onClick={() => setMemberToDelete(m)} color="danger" plain size="sm" aria-label={`${m.name} 삭제`}>
+                    <Trash2 className="w-4 h-4" />
+                  </IconButton>
                 </div>
               </div>
             </Card>
@@ -406,20 +443,16 @@ export function ProfilePage() {
         </DialogFooter>
       </Dialog>
 
-      {/* Member Delete Confirm */}
-      <ConfirmDialog
-        open={!!memberToDelete}
-        onClose={() => setMemberToDelete(null)}
-        onConfirm={async () => {
-          if (memberToDelete) {
-            await deleteMember(memberToDelete.id)
-            setMemberToDelete(null)
-          }
-        }}
-        title="구성원 삭제"
-        description={`'${memberToDelete?.name ?? ''}' 구성원을 삭제하면 해당 구성원의 모든 자산, 거래 데이터가 함께 삭제됩니다. 이 작업은 되돌릴 수 없습니다.`}
-        confirmText="삭제"
-        variant="danger"
+      {/* Member Delete with linked-data preview */}
+      <MemberDeleteDialog
+        member={memberToDelete}
+        usage={memberUsage}
+        usageLoading={usageLoading}
+        isDeleting={isDeleting}
+        confirmDefault={confirmDefaultDelete}
+        onToggleConfirmDefault={setConfirmDefaultDelete}
+        onClose={closeDeleteDialog}
+        onConfirm={performDelete}
       />
 
       {/* Reset Confirm */}
@@ -447,4 +480,142 @@ function SyncStatusIndicator({ status }: { status: SyncStatus }) {
     return <AlertCircle className="w-5 h-5 text-red-500" />
   }
   return <CloudOff className="w-5 h-5 text-disabled" />
+}
+
+/**
+ * Surfaces the cascade of records that will be removed alongside a member
+ * (transactions, assets, daily values, loans linked through those assets) so
+ * the user can make an informed decision before confirming. Default members
+ * are deletable but require an explicit second confirmation checkbox — they
+ * are typically duplicates from the pre-syncId-fix sync bug, and once
+ * dedupMigration runs, the user should never see this guarded path again.
+ */
+interface MemberDeleteDialogProps {
+  member: Member | null
+  usage: MemberUsage | null
+  usageLoading: boolean
+  isDeleting: boolean
+  confirmDefault: boolean
+  onToggleConfirmDefault: (next: boolean) => void
+  onClose: () => void
+  onConfirm: () => void
+}
+
+function MemberDeleteDialog({
+  member,
+  usage,
+  usageLoading,
+  isDeleting,
+  confirmDefault,
+  onToggleConfirmDefault,
+  onClose,
+  onConfirm,
+}: MemberDeleteDialogProps) {
+  const isDefault = !!member?.isDefault
+  const totalLinked = usage
+    ? usage.transactions + usage.assetItems + usage.dailyValues + usage.loans
+    : 0
+  const canConfirm = !usageLoading && (!isDefault || confirmDefault) && !isDeleting
+
+  const rows: { icon: typeof Receipt; label: string; count: number }[] = usage
+    ? [
+        { icon: Receipt, label: '거래내역', count: usage.transactions },
+        { icon: Wallet, label: '자산 항목', count: usage.assetItems },
+        { icon: LineChart, label: '일별 자산가치', count: usage.dailyValues },
+        { icon: Landmark, label: '대출', count: usage.loans },
+      ]
+    : []
+
+  return (
+    <Dialog open={!!member} onClose={onClose} size="sm" role="alertdialog">
+      <DialogHeader title="구성원 삭제" onClose={onClose} />
+      <DialogBody>
+        {member && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white text-base font-bold"
+                style={{ backgroundColor: member.color }}
+              >
+                {member.name.charAt(0)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-body2 text-heading font-medium truncate">{member.name}</p>
+                {isDefault && (
+                  <span className="inline-block mt-0.5 text-caption px-2 py-0.5 rounded-full bg-warning-50 dark:bg-warning-900/30 text-warning-700 dark:text-warning-300">
+                    기본 구성원
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-danger-200 dark:border-danger-800 bg-danger-50/40 dark:bg-danger-950/20 p-3">
+              <div className="flex items-start gap-2 mb-2">
+                <AlertTriangle className="w-4 h-4 text-danger-600 dark:text-danger-400 mt-0.5 flex-shrink-0" />
+                <p className="text-body3 text-danger-700 dark:text-danger-300">
+                  삭제 시 아래 데이터가 함께 제거됩니다. 되돌릴 수 없습니다.
+                </p>
+              </div>
+
+              {usageLoading && (
+                <div className="flex items-center gap-2 py-2 text-caption text-sub">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  연결된 데이터 확인 중…
+                </div>
+              )}
+
+              {!usageLoading && usage && totalLinked === 0 && (
+                <p className="text-body3 text-sub py-1">연결된 데이터가 없습니다.</p>
+              )}
+
+              {!usageLoading && usage && totalLinked > 0 && (
+                <ul className="space-y-1.5">
+                  {rows.map(({ icon: Icon, label, count }) => (
+                    <li
+                      key={label}
+                      className={`flex items-center justify-between text-body3 ${count > 0 ? 'text-body' : 'text-disabled'}`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Icon className="w-3.5 h-3.5" />
+                        {label}
+                      </span>
+                      <span className="tabular-nums font-medium">
+                        {count > 0 ? `${count.toLocaleString()}건` : '0건'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {isDefault && (
+              <label className="flex items-start gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={confirmDefault}
+                  onChange={(e) => onToggleConfirmDefault(e.target.checked)}
+                />
+                <span className="text-body3 text-body">
+                  기본 구성원입니다. 삭제를 진행하려면 체크해주세요.
+                </span>
+              </label>
+            )}
+          </div>
+        )}
+      </DialogBody>
+      <DialogFooter>
+        <Button variant="ghost" onClick={onClose} disabled={isDeleting}>
+          취소
+        </Button>
+        <Button
+          variant="danger"
+          onClick={onConfirm}
+          disabled={!canConfirm}
+        >
+          {isDeleting ? '삭제 중…' : '삭제'}
+        </Button>
+      </DialogFooter>
+    </Dialog>
+  )
 }

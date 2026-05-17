@@ -80,6 +80,13 @@ export interface ImportOptions {
   skipIndexes?: Set<number>
   /** Override category per row, keyed by parsed index */
   categoryOverrides?: Record<number, number>
+  /**
+   * When set (yyyy-MM-dd), each transaction's date is replaced with this value
+   * instead of the date parsed from the statement. Intended for users who track
+   * daily cash flow against the card's payment due date rather than individual
+   * purchase dates.
+   */
+  overrideDate?: string
 }
 
 export interface ImportResult {
@@ -499,6 +506,13 @@ export async function importStatement(
   let failed = 0
   let skipped = 0
 
+  // Validate overrideDate at the top so a single bad input fails fast rather
+  // than silently writing thousands of rows to "Invalid Date".
+  const overrideDate = options.overrideDate?.trim() || undefined
+  if (overrideDate && !/^\d{4}-\d{2}-\d{2}$/.test(overrideDate)) {
+    throw new Error(`overrideDate must be yyyy-MM-dd, got: ${overrideDate}`)
+  }
+
   for (const row of rows) {
     if (skip.has(row.index)) {
       skipped++
@@ -507,6 +521,7 @@ export async function importStatement(
     try {
       const categoryId = options.categoryOverrides?.[row.index] ?? row.suggestion.categoryId ?? null
       const memberId = options.memberMap?.[row.cardSuffix] ?? null
+      const effectiveDate = overrideDate ?? row.date
 
       const txn: Omit<Transaction, 'id'> = {
         syncId: crypto.randomUUID(),
@@ -514,7 +529,7 @@ export async function importStatement(
         amount: row.amount,
         categoryId: categoryId,
         memberId: memberId,
-        date: row.date,
+        date: effectiveDate,
         memo: row.merchant, // memo = merchant name per user request
         paymentMethod: options.paymentMethod,
         paymentMethodDetail: options.paymentMethodDetail,
@@ -526,7 +541,7 @@ export async function importStatement(
       toInsert.push(txn)
       const catKey = categoryId != null ? String(categoryId) : 'uncategorized'
       byCategory[catKey] = (byCategory[catKey] ?? 0) + 1
-      dates.push(row.date)
+      dates.push(effectiveDate)
     } catch {
       failed++
     }

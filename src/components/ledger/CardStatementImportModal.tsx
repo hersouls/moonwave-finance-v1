@@ -13,7 +13,7 @@ import { useMemberStore } from '@/stores/memberStore'
 import { useToastStore } from '@/stores/toastStore'
 import { getCategoryIcon } from '@/utils/categoryIcons'
 import { PAYMENT_METHOD_OPTIONS } from '@/utils/paymentMethod'
-import { formatDate } from '@/lib/dateUtils'
+import { formatDate, getTodayString } from '@/lib/dateUtils'
 import { durations, easeOutExpo, springSnappy } from '@/lib/motionConfig'
 import {
   analyzeStatement,
@@ -72,6 +72,12 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
   const [showAllRows, setShowAllRows] = useState(false)
   const [importResult, setImportResult] = useState<{ imported: number; skipped: number; totalParsed: number } | null>(null)
   const [importError, setImportError] = useState<string>('')
+  // Cash-flow alignment: replace every row's statement date with one
+  // user-chosen date (typically the card's payment due date). Default on
+  // because users importing statements are almost always tracking real
+  // cash outflow, not accrual-basis purchase dates.
+  const [useOverrideDate, setUseOverrideDate] = useState(true)
+  const [overrideDate, setOverrideDate] = useState<string>(getTodayString())
 
   // Reset state on open
   useEffect(() => {
@@ -87,6 +93,8 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
     setShowAllRows(false)
     setImportResult(null)
     setImportError('')
+    setUseOverrideDate(true)
+    setOverrideDate(getTodayString())
   }, [open, initialText])
 
   // ── Analyze when entering review ─────────────────
@@ -153,6 +161,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
           : paymentMethodItems.find(i => i.id === paymentMethodItemId)?.name,
         memberMap: Object.keys(memberMap).length > 0 ? memberMap : undefined,
         skipIndexes,
+        overrideDate: useOverrideDate && overrideDate ? overrideDate : undefined,
       })
       setImportResult({ imported: result.imported, skipped: result.skipped, totalParsed: result.totalParsed })
       await reloadTransactions()
@@ -162,7 +171,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
       setStep('review')
       addToast('가져오기에 실패했습니다', 'error')
     }
-  }, [rows, paymentMethod, paymentMethodItemId, paymentMethodItems, memberMap, skipIndexes, reloadTransactions, addToast])
+  }, [rows, paymentMethod, paymentMethodItemId, paymentMethodItems, memberMap, skipIndexes, useOverrideDate, overrideDate, reloadTransactions, addToast])
 
   const handleClose = () => {
     if (step === 'importing') return
@@ -224,7 +233,10 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
               transition={{ duration: durations.fast, ease: easeOutExpo }}
               className="space-y-5"
             >
-              <ReviewSummary stats={stats} />
+              <ReviewSummary
+                stats={stats}
+                overrideDate={useOverrideDate ? overrideDate : null}
+              />
 
               {/* Payment method bulk picker */}
               <PaymentMethodPicker
@@ -233,6 +245,15 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
                 items={itemsForMethod}
                 selectedItemId={paymentMethodItemId}
                 onItemChange={setPaymentMethodItemId}
+              />
+
+              {/* Bulk payment-due-date override — aligns all rows to one date
+                  for cash-flow accuracy (replaces individual statement dates). */}
+              <BillingDatePicker
+                enabled={useOverrideDate}
+                date={overrideDate}
+                onToggle={setUseOverrideDate}
+                onChange={setOverrideDate}
               />
 
               {/* Card suffix → member mapping */}
@@ -288,6 +309,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
                 onToggle={toggleRow}
                 showAll={showAllRows}
                 onToggleShowAll={() => setShowAllRows(s => !s)}
+                overrideDate={useOverrideDate ? overrideDate : null}
               />
             </motion.div>
           )}
@@ -369,7 +391,11 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
             <FooterButton
               variant="primary"
               onClick={handleImport}
-              disabled={stats.selected === 0 || (stats.cardSuffixes.length > 0 && !allCardSuffixesMapped)}
+              disabled={
+                stats.selected === 0 ||
+                (stats.cardSuffixes.length > 0 && !allCardSuffixesMapped) ||
+                (useOverrideDate && !overrideDate)
+              }
             >
               <Check className="w-4 h-4" strokeWidth={3} />
               <span>{stats.selected}건 가져오기</span>
@@ -556,7 +582,13 @@ function InputStep({
   )
 }
 
-function ReviewSummary({ stats }: { stats: { total: number; selected: number; totalAmount: number; dateRange: { from: string; to: string } | null } }) {
+function ReviewSummary({
+  stats,
+  overrideDate,
+}: {
+  stats: { total: number; selected: number; totalAmount: number; dateRange: { from: string; to: string } | null }
+  overrideDate: string | null
+}) {
   return (
     <div className="rounded-3xl p-4 bg-surface-primary ring-1 ring-base shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -585,13 +617,94 @@ function ReviewSummary({ stats }: { stats: { total: number; selected: number; to
           <p className="text-body3-semi font-bold tabular-nums text-value-negative">
             −{stats.totalAmount.toLocaleString('ko-KR')}원
           </p>
-          {stats.dateRange && (
+          {overrideDate ? (
+            <p className="text-[10px] mt-0.5 tabular-nums font-semibold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]">
+              지급일 {formatDate(overrideDate)}
+            </p>
+          ) : stats.dateRange && (
             <p className="text-[10px] text-disabled mt-0.5 tabular-nums">
               {stats.dateRange.from} ~ {stats.dateRange.to}
             </p>
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Bulk replace each row's statement date with one user-chosen date — typically
+ * the credit card's payment due date. This is essential when the user tracks
+ * daily cash flow (cash-basis) rather than purchase activity (accrual-basis):
+ * the cash actually leaves the account on the payment date, not on each
+ * individual transaction date.
+ */
+function BillingDatePicker({
+  enabled, date, onToggle, onChange,
+}: {
+  enabled: boolean
+  date: string
+  onToggle: (v: boolean) => void
+  onChange: (v: string) => void
+}) {
+  const shouldReduceMotion = useReducedMotion()
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <label htmlFor="cs-override-date" className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sub">
+          <CalendarIcon className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" />
+          지급일 일괄 설정
+        </label>
+        <motion.button
+          type="button"
+          onClick={() => onToggle(!enabled)}
+          whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
+          transition={springSnappy}
+          aria-pressed={enabled}
+          className={clsx(
+            'inline-flex items-center gap-1 px-3 h-7 rounded-full text-[11px] font-bold transition-all',
+            enabled
+              ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_2px_8px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
+              : 'bg-surface-tertiary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
+          )}
+        >
+          {enabled && <Check className="w-3 h-3" strokeWidth={3} />}
+          {enabled ? '사용' : '사용 안 함'}
+        </motion.button>
+      </div>
+      <motion.div
+        animate={{ opacity: enabled ? 1 : 0.55 }}
+        transition={{ duration: durations.fast, ease: easeOutExpo }}
+        className={clsx(
+          'rounded-2xl p-3.5 transition-all',
+          enabled
+            ? 'bg-surface-primary ring-1 ring-[color:var(--color-primary-300)] shadow-[0_0_0_4px_color-mix(in_oklch,var(--color-primary-500)_8%,transparent)]'
+            : 'bg-surface-tertiary ring-1 ring-base',
+        )}
+      >
+        <input
+          id="cs-override-date"
+          type="date"
+          value={date}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={!enabled}
+          className={clsx(
+            'w-full h-11 px-3 rounded-xl text-body3 font-semibold text-heading tabular-nums outline-none transition-all',
+            'bg-surface-secondary ring-1 ring-base focus:ring-[color:var(--color-primary-400)] focus:bg-surface-primary',
+            'disabled:opacity-60 disabled:cursor-not-allowed',
+          )}
+        />
+        <p className="text-[11px] text-sub mt-2 leading-relaxed">
+          {enabled
+            ? '명세서의 거래일을 무시하고 위 날짜로 모든 거래를 등록합니다. 카드 대금 지급일에 맞춰 일별 현금흐름을 정확히 확인할 수 있어요.'
+            : '명세서에 적힌 거래일을 그대로 사용합니다.'}
+        </p>
+        {enabled && !date && (
+          <p className="text-[11px] text-status-danger mt-1.5 font-semibold">
+            날짜를 선택해주세요.
+          </p>
+        )}
+      </motion.div>
     </div>
   )
 }
@@ -754,7 +867,7 @@ function MemberMappingPicker({
 }
 
 function RowList({
-  rows, categories, members, memberMap, skipIndexes, onToggle, showAll, onToggleShowAll,
+  rows, categories, members, memberMap, skipIndexes, onToggle, showAll, onToggleShowAll, overrideDate,
 }: {
   rows: AnalyzedRow[]
   categories: ReturnType<typeof useTransactionStore.getState>['categories']
@@ -764,6 +877,7 @@ function RowList({
   onToggle: (index: number) => void
   showAll: boolean
   onToggleShowAll: () => void
+  overrideDate: string | null
 }) {
   const COLLAPSED = 8
   const rendered = showAll ? rows : rows.slice(0, COLLAPSED)
@@ -786,6 +900,7 @@ function RowList({
             memberMap={memberMap}
             skip={skipIndexes.has(row.index)}
             onToggle={() => onToggle(row.index)}
+            overrideDate={overrideDate}
           />
         ))}
       </div>
@@ -804,7 +919,7 @@ function RowList({
 }
 
 function RowItem({
-  row, categories, members, memberMap, skip, onToggle,
+  row, categories, members, memberMap, skip, onToggle, overrideDate,
 }: {
   row: AnalyzedRow
   categories: ReturnType<typeof useTransactionStore.getState>['categories']
@@ -812,6 +927,7 @@ function RowItem({
   memberMap: Record<string, number>
   skip: boolean
   onToggle: () => void
+  overrideDate: string | null
 }) {
   const shouldReduceMotion = useReducedMotion()
   const cat = row.suggestion.categoryId ? categories.find(c => c.id === row.suggestion.categoryId) : null
@@ -820,6 +936,8 @@ function RowItem({
   const memberId = memberMap[row.cardSuffix]
   const member = memberId ? members.find(m => m.id === memberId) : null
   const dup = row.duplicate.level
+  const effectiveDate = overrideDate ?? row.date
+  const isDateOverridden = overrideDate != null && overrideDate !== row.date
 
   return (
     <motion.button
@@ -871,9 +989,19 @@ function RowItem({
             )}
           </div>
           <div className="flex items-center gap-2 mt-0.5 text-[10px] text-sub tabular-nums">
-            <span className="inline-flex items-center gap-0.5">
+            <span
+              className={clsx(
+                'inline-flex items-center gap-0.5',
+                isDateOverridden && 'font-semibold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]',
+              )}
+            >
               <CalendarIcon className="w-2.5 h-2.5" />
-              {formatDate(row.date)}
+              {formatDate(effectiveDate)}
+              {isDateOverridden && (
+                <span className="ml-1 text-[9px] text-disabled line-through font-normal">
+                  {formatDate(row.date)}
+                </span>
+              )}
             </span>
             {cat && (
               <span className="inline-flex items-center gap-0.5">
