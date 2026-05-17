@@ -125,6 +125,9 @@
 /* Hero Effects — variants, aurora, spotlight, skeleton wave */
 @import './utilities/hero-effects.css';
 
+/* Hero Card — soft tint variant (pastel + dark text) */
+@import './utilities/hero-card-soft.css';
+
 /* Container Queries — inline-size based layout */
 @import './utilities/container-queries.css';
 

@@ -18,8 +18,9 @@ interface Props {
  *   • two delta chips (vs previous month, vs 3-month baseline)
  *   • a 6-month sparkline trail so the user instantly sees direction
  *
- * Visual identity uses the same hero-gradient + noise + spotlight stack as
- * SubscriptionHero so the analysis view feels native to the design system.
+ * Visuals are entirely composed from Foundation utility classes
+ * (.hero-card-soft + variants, typography tokens, radius/shadow tokens) so
+ * the look matches anywhere else that adopts the same primitives.
  */
 export function LedgerAnalysisHero({ analysis }: Props) {
   const { current, prev, baseline, sparklines } = analysis
@@ -27,7 +28,7 @@ export function LedgerAnalysisHero({ analysis }: Props) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
       <HeroCard
-        variant="expense"
+        variant="negative"
         icon={Wallet}
         label="지출"
         value={current.expense}
@@ -37,7 +38,7 @@ export function LedgerAnalysisHero({ analysis }: Props) {
         emphasizeIncrease="bad"
       />
       <HeroCard
-        variant="income"
+        variant="positive"
         icon={ArrowDownCircle}
         label="수입"
         value={current.income}
@@ -47,7 +48,7 @@ export function LedgerAnalysisHero({ analysis }: Props) {
         emphasizeIncrease="good"
       />
       <HeroCard
-        variant="savings"
+        variant="primary"
         icon={PiggyBank}
         label="순저축"
         value={current.net}
@@ -65,31 +66,13 @@ export function LedgerAnalysisHero({ analysis }: Props) {
 // HeroCard
 // ════════════════════════════════════════════════════════
 
-type Variant = 'expense' | 'income' | 'savings'
+type Variant = 'negative' | 'positive' | 'primary'
 type Emphasis = 'good' | 'bad'
 
-const VARIANT_STYLES: Record<Variant, { accent: string; gradient: string; ring: string; chipBg: string }> = {
-  expense: {
-    accent: 'var(--value-negative)',
-    gradient:
-      'linear-gradient(135deg, color-mix(in srgb, var(--value-negative) 16%, var(--surface-primary)) 0%, color-mix(in srgb, var(--value-negative) 5%, var(--surface-primary)) 100%)',
-    ring: 'ring-[color:color-mix(in_srgb,var(--value-negative)_28%,transparent)]',
-    chipBg: 'color-mix(in srgb, var(--value-negative) 12%, transparent)',
-  },
-  income: {
-    accent: 'var(--value-positive)',
-    gradient:
-      'linear-gradient(135deg, color-mix(in srgb, var(--value-positive) 16%, var(--surface-primary)) 0%, color-mix(in srgb, var(--value-positive) 5%, var(--surface-primary)) 100%)',
-    ring: 'ring-[color:color-mix(in_srgb,var(--value-positive)_28%,transparent)]',
-    chipBg: 'color-mix(in srgb, var(--value-positive) 12%, transparent)',
-  },
-  savings: {
-    accent: 'var(--color-primary-500)',
-    gradient:
-      'linear-gradient(135deg, color-mix(in srgb, var(--color-primary-500) 18%, var(--surface-primary)) 0%, color-mix(in srgb, var(--color-primary-500) 5%, var(--surface-primary)) 100%)',
-    ring: 'ring-[color:color-mix(in_srgb,var(--color-primary-500)_28%,transparent)]',
-    chipBg: 'color-mix(in srgb, var(--color-primary-500) 12%, transparent)',
-  },
+const VARIANT_CLASS: Record<Variant, string> = {
+  negative: 'hero-card-soft hero-card-soft--negative',
+  positive: 'hero-card-soft hero-card-soft--positive',
+  primary: 'hero-card-soft hero-card-soft--primary',
 }
 
 function HeroCard({
@@ -108,7 +91,6 @@ function HeroCard({
 }) {
   const shouldReduceMotion = useReducedMotion()
   const animated = useCountUp(value, 700)
-  const style = VARIANT_STYLES[variant]
   const isNegative = value < 0
 
   return (
@@ -116,12 +98,7 @@ function HeroCard({
       initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ ...springGentle }}
-      className={clsx(
-        'relative overflow-hidden rounded-3xl ring-1 shadow-[0_4px_18px_rgba(0,0,0,0.06)]',
-        'px-5 py-5',
-        style.ring,
-      )}
-      style={{ background: style.gradient }}
+      className={VARIANT_CLASS[variant]}
     >
       {/* Subtle noise overlay for premium texture */}
       <div className="noise-overlay absolute inset-0 opacity-40 pointer-events-none" aria-hidden="true" />
@@ -130,24 +107,15 @@ function HeroCard({
         {/* Header row */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{
-                background: `linear-gradient(135deg, color-mix(in srgb, ${style.accent} 22%, transparent), color-mix(in srgb, ${style.accent} 8%, transparent))`,
-                boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${style.accent} 32%, transparent), inset 0 1px 0 0 rgba(255,255,255,0.45)`,
-              }}
-            >
-              <Icon className="w-4 h-4" style={{ color: style.accent }} aria-hidden="true" />
-            </div>
-            <span className="text-[11px] font-bold tracking-wider uppercase" style={{ color: style.accent }}>
+            <span className="hero-card-soft__icon-frame">
+              <Icon className="w-4 h-4" aria-hidden="true" />
+            </span>
+            <span className="typo-label4 tracking-wide uppercase" style={{ color: 'var(--hero-soft-accent)' }}>
               {label}
             </span>
           </div>
           {savingsRate != null && (
-            <span
-              className="text-[10px] font-bold px-2 h-5 inline-flex items-center rounded-full tabular-nums"
-              style={{ background: style.chipBg, color: style.accent }}
-            >
+            <span className="hero-card-soft__chip typo-label4">
               저축률 {Math.round(savingsRate * 100)}%
             </span>
           )}
@@ -156,14 +124,14 @@ function HeroCard({
         {/* Value */}
         <div className="mt-3">
           <motion.p
-            className="text-title2 sm:text-[28px] font-extrabold text-heading tabular-nums leading-tight"
+            className="typo-display2 text-heading tabular-nums tracking-tight"
             initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: durations.base, ease: easeOutExpo, delay: 0.06 }}
           >
             {isNegative ? '−' : ''}
             {formatKoreanUnit(Math.abs(animated))}
-            <span className="text-body3 font-bold text-sub ml-0.5">원</span>
+            <span className="typo-body3-bold text-sub ml-0.5">원</span>
           </motion.p>
         </div>
 
@@ -178,11 +146,11 @@ function HeroCard({
           <div className="mt-3 -mx-1">
             <Sparkline
               data={sparkData}
-              color={style.accent}
+              color="var(--hero-soft-accent)"
               height={28}
               className="w-full"
             />
-            <p className="text-[9px] text-disabled mt-0.5 px-1 tabular-nums">최근 {sparkData.length}개월</p>
+            <p className="typo-label4 text-disabled mt-0.5 px-1 tabular-nums">최근 {sparkData.length}개월</p>
           </div>
         )}
       </div>
@@ -222,7 +190,7 @@ function DeltaChip({
   return (
     <span
       className={clsx(
-        'inline-flex items-center gap-1 px-2 h-6 rounded-full text-[10.5px] font-bold tabular-nums ring-1',
+        'inline-flex items-center gap-1 px-2 h-6 rounded-full typo-label4 tabular-nums ring-1',
         tone,
         muted && 'opacity-80',
       )}

@@ -1,0 +1,96 @@
+/* ===============================================
+ * Hero Card — Soft Tint Variant
+ *
+ * Companion to .hero-gradient-* (dark, white-text hero cards in
+ * hero-effects.css). The soft variant uses a light pastel tint of a
+ * semantic accent over surface-primary, with dark heading text — the
+ * pattern used by analysis/insight summaries (ledger 지출/수입/순저축,
+ * etc.). Single source of truth so consumers don't reinvent the
+ * gradient/ring/shadow recipe inline.
+ *
+ * Composition:
+ *   .hero-card-soft               — base (radius / shadow / inset highlight)
+ *   .hero-card-soft--negative     — red tint (expense, loss)
+ *   .hero-card-soft--positive     — green tint (income, gain)
+ *   .hero-card-soft--primary      — brand-primary tint (savings, neutral)
+ *
+ *   .hero-card-soft__icon-frame   — 32×32 accented icon container
+ * =============================================== */
+
+:root {
+  /* Inset highlight on top edge — applied to soft hero cards & icon frames.
+     Light mode uses a faint white catch-light; dark mode subdues it so the
+     card doesn't read as a flat slab. */
+  --hero-soft-inset-highlight: rgba(255, 255, 255, 0.5);
+  --hero-soft-icon-inset-highlight: rgba(255, 255, 255, 0.45);
+
+  /* Per-variant accent slot — overridden by .hero-card-soft--* variants */
+  --hero-soft-accent: var(--color-primary-500);
+}
+
+.dark {
+  --hero-soft-inset-highlight: rgba(255, 255, 255, 0.06);
+  --hero-soft-icon-inset-highlight: rgba(255, 255, 255, 0.08);
+}
+
+.hero-card-soft {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--card-radius-xl); /* 24px — Foundation token */
+  padding: 20px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--hero-soft-accent) 16%, var(--surface-primary)) 0%,
+    color-mix(in srgb, var(--hero-soft-accent) 5%, var(--surface-primary)) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--hero-soft-accent) 28%, transparent),
+    inset 0 1px 0 0 var(--hero-soft-inset-highlight),
+    var(--shadow-1);
+}
+
+.hero-card-soft--negative {
+  --hero-soft-accent: var(--value-negative);
+}
+
+.hero-card-soft--positive {
+  --hero-soft-accent: var(--value-positive);
+}
+
+.hero-card-soft--primary {
+  --hero-soft-accent: var(--color-primary-500);
+}
+
+/* Icon frame — accent-tinted square with inset highlight. The accent is
+   inherited from --hero-soft-accent so dropping it inside a variant card
+   automatically picks up the right color. */
+.hero-card-soft__icon-frame {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-lg); /* 12px */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--hero-soft-accent) 22%, transparent),
+    color-mix(in srgb, var(--hero-soft-accent) 8%, transparent)
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--hero-soft-accent) 32%, transparent),
+    inset 0 1px 0 0 var(--hero-soft-icon-inset-highlight);
+  color: var(--hero-soft-accent);
+}
+
+/* Chip slot inside a soft hero — for tiny accent-tinted pill labels. */
+.hero-card-soft__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--radius-full);
+  background-color: color-mix(in srgb, var(--hero-soft-accent) 12%, transparent);
+  color: var(--hero-soft-accent);
+  font-variant-numeric: tabular-nums;
+}
