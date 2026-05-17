@@ -5,7 +5,7 @@ import {
   Users, Wallet, Coins, Tag, ArrowUpDown, CalendarRange,
   CreditCard, Banknote, Landmark, Receipt, MoreHorizontal,
   Repeat, Tv, Laptop, Sparkles, Cloud, Music, Newspaper,
-  GraduationCap, Heart, ShoppingBag, MinusCircle,
+  GraduationCap, Heart, ShoppingBag, Smartphone, MinusCircle,
   type LucideIcon,
 } from 'lucide-react'
 import { clsx } from 'clsx'
@@ -78,6 +78,7 @@ const SUBSCRIPTION_CATEGORY_ICONS: Record<SubscriptionCategoryType, LucideIcon> 
   health: Heart,
   shopping: ShoppingBag,
   finance: Landmark,
+  telecom: Smartphone,
   other: MoreHorizontal,
 }
 

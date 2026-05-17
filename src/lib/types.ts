@@ -155,7 +155,8 @@ export type SubscriptionCycle =
   | 'quarterly' | 'semi-annual' | 'yearly' | 'custom'
 export type SubscriptionCategoryType =
   | 'entertainment' | 'productivity' | 'ai' | 'cloud' | 'music'
-  | 'news' | 'education' | 'health' | 'shopping' | 'finance' | 'other'
+  | 'news' | 'education' | 'health' | 'shopping' | 'finance'
+  | 'telecom' | 'other'
 
 export interface PauseHistoryEntry {
   pausedAt: string    // YYYY-MM-DD

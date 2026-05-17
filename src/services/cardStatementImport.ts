@@ -581,10 +581,13 @@ export async function importStatement(
       const memberId = options.memberMap?.[row.cardSuffix] ?? null
       const effectiveDate = overrideDate ?? row.date
 
-      // Bulk UI override wins when set; otherwise use per-row rule suggestion
-      // (e.g., Claude/Vercel → 'ai', Supabase/구글클라우드 → 'cloud').
-      const subscriptionCategory =
-        options.subscriptionCategoryOverride ?? row.suggestion.subscriptionCategory
+      // Subscription tagging is strictly opt-in — only the bulk UI override
+      // applies it. The keyword rule's per-row suggestion (Claude → 'ai',
+      // Supabase → 'cloud', etc.) is exposed in CategorySuggestion for
+      // hint UIs but is NOT auto-written to the transaction here; users were
+      // surprised by Claude/OpenAI rows silently appearing as subscriptions
+      // after a card statement import.
+      const subscriptionCategory = options.subscriptionCategoryOverride
 
       const txn: Omit<Transaction, 'id'> = {
         syncId: crypto.randomUUID(),

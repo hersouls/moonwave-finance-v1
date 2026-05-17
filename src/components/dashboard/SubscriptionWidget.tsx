@@ -4,23 +4,24 @@ import { ArrowRight } from 'lucide-react'
 import { clsx } from 'clsx'
 import { Card } from '@/components/ui/Card'
 import { Amount } from '@/components/ui/Amount'
-import { useSubscriptionStore } from '@/stores/subscriptionStore'
-import { formatKRW, formatUSD } from '@/utils/format'
-import { getDaysUntilBilling } from '@/lib/dateUtils'
+import { useSubscriptionData } from '@/hooks/useSubscriptionData'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { formatKRW } from '@/utils/format'
 
 export function SubscriptionWidget() {
   const navigate = useNavigate()
-  const subscriptions = useSubscriptionStore((s) => s.subscriptions)
-  const store = useSubscriptionStore
-  const active = useMemo(() => store.getState().getActive(), [subscriptions])
-  const monthlyCombined = useMemo(() => store.getState().getMonthlyTotalCombinedKRW(), [subscriptions])
-  const monthlyKRW = useMemo(() => store.getState().getMonthlyTotalKRW(), [subscriptions])
-  const monthlyUSD = useMemo(() => store.getState().getMonthlyTotalUSD(), [subscriptions])
-  const upcoming = useMemo(() => store.getState().getUpcomingBills(7), [subscriptions])
+  const { detected, stats } = useSubscriptionData()
   const hideAmounts = useSettingsStore((s) => !!s.settings.hideAmounts)
 
-  if (active.length === 0) return null
+  const upcoming = useMemo(
+    () => detected
+      .filter((s) => s.daysUntilNext >= 0 && s.daysUntilNext <= 7)
+      .sort((a, b) => a.daysUntilNext - b.daysUntilNext)
+      .slice(0, 3),
+    [detected],
+  )
+
+  if (detected.length === 0) return null
 
   return (
     <Card className="card-pad-lg">
@@ -36,11 +37,10 @@ export function SubscriptionWidget() {
 
       <div className="mb-3">
         <p className={clsx('text-title2 text-heading tabular-nums', hideAmounts && 'amount-masked')}>
-          월 {formatKRW(monthlyCombined)}
+          월 {formatKRW(stats.totalMonthly)}
         </p>
         <p className={clsx('text-caption text-sub', hideAmounts && 'amount-masked')}>
-          (원화 {formatKRW(monthlyKRW)}
-          {monthlyUSD > 0 && ` + 달러 ${formatUSD(monthlyUSD)}`})
+          {detected.length}개 구독 · 연 {formatKRW(stats.totalYearly)}
         </p>
       </div>
 
@@ -48,28 +48,21 @@ export function SubscriptionWidget() {
         <div>
           <p className="text-caption text-sub mb-2">다음 결제 예정</p>
           <div className="space-y-2">
-            {upcoming.slice(0, 3).map((sub) => {
-              const daysLeft = getDaysUntilBilling(sub.billingDay, sub.cycle, sub.billingMonth, sub.startDate, sub.customCycleDays)
-              return (
-                <div key={sub.id} className="flex items-center gap-2 el-hover rounded-md -mx-1 px-1">
-                  <div
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: sub.color }}
-                  />
-                  <span className="text-sm text-body flex-1 truncate">
-                    {sub.name}
-                  </span>
-                  {sub.currency === 'USD' ? (
-                    <Amount value={sub.amount} format="usd" size="emphasis" className="text-heading" />
-                  ) : (
-                    <Amount value={sub.amount} format="krw" size="emphasis" className="text-heading" unit="" />
-                  )}
-                  <span className="text-caption text-disabled w-10 text-right">
-                    D-{daysLeft}
-                  </span>
-                </div>
-              )
-            })}
+            {upcoming.map((sub) => (
+              <div key={sub.key} className="flex items-center gap-2 el-hover rounded-md -mx-1 px-1">
+                <div
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: sub.color }}
+                />
+                <span className="text-sm text-body flex-1 truncate">
+                  {sub.name}
+                </span>
+                <Amount value={sub.avgAmount} format="krw" size="emphasis" className="text-heading" unit="" />
+                <span className="text-caption text-disabled w-10 text-right">
+                  {sub.daysUntilNext === 0 ? '오늘' : `D-${sub.daysUntilNext}`}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}

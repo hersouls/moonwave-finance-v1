@@ -3,18 +3,21 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { CalendarClock } from 'lucide-react'
 import { Amount } from '@/components/ui/Amount'
-import { useSubscriptionStore } from '@/stores/subscriptionStore'
+import { useSubscriptionData } from '@/hooks/useSubscriptionData'
 
 export function UpcomingBillsCard() {
   const shouldReduceMotion = useReducedMotion()
   const navigate = useNavigate()
-  const subscriptions = useSubscriptionStore((s) => s.subscriptions)
+  const { detected } = useSubscriptionData()
 
-  const upcoming = useMemo(() => {
-    return useSubscriptionStore.getState().getUpcomingBills(7)
-  }, [subscriptions])
+  const upcoming = useMemo(
+    () => detected
+      .filter((s) => s.daysUntilNext >= 0 && s.daysUntilNext <= 7)
+      .sort((a, b) => a.daysUntilNext - b.daysUntilNext),
+    [detected],
+  )
 
-  const total = useMemo(() => upcoming.reduce((s, u) => s + u.amount, 0), [upcoming])
+  const total = useMemo(() => upcoming.reduce((sum, u) => sum + u.avgAmount, 0), [upcoming])
   const firstThree = upcoming.slice(0, 3)
 
   if (upcoming.length === 0) {
@@ -60,8 +63,8 @@ export function UpcomingBillsCard() {
         unit=""
       />
       <div className="mt-2 space-y-0.5">
-        {firstThree.map(sub => (
-          <p key={sub.id} className="text-[10px] text-sub truncate">
+        {firstThree.map((sub) => (
+          <p key={sub.key} className="text-[10px] text-sub truncate">
             <span
               className="inline-block w-1.5 h-1.5 rounded-full mr-1 align-middle"
               style={{ backgroundColor: sub.color }}

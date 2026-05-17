@@ -38,6 +38,7 @@ import {
   type SubscriptionStats,
 } from '@/services/subscriptionDetection'
 import { Dialog, DialogBody } from '@/components/ui/Dialog'
+import { SubscriptionTypeBreakdown } from './SubscriptionTypeBreakdown'
 
 // ════════════════════════════════════════════════════════
 // Main Page
@@ -152,6 +153,9 @@ export function SubscriptionPage() {
         onChange={setActiveCycleFilter}
         detected={detected}
       />
+
+      {/* ─── Subscription type breakdown (full-width hero chart) ─── */}
+      <SubscriptionTypeBreakdown detected={detected} />
 
       {/* ─── Charts grid (the "다양한 그래프") ─── */}
       <ChartsGrid stats={stats} detected={detected} categories={categories} />

@@ -110,6 +110,7 @@ export const SUBSCRIPTION_CATEGORIES = [
   { value: 'health' as const, label: '건강/피트니스', icon: 'Heart', color: '#EC4899' },
   { value: 'shopping' as const, label: '쇼핑/멤버십', icon: 'ShoppingBag', color: '#F97316' },
   { value: 'finance' as const, label: '금융', icon: 'Landmark', color: '#6366F1' },
+  { value: 'telecom' as const, label: '통신', icon: 'Smartphone', color: '#0EA5E9' },
   { value: 'other' as const, label: '기타', icon: 'MoreHorizontal', color: '#71717A' },
 ] as const
 
