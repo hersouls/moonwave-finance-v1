@@ -1039,35 +1039,55 @@ async function resolveFksOnRecord(
   for (const { field, refTable } of defs) {
     const syncIdField = `${field}_syncId`
     const refSyncId = record[syncIdField]
-    if (refSyncId === null) {
-      // Writer explicitly cleared the FK.
-      record[field] = null
-      delete record[syncIdField]
-      continue
-    }
+
+    // Path 1: companion present as string → resolve by syncId (definitive).
     if (typeof refSyncId === 'string') {
       const parent = await (getLocalTable(refTable) as typeof db.members)
         .where('syncId').equals(refSyncId).first() as { id?: number } | undefined
       if (parent?.id != null) {
         record[field] = parent.id
       } else {
-        // Parent has not arrived locally yet — defer. Drop the cloud value
-        // so a half-broken numeric FK doesn't get written.
+        // Parent hasn't arrived locally — defer. Drop the cloud value so a
+        // half-broken numeric FK doesn't get written.
         delete record[field]
         unmapped.push({ field, refTable, refSyncId })
       }
       delete record[syncIdField]
       continue
     }
-    // Legacy path: no companion. Use fkMappings (cloudId → localId).
+
+    // Path 2: companion is null OR missing. Both can mean either
+    //   (a) writer's parent had no syncId at upload time (`addFkSyncIds`
+    //       returns `parent?.syncId ?? null`), OR
+    //   (b) the FK was genuinely null (e.g., deleted category cleared by
+    //       `deleteTransactionCategory`).
+    // We can't distinguish (a) from (b) from the companion alone, so try the
+    // legacy fkMappings fallback (cloud auto-id → local id) first. Only after
+    // that also fails do we treat the FK as cleared. This rescues transactions
+    // whose category sync-id was lost at write time but whose numeric cloud id
+    // still resolves through the syncId chain.
+    if (refSyncId === null) delete record[syncIdField]
+
     const value = record[field]
-    const mapping = fkMappings[refTable]
-    if (typeof value === 'number' && mapping) {
-      if (mapping.has(value)) {
+    if (typeof value === 'number') {
+      const mapping = fkMappings[refTable]
+      if (mapping && mapping.has(value)) {
         record[field] = mapping.get(value)!
-      } else if (value !== 0) {
+      } else if (value === 0) {
+        // 0 is sometimes used as "unset" — preserve existing behavior of
+        // leaving it untouched so callers can normalize.
+      } else {
+        // Legacy fallback failed. Null the FK so we don't leave a ghost id
+        // that points into an unrelated local row (Case E in cross-device
+        // re-merge). Queue for deferred retry — if the parent table snapshot
+        // arrives later (real-time sync), `flushPendingChildren` will fix it.
+        record[field] = null
         unmapped.push({ field, refTable, cloudValue: value })
       }
+    } else if (refSyncId === null) {
+      // Companion was explicitly null AND record[field] isn't a number —
+      // honour the clear.
+      record[field] = null
     }
   }
   return unmapped

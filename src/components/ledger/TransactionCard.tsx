@@ -14,6 +14,7 @@ import { formatDate } from '@/lib/dateUtils'
 import { getPaymentMethodLabel } from '@/utils/paymentMethod'
 import { getCategoryIcon } from '@/utils/categoryIcons'
 import { TRANSACTION_CARD_SWIPE, UNCATEGORIZED_LABEL } from '@/lib/ledgerConstants'
+import { SUBSCRIPTION_CATEGORIES } from '@/utils/constants'
 import type { Transaction } from '@/lib/types'
 
 interface TransactionCardProps {
@@ -38,6 +39,14 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
   const member = (transaction.memberId ? members.find(m => m.id === transaction.memberId) : null) ?? null
   const pmLabel = transaction.paymentMethodDetail || getPaymentMethodLabel(transaction.paymentMethod)
   const isIncome = transaction.type === 'income'
+  // Subscription badge fires for either: (a) direct subscriptionId link (auto-
+  // generated from a Subscription record) or (b) user-applied subscriptionCategory
+  // tag (e.g., card statement import / form). The sidebar count uses (b), so the
+  // card must too — otherwise the list and the "구독 N개" sidebar disagree.
+  const isSubscription = transaction.subscriptionId != null || !!transaction.subscriptionCategory
+  const subCategoryLabel = transaction.subscriptionCategory
+    ? SUBSCRIPTION_CATEGORIES.find(c => c.value === transaction.subscriptionCategory)?.label
+    : null
   // A signed-negative expense represents a refund (e.g., card chargeback).
   // Treat it like an inflow for display purposes — same category color, but
   // positive sign and positive-value styling so the user can immediately
@@ -193,10 +202,10 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
                       {member.name}
                     </span>
                   )}
-                  {transaction.subscriptionId && (
+                  {isSubscription && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-status-info-soft text-status-info flex items-center gap-0.5 flex-shrink-0 ring-1 ring-status-info/15">
                       <RefreshCw className="w-2.5 h-2.5" />
-                      구독
+                      {subCategoryLabel ? `구독 · ${subCategoryLabel}` : '구독'}
                     </span>
                   )}
                   {isRefund && (
