@@ -39,7 +39,7 @@ export function UpcomingBillsCard() {
   return (
     <motion.button
       type="button"
-      onClick={() => navigate('/subscriptions/calendar')}
+      onClick={() => navigate('/subscriptions')}
       whileHover={shouldReduceMotion ? undefined : { y: -2 }}
       whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
       className="flex-shrink-0 w-[180px] rounded-2xl bg-surface-primary p-4 text-left hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all"

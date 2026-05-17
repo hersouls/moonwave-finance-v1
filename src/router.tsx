@@ -15,7 +15,6 @@ const AssetCalendarPage = lazy(() => import('./components/calendar/AssetCalendar
 const ReportsPage = lazy(() => import('./components/reports/ReportsPage').then(m => ({ default: m.ReportsPage })))
 const ProfilePage = lazy(() => import('./components/profile/ProfilePage').then(m => ({ default: m.ProfilePage })))
 const SubscriptionPage = lazy(() => import('./components/subscriptions/SubscriptionPage').then(m => ({ default: m.SubscriptionPage })))
-const SubscriptionCalendarPage = lazy(() => import('./components/subscriptions/SubscriptionCalendarPage').then(m => ({ default: m.SubscriptionCalendarPage })))
 const NotFoundPage = lazy(() => import('./components/ui/NotFoundPage').then(m => ({ default: m.NotFoundPage })))
 
 function LazyPage({ children }: { children: React.ReactNode }) {
@@ -40,11 +39,12 @@ export const router = createBrowserRouter([
       { path: 'ledger/income', element: <LazyPage><LedgerPage /></LazyPage> },
       { path: 'ledger/calendar', element: <LazyPage><CalendarPage /></LazyPage> },
       { path: 'calendar', element: <Navigate to="/ledger/calendar" replace /> },
-      // 구독 축
-      { path: 'subscriptions', element: <Navigate to="/subscriptions/domestic" replace /> },
-      { path: 'subscriptions/domestic', element: <LazyPage><SubscriptionPage /></LazyPage> },
-      { path: 'subscriptions/international', element: <LazyPage><SubscriptionPage /></LazyPage> },
-      { path: 'subscriptions/calendar', element: <LazyPage><SubscriptionCalendarPage /></LazyPage> },
+      // 구독 축 — 자동 감지 기반 단일 페이지
+      { path: 'subscriptions', element: <LazyPage><SubscriptionPage /></LazyPage> },
+      // Legacy redirects (pre-v2 separate registration)
+      { path: 'subscriptions/domestic', element: <Navigate to="/subscriptions" replace /> },
+      { path: 'subscriptions/international', element: <Navigate to="/subscriptions" replace /> },
+      { path: 'subscriptions/calendar', element: <Navigate to="/subscriptions" replace /> },
       // 기타
       { path: 'reports', element: <LazyPage><ReportsPage /></LazyPage> },
       { path: 'profile', element: <LazyPage><ProfilePage /></LazyPage> },

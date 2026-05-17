@@ -55,9 +55,7 @@ const navGroups: NavGroup[] = [
     label: '구독',
     icon: Repeat,
     children: [
-      { label: '국내관리', path: '/subscriptions/domestic' },
-      { label: '국외관리', path: '/subscriptions/international' },
-      { label: '캘린더', path: '/subscriptions/calendar' },
+      { label: '구독 관리', path: '/subscriptions' },
     ],
   },
 ]

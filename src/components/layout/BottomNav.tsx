@@ -8,7 +8,7 @@ const NAV_TARGETS: Record<string, string> = {
   dashboard: '/',
   assets: '/assets',
   ledger: '/ledger/expense',
-  subscriptions: '/subscriptions/domestic',
+  subscriptions: '/subscriptions',
   reports: '/reports',
 }
 

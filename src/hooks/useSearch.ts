@@ -218,7 +218,7 @@ export function useSearch(query: string) {
             id: sub.id!,
             title: sub.name,
             subtitle: sub.description || undefined,
-            path: sub.currency === 'USD' ? '/subscriptions/international' : '/subscriptions/domestic',
+            path: '/subscriptions',
             matchedField: best,
             matchedText,
             matchRange: findMatch(matchedText, q) ?? undefined,
