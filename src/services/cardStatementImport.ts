@@ -1,9 +1,14 @@
-// ─── Shinhan-style card statement import service ───────
+// ─── Card statement import service (Shinhan + Samsung) ──
 //
-// Parses pasted text from card statements (Shinhan format) into structured
-// transactions, detects duplicates against the local DB, and auto-classifies
-// each row's category using rule-based merchant keyword matching plus the
-// user's own historical merchant→category mappings.
+// Parses pasted text from card statements into structured transactions,
+// detects duplicates against the local DB, and auto-classifies each row's
+// category using rule-based merchant keyword matching plus the user's own
+// historical merchant→category mappings.
+//
+// Supported card companies:
+//   - Shinhan: block-based (빈 줄로 거래 구분, line-ordered)
+//   - Samsung: stream-based (state machine, merchant→amount→date+owner triples
+//              with optional inline discount lines like "LINK할인혜택 -2,000원")
 //
 // User-controlled at import time:
 //   - bulk paymentMethod (single value applied to every row)
@@ -126,7 +131,41 @@ export interface ImportResult {
   dateRange: { from: string; to: string }
 }
 
-// ─── Parser ─────────────────────────────────────────────
+// ─── Card-company detection ─────────────────────────────
+
+export type CardCompany = 'shinhan' | 'samsung' | 'unknown'
+
+const SAMSUNG_DATE_OWNER_RE = /\b\d{2}\.\s*\d{1,2}\.\s*\d{1,2}본\s*인\s*\d{3,4}\b/
+const SHINHAN_FULL_DATE_RE = /^\d{4}[.\-/]\d{1,2}[.\-/]\d{1,2}$/m
+const SHINHAN_OWNER_LINE_RE = /^(?:본인|가족)\s*\d{3,4}$/m
+
+/**
+ * Detects card company by signature line patterns. Falls back to 'shinhan'
+ * when ambiguous, since that was the original supported format.
+ *
+ * Samsung signal: "YY. M. DD본 인 XXXX" combined date+owner on one line
+ * Shinhan signal: full 4-digit-year date line AND standalone "본인XXX" line
+ */
+export function detectCardCompany(text: string): CardCompany {
+  const samsungHit = SAMSUNG_DATE_OWNER_RE.test(text)
+  const shinhanHit = SHINHAN_FULL_DATE_RE.test(text) && SHINHAN_OWNER_LINE_RE.test(text)
+  if (samsungHit && !shinhanHit) return 'samsung'
+  if (shinhanHit && !samsungHit) return 'shinhan'
+  if (samsungHit && shinhanHit) return 'samsung' // prefer specific signature
+  return 'unknown'
+}
+
+/**
+ * Unified parser entry. Auto-detects card company unless explicitly given.
+ * Falls back to Shinhan parser when detection returns 'unknown' (legacy behavior).
+ */
+export function parseCardStatement(text: string, company?: CardCompany): ParsedRow[] {
+  const c = company ?? detectCardCompany(text)
+  if (c === 'samsung') return parseSamsungStatement(text)
+  return parseShinhanStatement(text) // default fallback
+}
+
+// ─── Shinhan parser (block-based) ───────────────────────
 
 /**
  * Parses Shinhan-style statement text into a list of rows. Each "block" is
@@ -217,7 +256,98 @@ function parseAdjustment(line: string): { kind: 'discount' | 'fee' | 'original' 
   if (line.startsWith('수수료')) return { kind: 'fee', value: Math.abs(value) }
   if (line.startsWith('이용금액')) return { kind: 'original', value: Math.abs(value) }
   if (line.startsWith('부분취소')) return { kind: 'partial', value }
+  // Samsung-style 자유 라벨: "LINK할인혜택 -2,000원" 같이 prefix가 자유로움
+  // → "할인" 단어가 포함되고 음수면 discount로 인식
+  if (line.includes('할인') && value < 0) return { kind: 'discount', value: Math.abs(value) }
   return null
+}
+
+// ─── Samsung parser (state-machine, line-stream based) ──
+
+const SAMSUNG_AMOUNT_RE = /^([0-9][\d,]*)\s*원$/
+// "26. 3. 17본 인 0438" → groups: yy, m, d, suffix. Allows arbitrary whitespace.
+const SAMSUNG_DATE_OWNER_LINE_RE = /^(\d{2})\.\s*(\d{1,2})\.\s*(\d{1,2})\s*본\s*인\s*(\d{3,4})$/
+// Lines to skip outright (section headers / subtotals / page noise)
+const SAMSUNG_SKIP_EXACT = new Set([
+  '일시불', '할부', '해외', '국내', '현금서비스', '카드론', '이전월', '합계',
+])
+function isSamsungSkipLine(line: string): boolean {
+  if (SAMSUNG_SKIP_EXACT.has(line)) return true
+  if (line.startsWith('소계')) return true   // "소계 총 7건 275,242원"
+  if (/^합계\b/.test(line)) return true
+  return false
+}
+
+/**
+ * Parses Samsung-style statement text. Walks lines as a stream and builds
+ * (merchant, amount, date+owner) triples. Inline discount lines like
+ * "LINK할인혜택 -2,000원" attach to either the pending or last-emitted row,
+ * whichever has not yet been finalized.
+ *
+ * Two-digit year (e.g., "26") is expanded to 20YY.
+ */
+export function parseSamsungStatement(text: string): ParsedRow[] {
+  const rows: ParsedRow[] = []
+  let pendingMerchant: string | null = null
+  let pendingAmount: number | null = null
+  let pendingDiscount: number | null = null
+  let lastEmitted: ParsedRow | null = null
+
+  for (const rawLine of text.split(/\r?\n/)) {
+    const line = rawLine.trim()
+    if (!line) continue
+    if (isSamsungSkipLine(line)) continue
+
+    // 1) Date+owner line — finalize the pending triple
+    const dateOwnerMatch = line.match(SAMSUNG_DATE_OWNER_LINE_RE)
+    if (dateOwnerMatch) {
+      const [, yy, m, d, suffix] = dateOwnerMatch
+      if (pendingMerchant && pendingAmount != null) {
+        const row: ParsedRow = {
+          index: rows.length,
+          merchant: pendingMerchant,
+          amount: pendingAmount,
+          date: `20${yy}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`,
+          cardSuffix: suffix,
+        }
+        if (pendingDiscount != null) row.discount = pendingDiscount
+        rows.push(row)
+        lastEmitted = row
+      }
+      pendingMerchant = null
+      pendingAmount = null
+      pendingDiscount = null
+      continue
+    }
+
+    // 2) Discount line — attach to whichever transaction is closest
+    const adj = parseAdjustment(line)
+    if (adj && adj.kind === 'discount') {
+      if (pendingAmount != null) {
+        pendingDiscount = (pendingDiscount ?? 0) + adj.value
+      } else if (lastEmitted) {
+        lastEmitted.discount = (lastEmitted.discount ?? 0) + adj.value
+      }
+      continue
+    }
+
+    // 3) Amount line
+    const amountMatch = line.match(SAMSUNG_AMOUNT_RE)
+    if (amountMatch) {
+      const value = parseInt(amountMatch[1].replace(/,/g, ''), 10)
+      if (!Number.isNaN(value)) {
+        pendingAmount = value
+      }
+      continue
+    }
+
+    // 4) Otherwise: treat as merchant candidate. Replace any earlier candidate
+    //    that wasn't followed by an amount — the *latest* line before an
+    //    amount wins (handles header/footer noise that appears between rows).
+    pendingMerchant = line
+  }
+
+  return rows
 }
 
 // ─── Merchant keyword rules (for auto-categorization) ──
@@ -701,7 +831,7 @@ export async function analyzeStatement(
   categories: TransactionCategory[],
   existing: Transaction[],
 ): Promise<AnalyzedRow[]> {
-  const rows = parseShinhanStatement(text)
+  const rows = parseCardStatement(text)
   // Load registered subscriptions + learned aliases + history stats once.
   // O(history + N) total rather than O(N × history).
   const [subscriptions, aliases] = await Promise.all([

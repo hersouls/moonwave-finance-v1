@@ -22,6 +22,7 @@ import { durations, easeOutExpo, springSnappy } from '@/lib/motionConfig'
 import {
   analyzeStatement,
   importStatement,
+  detectCardCompany,
   type AnalyzedRow,
   type DuplicateLevel,
 } from '@/services/cardStatementImport'
@@ -45,7 +46,7 @@ const PAYMENT_METHOD_ICONS: Record<PaymentMethod, typeof Banknote> = {
   other: MoreHorizontal,
 }
 
-const SAMPLE_TEXT = `(주)신세계사이먼 파주점
+const SAMPLE_TEXT_SHINHAN = `(주)신세계사이먼 파주점
 293,100원
 2026.04.05
 본인643
@@ -55,6 +56,19 @@ CLAUDE.AI SUBSCRIPTION
 2026.03.23
 본인429
 수수료 301원`
+
+const SAMPLE_TEXT_SAMSUNG = `일시불
+소계 총 2건 100,000원
+컬리페이_컬리
+60,000원
+
+26. 4. 5본 인 0438
+LINK할인혜택 -2,000원
+
+설성푸드 주식회사
+40,000원
+
+26. 4. 12본 인 0438`
 
 export function CardStatementImportModal({ open, onClose, initialText }: Props) {
   const transactions = useTransactionStore((s) => s.transactions)
@@ -513,7 +527,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
 
 function PremiumHeader({ step, onClose, canClose }: { step: Step; onClose: () => void; canClose: boolean }) {
   const stepInfo: Record<Step, { title: string; subtitle: string }> = {
-    input: { title: '카드 명세서 가져오기', subtitle: '신한카드 명세서 텍스트를 붙여넣어 주세요' },
+    input: { title: '카드 명세서 가져오기', subtitle: '신한·삼성카드 명세서 텍스트를 붙여넣어 주세요' },
     review: { title: '검토 및 매핑', subtitle: '거래수단 · 멤버 매핑을 확인하세요' },
     importing: { title: '가져오는 중', subtitle: '잠시만 기다려 주세요' },
     result: { title: '완료', subtitle: '거래가 성공적으로 등록되었습니다' },
@@ -604,7 +618,11 @@ function InputStep({
   onToggleSample: () => void
 }) {
   const lineCount = text.split('\n').filter(l => l.trim()).length
-  const estimatedRows = Math.floor(lineCount / 4)
+  // 카드사별로 거래 1건당 차지하는 라인 수가 다르다: Shinhan 4줄, Samsung 3줄
+  const detectedCompany = text.trim() ? detectCardCompany(text) : 'unknown'
+  const linesPerRow = detectedCompany === 'samsung' ? 3 : 4
+  const estimatedRows = Math.floor(lineCount / linesPerRow)
+  const companyLabel = detectedCompany === 'samsung' ? '삼성카드' : detectedCompany === 'shinhan' ? '신한카드' : '카드사 미감지'
 
   return (
     <div className="space-y-4 pt-1">
@@ -625,14 +643,27 @@ function InputStep({
           <textarea
             value={text}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="신한카드 앱/웹에서 거래내역을 복사해 붙여넣으세요...&#10;&#10;예시:&#10;가맹점명&#10;금액 (예: 123,456원)&#10;날짜 (예: 2026.04.05)&#10;본인XXX"
+            placeholder="신한·삼성카드 앱/웹에서 거래내역을 복사해 붙여넣으세요...&#10;&#10;[신한] 가맹점 / 금액원 / 2026.04.05 / 본인XXX&#10;[삼성] 가맹점 / 금액원 / 26. 4. 5본 인 XXXX&#10;        + 할인 라인(LINK할인혜택 -N원)은 자동 인식"
             className="w-full min-h-[280px] p-4 bg-surface-primary rounded-2xl text-caption text-heading placeholder:text-disabled outline-none resize-y tabular-nums"
             spellCheck={false}
           />
           {text.trim() && (
-            <div className="absolute bottom-3 right-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[color:var(--color-primary-500)] text-white text-[10px] font-bold shadow-md">
-              <Sparkles className="w-3 h-3" />
-              ~{estimatedRows}건 감지
+            <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+              <span
+                className={clsx(
+                  'inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold shadow-md',
+                  detectedCompany === 'unknown'
+                    ? 'bg-surface-tertiary text-sub ring-1 ring-base'
+                    : 'bg-surface-primary text-heading ring-1 ring-[color:var(--color-primary-300)]',
+                )}
+              >
+                <CreditCard className="w-3 h-3" />
+                {companyLabel}
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[color:var(--color-primary-500)] text-white text-[10px] font-bold shadow-md">
+                <Sparkles className="w-3 h-3" />
+                ~{estimatedRows}건 감지
+              </span>
             </div>
           )}
         </div>
@@ -657,14 +688,25 @@ function InputStep({
             transition={{ duration: durations.base, ease: easeOutExpo }}
             className="overflow-hidden"
           >
-            <div className="rounded-2xl bg-surface-tertiary ring-1 ring-base p-3.5">
-              <p className="text-[11px] text-sub mb-2 font-semibold">
-                <FileText className="inline w-3 h-3 mr-1" />
-                4줄 단위 블록 (가맹점 / 금액 / 날짜 / 카드주인) + 선택 항목
-              </p>
-              <pre className="text-[11px] text-body whitespace-pre-wrap tabular-nums font-mono leading-relaxed">
-                {SAMPLE_TEXT}
-              </pre>
+            <div className="rounded-2xl bg-surface-tertiary ring-1 ring-base p-3.5 space-y-3">
+              <div>
+                <p className="text-[11px] text-sub mb-2 font-semibold">
+                  <FileText className="inline w-3 h-3 mr-1" />
+                  신한카드 — 4줄 블록 (가맹점 / 금액 / 날짜 / 카드주인) + 선택 항목
+                </p>
+                <pre className="text-[11px] text-body whitespace-pre-wrap tabular-nums font-mono leading-relaxed">
+                  {SAMPLE_TEXT_SHINHAN}
+                </pre>
+              </div>
+              <div className="pt-2 border-t border-dashed border-[color:var(--border-default)]">
+                <p className="text-[11px] text-sub mb-2 font-semibold">
+                  <FileText className="inline w-3 h-3 mr-1" />
+                  삼성카드 — 가맹점 / 금액 / "YY. M. DD본 인 XXXX" 3줄 + 할인 라인(자유 라벨)
+                </p>
+                <pre className="text-[11px] text-body whitespace-pre-wrap tabular-nums font-mono leading-relaxed">
+                  {SAMPLE_TEXT_SAMSUNG}
+                </pre>
+              </div>
             </div>
           </motion.div>
         )}
