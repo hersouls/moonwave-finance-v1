@@ -81,9 +81,117 @@ interface ParsedDividend {
   stockName: string; dividendAmount: number; quantity: number; tax: number
 }
 
-function parseTrades(text: string): ParsedTrade[] {
+// Pre-process: fix common paste corruption (line breaks eaten between values)
+function preProcessTradeText(text: string): string {
+  let s = text
+  // "26.2.26국내주식" → "26.2.26\n국내주식"
+  s = s.replace(/(\d{2}\.\d{1,2}\.\d{1,2})(국내주식|해외주식|국내ETF|해외ETF)/g, '$1\n$2')
+  // "logo경방" → "logo\n경방"
+  s = s.replace(/logo([^\s])/g, 'logo\n$1')
+  // "+30,143원+70원" → "+30,143원\n+70원"  (amount glued to next amount)
+  s = s.replace(/([\d,]+원)([+-][\d,]+원)/g, '$1\n$2')
+  // "973,000원894,000원" → "973,000원\n894,000원" (no sign on second)
+  s = s.replace(/([\d,]+원)(\d[\d,]+원)/g, '$1\n$2')
+  // "284,000원1주" → "284,000원\n1주"
+  s = s.replace(/([\d,]+원)(\d+주)/g, '$1\n$2')
+  // "국내주식logo" → "국내주식\nlogo"
+  s = s.replace(/(국내주식|해외주식|국내ETF|해외ETF)(logo)/g, '$1\n$2')
+  // Remove trailing summary line "총 판매수익 ..."
+  s = s.replace(/총\s*판매수익.*$/m, '')
+  return s
+}
+
+// Detect format: "26.5.19" (detail view) vs "2026-05-28" (card view)
+function detectTradeFormat(text: string): 'detail' | 'card' {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  for (const l of lines.slice(0, 10)) {
+    if (l.match(/^\d{4}-\d{2}-\d{2}$/)) return 'card'
+    if (l.match(/^\d{2}\.\d{1,2}\.\d{1,2}/)) return 'detail'
+  }
+  return 'detail'
+}
+
+// Card view parser: "종목명 / 국내주식 / 2026-05-28 / 187주 · 2,876,060원 / 대성 / +412,540원 / +16.7%"
+function parseTradesCardView(text: string): ParsedTrade[] {
   const results: ParsedTrade[] = []
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  let i = 0
+
+  while (i < lines.length) {
+    // Find stock name: Korean text that is NOT a date, NOT a number, NOT an asset type, NOT a member name
+    // Pattern: look for asset type line "국내주식" or "해외주식" then backtrack to stock name
+    const assetTypeIdx = lines.findIndex((l, idx) => idx >= i && (l === '국내주식' || l === '해외주식' || l === '국내ETF' || l === '해외ETF'))
+    if (assetTypeIdx < 0 || assetTypeIdx <= i) { i++; continue }
+
+    // Stock name is the line before asset type
+    const stockName = lines[assetTypeIdx - 1]
+    // Skip if stockName looks like a date or amount
+    if (!stockName || stockName.match(/^\d{4}-\d{2}-\d{2}$/) || stockName.match(/^[+-]?[\d,]+원$/)) { i = assetTypeIdx + 1; continue }
+
+    const assetTypeRaw = lines[assetTypeIdx]
+    let assetType: InvestmentAssetType = '국내주식'
+    let market: InvestmentMarket = 'domestic'
+    if (assetTypeRaw.includes('해외')) { market = 'overseas'; assetType = '해외주식' }
+
+    let j = assetTypeIdx + 1
+
+    // Next: date line "2026-05-28"
+    if (j >= lines.length) { i = j; continue }
+    let sellDate = ''
+    const dateMatch = lines[j].match(/^(\d{4}-\d{2}-\d{2})$/)
+    if (dateMatch) { sellDate = dateMatch[1]; j++ }
+    else { i = assetTypeIdx + 1; continue }
+
+    // Next: "187주 · 2,876,060원" or "187주 · 2,876,060원"
+    if (j >= lines.length) { i = j; continue }
+    const qtyAmtMatch = lines[j].match(/^([\d,.]+)주\s*·\s*([\d,]+)원$/)
+    let sellQuantity = 0, totalSellAmount = 0
+    if (qtyAmtMatch) {
+      sellQuantity = Math.round(parseQuantityFloat(qtyAmtMatch[1]))
+      totalSellAmount = Math.abs(parseAmount(qtyAmtMatch[2]))
+      j++
+    } else { i = assetTypeIdx + 1; continue }
+
+    // Next: member name (skip)
+    if (j < lines.length && !lines[j].match(/^[+-]/) && !lines[j].match(/^\d/)) j++
+
+    // Next: profit "+412,540원" or "-2,645원"
+    if (j >= lines.length) { i = j; continue }
+    const totalProfit = parseAmount(lines[j]); j++
+
+    // Next: profit rate "+16.7%" (might be on same or next line)
+    let profitRate = 0
+    if (j < lines.length && lines[j].match(/%/)) {
+      profitRate = parseRate(lines[j]); j++
+    }
+
+    // Calculate derived fields
+    const totalBuyAmount = totalSellAmount - totalProfit
+    const profitPerShare = sellQuantity > 0 ? Math.round(totalProfit / sellQuantity) : 0
+    const sellPricePerShare = sellQuantity > 0 ? Math.round(totalSellAmount / sellQuantity) : 0
+    const buyPricePerShare = sellQuantity > 0 ? Math.round(totalBuyAmount / sellQuantity) : 0
+
+    results.push({
+      sellDate, assetType, market, stockName,
+      totalProfit, profitRate, totalSellAmount, totalBuyAmount,
+      sellQuantity, fee: 0, tax: 0, profitPerShare,
+      sellPricePerShare, buyPricePerShare,
+      fxGainLoss: null, sellExchangeRate: null, buyExchangeRate: null,
+    })
+
+    i = j
+  }
+  return results
+}
+
+function parseTrades(text: string): ParsedTrade[] {
+  const format = detectTradeFormat(text)
+  if (format === 'card') return parseTradesCardView(text)
+
+  // Detail view parser (original: "26.5.19" format)
+  const cleaned = preProcessTradeText(text)
+  const results: ParsedTrade[] = []
+  const lines = cleaned.split('\n').map(l => l.trim()).filter(Boolean)
   let i = 0
   while (i < lines.length) {
     const dateMatch = lines[i].match(/^(\d{2}\.\d{1,2}\.\d{1,2})/)
@@ -129,44 +237,127 @@ function parseTrades(text: string): ParsedTrade[] {
   return results
 }
 
-function parseDividends(text: string): ParsedDividend[] {
+// Pre-process dividend raw text (fix glued lines)
+function preProcessDividendText(text: string): string {
+  let s = text
+  // "176원26.4.15" → "176원\n26.4.15"
+  s = s.replace(/([\d,]+원)(\d{2}\.\d)/g, '$1\n$2')
+  // "+4,000원8주" → "+4,000원\n8주"
+  s = s.replace(/([\d,]+원)(\d+[주])/g, '$1\n$2')
+  // "3주173원" → "3주\n173원"
+  s = s.replace(/([\d.]+주)([\d,]+원)/g, '$1\n$2')
+  // "+41,389원19주" → "+41,389원\n19주"
+  s = s.replace(/([\d,]+원)(\d+주)/g, '$1\n$2')
+  // "26.2.26국내주식" etc
+  s = s.replace(/(\d{2}\.\d{1,2}\.\d{1,2})(국내|해외)/g, '$1\n$2')
+  // "비고26.4.17" → skip header line
+  s = s.replace(/^비고.*$/m, '')
+  // "logo종목" → "logo\n종목"
+  s = s.replace(/logo([^\s])/g, 'logo\n$1')
+  return s
+}
+
+// Card-view dividend parser: "종목명 / 해외주식 / 2026-04-16 / 3주 · 배당락 2026-03-31 / 대성 / +840원 / 세금 176원"
+function parseDividendsCardView(text: string): ParsedDividend[] {
   const results: ParsedDividend[] = []
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
   let i = 0
+
   while (i < lines.length) {
+    // Find asset type line
+    const atIdx = lines.findIndex((l, idx) => idx >= i && (l === '국내주식' || l === '해외주식'))
+    if (atIdx < 0 || atIdx <= i) { i++; continue }
+
+    const stockName = lines[atIdx - 1]
+    if (!stockName || stockName.match(/^\d{4}-\d{2}-\d{2}$/) || stockName.match(/^[+-]?[\d,]+원$/)) { i = atIdx + 1; continue }
+
+    const assetTypeRaw = lines[atIdx]
+    let assetType: InvestmentAssetType = '국내주식'
+    let market: InvestmentMarket = 'domestic'
+    if (assetTypeRaw.includes('해외')) { market = 'overseas'; assetType = '해외주식' }
+
+    let j = atIdx + 1
+
+    // Date "2026-04-16"
+    if (j >= lines.length) { i = j; continue }
+    let paymentDate = ''
+    const dm = lines[j].match(/^(\d{4}-\d{2}-\d{2})$/)
+    if (dm) { paymentDate = dm[1]; j++ } else { i = atIdx + 1; continue }
+
+    // "3주 · 배당락 2026-03-31" or "16주 · 배당락 2025-12-29"
+    if (j >= lines.length) { i = j; continue }
+    let quantity = 0, exDividendDate = ''
+    const qtyExMatch = lines[j].match(/^([\d,.]+)주\s*·\s*배당락\s*(\d{4}-\d{2}-\d{2})/)
+    if (qtyExMatch) {
+      quantity = parseQuantityFloat(qtyExMatch[1])
+      exDividendDate = qtyExMatch[2]
+      j++
+    } else { i = atIdx + 1; continue }
+
+    // Member name (skip)
+    if (j < lines.length && !lines[j].match(/^[+-]/) && !lines[j].match(/^\d/) && !lines[j].match(/^세금/)) j++
+
+    // Dividend amount "+3,200원"
+    if (j >= lines.length) { i = j; continue }
+    const dividendAmount = Math.abs(parseAmount(lines[j])); j++
+
+    // Optional tax "세금 176원"
+    let tax = 0
+    if (j < lines.length && lines[j].match(/^세금/)) {
+      tax = Math.abs(parseAmount(lines[j])); j++
+    }
+
+    results.push({ paymentDate, exDividendDate, assetType, market, stockName, dividendAmount, quantity, tax })
+    i = j
+  }
+  return results
+}
+
+function parseDividends(text: string): ParsedDividend[] {
+  // Auto-detect format
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  const isCardView = lines.some(l => l.match(/^\d{4}-\d{2}-\d{2}$/)) && lines.some(l => l.includes('배당락'))
+  if (isCardView) return parseDividendsCardView(text)
+
+  // Detail view (raw): pre-process then parse
+  const cleaned = preProcessDividendText(text)
+  const results: ParsedDividend[] = []
+  const clines = cleaned.split('\n').map(l => l.trim()).filter(Boolean)
+  let i = 0
+  while (i < clines.length) {
     // Payment date
-    const dateMatch = lines[i].match(/^(\d{2}\.\d{1,2}\.\d{1,2})/)
+    const dateMatch = clines[i].match(/^(\d{2}\.\d{1,2}\.\d{1,2})/)
     if (!dateMatch) { i++; continue }
     const paymentDate = parseYY(dateMatch[1])
     if (!paymentDate) { i++; continue }
     i++
     // Ex-dividend date
-    if (i >= lines.length) break
-    const exMatch = lines[i].match(/^(\d{2}\.\d{1,2}\.\d{1,2})/)
+    if (i >= clines.length) break
+    const exMatch = clines[i].match(/^(\d{2}\.\d{1,2}\.\d{1,2})/)
     if (!exMatch) { i++; continue }
     const exDividendDate = parseYY(exMatch[1])
     if (!exDividendDate) { i++; continue }
     i++
     // Asset type
-    if (i >= lines.length) break
-    const assetTypeRaw = lines[i].trim()
+    if (i >= clines.length) break
+    const assetTypeRaw = clines[i].trim()
     let assetType: InvestmentAssetType = '국내주식'
     let market: InvestmentMarket = 'domestic'
     if (assetTypeRaw.includes('해외')) { market = 'overseas'; assetType = '해외주식' }
     i++
-    if (i < lines.length && lines[i].toLowerCase() === 'logo') i++
+    if (i < clines.length && clines[i].toLowerCase() === 'logo') i++
     // Stock name
-    if (i >= lines.length) break
-    const stockName = lines[i].trim(); i++
+    if (i >= clines.length) break
+    const stockName = clines[i].trim(); i++
     // Dividend amount
-    if (i >= lines.length) break
-    const dividendAmount = Math.abs(parseAmount(lines[i])); i++
+    if (i >= clines.length) break
+    const dividendAmount = Math.abs(parseAmount(clines[i])); i++
     // Quantity
-    if (i >= lines.length) break
-    const quantity = parseQuantityFloat(lines[i]); i++
+    if (i >= clines.length) break
+    const quantity = parseQuantityFloat(clines[i]); i++
     // Tax
-    if (i >= lines.length) break
-    const tax = Math.abs(parseAmount(lines[i])); i++
+    if (i >= clines.length) break
+    const tax = Math.abs(parseAmount(clines[i])); i++
     results.push({ paymentDate, exDividendDate, assetType, market, stockName, dividendAmount, quantity, tax })
   }
   return results
