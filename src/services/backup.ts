@@ -3,7 +3,7 @@ import { BACKUP_CONFIG } from '@/utils/constants'
 import type { BackupFile } from '@/lib/types'
 
 export async function exportBackup(): Promise<void> {
-  const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans] = await Promise.all([
+  const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans, investmentTrades, dividends, accountInterests] = await Promise.all([
     db.members.toArray(),
     db.assetCategories.toArray(),
     db.assetItems.toArray(),
@@ -15,6 +15,9 @@ export async function exportBackup(): Promise<void> {
     db.paymentMethodItems.toArray(),
     db.subscriptions.toArray(),
     db.loans.toArray(),
+    db.investmentTrades.toArray(),
+    db.dividends.toArray(),
+    db.accountInterests.toArray(),
   ])
 
   const backup: BackupFile = {
@@ -33,6 +36,9 @@ export async function exportBackup(): Promise<void> {
       paymentMethodItems,
       subscriptions,
       loans,
+      investmentTrades,
+      dividends,
+      accountInterests,
       settings: {},
     },
   }
@@ -61,7 +67,7 @@ export async function importBackup(file: File): Promise<void> {
     throw new Error('올바르지 않은 백업 파일입니다.')
   }
 
-  await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions, db.loans], async () => {
+  await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions, db.loans, db.investmentTrades, db.dividends, db.accountInterests], async () => {
     await db.members.clear()
     await db.assetCategories.clear()
     await db.assetItems.clear()
@@ -73,6 +79,9 @@ export async function importBackup(file: File): Promise<void> {
     await db.paymentMethodItems.clear()
     await db.subscriptions.clear()
     await db.loans.clear()
+    await db.investmentTrades.clear()
+    await db.dividends.clear()
+    await db.accountInterests.clear()
 
     if (backup.data.members?.length) await db.members.bulkAdd(backup.data.members)
     if (backup.data.assetCategories?.length) await db.assetCategories.bulkAdd(backup.data.assetCategories)
@@ -85,6 +94,9 @@ export async function importBackup(file: File): Promise<void> {
     if (backup.data.paymentMethodItems?.length) await db.paymentMethodItems.bulkAdd(backup.data.paymentMethodItems)
     if (backup.data.subscriptions?.length) await db.subscriptions.bulkAdd(backup.data.subscriptions)
     if (backup.data.loans?.length) await db.loans.bulkAdd(backup.data.loans)
+    if (backup.data.investmentTrades?.length) await db.investmentTrades.bulkAdd(backup.data.investmentTrades)
+    if (backup.data.dividends?.length) await db.dividends.bulkAdd(backup.data.dividends)
+    if (backup.data.accountInterests?.length) await db.accountInterests.bulkAdd(backup.data.accountInterests)
   })
 }
 
@@ -114,6 +126,52 @@ export async function exportTransactionsCSV(): Promise<void> {
   const dateStr = new Date().toISOString().split('T')[0]
   link.href = url
   link.download = `moonwave_transactions_${dateStr}.csv`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+export async function exportInvestmentCSV(): Promise<void> {
+  const trades = await db.investmentTrades.toArray()
+  const divs = await db.dividends.toArray()
+  const interests = await db.accountInterests.toArray()
+  const members = await db.members.toArray()
+  const memberMap = new Map(members.map(m => [m.id, m.name]))
+
+  // Trades
+  const tHeader = '유형,판매일,종목유형,마켓,종목명,판매수익,수익률(%),판매금액,구매금액,수량,수수료,제세금,1주당수익,1주당판매가,1주당구매가,환차손익,판매환율,구매환율,구성원'
+  const tRows = trades.sort((a, b) => b.sellDate.localeCompare(a.sellDate)).map(t => {
+    const mem = t.memberId != null ? memberMap.get(t.memberId) || '' : ''
+    return `판매수익,${t.sellDate},${t.assetType},${t.market},"${t.stockName}",${t.totalProfit},${t.profitRate},${t.totalSellAmount},${t.totalBuyAmount},${t.sellQuantity},${t.fee},${t.tax},${t.profitPerShare},${t.sellPricePerShare},${t.buyPricePerShare},${t.fxGainLoss ?? ''},${t.sellExchangeRate ?? ''},${t.buyExchangeRate ?? ''},"${mem}"`
+  })
+
+  // Dividends
+  const dHeader = '유형,지급일,배당락일,종목유형,마켓,종목명,배당금,수량,제세금,구성원'
+  const dRows = divs.sort((a, b) => b.paymentDate.localeCompare(a.paymentDate)).map(d => {
+    const mem = d.memberId != null ? memberMap.get(d.memberId) || '' : ''
+    return `배당금,${d.paymentDate},${d.exDividendDate},${d.assetType},${d.market},"${d.stockName}",${d.dividendAmount},${d.quantity},${d.tax},"${mem}"`
+  })
+
+  // Interests
+  const iHeader = '유형,입금일,기간시작,기간종료,이자유형,통화,이자,제세금,이자율(%),구성원'
+  const iRows = interests.sort((a, b) => b.depositDate.localeCompare(a.depositDate)).map(r => {
+    const mem = r.memberId != null ? memberMap.get(r.memberId) || '' : ''
+    return `계좌이자,${r.depositDate},${r.periodStart},${r.periodEnd},${r.interestType},${r.currency},${r.interestAmount},${r.tax},${r.interestRate},"${mem}"`
+  })
+
+  const sections = []
+  if (tRows.length) sections.push(`[판매수익]\n${tHeader}\n${tRows.join('\n')}`)
+  if (dRows.length) sections.push(`[배당금]\n${dHeader}\n${dRows.join('\n')}`)
+  if (iRows.length) sections.push(`[계좌이자]\n${iHeader}\n${iRows.join('\n')}`)
+
+  const csv = '\uFEFF' + sections.join('\n\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  const dateStr = new Date().toISOString().split('T')[0]
+  link.href = url
+  link.download = `moonwave_investments_${dateStr}.csv`
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)

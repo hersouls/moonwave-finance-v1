@@ -15,6 +15,7 @@ const AssetCalendarPage = lazy(() => import('./components/calendar/AssetCalendar
 const ReportsPage = lazy(() => import('./components/reports/ReportsPage').then(m => ({ default: m.ReportsPage })))
 const ProfilePage = lazy(() => import('./components/profile/ProfilePage').then(m => ({ default: m.ProfilePage })))
 const SubscriptionPage = lazy(() => import('./components/subscriptions/SubscriptionPage').then(m => ({ default: m.SubscriptionPage })))
+const InvestmentPage = lazy(() => import('./components/investments/InvestmentPage').then(m => ({ default: m.InvestmentPage })))
 const NotFoundPage = lazy(() => import('./components/ui/NotFoundPage').then(m => ({ default: m.NotFoundPage })))
 
 function LazyPage({ children }: { children: React.ReactNode }) {
@@ -41,6 +42,8 @@ export const router = createBrowserRouter([
       { path: 'calendar', element: <Navigate to="/ledger/calendar" replace /> },
       // 구독 축 — 자동 감지 기반 단일 페이지
       { path: 'subscriptions', element: <LazyPage><SubscriptionPage /></LazyPage> },
+      // 투자수익 축
+      { path: 'investments', element: <LazyPage><InvestmentPage /></LazyPage> },
       // Legacy redirects (pre-v2 separate registration)
       { path: 'subscriptions/domestic', element: <Navigate to="/subscriptions" replace /> },
       { path: 'subscriptions/international', element: <Navigate to="/subscriptions" replace /> },

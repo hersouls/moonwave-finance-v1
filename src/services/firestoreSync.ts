@@ -27,10 +27,10 @@ import type {
   SyncChangeLogEntry,
 } from '@/lib/types'
 
-export type SyncableTable = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions' | 'loans' | 'merchantAliases'
+export type SyncableTable = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions' | 'loans' | 'investmentTrades' | 'dividends' | 'accountInterests' | 'merchantAliases'
 
 const BATCH_LIMIT = 499
-const ALL_TABLES: SyncableTable[] = ['members', 'assetCategories', 'assetItems', 'dailyValues', 'transactionCategories', 'transactions', 'budgets', 'goals', 'paymentMethodItems', 'subscriptions', 'loans', 'merchantAliases']
+const ALL_TABLES: SyncableTable[] = ['members', 'assetCategories', 'assetItems', 'dailyValues', 'transactionCategories', 'transactions', 'budgets', 'goals', 'paymentMethodItems', 'subscriptions', 'loans', 'investmentTrades', 'dividends', 'accountInterests', 'merchantAliases']
 
 // ─── Cloud payload helpers ────────────────────────────────────────
 //
@@ -217,7 +217,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
   try {
     await ensureAndPersistSyncIds()
 
-    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans, merchantAliases] = await Promise.all([
+    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans, investmentTrades, dividends, accountInterests, merchantAliases] = await Promise.all([
       db.members.toArray(),
       db.assetCategories.toArray(),
       db.assetItems.toArray(),
@@ -229,6 +229,9 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       db.paymentMethodItems.toArray(),
       db.subscriptions.toArray(),
       db.loans.toArray(),
+      db.investmentTrades.toArray(),
+      db.dividends.toArray(),
+      db.accountInterests.toArray(),
       db.merchantAliases.toArray(),
     ])
 
@@ -244,6 +247,9 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       uploadTable(uid, 'paymentMethodItems', paymentMethodItems.map(ensureSyncId)),
       uploadTable(uid, 'subscriptions', subscriptions.map(ensureSyncId)),
       uploadTable(uid, 'loans', loans.map(ensureSyncId)),
+      uploadTable(uid, 'investmentTrades', investmentTrades.map(ensureSyncId)),
+      uploadTable(uid, 'dividends', dividends.map(ensureSyncId)),
+      uploadTable(uid, 'accountInterests', accountInterests.map(ensureSyncId)),
       uploadTable(uid, 'merchantAliases', merchantAliases.map(ensureSyncId)),
     ]))
 
@@ -260,6 +266,9 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       paymentMethodItems: new Set(paymentMethodItems.map(r => r.syncId).filter(Boolean) as string[]),
       subscriptions: new Set(subscriptions.map(r => r.syncId).filter(Boolean) as string[]),
       loans: new Set(loans.map(r => r.syncId).filter(Boolean) as string[]),
+      investmentTrades: new Set(investmentTrades.map(r => r.syncId).filter(Boolean) as string[]),
+      dividends: new Set(dividends.map(r => r.syncId).filter(Boolean) as string[]),
+      accountInterests: new Set(accountInterests.map(r => r.syncId).filter(Boolean) as string[]),
       merchantAliases: new Set(merchantAliases.map(r => r.syncId).filter(Boolean) as string[]),
     }
 
@@ -1024,6 +1033,15 @@ const TABLE_FK_DEFS: Partial<Record<SyncableTable, Array<{ field: string; refTab
   loans: [
     { field: 'linkedAssetItemId', refTable: 'assetItems' },
   ],
+  investmentTrades: [
+    { field: 'memberId', refTable: 'members' },
+  ],
+  dividends: [
+    { field: 'memberId', refTable: 'members' },
+  ],
+  accountInterests: [
+    { field: 'memberId', refTable: 'members' },
+  ],
   merchantAliases: [
     { field: 'categoryId', refTable: 'transactionCategories' },
     { field: 'subscriptionId', refTable: 'subscriptions' },
@@ -1189,7 +1207,7 @@ function recordUnmappedFks(
 type DexieTable = typeof db.members | typeof db.assetCategories | typeof db.assetItems |
   typeof db.dailyValues | typeof db.transactionCategories | typeof db.transactions |
   typeof db.budgets | typeof db.goals | typeof db.paymentMethodItems | typeof db.subscriptions |
-  typeof db.loans | typeof db.merchantAliases
+  typeof db.loans | typeof db.investmentTrades | typeof db.dividends | typeof db.accountInterests | typeof db.merchantAliases
 
 function getLocalTable(tableName: SyncableTable): DexieTable {
   const map: Record<SyncableTable, DexieTable> = {
@@ -1204,6 +1222,9 @@ function getLocalTable(tableName: SyncableTable): DexieTable {
     paymentMethodItems: db.paymentMethodItems,
     subscriptions: db.subscriptions,
     loans: db.loans,
+    investmentTrades: db.investmentTrades,
+    dividends: db.dividends,
+    accountInterests: db.accountInterests,
     merchantAliases: db.merchantAliases,
   }
   return map[tableName]

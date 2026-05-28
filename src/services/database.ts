@@ -13,6 +13,9 @@ import type {
   PaymentMethodItem,
   Subscription,
   Loan,
+  InvestmentTrade,
+  Dividend,
+  AccountInterest,
   MerchantAlias,
   SyncChangeLogEntry,
   SyncTombstone,
@@ -30,6 +33,9 @@ class FinanceDatabase extends Dexie {
   paymentMethodItems!: Table<PaymentMethodItem>
   subscriptions!: Table<Subscription>
   loans!: Table<Loan>
+  investmentTrades!: Table<InvestmentTrade>
+  dividends!: Table<Dividend>
+  accountInterests!: Table<AccountInterest>
   merchantAliases!: Table<MerchantAlias>
   syncChangeLog!: Table<SyncChangeLogEntry>
   syncTombstones!: Table<SyncTombstone>
@@ -239,6 +245,27 @@ class FinanceDatabase extends Dexie {
         })
       }
     })
+
+    // v12: add investmentTrades + dividends tables
+    this.version(12).stores({
+      members: '++id, syncId, name, sortOrder',
+      assetCategories: '++id, syncId, name, type, sortOrder',
+      assetItems: '++id, syncId, memberId, categoryId, type, isActive, sortOrder',
+      dailyValues: '++id, syncId, assetItemId, date, [assetItemId+date]',
+      transactionCategories: '++id, syncId, name, type, sortOrder',
+      transactions: '++id, syncId, memberId, type, categoryId, date, isRecurring, recurSourceId, paymentMethod, paymentMethodItemId, subscriptionId',
+      budgets: '++id, syncId, categoryId, month',
+      goals: '++id, syncId, targetDate',
+      paymentMethodItems: '++id, syncId, type, name, sortOrder, linkedAssetItemId',
+      subscriptions: '++id, syncId, currency, category, status, billingDay, cycle, sortOrder, paymentMethodItemId',
+      loans: '++id, syncId, isActive, sortOrder',
+      investmentTrades: '++id, syncId, memberId, sellDate, assetType, market, stockName, sortOrder, [sellDate+stockName+sellQuantity]',
+      dividends: '++id, syncId, memberId, paymentDate, exDividendDate, assetType, market, stockName, sortOrder, [paymentDate+stockName+quantity]',
+      accountInterests: '++id, syncId, memberId, depositDate, currency, interestType, sortOrder, [depositDate+periodStart+periodEnd+currency]',
+      merchantAliases: '++id, syncId, &merchantKey, categoryId, source, learnedAt, lastUsedAt',
+      syncChangeLog: '++id, tableName, syncId, processed, timestamp, [tableName+syncId]',
+      syncTombstones: '++id, tableName, syncId, deletedAt, [tableName+syncId]',
+    })
   }
 }
 
@@ -254,7 +281,7 @@ export function setSyncWritingFlag(v: boolean) {
 }
 export function getSyncWritingFlag() { return _syncWritingCount > 0 }
 
-type SyncableTableName = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions' | 'loans' | 'merchantAliases'
+type SyncableTableName = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions' | 'loans' | 'investmentTrades' | 'dividends' | 'accountInterests' | 'merchantAliases'
 
 function installChangeTracking() {
   const tables: { table: Table; name: SyncableTableName }[] = [
@@ -269,6 +296,9 @@ function installChangeTracking() {
     { table: db.paymentMethodItems, name: 'paymentMethodItems' },
     { table: db.subscriptions, name: 'subscriptions' },
     { table: db.loans, name: 'loans' },
+    { table: db.investmentTrades, name: 'investmentTrades' },
+    { table: db.dividends, name: 'dividends' },
+    { table: db.accountInterests, name: 'accountInterests' },
     { table: db.merchantAliases, name: 'merchantAliases' },
   ]
 
@@ -851,6 +881,78 @@ export async function deleteLoan(id: number): Promise<void> {
   await db.loans.delete(id)
 }
 
+// ─── Investment Trade CRUD ──────────────────────
+export async function getAllInvestmentTrades(): Promise<InvestmentTrade[]> {
+  return db.investmentTrades.orderBy('sortOrder').toArray()
+}
+
+export async function addInvestmentTrade(trade: Omit<InvestmentTrade, 'id'>): Promise<number> {
+  return db.investmentTrades.add(trade as InvestmentTrade) as Promise<number>
+}
+
+export async function updateInvestmentTrade(id: number, updates: Partial<InvestmentTrade>): Promise<void> {
+  await db.investmentTrades.update(id, { ...updates, updatedAt: new Date().toISOString() })
+}
+
+export async function deleteInvestmentTrade(id: number): Promise<void> {
+  await db.investmentTrades.delete(id)
+}
+
+export async function findDuplicateInvestmentTrade(sellDate: string, stockName: string, sellQuantity: number): Promise<InvestmentTrade | undefined> {
+  return db.investmentTrades
+    .where('[sellDate+stockName+sellQuantity]')
+    .equals([sellDate, stockName, sellQuantity])
+    .first()
+}
+
+// ─── Dividend CRUD ──────────────────────────────
+export async function getAllDividends(): Promise<Dividend[]> {
+  return db.dividends.orderBy('sortOrder').toArray()
+}
+
+export async function addDividend(div: Omit<Dividend, 'id'>): Promise<number> {
+  return db.dividends.add(div as Dividend) as Promise<number>
+}
+
+export async function updateDividend(id: number, updates: Partial<Dividend>): Promise<void> {
+  await db.dividends.update(id, { ...updates, updatedAt: new Date().toISOString() })
+}
+
+export async function deleteDividend(id: number): Promise<void> {
+  await db.dividends.delete(id)
+}
+
+export async function findDuplicateDividend(paymentDate: string, stockName: string, quantity: number): Promise<Dividend | undefined> {
+  return db.dividends
+    .where('[paymentDate+stockName+quantity]')
+    .equals([paymentDate, stockName, quantity])
+    .first()
+}
+
+// ─── Account Interest CRUD ──────────────────────
+export async function getAllAccountInterests(): Promise<AccountInterest[]> {
+  return db.accountInterests.orderBy('sortOrder').toArray()
+}
+
+export async function addAccountInterest(interest: Omit<AccountInterest, 'id'>): Promise<number> {
+  return db.accountInterests.add(interest as AccountInterest) as Promise<number>
+}
+
+export async function updateAccountInterest(id: number, updates: Partial<AccountInterest>): Promise<void> {
+  await db.accountInterests.update(id, { ...updates, updatedAt: new Date().toISOString() })
+}
+
+export async function deleteAccountInterest(id: number): Promise<void> {
+  await db.accountInterests.delete(id)
+}
+
+export async function findDuplicateAccountInterest(depositDate: string, periodStart: string, periodEnd: string, currency: string): Promise<AccountInterest | undefined> {
+  return db.accountInterests
+    .where('[depositDate+periodStart+periodEnd+currency]')
+    .equals([depositDate, periodStart, periodEnd, currency])
+    .first()
+}
+
 // ─── Recurring Transaction Helpers ───────────────
 export async function getRecurringTransactions(): Promise<Transaction[]> {
   return db.transactions.where('isRecurring').equals(1).toArray()
@@ -873,6 +975,9 @@ export async function clearAllData(): Promise<void> {
   await db.paymentMethodItems.clear()
   await db.subscriptions.clear()
   await db.loans.clear()
+  await db.investmentTrades.clear()
+  await db.dividends.clear()
+  await db.accountInterests.clear()
   await db.merchantAliases.clear()
   await db.syncChangeLog.clear()
   await db.syncTombstones.clear()
