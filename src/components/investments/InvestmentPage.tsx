@@ -247,9 +247,10 @@ function parseTrades(text: string): ParsedTrade[] {
     if (i >= lines.length) break
     const buyPricePerShare = Math.abs(parseAmount(lines[i])); i++
     let fxGainLoss: number | null = null, sellExchangeRate: number | null = null, buyExchangeRate: number | null = null
-    if (i < lines.length) { const v = lines[i].trim(); if (v === '-') { i++ } else if (v.match(/[+-]?\d/)) { fxGainLoss = parseAmount(v); i++ } }
-    if (i < lines.length) { const v = lines[i].trim(); if (v === '-') { i++ } else { sellExchangeRate = parseExchangeRate(v); if (sellExchangeRate !== null) i++ } }
-    if (i < lines.length) { const v = lines[i].trim(); if (v === '-') { i++ } else { buyExchangeRate = parseExchangeRate(v); if (buyExchangeRate !== null) i++ } }
+    const isNextDate = (idx: number) => idx < lines.length && /^\d{2}\.\d{1,2}\.\d{1,2}/.test(lines[idx])
+    if (i < lines.length && !isNextDate(i)) { const v = lines[i].trim(); if (v === '-') { i++ } else if (v.match(/[+-]?\d/)) { fxGainLoss = parseAmount(v); i++ } }
+    if (i < lines.length && !isNextDate(i)) { const v = lines[i].trim(); if (v === '-') { i++ } else { sellExchangeRate = parseExchangeRate(v); if (sellExchangeRate !== null) i++ } }
+    if (i < lines.length && !isNextDate(i)) { const v = lines[i].trim(); if (v === '-') { i++ } else { buyExchangeRate = parseExchangeRate(v); if (buyExchangeRate !== null) i++ } }
     results.push({ sellDate, assetType, market, stockName, totalProfit, profitRate, totalSellAmount, totalBuyAmount, sellQuantity, fee, tax, profitPerShare, sellPricePerShare, buyPricePerShare, fxGainLoss, sellExchangeRate, buyExchangeRate })
   }
   return results
