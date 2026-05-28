@@ -84,20 +84,32 @@ interface ParsedDividend {
 // Pre-process: fix common paste corruption (line breaks eaten between values)
 function preProcessTradeText(text: string): string {
   let s = text
+  // Remove header lines
+  s = s.replace(/^(판매일|종목유형|종목명|총 판매수익|수익률|총 판매금액|총 구매금액|판매수량|수수료|제세금|1주당 수익|1주당 판매가격|1주당 구매가격|환차손익|판매 환율|구매 환율)\s*$/gm, '')
+  // Remove trailing summary line "총 판매수익 ..."
+  s = s.replace(/총\s*판매수익.*$/m, '')
   // "26.2.26국내주식" → "26.2.26\n국내주식"
   s = s.replace(/(\d{2}\.\d{1,2}\.\d{1,2})(국내주식|해외주식|국내ETF|해외ETF)/g, '$1\n$2')
+  // "-26.2.9" (dash FX field glued to date) → "-\n26.2.9"
+  s = s.replace(/^-(\d{2}\.\d{1,2}\.\d{1,2})/gm, '-\n$1')
+  // "--" (double dash) → "-\n-"
+  s = s.replace(/^--$/gm, '-\n-')
   // "logo경방" → "logo\n경방"
-  s = s.replace(/logo([^\s])/g, 'logo\n$1')
-  // "+30,143원+70원" → "+30,143원\n+70원"  (amount glued to next amount)
+  s = s.replace(/logo([^\s\n])/g, 'logo\n$1')
+  // "클래시스+262,764원" or "코리아에셋투자증권+2,251,767원" (Korean text glued to signed amount)
+  s = s.replace(/([가-힣A-Za-z])([+-]\d[\d,]*원)/g, '$1\n$2')
+  // "+370,416원7.1%" (amount glued to rate %)
+  s = s.replace(/([\d,]+원)([\d.]+%)/g, '$1\n$2')
+  // "+30,143원+70원" → "+30,143원\n+70원"  (amount glued to signed amount)
   s = s.replace(/([\d,]+원)([+-][\d,]+원)/g, '$1\n$2')
-  // "973,000원894,000원" → "973,000원\n894,000원" (no sign on second)
+  // "973,000원894,000원" → "973,000원\n894,000원" (unsigned amount glued)
   s = s.replace(/([\d,]+원)(\d[\d,]+원)/g, '$1\n$2')
   // "284,000원1주" → "284,000원\n1주"
   s = s.replace(/([\d,]+원)(\d+주)/g, '$1\n$2')
+  // "0원3,009원" → "0원\n3,009원" (run again for chained)
+  s = s.replace(/([\d,]+원)(\d[\d,]+원)/g, '$1\n$2')
   // "국내주식logo" → "국내주식\nlogo"
   s = s.replace(/(국내주식|해외주식|국내ETF|해외ETF)(logo)/g, '$1\n$2')
-  // Remove trailing summary line "총 판매수익 ..."
-  s = s.replace(/총\s*판매수익.*$/m, '')
   return s
 }
 
@@ -125,8 +137,10 @@ function parseTradesCardView(text: string): ParsedTrade[] {
 
     // Stock name is the line before asset type
     const stockName = lines[assetTypeIdx - 1]
-    // Skip if stockName looks like a date or amount
-    if (!stockName || stockName.match(/^\d{4}-\d{2}-\d{2}$/) || stockName.match(/^[+-]?[\d,]+원$/)) { i = assetTypeIdx + 1; continue }
+    // Skip if stockName looks like a date, amount, asset type keyword, or interest type
+    if (!stockName || stockName.match(/^\d{4}-\d{2}-\d{2}$/) || stockName.match(/^[+-]?[\d,]+원$/)
+      || stockName === '국내주식' || stockName === '해외주식' || stockName === '국내ETF' || stockName === '해외ETF'
+      || stockName.includes('이자')) { i = assetTypeIdx + 1; continue }
 
     const assetTypeRaw = lines[assetTypeIdx]
     let assetType: InvestmentAssetType = '국내주식'
@@ -170,6 +184,9 @@ function parseTradesCardView(text: string): ParsedTrade[] {
     const profitPerShare = sellQuantity > 0 ? Math.round(totalProfit / sellQuantity) : 0
     const sellPricePerShare = sellQuantity > 0 ? Math.round(totalSellAmount / sellQuantity) : 0
     const buyPricePerShare = sellQuantity > 0 ? Math.round(totalBuyAmount / sellQuantity) : 0
+
+    // Skip garbage: zero-profit entries with suspicious data, or stock named as asset type
+    if ((totalProfit === 0 && profitRate === 0) || totalSellAmount < 100) { i = j; continue }
 
     results.push({
       sellDate, assetType, market, stockName,
