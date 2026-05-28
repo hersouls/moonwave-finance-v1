@@ -13,6 +13,7 @@ interface AccountInterestState {
   addInterestsFromParsed: (items: Omit<AccountInterest, 'id' | 'syncId' | 'sortOrder' | 'createdAt' | 'updatedAt'>[]) => Promise<{ added: number; skipped: number }>
   updateInterest: (id: number, updates: Partial<AccountInterest>) => Promise<void>
   deleteInterest: (id: number) => Promise<void>
+  clearAll: () => Promise<void>
 
   getTotalInterest: () => number
   getTotalTax: () => number
@@ -104,6 +105,13 @@ export const useAccountInterestStore = create<AccountInterestState>()(
         await db.deleteAccountInterest(id)
         await get().loadInterests()
         useToastStore.getState().addToast('계좌이자가 삭제되었습니다.', 'info')
+      },
+
+      clearAll: async () => {
+        const all = await db.getAllAccountInterests()
+        for (const r of all) if (r.id != null) await db.deleteAccountInterest(r.id)
+        await get().loadInterests()
+        useToastStore.getState().addToast('계좌이자가 초기화되었습니다.', 'info')
       },
 
       getTotalInterest: () => get().interests.reduce((s, d) => s + d.interestAmount, 0),

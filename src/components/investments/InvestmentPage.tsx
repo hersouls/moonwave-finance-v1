@@ -25,6 +25,7 @@ import {
   ChevronRight,
   Save,
   Plus,
+  RotateCcw,
 } from 'lucide-react'
 import { useInvestmentStore } from '@/stores/investmentStore'
 import { useDividendStore } from '@/stores/dividendStore'
@@ -1967,6 +1968,7 @@ export function InvestmentPage() {
   const loadTrades = useInvestmentStore(s => s.loadTrades)
   const addTradesFromParsed = useInvestmentStore(s => s.addTradesFromParsed)
   const deleteTradeAction = useInvestmentStore(s => s.deleteTrade)
+  const clearAllTrades = useInvestmentStore(s => s.clearAll)
   const getMonthlyTradeStats = useInvestmentStore(s => s.getMonthlyStats)
   const getTopGainers = useInvestmentStore(s => s.getTopGainers)
   const getTopLosers = useInvestmentStore(s => s.getTopLosers)
@@ -1976,6 +1978,7 @@ export function InvestmentPage() {
   const loadDividends = useDividendStore(s => s.loadDividends)
   const addDividendsFromParsed = useDividendStore(s => s.addDividendsFromParsed)
   const deleteDividendAction = useDividendStore(s => s.deleteDividend)
+  const clearAllDividends = useDividendStore(s => s.clearAll)
   const getMonthlyDivStats = useDividendStore(s => s.getMonthlyStats)
   const getTopDivStocks = useDividendStore(s => s.getTopStocks)
 
@@ -1984,6 +1987,7 @@ export function InvestmentPage() {
   const loadInterests = useAccountInterestStore(s => s.loadInterests)
   const addInterestsFromParsed = useAccountInterestStore(s => s.addInterestsFromParsed)
   const deleteInterestAction = useAccountInterestStore(s => s.deleteInterest)
+  const clearAllInterests = useAccountInterestStore(s => s.clearAll)
   const getMonthlyInterestStats = useAccountInterestStore(s => s.getMonthlyStats)
 
   const members = useMemberStore(s => s.members)
@@ -1995,6 +1999,7 @@ export function InvestmentPage() {
   const [selectedDiv, setSelectedDiv] = useState<Dividend | null>(null)
   const [selectedInterest, setSelectedInterest] = useState<AccountInterest | null>(null)
   const [showImport, setShowImport] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editingTrade, setEditingTrade] = useState<InvestmentTrade | null>(null)
   const [editingDiv, setEditingDiv] = useState<Dividend | null>(null)
@@ -2109,6 +2114,13 @@ export function InvestmentPage() {
   const handleDeleteDiv = useCallback(async (id: number) => { await deleteDividendAction(id); setSelectedDiv(null) }, [deleteDividendAction])
   const handleDeleteInterest = useCallback(async (id: number) => { await deleteInterestAction(id); setSelectedInterest(null) }, [deleteInterestAction])
 
+  const handleReset = async () => {
+    if (activeTab === 'trades') await clearAllTrades()
+    else if (activeTab === 'dividends') await clearAllDividends()
+    else if (activeTab === 'interests') await clearAllInterests()
+    setShowResetConfirm(false)
+  }
+
   const openEditTrade = (t: InvestmentTrade) => { setSelectedTrade(null); setEditingTrade(t); setShowForm(true) }
   const openEditDiv = (d: Dividend) => { setSelectedDiv(null); setEditingDiv(d); setShowForm(true) }
   const openEditInterest = (r: AccountInterest) => { setSelectedInterest(null); setEditingInterest(r); setShowForm(true) }
@@ -2147,6 +2159,13 @@ export function InvestmentPage() {
           <TrendingUp className="w-5 h-5" style={{ color: 'var(--color-primary-500)' }} />투자수익
         </h1>
         <div className="flex items-center gap-2">
+          {activeTab !== 'dashboard' && hasData && (
+            <button onClick={() => setShowResetConfirm(true)}
+              className="inline-flex items-center gap-1 h-9 px-3 rounded-2xl text-[12px] font-bold ring-1 transition-all"
+              style={{ color: 'var(--status-danger-text)', borderColor: 'color-mix(in srgb, var(--status-danger-text) 30%, transparent)', backgroundColor: 'var(--status-danger-bg)' }}>
+              <RotateCcw className="w-3.5 h-3.5" />초기화
+            </button>
+          )}
           {activeTab !== 'dashboard' && (
             <button onClick={openNewForm}
               className="inline-flex items-center gap-1 h-9 px-3 rounded-2xl text-[12px] font-bold text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] bg-surface-primary transition-all">
@@ -2351,6 +2370,41 @@ export function InvestmentPage() {
       {selectedTrade && <TradeDetailSheet trade={selectedTrade} memberName={selectedTrade.memberId != null ? memberMap.get(selectedTrade.memberId) : undefined} onClose={() => setSelectedTrade(null)} onDelete={handleDeleteTrade} onEdit={openEditTrade} />}
       {selectedDiv && <DividendDetailSheet div={selectedDiv} memberName={selectedDiv.memberId != null ? memberMap.get(selectedDiv.memberId) : undefined} onClose={() => setSelectedDiv(null)} onDelete={handleDeleteDiv} onEdit={openEditDiv} />}
       {selectedInterest && <InterestDetailSheet interest={selectedInterest} memberName={selectedInterest.memberId != null ? memberMap.get(selectedInterest.memberId) : undefined} onClose={() => setSelectedInterest(null)} onDelete={handleDeleteInterest} onEdit={openEditInterest} />}
+
+      {/* Reset Confirm Dialog */}
+      {showResetConfirm && (
+        <AnimatePresence>
+          <motion.div key="reset-ov" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[var(--z-overlay)] bg-black/40 dark:bg-black/60 backdrop-blur-[12px]"
+            onClick={() => setShowResetConfirm(false)} />
+          <motion.div key="reset-dlg" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 30 }}
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[calc(var(--z-overlay)+1)] w-[calc(100%-2rem)] max-w-sm rounded-3xl bg-surface-primary ring-1 ring-[color:var(--border-default)] p-6 text-center"
+            onClick={e => e.stopPropagation()}>
+            <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center"
+              style={{ backgroundColor: 'var(--status-danger-bg)' }}>
+              <RotateCcw className="w-6 h-6" style={{ color: 'var(--status-danger-text)' }} />
+            </div>
+            <h3 className="text-body3-semi text-heading mb-1">
+              {activeTab === 'trades' ? '판매수익' : activeTab === 'dividends' ? '배당금' : '계좌이자'} 초기화
+            </h3>
+            <p className="text-[12px] text-sub mb-5">
+              등록된 모든 {activeTab === 'trades' ? '판매수익' : activeTab === 'dividends' ? '배당금' : '계좌이자'} 데이터가 삭제됩니다.<br />이 작업은 되돌릴 수 없습니다.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setShowResetConfirm(false)}
+                className="flex-1 h-11 rounded-2xl text-[13px] font-bold text-body ring-1 ring-[color:var(--border-strong)] bg-surface-primary hover:bg-[var(--hover-bg)] transition-all">
+                취소
+              </button>
+              <button onClick={handleReset}
+                className="flex-1 h-11 rounded-2xl text-[13px] font-bold text-white transition-all"
+                style={{ backgroundColor: 'var(--status-danger-text)' }}>
+                초기화
+              </button>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      )}
 
       {/* Import Modal */}
       <PasteImportModal isOpen={showImport} onClose={() => setShowImport(false)}

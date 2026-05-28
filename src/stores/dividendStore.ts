@@ -13,6 +13,7 @@ interface DividendState {
   addDividendsFromParsed: (divs: Omit<Dividend, 'id' | 'syncId' | 'sortOrder' | 'createdAt' | 'updatedAt'>[]) => Promise<{ added: number; skipped: number }>
   updateDividend: (id: number, updates: Partial<Dividend>) => Promise<void>
   deleteDividend: (id: number) => Promise<void>
+  clearAll: () => Promise<void>
 
   getTotalDividend: () => number
   getTotalTax: () => number
@@ -108,6 +109,13 @@ export const useDividendStore = create<DividendState>()(
         await db.deleteDividend(id)
         await get().loadDividends()
         useToastStore.getState().addToast('배당금이 삭제되었습니다.', 'info')
+      },
+
+      clearAll: async () => {
+        const all = await db.getAllDividends()
+        for (const d of all) if (d.id != null) await db.deleteDividend(d.id)
+        await get().loadDividends()
+        useToastStore.getState().addToast('배당금이 초기화되었습니다.', 'info')
       },
 
       getTotalDividend: () => get().dividends.reduce((s, d) => s + d.dividendAmount, 0),

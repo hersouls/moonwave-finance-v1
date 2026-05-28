@@ -13,6 +13,7 @@ interface InvestmentState {
   addTradesFromParsed: (trades: Omit<InvestmentTrade, 'id' | 'syncId' | 'sortOrder' | 'createdAt' | 'updatedAt'>[]) => Promise<{ added: number; skipped: number }>
   updateTrade: (id: number, updates: Partial<InvestmentTrade>) => Promise<void>
   deleteTrade: (id: number) => Promise<void>
+  clearAll: () => Promise<void>
 
   // Computed getters
   getByMarket: (market: InvestmentMarket) => InvestmentTrade[]
@@ -118,6 +119,13 @@ export const useInvestmentStore = create<InvestmentState>()(
         await db.deleteInvestmentTrade(id)
         await get().loadTrades()
         useToastStore.getState().addToast('투자수익이 삭제되었습니다.', 'info')
+      },
+
+      clearAll: async () => {
+        const all = await db.getAllInvestmentTrades()
+        for (const t of all) if (t.id != null) await db.deleteInvestmentTrade(t.id)
+        await get().loadTrades()
+        useToastStore.getState().addToast('판매수익이 초기화되었습니다.', 'info')
       },
 
       // Computed
