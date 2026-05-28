@@ -250,17 +250,37 @@ function preProcessDividendText(text: string): string {
   s = s.replace(/([\d,]+원)(\d+주)/g, '$1\n$2')
   // "26.2.26국내주식" etc
   s = s.replace(/(\d{2}\.\d{1,2}\.\d{1,2})(국내|해외)/g, '$1\n$2')
-  // "비고26.4.17" → skip header line
-  s = s.replace(/^비고.*$/m, '')
+  // "비고26.4.17" → "\n26.4.17" (keep the date, strip header)
+  s = s.replace(/비고(\d{2}\.\d)/g, '\n$1')
+  // Remove leftover header lines
+  s = s.replace(/^(지급일|배당락일|종목유형|종목명|배당금|기준 수량|제세금.*|비고)\s*$/gm, '')
   // "logo종목" → "logo\n종목"
   s = s.replace(/logo([^\s])/g, 'logo\n$1')
   return s
 }
 
-// Card-view dividend parser: "종목명 / 해외주식 / 2026-04-16 / 3주 · 배당락 2026-03-31 / 대성 / +840원 / 세금 176원"
+// Pre-process card-view dividend text
+function preProcessDividendCardText(text: string): string {
+  let s = text
+  // "LG국내주식" → "LG\n국내주식"
+  s = s.replace(/([가-힣A-Za-z0-9&\-]+)(국내주식|해외주식)/g, (_, name, type) => {
+    if (name === '국내' || name === '해외') return `${name}${type}`
+    return `${name}\n${type}`
+  })
+  // "국내주식2026-" → "국내주식\n2026-"
+  s = s.replace(/(국내주식|해외주식)(\d{4}-)/g, '$1\n$2')
+  // "2025-12-12대성" → "2025-12-12\n대성"
+  s = s.replace(/(\d{4}-\d{2}-\d{2})([가-힣])/g, '$1\n$2')
+  // "26-03-02대성" same
+  s = s.replace(/(\d{2}-\d{2})([가-힣])/g, '$1\n$2')
+  return s
+}
+
+// Card-view dividend parser
 function parseDividendsCardView(text: string): ParsedDividend[] {
+  const cleaned = preProcessDividendCardText(text)
   const results: ParsedDividend[] = []
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  const lines = cleaned.split('\n').map(l => l.trim()).filter(Boolean)
   let i = 0
 
   while (i < lines.length) {
