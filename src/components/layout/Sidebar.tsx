@@ -14,6 +14,7 @@ import {
   ChevronDown,
   CreditCard,
   Calendar,
+  TrendingUp,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { Tooltip } from '@/components/ui/Tooltip'
@@ -73,6 +74,7 @@ const standaloneTop: NavStandalone = {
 
 const standaloneMid: NavStandalone[] = [
   { id: 'subscriptions', label: '구독', icon: Repeat, path: '/subscriptions' },
+  { id: 'investments', label: '투자수익', icon: TrendingUp, path: '/investments' },
 ]
 
 const standaloneBottom: NavStandalone[] = [
@@ -85,6 +87,7 @@ function getActiveGroupId(pathname: string): string | null {
   if (pathname.startsWith('/assets') || pathname.startsWith('/liabilities')) return 'assets'
   if (pathname.startsWith('/ledger')) return 'ledger'
   if (pathname.startsWith('/subscriptions')) return 'subscriptions'
+  if (pathname.startsWith('/investments')) return 'investments'
   return null
 }
 

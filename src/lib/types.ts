@@ -190,6 +190,116 @@ export interface Subscription {
   updatedAt: string
 }
 
+// ─── Investment Trade Types ──────────────────────────
+export type InvestmentMarket = 'domestic' | 'overseas'
+export type InvestmentAssetType = '국내주식' | '해외주식' | '국내ETF' | '해외ETF' | '채권' | '펀드' | '기타'
+
+export interface InvestmentTrade {
+  id?: number
+  syncId?: string
+  /** 구성원 FK */
+  memberId: number | null
+  /** 판매일 YYYY-MM-DD */
+  sellDate: string
+  /** 종목유형 */
+  assetType: InvestmentAssetType
+  /** 국내/해외 마켓 구분 */
+  market: InvestmentMarket
+  /** 종목명 */
+  stockName: string
+  /** 총 판매수익 (음수 가능) */
+  totalProfit: number
+  /** 수익률 (%) */
+  profitRate: number
+  /** 총 판매금액 */
+  totalSellAmount: number
+  /** 총 구매금액 */
+  totalBuyAmount: number
+  /** 판매수량 */
+  sellQuantity: number
+  /** 수수료 */
+  fee: number
+  /** 제세금 */
+  tax: number
+  /** 1주당 수익 */
+  profitPerShare: number
+  /** 1주당 판매가격 */
+  sellPricePerShare: number
+  /** 1주당 구매가격 */
+  buyPricePerShare: number
+  /** 환차손익 (해외 only, null이면 해당없음) */
+  fxGainLoss: number | null
+  /** 판매 환율 (해외 only) */
+  sellExchangeRate: number | null
+  /** 구매 환율 (해외 only) */
+  buyExchangeRate: number | null
+  /** 메모 */
+  memo?: string
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+}
+
+// ─── Dividend Types ──────────────────────────────────
+export interface Dividend {
+  id?: number
+  syncId?: string
+  /** 구성원 FK */
+  memberId: number | null
+  /** 지급일 YYYY-MM-DD */
+  paymentDate: string
+  /** 배당락일 YYYY-MM-DD */
+  exDividendDate: string
+  /** 종목유형 */
+  assetType: InvestmentAssetType
+  /** 국내/해외 마켓 구분 */
+  market: InvestmentMarket
+  /** 종목명 */
+  stockName: string
+  /** 배당금 */
+  dividendAmount: number
+  /** 기준 수량 (소수 가능 — 해외주식 단주) */
+  quantity: number
+  /** 제세금·외국 납부 세금 */
+  tax: number
+  /** 비고 */
+  memo?: string
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+}
+
+// ─── Account Interest Types ──────────────────────────
+export type InterestCurrency = 'KRW' | 'USD'
+
+export interface AccountInterest {
+  id?: number
+  syncId?: string
+  /** 구성원 FK */
+  memberId: number | null
+  /** 입금일 YYYY-MM-DD */
+  depositDate: string
+  /** 쌓인 기간 시작 YYYY-MM-DD */
+  periodStart: string
+  /** 쌓인 기간 종료 YYYY-MM-DD */
+  periodEnd: string
+  /** 유형 (원화 이자 / 달러 이자) */
+  interestType: string
+  /** 통화 */
+  currency: InterestCurrency
+  /** 이자 금액 */
+  interestAmount: number
+  /** 제세금 */
+  tax: number
+  /** 이자율 (%) — e.g. 1.00 */
+  interestRate: number
+  /** 비고 */
+  memo?: string
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+}
+
 // ─── Loan Types ───────────────────────────────────
 export type LoanRepaymentType = 'equal_principal' | 'equal_installment' | 'bullet' | 'custom'
 
@@ -373,6 +483,9 @@ export interface BackupFile {
     paymentMethodItems?: PaymentMethodItem[]
     subscriptions?: Subscription[]
     loans?: Loan[]
+    investmentTrades?: InvestmentTrade[]
+    dividends?: Dividend[]
+    accountInterests?: AccountInterest[]
     settings: Partial<Settings>
   }
 }
