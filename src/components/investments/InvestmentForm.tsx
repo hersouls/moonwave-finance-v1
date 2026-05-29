@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useId } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Save, Plus } from 'lucide-react'
 import { useInvestmentStore } from '@/stores/investmentStore'
 import { useDividendStore } from '@/stores/dividendStore'
 import { useAccountInterestStore } from '@/stores/accountInterestStore'
 import { useMemberStore } from '@/stores/memberStore'
+import { useEscapeKey } from '@/hooks/useEscapeKey'
 // Form component for investment data entry
 import type { InvestmentTrade, Dividend, AccountInterest, InvestmentAssetType, InvestmentMarket, InterestCurrency } from '@/lib/types'
 
@@ -21,14 +22,20 @@ interface Props {
 
 const ASSET_TYPES: InvestmentAssetType[] = ['국내주식', '해외주식', '국내ETF', '해외ETF', '채권', '펀드', '기타']
 
-function InputField({ label, value, onChange, type = 'text', placeholder, suffix, required }: {
-  label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; suffix?: string; required?: boolean
+function InputField({ label, value, onChange, type = 'text', placeholder, suffix, required, invalid }: {
+  label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; suffix?: string; required?: boolean; invalid?: boolean
 }) {
+  const id = useId()
   return (
     <div>
-      <label className="text-[10px] font-bold uppercase tracking-[0.12em] text-sub block mb-1">{label}{required && ' *'}</label>
-      <div className="input-field">
-        <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      <label htmlFor={id} className="text-[10px] font-bold uppercase tracking-[0.12em] text-sub block mb-1">
+        {label}{required && <span className="text-value-negative" aria-hidden="true"> *</span>}
+      </label>
+      <div className="input-field" style={invalid ? { boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--value-negative) 55%, transparent)' } : undefined}>
+        <input id={id} type={type} value={value} onChange={e => onChange(e.target.value)}
+          placeholder={placeholder ?? (type === 'number' ? '0' : undefined)}
+          required={required} aria-required={required} aria-invalid={invalid || undefined}
+          inputMode={type === 'number' ? 'decimal' : undefined}
           className="input-value tabular-nums" />
         {suffix && <span className="text-[11px] text-disabled pr-3 shrink-0">{suffix}</span>}
       </div>
@@ -39,11 +46,12 @@ function InputField({ label, value, onChange, type = 'text', placeholder, suffix
 function SelectField({ label, value, onChange, options }: {
   label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[]
 }) {
+  const id = useId()
   return (
     <div>
-      <label className="text-[10px] font-bold uppercase tracking-[0.12em] text-sub block mb-1">{label}</label>
+      <label htmlFor={id} className="text-[10px] font-bold uppercase tracking-[0.12em] text-sub block mb-1">{label}</label>
       <div className="select-field">
-        <select value={value} onChange={e => onChange(e.target.value)} className="input-value">
+        <select id={id} value={value} onChange={e => onChange(e.target.value)} className="input-value">
           {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </div>
@@ -133,11 +141,25 @@ export function InvestmentFormSheet({ isOpen, onClose, formType, editTrade, edit
       setPeriodStart(''); setPeriodEnd(''); setInterestAmount(''); setInterestRate('')
       setAssetType('국내주식'); setInterestType('원화 이자'); setCurrency('KRW')
     }
-  }, [isOpen, formType, editTrade, editDividend, editInterest, members])
+    // `members`는 의도적으로 의존성에서 제외: 동기화로 멤버 목록이 갱신될 때마다
+    // 입력 중인 폼이 초기화되는 버그를 방지한다. 시트가 열리거나 편집 대상이 바뀔 때만 리셋.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, formType, editTrade, editDividend, editInterest])
 
   const market: InvestmentMarket = assetType.includes('해외') ? 'overseas' : 'domestic'
 
+  // 필수값 검증 — 미입력 시 저장 비활성화 (#14)
+  const isValid =
+    formType === 'trade'
+      ? !!sellDate && !!stockName.trim() && totalSellAmount !== '' && totalBuyAmount !== '' && totalProfit !== '' && sellQuantity !== ''
+      : formType === 'dividend'
+        ? !!paymentDate && !!exDividendDate && !!stockName.trim() && dividendAmount !== '' && quantity !== ''
+        : !!depositDate && !!periodStart && !!periodEnd && interestRate !== '' && interestAmount !== ''
+
+  useEscapeKey(onClose, isOpen)
+
   const handleSave = async () => {
+    if (!isValid) return
     if (formType === 'trade') {
       const data = {
         memberId, sellDate, assetType, market, stockName,
@@ -186,11 +208,11 @@ export function InvestmentFormSheet({ isOpen, onClose, formType, editTrade, edit
 
   return (
     <AnimatePresence>
-      <motion.div key="form-ov" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      <motion.div key="form-ov" aria-hidden="true" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         className="fixed inset-0 z-[var(--z-overlay)] bg-black/40 dark:bg-black/60 backdrop-blur-[12px]" onClick={onClose} />
       <motion.div key="form-sh" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
         transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-        className="sheet-container max-h-[92vh]">
+        className="sheet-container max-h-[92vh]" role="dialog" aria-modal="true" aria-label={`${titles[formType]} ${isEdit ? '수정' : '등록'}`}>
         <div className="sheet-handle" />
         <div className="sheet-body">
           <div className="sheet-header mb-4">
@@ -269,11 +291,14 @@ export function InvestmentFormSheet({ isOpen, onClose, formType, editTrade, edit
 
           {/* Save button */}
           <div className="sheet-footer mt-4">
-            <button onClick={handleSave}
-              className="sheet-cta inline-flex items-center justify-center gap-2 w-full h-12 rounded-2xl text-[14px] font-bold text-white transition-all"
-              style={{ background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))' }}>
+            <button onClick={handleSave} disabled={!isValid} aria-disabled={!isValid}
+              className="sheet-cta inline-flex items-center justify-center gap-2 w-full h-12 rounded-2xl text-[14px] font-bold transition-all disabled:cursor-not-allowed"
+              style={{
+                background: isValid ? 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))' : 'var(--surface-tertiary)',
+                color: isValid ? '#fff' : 'var(--text-disabled)',
+              }}>
               {isEdit ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-              {isEdit ? '수정 완료' : '등록하기'}
+              {isEdit ? '수정 완료' : (isValid ? '등록하기' : '필수 항목을 입력하세요')}
             </button>
           </div>
         </div>

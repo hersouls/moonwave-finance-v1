@@ -33,11 +33,13 @@ import { useAccountInterestStore } from '@/stores/accountInterestStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useSyncListener } from '@/hooks/useSyncListener'
 import { useCountUp } from '@/hooks/useCountUp'
+import { useEscapeKey } from '@/hooks/useEscapeKey'
+import { LiveRegion } from '@/components/ui/LiveRegion'
 import { springSnappy } from '@/lib/motionConfig'
 import { useInvestmentInsights, type InvestmentInsights } from '@/hooks/useInvestmentInsights'
 import { CumulativeProfitChart, AssetTypeDonutChart, SeasonHeatmap, PeriodComparison } from './InvestmentCharts'
 import { InvestmentFormSheet } from './InvestmentForm'
-import { formatKRW, formatKoreanUnit, formatChange, formatPercent } from '@/utils/format'
+import { formatKRW, formatKoreanUnit, formatChange, formatPercent, formatShares, formatRatePercent, formatExchangeRate } from '@/utils/format'
 import type { InvestmentTrade, Dividend, AccountInterest, InvestmentAssetType, InvestmentMarket, InterestCurrency } from '@/lib/types'
 
 // ─── Text Paste Parsers ──────────────────────────────
@@ -67,6 +69,16 @@ function parseExchangeRate(raw: string): number | null {
 function parseQuantityFloat(raw: string): number {
   const cleaned = raw.replace(/[^\d.,]/g, '').replace(/,/g, '')
   return Number(cleaned) || 0
+}
+
+// 종목유형 문자열을 정확한 InvestmentAssetType + 마켓으로 해석.
+// '국내ETF'/'해외ETF'/'채권'/'펀드' 등을 '주식'으로 뭉개지 않도록 보존한다.
+const KNOWN_ASSET_TYPES: InvestmentAssetType[] = ['국내ETF', '해외ETF', '국내주식', '해외주식', '채권', '펀드', '기타']
+function resolveAssetType(raw: string): { assetType: InvestmentAssetType; market: InvestmentMarket } {
+  const match = KNOWN_ASSET_TYPES.find(k => raw.includes(k))
+  const assetType = match ?? (raw.includes('해외') ? '해외주식' : '국내주식')
+  const market: InvestmentMarket = assetType.includes('해외') ? 'overseas' : 'domestic'
+  return { assetType, market }
 }
 
 interface ParsedTrade {
@@ -143,10 +155,7 @@ function parseTradesCardView(text: string): ParsedTrade[] {
       || stockName === '국내주식' || stockName === '해외주식' || stockName === '국내ETF' || stockName === '해외ETF'
       || stockName.includes('이자')) { i = assetTypeIdx + 1; continue }
 
-    const assetTypeRaw = lines[assetTypeIdx]
-    let assetType: InvestmentAssetType = '국내주식'
-    let market: InvestmentMarket = 'domestic'
-    if (assetTypeRaw.includes('해외')) { market = 'overseas'; assetType = '해외주식' }
+    const { assetType, market } = resolveAssetType(lines[assetTypeIdx])
 
     let j = assetTypeIdx + 1
 
@@ -162,7 +171,7 @@ function parseTradesCardView(text: string): ParsedTrade[] {
     const qtyAmtMatch = lines[j].match(/^([\d,.]+)주\s*·\s*([\d,]+)원$/)
     let sellQuantity = 0, totalSellAmount = 0
     if (qtyAmtMatch) {
-      sellQuantity = Math.round(parseQuantityFloat(qtyAmtMatch[1]))
+      sellQuantity = parseQuantityFloat(qtyAmtMatch[1])
       totalSellAmount = Math.abs(parseAmount(qtyAmtMatch[2]))
       j++
     } else { i = assetTypeIdx + 1; continue }
@@ -218,10 +227,7 @@ function parseTrades(text: string): ParsedTrade[] {
     if (!sellDate) { i++; continue }
     i++
     if (i >= lines.length) break
-    const assetTypeRaw = lines[i].trim()
-    let assetType: InvestmentAssetType = '국내주식'
-    let market: InvestmentMarket = 'domestic'
-    if (assetTypeRaw.includes('해외')) { market = 'overseas'; assetType = '해외주식' }
+    const { assetType, market } = resolveAssetType(lines[i].trim())
     i++
     if (i < lines.length && lines[i].toLowerCase() === 'logo') i++
     if (i >= lines.length) break
@@ -235,7 +241,7 @@ function parseTrades(text: string): ParsedTrade[] {
     if (i >= lines.length) break
     const totalBuyAmount = Math.abs(parseAmount(lines[i])); i++
     if (i >= lines.length) break
-    const sellQuantity = parseInt(lines[i].replace(/[^\d]/g, '')) || 0; i++
+    const sellQuantity = parseQuantityFloat(lines[i]) || 0; i++
     if (i >= lines.length) break
     const fee = Math.abs(parseAmount(lines[i])); i++
     if (i >= lines.length) break
@@ -282,12 +288,12 @@ function preProcessDividendText(text: string): string {
 function preProcessDividendCardText(text: string): string {
   let s = text
   // "LG국내주식" → "LG\n국내주식"
-  s = s.replace(/([가-힣A-Za-z0-9&\-]+)(국내주식|해외주식)/g, (_, name, type) => {
+  s = s.replace(/([가-힣A-Za-z0-9&\-]+)(국내주식|해외주식|국내ETF|해외ETF)/g, (_, name, type) => {
     if (name === '국내' || name === '해외') return `${name}${type}`
     return `${name}\n${type}`
   })
   // "국내주식2026-" → "국내주식\n2026-"
-  s = s.replace(/(국내주식|해외주식)(\d{4}-)/g, '$1\n$2')
+  s = s.replace(/(국내주식|해외주식|국내ETF|해외ETF)(\d{4}-)/g, '$1\n$2')
   // "2025-12-12대성" → "2025-12-12\n대성"
   s = s.replace(/(\d{4}-\d{2}-\d{2})([가-힣])/g, '$1\n$2')
   // "26-03-02대성" same
@@ -304,16 +310,13 @@ function parseDividendsCardView(text: string): ParsedDividend[] {
 
   while (i < lines.length) {
     // Find asset type line
-    const atIdx = lines.findIndex((l, idx) => idx >= i && (l === '국내주식' || l === '해외주식'))
+    const atIdx = lines.findIndex((l, idx) => idx >= i && (l === '국내주식' || l === '해외주식' || l === '국내ETF' || l === '해외ETF'))
     if (atIdx < 0 || atIdx <= i) { i++; continue }
 
     const stockName = lines[atIdx - 1]
     if (!stockName || stockName.match(/^\d{4}-\d{2}-\d{2}$/) || stockName.match(/^[+-]?[\d,]+원$/)) { i = atIdx + 1; continue }
 
-    const assetTypeRaw = lines[atIdx]
-    let assetType: InvestmentAssetType = '국내주식'
-    let market: InvestmentMarket = 'domestic'
-    if (assetTypeRaw.includes('해외')) { market = 'overseas'; assetType = '해외주식' }
+    const { assetType, market } = resolveAssetType(lines[atIdx])
 
     let j = atIdx + 1
 
@@ -379,10 +382,7 @@ function parseDividends(text: string): ParsedDividend[] {
     i++
     // Asset type
     if (i >= clines.length) break
-    const assetTypeRaw = clines[i].trim()
-    let assetType: InvestmentAssetType = '국내주식'
-    let market: InvestmentMarket = 'domestic'
-    if (assetTypeRaw.includes('해외')) { market = 'overseas'; assetType = '해외주식' }
+    const { assetType, market } = resolveAssetType(clines[i].trim())
     i++
     if (i < clines.length && clines[i].toLowerCase() === 'logo') i++
     // Stock name
@@ -637,7 +637,7 @@ function TradeCard({ trade, memberName, onClick }: { trade: InvestmentTrade; mem
           </div>
           <div className="flex items-center gap-2 mt-0.5 text-[10px] text-sub tabular-nums">
             <span>{trade.sellDate}</span>
-            <span>{trade.sellQuantity}주 · {formatKoreanUnit(trade.totalSellAmount)}원</span>
+            <span>{formatShares(trade.sellQuantity)}주 · {formatKoreanUnit(trade.totalSellAmount)}원</span>
             {memberName && <span className="inline-flex items-center gap-0.5"><Users className="w-2.5 h-2.5" />{memberName}</span>}
           </div>
         </div>
@@ -674,7 +674,7 @@ function DividendCard({ div, memberName, onClick }: { div: Dividend; memberName?
           </div>
           <div className="flex items-center gap-2 mt-0.5 text-[10px] text-sub tabular-nums">
             <span>{div.paymentDate}</span>
-            <span>{div.quantity % 1 === 0 ? div.quantity : div.quantity.toFixed(6)}주 · 배당락 {div.exDividendDate}</span>
+            <span>{formatShares(div.quantity)}주 · 배당락 {div.exDividendDate}</span>
             {memberName && <span className="inline-flex items-center gap-0.5"><Users className="w-2.5 h-2.5" />{memberName}</span>}
           </div>
         </div>
@@ -691,6 +691,7 @@ function DividendCard({ div, memberName, onClick }: { div: Dividend; memberName?
 function TradeDetailSheet({ trade, memberName, onClose, onDelete, onEdit }: {
   trade: InvestmentTrade | null; memberName?: string; onClose: () => void; onDelete: (id: number) => void; onEdit?: (t: InvestmentTrade) => void
 }) {
+  useEscapeKey(onClose, !!trade)
   if (!trade) return null
   const pos = trade.totalProfit >= 0
   const rows: { label: string; value: string; highlight?: boolean }[] = [
@@ -701,7 +702,7 @@ function TradeDetailSheet({ trade, memberName, onClose, onDelete, onEdit }: {
     { label: '수익률', value: `${trade.profitRate >= 0 ? '+' : ''}${trade.profitRate.toFixed(1)}%`, highlight: true },
     { label: '총 판매금액', value: formatKRW(trade.totalSellAmount) },
     { label: '총 구매금액', value: formatKRW(trade.totalBuyAmount) },
-    { label: '판매수량', value: `${trade.sellQuantity}주` },
+    { label: '판매수량', value: `${formatShares(trade.sellQuantity)}주` },
     { label: '수수료', value: formatKRW(trade.fee) },
     { label: '제세금', value: formatKRW(trade.tax) },
     { label: '1주당 수익', value: formatChange(trade.profitPerShare) },
@@ -709,13 +710,13 @@ function TradeDetailSheet({ trade, memberName, onClose, onDelete, onEdit }: {
     { label: '1주당 구매가격', value: formatKRW(trade.buyPricePerShare) },
   ]
   if (trade.fxGainLoss !== null) rows.push({ label: '환차손익', value: formatChange(trade.fxGainLoss) })
-  if (trade.sellExchangeRate !== null) rows.push({ label: '판매 환율', value: `${trade.sellExchangeRate.toFixed(2)}원` })
-  if (trade.buyExchangeRate !== null) rows.push({ label: '구매 환율', value: `${trade.buyExchangeRate.toFixed(2)}원` })
+  if (trade.sellExchangeRate !== null) rows.push({ label: '판매 환율', value: formatExchangeRate(trade.sellExchangeRate) })
+  if (trade.buyExchangeRate !== null) rows.push({ label: '구매 환율', value: formatExchangeRate(trade.buyExchangeRate) })
   return (
     <AnimatePresence>
-      <motion.div key="ov" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sheet-overlay" onClick={onClose} />
+      <motion.div key="ov" aria-hidden="true" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sheet-overlay" onClick={onClose} />
       <motion.div key="sh" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        className="sheet-container">
+        className="sheet-container" role="dialog" aria-modal="true" aria-label="상세 정보">
         <div className="sheet-handle" />
         <div className="sheet-body">
           <div className="sheet-header mb-4">
@@ -764,6 +765,7 @@ function TradeDetailSheet({ trade, memberName, onClose, onDelete, onEdit }: {
 function DividendDetailSheet({ div, memberName, onClose, onDelete, onEdit }: {
   div: Dividend | null; memberName?: string; onClose: () => void; onDelete: (id: number) => void; onEdit?: (d: Dividend) => void
 }) {
+  useEscapeKey(onClose, !!div)
   if (!div) return null
   const net = div.dividendAmount - div.tax
   const rows = [
@@ -772,15 +774,15 @@ function DividendDetailSheet({ div, memberName, onClose, onDelete, onEdit }: {
     { label: '종목유형', value: div.assetType },
     { label: '구성원', value: memberName || '미지정' },
     { label: '배당금', value: formatKRW(div.dividendAmount) },
-    { label: '기준 수량', value: `${div.quantity % 1 === 0 ? div.quantity : div.quantity.toFixed(6)}주` },
+    { label: '기준 수량', value: `${formatShares(div.quantity)}주` },
     { label: '제세금', value: formatKRW(div.tax) },
     { label: '세후 수령액', value: formatKRW(net) },
   ]
   return (
     <AnimatePresence>
-      <motion.div key="ov" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sheet-overlay" onClick={onClose} />
+      <motion.div key="ov" aria-hidden="true" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sheet-overlay" onClick={onClose} />
       <motion.div key="sh" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        className="sheet-container">
+        className="sheet-container" role="dialog" aria-modal="true" aria-label="상세 정보">
         <div className="sheet-handle" />
         <div className="sheet-body">
           <div className="sheet-header mb-4">
@@ -833,7 +835,7 @@ function InterestCard({ interest, memberName, onClick }: { interest: AccountInte
             <span className="text-body3 text-heading font-bold">{interest.interestType}</span>
             <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 h-[14px] rounded-full inline-flex items-center"
               style={{ backgroundColor: `color-mix(in srgb, ${typeColor} 14%, transparent)`, color: typeColor, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${typeColor} 22%, transparent)` }}>
-              연 {interest.interestRate.toFixed(2)}%
+              연 {formatRatePercent(interest.interestRate)}
             </span>
           </div>
           <div className="flex items-center gap-2 mt-0.5 text-[10px] text-sub tabular-nums">
@@ -855,6 +857,7 @@ function InterestCard({ interest, memberName, onClick }: { interest: AccountInte
 function InterestDetailSheet({ interest, memberName, onClose, onDelete, onEdit }: {
   interest: AccountInterest | null; memberName?: string; onClose: () => void; onDelete: (id: number) => void; onEdit?: (r: AccountInterest) => void
 }) {
+  useEscapeKey(onClose, !!interest)
   if (!interest) return null
   const net = interest.interestAmount - interest.tax
   const rows = [
@@ -865,13 +868,13 @@ function InterestDetailSheet({ interest, memberName, onClose, onDelete, onEdit }
     { label: '이자', value: formatKRW(interest.interestAmount) },
     { label: '제세금', value: formatKRW(interest.tax) },
     { label: '세후 수령액', value: formatKRW(net) },
-    { label: '이자율', value: `연 ${interest.interestRate.toFixed(2)}%` },
+    { label: '이자율', value: `연 ${formatRatePercent(interest.interestRate)}` },
   ]
   return (
     <AnimatePresence>
-      <motion.div key="ov" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sheet-overlay" onClick={onClose} />
+      <motion.div key="ov" aria-hidden="true" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sheet-overlay" onClick={onClose} />
       <motion.div key="sh" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        className="sheet-container">
+        className="sheet-container" role="dialog" aria-modal="true" aria-label="상세 정보">
         <div className="sheet-handle" />
         <div className="sheet-body">
           <div className="sheet-header mb-4">
@@ -930,6 +933,8 @@ function PasteImportModal({ isOpen, onClose, onImportTrades, onImportDividends, 
     if (isOpen) { setText(''); setParsedTrades([]); setParsedDivs([]); setParsedInterests([]); setStep('input'); setSelectedMemberId(members[0]?.id ?? null); setTimeout(() => textareaRef.current?.focus(), 100) }
   }, [isOpen, members])
 
+  useEscapeKey(onClose, isOpen)
+
   const handleParse = () => {
     if (importType === 'trades') setParsedTrades(parseTrades(text))
     else if (importType === 'dividends') setParsedDivs(parseDividends(text))
@@ -955,9 +960,9 @@ function PasteImportModal({ isOpen, onClose, onImportTrades, onImportDividends, 
 
   return (
     <AnimatePresence>
-      <motion.div key="paste-ov" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sheet-overlay" onClick={onClose} />
+      <motion.div key="paste-ov" aria-hidden="true" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="sheet-overlay" onClick={onClose} />
       <motion.div key="paste-sh" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        className="sheet-container max-h-[90vh]">
+        className="sheet-container max-h-[90vh]" role="dialog" aria-modal="true" aria-label="데이터 가져오기">
         <div className="sheet-handle" />
         <div className="sheet-body">
           <div className="sheet-header mb-4">
@@ -1015,12 +1020,12 @@ function PasteImportModal({ isOpen, onClose, onImportTrades, onImportDividends, 
                 <div className="space-y-1 max-h-60 overflow-y-auto mb-4">
                   {importType === 'trades' ? parsedTrades.map((t, i) => (
                     <div key={i} className="list-item card-fill rounded-lg">
-                      <div><p className="text-body3 font-bold text-heading">{t.stockName}</p><p className="text-[10px] text-sub">{t.sellDate} · {t.sellQuantity}주</p></div>
+                      <div><p className="text-body3 font-bold text-heading">{t.stockName}</p><p className="text-[10px] text-sub">{t.sellDate} · {formatShares(t.sellQuantity)}주</p></div>
                       <span className={clsx('text-body3 font-bold financial-value', t.totalProfit >= 0 ? 'value-positive' : 'value-negative')}>{formatChange(t.totalProfit)}</span>
                     </div>
                   )) : importType === 'dividends' ? parsedDivs.map((d, i) => (
                     <div key={i} className="list-item card-fill rounded-lg">
-                      <div><p className="text-body3 font-bold text-heading">{d.stockName}</p><p className="text-[10px] text-sub">{d.paymentDate} · {d.quantity}주</p></div>
+                      <div><p className="text-body3 font-bold text-heading">{d.stockName}</p><p className="text-[10px] text-sub">{d.paymentDate} · {formatShares(d.quantity)}주</p></div>
                       <span className="text-body3 font-bold financial-value value-positive">+{formatKoreanUnit(d.dividendAmount)}원</span>
                     </div>
                   )) : parsedInterests.map((r, i) => (
@@ -1160,31 +1165,50 @@ function InvestmentDashboard({
     <div className="space-y-5">
       {/* Total Hero */}
       <InvestmentHeroSection label="총 투자수익 합계" aurora={AURORA_DEFAULT}>
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="text-financial-fluid font-extrabold tracking-tight tabular-nums text-heading"
-            style={{ textShadow: '0 1px 2px color-mix(in srgb, var(--color-primary-500) 16%, transparent)' }}>
-            {isPositive ? '+' : ''}{animatedTotal.toLocaleString('ko-KR')}
-          </span>
-          <span className="text-body3-semi font-bold text-sub" style={{ fontSize: 'clamp(18px,4vw,22px)' }}>원</span>
+        <div className="flex items-end justify-between gap-3 flex-wrap">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <span aria-hidden="true"
+              className={clsx('text-financial-fluid font-extrabold tracking-tight tabular-nums', isPositive ? 'text-heading' : 'value-negative')}
+              style={isPositive ? { textShadow: '0 1px 2px color-mix(in srgb, var(--color-primary-500) 16%, transparent)' } : undefined}>
+              {isPositive ? '+' : ''}{animatedTotal.toLocaleString('ko-KR')}
+            </span>
+            <span aria-hidden="true" className="text-body3-semi font-bold text-sub" style={{ fontSize: 'clamp(18px,4vw,22px)' }}>원</span>
+            <span className="sr-only">총 투자수익 합계 {formatChange(totalIncome)}</span>
+          </div>
+          {(tradeCount + divCount + interestCount) > 0 && (
+            <span className="inline-flex items-center gap-1 px-2.5 h-6 rounded-full text-[10px] font-bold text-sub bg-surface-tertiary ring-1 ring-base tabular-nums">
+              총 {tradeCount + divCount + interestCount}건
+            </span>
+          )}
         </div>
 
           {/* 3-column breakdown */}
-          <div className="grid grid-cols-3 gap-3 mt-5">
+          <div className="grid grid-cols-3 gap-2.5 mt-5">
             {[
               { key: 'trades' as const, label: '판매수익', icon: TrendingUp, value: tradeProfit, count: tradeCount, rate: tradeRate, color: 'var(--value-positive)' },
               { key: 'dividends' as const, label: '배당금', icon: Banknote, value: divNet, count: divCount, color: 'oklch(0.68 0.16 70)' },
               { key: 'interests' as const, label: '계좌이자', icon: Landmark, value: interestNet, count: interestCount, color: 'var(--color-primary-500)' },
             ].map(item => {
               const Icon = item.icon
+              const valPos = item.value >= 0
               return (
                 <button key={item.key} onClick={() => onTabChange(item.key)}
-                  className="rounded-xl p-3 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ring-1 ring-base bg-surface-primary">
-                  <div className="flex items-center gap-1 mb-1.5">
-                    <Icon className="w-3.5 h-3.5" style={{ color: item.color }} />
-                    <span className="text-[9px] font-bold tracking-[0.14em] uppercase" style={{ color: item.color }}>{item.label}</span>
+                  aria-label={`${item.label} ${formatChange(item.value)}, ${item.count}건 — 자세히 보기`}
+                  className="group relative rounded-2xl p-3 text-left transition-all hover:-translate-y-0.5 active:translate-y-0 ring-1 ring-base bg-surface-primary hover:shadow-[0_6px_18px_rgba(0,0,0,0.07)] overflow-hidden">
+                  <div className="flex items-center justify-between mb-2">
+                    <span aria-hidden="true" className="inline-flex items-center justify-center w-7 h-7 rounded-xl"
+                      style={{
+                        background: `linear-gradient(135deg, color-mix(in srgb, ${item.color} 22%, transparent), color-mix(in srgb, ${item.color} 7%, transparent))`,
+                        color: item.color,
+                        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${item.color} 30%, transparent), inset 0 1px 0 0 rgba(255,255,255,0.35)`,
+                      }}>
+                      <Icon className="w-3.5 h-3.5" />
+                    </span>
+                    <ChevronRight aria-hidden="true" className="w-3.5 h-3.5 text-disabled opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                   </div>
-                  <p className="text-body3 font-bold tabular-nums text-heading">
-                    {item.value >= 0 ? '+' : ''}{formatKoreanUnit(item.value)}<span className="text-[10px] font-medium text-sub">원</span>
+                  <span className="block text-[9px] font-bold tracking-[0.12em] uppercase mb-0.5" style={{ color: item.color }}>{item.label}</span>
+                  <p className="text-body3 font-bold tabular-nums" style={{ color: valPos ? 'var(--text-primary)' : 'var(--value-negative)' }}>
+                    {valPos ? '+' : '−'}{formatKoreanUnit(Math.abs(item.value))}<span className="text-[10px] font-medium text-sub">원</span>
                   </p>
                   <div className="flex items-center gap-1.5 mt-1">
                     <span className="text-[10px] text-sub tabular-nums">{item.count}건</span>
@@ -1204,58 +1228,68 @@ function InvestmentDashboard({
             })}
           </div>
 
-          {/* Composition bar */}
-          {totalIncome > 0 && (
-            <div className="mt-4">
-              <div className="flex h-2 rounded-full overflow-hidden bg-surface-secondary">
-                {tradeProfit > 0 && <div style={{ width: `${(tradeProfit / totalIncome) * 100}%`, backgroundColor: 'var(--value-positive)' }} />}
-                {divNet > 0 && <div style={{ width: `${(divNet / totalIncome) * 100}%`, backgroundColor: 'oklch(0.68 0.16 70)' }} />}
-                {interestNet > 0 && <div style={{ width: `${(interestNet / totalIncome) * 100}%`, backgroundColor: 'var(--color-primary-500)' }} />}
+          {/* Composition bar — 수익 구성(양의 기여분 기준, 합 100%) */}
+          {(() => {
+            const posTrade = Math.max(tradeProfit, 0)
+            const posDiv = Math.max(divNet, 0)
+            const posInt = Math.max(interestNet, 0)
+            const posSum = posTrade + posDiv + posInt
+            if (posSum <= 0) return null
+            const seg = [
+              { label: '판매', v: posTrade, color: 'var(--value-positive)' },
+              { label: '배당', v: posDiv, color: 'oklch(0.68 0.16 70)' },
+              { label: '이자', v: posInt, color: 'var(--color-primary-500)' },
+            ].filter(s => s.v > 0)
+            return (
+              <div className="mt-4">
+                <div className="flex h-2 rounded-full overflow-hidden bg-surface-secondary gap-px" role="presentation">
+                  {seg.map(s => <div key={s.label} style={{ width: `${(s.v / posSum) * 100}%`, backgroundColor: s.color }} />)}
+                </div>
+                <div className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1 mt-2">
+                  {seg.map(s => (
+                    <span key={s.label} className="flex items-center gap-1 text-[10px] text-sub">
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />{s.label} {formatPercent((s.v / posSum) * 100, 0)}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div className="flex items-center justify-center gap-4 mt-2">
-                {tradeProfit > 0 && <span className="flex items-center gap-1 text-[10px] text-sub"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--value-positive)' }} />판매 {formatPercent((tradeProfit / totalIncome) * 100, 0)}</span>}
-                {divNet > 0 && <span className="flex items-center gap-1 text-[10px] text-sub"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'oklch(0.68 0.16 70)' }} />배당 {formatPercent((divNet / totalIncome) * 100, 0)}</span>}
-                {interestNet > 0 && <span className="flex items-center gap-1 text-[10px] text-sub"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--color-primary-500)' }} />이자 {formatPercent((interestNet / totalIncome) * 100, 0)}</span>}
-              </div>
-            </div>
-          )}
+            )
+          })()}
       </InvestmentHeroSection>
 
       {/* Monthly stacked chart */}
       {mergedMonthly.length > 0 && (
         <div className="space-y-2">
           <h3 className="text-body3 font-bold text-heading flex items-center gap-1.5">
-            <BarChart3 className="w-4 h-4 text-accent-primary" />월별 통합 수익
+            <BarChart3 className="w-4 h-4" style={{ color: 'var(--color-primary-500)' }} />월별 통합 수익
           </h3>
           <div className="space-y-1.5">
             {mergedMonthly.slice(0, 6).map(s => {
               const maxVal = Math.max(...mergedMonthly.slice(0, 6).map(m => Math.abs(m.total)), 1)
               const w = Math.min((Math.abs(s.total) / maxVal) * 100, 100)
               const [y, m] = s.month.split('-')
+              // 월별 막대 내부는 "양의 기여분 구성"으로 채워 합이 100%를 넘지 않도록 한다.
+              const posParts = [
+                { v: Math.max(s.trade, 0), color: 'var(--value-positive)', op: 0.78, delay: 0 },
+                { v: Math.max(s.div, 0), color: 'oklch(0.68 0.16 70)', op: 0.7, delay: 0.08 },
+                { v: Math.max(s.interest, 0), color: 'var(--color-primary-500)', op: 0.62, delay: 0.16 },
+              ]
+              const posSum = posParts.reduce((a, p) => a + p.v, 0)
               return (
                 <div key={s.month} className="flex items-center gap-2">
                   <span className="text-[10px] font-medium text-sub w-14 shrink-0 financial-value">{y}.{m}</span>
                   <div className="flex-1 h-7 relative bg-surface-secondary rounded-md overflow-hidden">
                     <div className="absolute inset-y-0 left-0 flex" style={{ width: `${w}%` }}>
-                      {s.trade !== 0 && s.total > 0 && (
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${(Math.abs(s.trade) / Math.abs(s.total)) * 100}%` }}
-                          transition={{ duration: 0.6, ease: 'easeOut' }}
-                          className="h-full" style={{ backgroundColor: 'var(--value-positive)', opacity: 0.75 }} />
-                      )}
-                      {s.div > 0 && s.total > 0 && (
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${(s.div / Math.abs(s.total)) * 100}%` }}
-                          transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
-                          className="h-full" style={{ backgroundColor: 'var(--status-warning-text)', opacity: 0.65 }} />
-                      )}
-                      {s.interest > 0 && s.total > 0 && (
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${(s.interest / Math.abs(s.total)) * 100}%` }}
-                          transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
-                          className="h-full" style={{ backgroundColor: 'var(--accent-primary-text)', opacity: 0.55 }} />
-                      )}
-                      {s.total < 0 && (
+                      {s.total >= 0 && posSum > 0 ? (
+                        posParts.filter(p => p.v > 0).map((p, idx) => (
+                          <motion.div key={idx} initial={{ width: 0 }} animate={{ width: `${(p.v / posSum) * 100}%` }}
+                            transition={{ duration: 0.6, ease: 'easeOut', delay: p.delay }}
+                            className="h-full" style={{ backgroundColor: p.color, opacity: p.op }} />
+                        ))
+                      ) : (
                         <motion.div initial={{ width: 0 }} animate={{ width: '100%' }}
                           transition={{ duration: 0.6, ease: 'easeOut' }}
-                          className="h-full" style={{ backgroundColor: 'var(--value-negative)', opacity: 0.75 }} />
+                          className="h-full" style={{ backgroundColor: 'var(--value-negative)', opacity: 0.78 }} />
                       )}
                     </div>
                     <span className={clsx('absolute inset-y-0 flex items-center px-2 text-[11px] font-bold financial-value',
@@ -1273,7 +1307,7 @@ function InvestmentDashboard({
 
       {/* Chart.js Charts: 2x2 grid */}
       {(tradeCount + divCount + interestCount) > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4" role="region" aria-label="투자 차트">
           <CumulativeProfitChart trades={trades} dividends={dividends} interests={interests} />
           <AssetTypeDonutChart trades={trades} />
           <SeasonHeatmap seasonality={insights.seasonality} />
@@ -1319,7 +1353,7 @@ function InvestmentDashboard({
 
       {/* ─── Premium Insight Cards ─── */}
       {(tradeCount + divCount + interestCount) > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-4" role="region" aria-label="투자 인사이트">
           {/* Section title */}
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--color-primary-500)' }} />
@@ -1645,7 +1679,7 @@ function TradeGridCard({ trade, memberName, onClick }: { trade: InvestmentTrade;
         {pos ? '+' : ''}{formatKoreanUnit(trade.totalProfit)}<span className="text-[11px]">원</span>
       </p>
       <div className="flex items-center justify-between mt-1.5">
-        <span className="text-[10px] text-sub tabular-nums">{trade.sellQuantity}주</span>
+        <span className="text-[10px] text-sub tabular-nums">{formatShares(trade.sellQuantity)}주</span>
         <span className={clsx('inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold tabular-nums ring-1',
           pos ? 'bg-status-success-soft text-status-success ring-[color:var(--status-success)]/15'
             : 'bg-status-danger-soft text-status-danger ring-[color:var(--status-danger)]/15',
@@ -1681,7 +1715,7 @@ function DividendGridCard({ div, onClick }: { div: Dividend; memberName?: string
         +{formatKoreanUnit(net)}<span className="text-[11px]">원</span>
       </p>
       <div className="flex items-center justify-between mt-1.5">
-        <span className="text-[10px] text-sub tabular-nums">{div.quantity % 1 === 0 ? div.quantity : div.quantity.toFixed(2)}주</span>
+        <span className="text-[10px] text-sub tabular-nums">{formatShares(div.quantity)}주</span>
         {div.tax > 0 && <span className="text-[9px] text-disabled tabular-nums">세금 {formatKRW(div.tax)}</span>}
       </div>
     </motion.button>
@@ -1702,7 +1736,7 @@ function InterestGridCard({ interest, onClick }: { interest: AccountInterest; me
             color: 'var(--color-primary-500)',
             boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--color-primary-500) 22%, transparent)',
           }}>
-          연 {interest.interestRate.toFixed(1)}%
+          연 {formatRatePercent(interest.interestRate)}
         </span>
         <span className="text-[9px] text-disabled tabular-nums">{interest.depositDate}</span>
       </div>
@@ -1723,7 +1757,7 @@ function CompactTradeRow({ trade, onClick }: { trade: InvestmentTrade; onClick: 
       className="group w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-[var(--hover-bg)] transition-colors border-b border-[color:var(--border-subtle)]">
       <span className="text-[10px] text-sub tabular-nums w-[70px] shrink-0">{trade.sellDate}</span>
       <span className="text-[11px] font-bold text-heading flex-1 truncate">{trade.stockName}</span>
-      <span className="text-[10px] text-sub tabular-nums w-10 text-right shrink-0">{trade.sellQuantity}주</span>
+      <span className="text-[10px] text-sub tabular-nums w-10 text-right shrink-0">{formatShares(trade.sellQuantity)}주</span>
       <span className="text-[11px] font-bold tabular-nums w-24 text-right shrink-0" style={{ color: pos ? 'var(--value-positive)' : 'var(--value-negative)' }}>
         {pos ? '+' : ''}{formatKoreanUnit(trade.totalProfit)}
       </span>
@@ -1742,7 +1776,7 @@ function CompactDividendRow({ div, onClick }: { div: Dividend; onClick: () => vo
       className="group w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-[var(--hover-bg)] transition-colors border-b border-[color:var(--border-subtle)]">
       <span className="text-[10px] text-sub tabular-nums w-[70px] shrink-0">{div.paymentDate}</span>
       <span className="text-[11px] font-bold text-heading flex-1 truncate">{div.stockName}</span>
-      <span className="text-[10px] text-sub tabular-nums w-10 text-right shrink-0">{div.quantity % 1 === 0 ? div.quantity : div.quantity.toFixed(2)}주</span>
+      <span className="text-[10px] text-sub tabular-nums w-10 text-right shrink-0">{formatShares(div.quantity)}주</span>
       <span className="text-[11px] font-bold tabular-nums w-24 text-right shrink-0" style={{ color: 'var(--value-positive)' }}>
         +{formatKoreanUnit(net)}
       </span>
@@ -1759,7 +1793,7 @@ function CompactInterestRow({ interest, onClick }: { interest: AccountInterest; 
       className="group w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-[var(--hover-bg)] transition-colors border-b border-[color:var(--border-subtle)]">
       <span className="text-[10px] text-sub tabular-nums w-[70px] shrink-0">{interest.depositDate}</span>
       <span className="text-[11px] font-bold text-heading flex-1 truncate">{interest.interestType}</span>
-      <span className="text-[10px] text-sub tabular-nums w-14 text-right shrink-0">연 {interest.interestRate.toFixed(1)}%</span>
+      <span className="text-[10px] text-sub tabular-nums w-14 text-right shrink-0">연 {formatRatePercent(interest.interestRate)}</span>
       <span className="text-[11px] font-bold tabular-nums w-24 text-right shrink-0" style={{ color: 'var(--value-positive)' }}>
         +{formatKoreanUnit(net)}
       </span>
@@ -1823,6 +1857,7 @@ function MarketFilterChips({ value, onChange, trades, dividends }: {
         const isActive = value === m
         return (
           <motion.button key={m} type="button" onClick={() => onChange(m)}
+            aria-pressed={isActive} aria-label={`${MARKET_LABELS[m]} ${count}건`}
             whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
             transition={springSnappy}
             className={clsx(
@@ -1895,6 +1930,7 @@ function MemberFilterChips({ value, onChange, members }: {
   return (
     <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 -my-1 py-1">
       <motion.button type="button" onClick={() => onChange('all')}
+        aria-pressed={value === 'all'}
         whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
         transition={springSnappy}
         className={clsx(
@@ -1910,6 +1946,7 @@ function MemberFilterChips({ value, onChange, members }: {
         const isActive = value === m.id
         return (
           <motion.button key={m.id} type="button" onClick={() => onChange(m.id)}
+            aria-pressed={isActive}
             whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
             transition={springSnappy}
             className={clsx(
@@ -1942,6 +1979,7 @@ function SortChips({ value, onChange }: { value: string; onChange: (v: 'date' | 
         const isActive = value === opt.key
         return (
           <motion.button key={opt.key} type="button" onClick={() => onChange(opt.key)}
+            aria-pressed={isActive} aria-label={`${opt.label} 정렬`}
             whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
             transition={springSnappy}
             className={clsx(
@@ -1957,6 +1995,30 @@ function SortChips({ value, onChange }: { value: string; onChange: (v: 'date' | 
       })}
     </div>
   )
+}
+
+// ─── Pure stat computations (shared by dashboard=전체 & 탭=필터) ──
+function computeTradeStats(list: InvestmentTrade[]) {
+  const totalSell = list.reduce((s, t) => s + t.totalSellAmount, 0)
+  const totalBuy = list.reduce((s, t) => s + t.totalBuyAmount, 0)
+  const totalProfit = list.reduce((s, t) => s + t.totalProfit, 0)
+  const profitRate = totalBuy > 0 ? (totalProfit / totalBuy) * 100 : 0
+  const wins = list.filter(t => t.totalProfit > 0).length
+  const losses = list.filter(t => t.totalProfit <= 0).length
+  const winRate = list.length > 0 ? (wins / list.length) * 100 : 0
+  return { totalSell, totalBuy, totalProfit, profitRate, wins, losses, winRate, count: list.length }
+}
+
+function computeDivStats(list: Dividend[]) {
+  const totalDiv = list.reduce((s, d) => s + d.dividendAmount, 0)
+  const totalTax = list.reduce((s, d) => s + d.tax, 0)
+  return { totalDiv, totalTax, netDiv: totalDiv - totalTax, count: list.length, stockCount: new Set(list.map(d => d.stockName)).size }
+}
+
+function computeInterestStats(list: AccountInterest[]) {
+  const totalInterest = list.reduce((s, r) => s + r.interestAmount, 0)
+  const totalTax = list.reduce((s, r) => s + r.tax, 0)
+  return { totalInterest, totalTax, netInterest: totalInterest - totalTax, count: list.length }
 }
 
 // ═══════════════════════════════════════════════════
@@ -2061,33 +2123,16 @@ export function InvestmentPage() {
   }, [interests, monthFilter, memberFilter])
 
   // --- Computed stats ---
-  const tradeStats = useMemo(() => {
-    const f = filteredTrades
-    const totalSell = f.reduce((s, t) => s + t.totalSellAmount, 0)
-    const totalBuy = f.reduce((s, t) => s + t.totalBuyAmount, 0)
-    const totalProfit = f.reduce((s, t) => s + t.totalProfit, 0)
-    const profitRate = totalBuy > 0 ? (totalProfit / totalBuy) * 100 : 0
-    const wins = f.filter(t => t.totalProfit > 0).length
-    const losses = f.filter(t => t.totalProfit <= 0).length
-    const winRate = f.length > 0 ? (wins / f.length) * 100 : 0
-    return { totalSell, totalBuy, totalProfit, profitRate, wins, losses, winRate, count: f.length }
-  }, [filteredTrades])
+  // 탭(필터 적용) 통계 — 판매/배당/이자 탭의 히어로·리스트에 사용
+  const tradeStats = useMemo(() => computeTradeStats(filteredTrades), [filteredTrades])
+  const divStats = useMemo(() => computeDivStats(filteredDivs), [filteredDivs])
+  const interestStats = useMemo(() => computeInterestStats(filteredInterests), [filteredInterests])
 
-  const divStats = useMemo(() => {
-    const f = filteredDivs
-    const totalDiv = f.reduce((s, d) => s + d.dividendAmount, 0)
-    const totalTax = f.reduce((s, d) => s + d.tax, 0)
-    const netDiv = totalDiv - totalTax
-    const stockSet = new Set(f.map(d => d.stockName))
-    return { totalDiv, totalTax, netDiv, count: f.length, stockCount: stockSet.size }
-  }, [filteredDivs])
-
-  const interestStats = useMemo(() => {
-    const f = filteredInterests
-    const totalInterest = f.reduce((s, r) => s + r.interestAmount, 0)
-    const totalTax = f.reduce((s, r) => s + r.tax, 0)
-    return { totalInterest, totalTax, netInterest: totalInterest - totalTax, count: f.length }
-  }, [filteredInterests])
+  // 대시보드(전체 데이터) 통계 — 대시보드는 필터 UI가 없으므로 항상 전체를 집계.
+  // 차트·인사이트(이미 전체 데이터 사용)와 합계를 일관되게 맞춘다.
+  const allTradeStats = useMemo(() => computeTradeStats(trades), [trades])
+  const allDivStats = useMemo(() => computeDivStats(dividends), [dividends])
+  const allInterestStats = useMemo(() => computeInterestStats(interests), [interests])
 
   const availableMonths = useMemo(() => {
     const months = new Set([
@@ -2182,7 +2227,7 @@ export function InvestmentPage() {
       </div>
 
       {/* Tab selector */}
-      <div className="tab-bar tab-bar--fixed tab-bar--4col">
+      <div className="tab-bar tab-bar--fixed tab-bar--4col" role="tablist" aria-label="투자수익 보기 전환">
         {([
           { key: 'dashboard' as const, label: '대시보드' },
           { key: 'trades' as const, label: `판매 (${trades.length})` },
@@ -2190,6 +2235,7 @@ export function InvestmentPage() {
           { key: 'interests' as const, label: `이자 (${interests.length})` },
         ]).map(t => (
           <button key={t.key} onClick={() => setActiveTab(t.key)}
+            role="tab" aria-selected={activeTab === t.key}
             className={clsx('tab-item', activeTab === t.key && 'tab-item--selected')}>
             {t.label}
           </button>
@@ -2199,9 +2245,9 @@ export function InvestmentPage() {
       {/* Dashboard View */}
       {activeTab === 'dashboard' ? (
         <InvestmentDashboard
-          tradeProfit={tradeStats.totalProfit} tradeRate={tradeStats.profitRate} tradeCount={tradeStats.count}
-          divNet={divStats.netDiv} divCount={divStats.count}
-          interestNet={interestStats.netInterest} interestCount={interestStats.count}
+          tradeProfit={allTradeStats.totalProfit} tradeRate={allTradeStats.profitRate} tradeCount={allTradeStats.count}
+          divNet={allDivStats.netDiv} divCount={allDivStats.count}
+          interestNet={allInterestStats.netInterest} interestCount={allInterestStats.count}
           monthlyTrades={getMonthlyTradeStats()} monthlyDivs={getMonthlyDivStats()} monthlyInterests={getMonthlyInterestStats()}
           topGainers={getTopGainers(5)} topDivStocks={getTopDivStocks(5)}
           onTabChange={setActiveTab} insights={insights}
@@ -2246,7 +2292,7 @@ export function InvestmentPage() {
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-disabled pointer-events-none" />
-              <input type="text" placeholder="종목명 검색..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+              <input type="text" aria-label="종목명 검색" placeholder="종목명 검색..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-3 h-10 rounded-2xl bg-surface-primary text-heading text-[13px] ring-1 ring-base placeholder:text-disabled focus:outline-none focus:ring-[color:var(--color-primary-400)] transition-all" />
             </div>
             <ViewModeToggle value={viewMode} onChange={setViewMode} />
@@ -2269,6 +2315,13 @@ export function InvestmentPage() {
         ) : (
           <MonthlyChart stats={getMonthlyInterestStats().map(s => ({ ...s, value: s.amount - s.tax }))} valueKey="value" color="amber" />
         )
+      )}
+
+      {/* 필터 결과 수 — 스크린리더 알림 */}
+      {activeTab !== 'dashboard' && !isLoading && (
+        <LiveRegion politeness="polite">
+          {filteredCount > 0 ? `${filteredCount}건 표시 중` : (hasData ? '검색 결과가 없습니다' : '표시할 항목이 없습니다')}
+        </LiveRegion>
       )}
 
       {/* Data View — non-dashboard tabs */}

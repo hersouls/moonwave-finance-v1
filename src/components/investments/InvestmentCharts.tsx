@@ -9,9 +9,10 @@ import {
   getPositiveColor,
   getChartSeries,
 } from '@/lib/chartConfig'
-import { formatKoreanUnit, formatPercent, formatKRW } from '@/utils/format'
+import { formatKoreanUnit, formatPercent, formatKRW, formatChange } from '@/utils/format'
 import type { InvestmentTrade, Dividend, AccountInterest } from '@/lib/types'
 import type { MonthlySeasonality } from '@/hooks/useInvestmentInsights'
+import { ChartA11ySummary } from '@/components/ui/ChartA11ySummary'
 
 // ─── Cumulative Profit Line Chart ────────────────
 export function CumulativeProfitChart({
@@ -110,7 +111,13 @@ export function CumulativeProfitChart({
   return (
     <div className="rounded-2xl bg-surface-primary p-4 ring-1 ring-base">
       <h3 className="text-body3-semi text-heading mb-4">누적 수익 추이</h3>
-      <div className="h-48" aria-hidden="true">
+      <ChartA11ySummary
+        title="누적 수익 추이"
+        description="월별 누적 투자수익(판매·배당·이자 합계) 추이"
+        caption={`최종 누적 합계 ${formatKRW(totalLine[totalLine.length - 1] ?? 0)}`}
+        rows={labels.map((l, i) => ({ label: l, value: formatKRW(totalLine[i] ?? 0) }))}
+      />
+      <div className="h-44 sm:h-48 lg:h-52" aria-hidden="true">
         <Line
           ref={chartRef}
           data={chartData}
@@ -201,6 +208,11 @@ export function AssetTypeDonutChart({ trades }: { trades: InvestmentTrade[] }) {
   return (
     <div className="rounded-2xl bg-surface-primary p-4 ring-1 ring-base">
       <h3 className="text-body3-semi text-heading mb-4">자산유형별 구성</h3>
+      <ChartA11ySummary
+        title="자산유형별 구성"
+        description="자산유형별 투자금(매수금액) 비중"
+        rows={breakdown.map(b => ({ label: b.type, value: formatKRW(b.buy), extra: formatPercent(b.share, 0) }))}
+      />
       <div className="flex items-center gap-6" aria-hidden="true">
         <div className="relative w-32 h-32 flex-shrink-0">
           <Doughnut
@@ -254,7 +266,12 @@ export function SeasonHeatmap({ seasonality }: { seasonality: MonthlySeasonality
   return (
     <div className="rounded-2xl bg-surface-primary p-4 ring-1 ring-base">
       <h3 className="text-body3-semi text-heading mb-3">월별 시즌 패턴</h3>
-      <div className="grid grid-cols-6 gap-1.5">
+      <ChartA11ySummary
+        title="월별 시즌 패턴"
+        description="매도 월별 평균 수익과 승률"
+        rows={seasonality.map(s => ({ label: `${s.month}월`, value: formatChange(Math.round(s.avgProfit)), extra: `승률 ${s.winRate.toFixed(0)}%` }))}
+      />
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-1.5" aria-hidden="true">
         {allMonths.map(m => {
           const d = dataMap.get(m)
           const intensity = d ? Math.min(Math.abs(d.avgProfit) / maxProfit, 1) : 0
@@ -352,6 +369,16 @@ export function PeriodComparison({
   return (
     <div className="rounded-2xl bg-surface-primary p-4 ring-1 ring-base">
       <h3 className="text-body3-semi text-heading mb-3">기간 비교</h3>
+      <ChartA11ySummary
+        title="기간 비교"
+        description="이번 달·지난 달·올해·작년 투자수익 비교"
+        rows={[
+          { label: `${thisMonth.label} (이번 달)`, value: formatChange(thisMonth.value) },
+          { label: `${lastMonth.label} (지난 달)`, value: formatChange(lastMonth.value) },
+          { label: thisYear.label, value: formatChange(thisYear.value) },
+          { label: lastYear.label, value: formatChange(lastYear.value) },
+        ]}
+      />
       <div className="space-y-3">
         {/* Monthly */}
         <div>
