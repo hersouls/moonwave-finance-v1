@@ -62,11 +62,14 @@ export const useDailyValueStore = create<DailyValueState>()(
         if (month === get().selectedMonth) {
           await get().loadValues()
         }
+        // 카드·통계·차트는 전체 이력(allValues)을 사용하므로 함께 갱신해야 일관성이 유지된다.
+        await get().loadAllValues()
       },
 
       bulkSetValues: async (entries) => {
         await db.bulkSetDailyValues(entries)
         await get().loadValues()
+        await get().loadAllValues()
       },
 
       getValueForItemDate: (assetItemId: number, date: string) => {

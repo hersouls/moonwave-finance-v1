@@ -13,7 +13,8 @@ import {
 } from '@/lib/chartConfig'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useAssetStore } from '@/stores/assetStore'
-import { getMonthDates } from '@/lib/dateUtils'
+import { getMonthDates, getPreviousMonth } from '@/lib/dateUtils'
+import { calculateDailyNetWorth, groupValuesByItem, valueAsOf } from '@/services/assetAnalytics'
 import { Card } from '@/components/ui/Card'
 import { ChartA11ySummary } from '@/components/ui/ChartA11ySummary'
 import { formatKoreanUnit } from '@/utils/format'
@@ -30,30 +31,29 @@ function withAlpha(color: string, alpha = 0.75): string {
 }
 
 export function DailyChangeChart() {
-  const values = useDailyValueStore((s) => s.values)
+  // 전체 이력 + Forward-Fill 기반으로 일별 순자산을 산출한 뒤 전일 대비 변동을 계산한다.
+  const allValues = useDailyValueStore((s) => s.allValues)
   const items = useAssetStore((s) => s.items)
   const selectedMonth = useDailyValueStore((s) => s.selectedMonth)
 
   const chartData = useMemo(() => {
     const dates = getMonthDates(selectedMonth)
-    const valueMap = new Map<string, number>()
-    for (const v of values) {
-      valueMap.set(`${v.assetItemId}-${v.date}`, v.value)
+    const activeItems = items.filter(i => i.isActive)
+    const netWorths = calculateDailyNetWorth(selectedMonth, activeItems, allValues).map(s => s.netWorth)
+
+    // 1일의 변동폭은 전월 마지막 날 순자산(이월값)을 기준으로 계산한다.
+    const prevMonth = getPreviousMonth(selectedMonth)
+    const prevMonthDates = getMonthDates(prevMonth)
+    const prevMonthLastDate = prevMonthDates[prevMonthDates.length - 1]
+    const byItem = groupValuesByItem(allValues)
+    let carryInNetWorth = 0
+    for (const item of activeItems) {
+      if (item.id == null) continue
+      const v = valueAsOf(byItem.get(item.id), prevMonthLastDate)
+      carryInNetWorth += item.type === 'asset' ? v : -v
     }
 
-    const netWorths = dates.map(date => {
-      let assets = 0
-      let liabilities = 0
-      for (const item of items) {
-        if (!item.isActive) continue
-        const val = valueMap.get(`${item.id}-${date}`) || 0
-        if (item.type === 'asset') assets += val
-        else liabilities += val
-      }
-      return assets - liabilities
-    })
-
-    const changes = netWorths.map((nw, i) => i === 0 ? 0 : nw - netWorths[i - 1])
+    const changes = netWorths.map((nw, i) => i === 0 ? nw - carryInNetWorth : nw - netWorths[i - 1])
     const hasData = changes.some(v => v !== 0)
     if (!hasData) return null
 
@@ -82,7 +82,7 @@ export function DailyChangeChart() {
       },
       avg,
     }
-  }, [values, items, selectedMonth])
+  }, [allValues, items, selectedMonth])
 
   if (!chartData) return null
 

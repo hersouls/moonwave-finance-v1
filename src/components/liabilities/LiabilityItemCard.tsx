@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
@@ -16,13 +17,17 @@ interface LiabilityItemCardProps {
 export function LiabilityItemCard({ itemId, name, categoryId }: LiabilityItemCardProps) {
   const navigate = useNavigate()
   const categories = useAssetStore((s) => s.categories)
-  const values = useDailyValueStore((s) => s.values)
+  // 전체 이력 사용: 이번 달 기록이 없어도 잔액이 사라지지 않도록.
+  const allValues = useDailyValueStore((s) => s.allValues)
 
   const category = categories.find(c => c.id === categoryId)
 
-  const itemValues = values
-    .filter(v => v.assetItemId === itemId)
-    .sort((a, b) => b.date.localeCompare(a.date))
+  const itemValues = useMemo(() =>
+    allValues
+      .filter(v => v.assetItemId === itemId)
+      .sort((a, b) => b.date.localeCompare(a.date)),
+    [allValues, itemId]
+  )
   const latestValue = itemValues[0]?.value || 0
   const prevValue = itemValues[1]?.value || latestValue
   const change = latestValue - prevValue

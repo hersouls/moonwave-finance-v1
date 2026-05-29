@@ -19,16 +19,17 @@ interface AssetItemCardProps {
 function AssetItemCardInner({ itemId, name, categoryId, type }: AssetItemCardProps) {
   const navigate = useNavigate()
   const categories = useAssetStore((s) => s.categories)
-  const values = useDailyValueStore((s) => s.values)
+  // 전체 이력 사용: 이번 달 기록이 없어도 현재 가치가 사라지지 않도록.
+  const allValues = useDailyValueStore((s) => s.allValues)
 
   const category = categories.find(c => c.id === categoryId)
 
   // Get sorted values for this item (newest first)
   const itemValues = useMemo(() =>
-    values
+    allValues
       .filter(v => v.assetItemId === itemId)
       .sort((a, b) => b.date.localeCompare(a.date)),
-    [values, itemId]
+    [allValues, itemId]
   )
 
   const latestValue = itemValues[0]?.value || 0

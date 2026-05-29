@@ -4,6 +4,7 @@ import { useAssetStore } from '@/stores/assetStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { getTodayString } from '@/lib/dateUtils'
+import { groupValuesByItem, valueAsOf } from '@/services/assetAnalytics'
 
 function getYesterday(): string {
   const d = new Date()
@@ -18,12 +19,14 @@ function getFirstDayOfMonth(): string {
 
 export function useAssetStats(): AssetStats {
   const items = useAssetStore((s) => s.items)
-  const values = useDailyValueStore((s) => s.values)
+  // 전체 이력을 사용해야 "현재 가치"가 지난 달 기록이어도 0으로 사라지지 않는다.
+  const allValues = useDailyValueStore((s) => s.allValues)
 
   return useMemo(() => {
     const today = getTodayString()
     const yesterday = getYesterday()
     const monthStart = getFirstDayOfMonth()
+    const byItem = groupValuesByItem(allValues)
 
     let totalAssets = 0
     let totalLiabilities = 0
@@ -33,21 +36,13 @@ export function useAssetStats(): AssetStats {
     let totalLiabilitiesMonthStart = 0
 
     for (const item of items) {
-      if (!item.isActive) continue
+      if (!item.isActive || item.id == null) continue
+      const series = byItem.get(item.id)
 
-      // Get today's value (or the most recent value)
-      const todayVal = values.find(v => v.assetItemId === item.id && v.date === today)
-      // If no value today, find latest value for this item
-      const latestVal = todayVal || values
-        .filter(v => v.assetItemId === item.id)
-        .sort((a, b) => b.date.localeCompare(a.date))[0]
-      const currentValue = latestVal?.value || 0
-
-      const yesterdayVal = values.find(v => v.assetItemId === item.id && v.date === yesterday)
-      const yesterdayValue = yesterdayVal?.value || currentValue
-
-      const monthStartVal = values.find(v => v.assetItemId === item.id && v.date === monthStart)
-      const monthStartValue = monthStartVal?.value || currentValue
+      // 각 기준일 이전(포함)의 가장 최근 값 (Forward-Fill)
+      const currentValue = valueAsOf(series, today)
+      const yesterdayValue = valueAsOf(series, yesterday)
+      const monthStartValue = valueAsOf(series, monthStart)
 
       if (item.type === 'asset') {
         totalAssets += currentValue
@@ -73,15 +68,17 @@ export function useAssetStats(): AssetStats {
       dailyChange: netWorth - netWorthYesterday,
       monthlyChange: netWorth - netWorthMonthStart,
     }
-  }, [items, values])
+  }, [items, allValues])
 }
 
 export function useCategoryBreakdown(type: 'asset' | 'liability'): CategoryBreakdown[] {
   const categories = useAssetStore((s) => s.categories)
   const items = useAssetStore((s) => s.items)
-  const values = useDailyValueStore((s) => s.values)
+  const allValues = useDailyValueStore((s) => s.allValues)
 
   return useMemo(() => {
+    const today = getTodayString()
+    const byItem = groupValuesByItem(allValues)
     const typeCats = categories.filter(c => c.type === type)
     const breakdowns: CategoryBreakdown[] = []
     let grandTotal = 0
@@ -91,10 +88,8 @@ export function useCategoryBreakdown(type: 'asset' | 'liability'): CategoryBreak
       let catTotal = 0
 
       for (const item of catItems) {
-        const latestVal = values
-          .filter(v => v.assetItemId === item.id)
-          .sort((a, b) => b.date.localeCompare(a.date))[0]
-        catTotal += latestVal?.value || 0
+        if (item.id == null) continue
+        catTotal += valueAsOf(byItem.get(item.id), today)
       }
 
       grandTotal += catTotal
@@ -113,26 +108,26 @@ export function useCategoryBreakdown(type: 'asset' | 'liability'): CategoryBreak
     }
 
     return breakdowns.filter(b => b.total > 0).sort((a, b) => b.total - a.total)
-  }, [categories, items, values, type])
+  }, [categories, items, allValues, type])
 }
 
 export function useMemberBreakdown(): MemberBreakdown[] {
   const members = useMemberStore((s) => s.members)
   const items = useAssetStore((s) => s.items)
-  const values = useDailyValueStore((s) => s.values)
+  const allValues = useDailyValueStore((s) => s.allValues)
 
   return useMemo(() => {
+    const today = getTodayString()
+    const byItem = groupValuesByItem(allValues)
+
     return members.map(member => {
       const memberItems = items.filter(i => i.memberId === member.id && i.isActive)
       let totalAssets = 0
       let totalLiabilities = 0
 
       for (const item of memberItems) {
-        const latestVal = values
-          .filter(v => v.assetItemId === item.id)
-          .sort((a, b) => b.date.localeCompare(a.date))[0]
-        const val = latestVal?.value || 0
-
+        if (item.id == null) continue
+        const val = valueAsOf(byItem.get(item.id), today)
         if (item.type === 'asset') totalAssets += val
         else totalLiabilities += val
       }
@@ -146,5 +141,5 @@ export function useMemberBreakdown(): MemberBreakdown[] {
         netWorth: totalAssets - totalLiabilities,
       }
     })
-  }, [members, items, values])
+  }, [members, items, allValues])
 }
