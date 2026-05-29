@@ -6,35 +6,22 @@ import { commonLineOptions, getGridColor, getTextColor, formatChartLabel, create
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useAssetStore } from '@/stores/assetStore'
 import { getMonthDates } from '@/lib/dateUtils'
+import { calculateDailyNetWorth } from '@/services/assetAnalytics'
 import { Card } from '@/components/ui/Card'
 import { ChartA11ySummary } from '@/components/ui/ChartA11ySummary'
 import { formatKoreanUnit } from '@/utils/format'
 
 export function NetWorthTrendChart() {
   const chartRef = useRef<Chart<'line'>>(null)
-  const values = useDailyValueStore((s) => s.values)
+  // 전체 이력 + Forward-Fill: 값이 없는 날에도 직전 값이 유지되어 0으로 급락하지 않는다.
+  const allValues = useDailyValueStore((s) => s.allValues)
   const items = useAssetStore((s) => s.items)
   const selectedMonth = useDailyValueStore((s) => s.selectedMonth)
 
   const netWorths = useMemo(() => {
-    const dates = getMonthDates(selectedMonth)
-    const valueMap = new Map<string, number>()
-    for (const v of values) {
-      valueMap.set(`${v.assetItemId}-${v.date}`, v.value)
-    }
-
-    return dates.map(date => {
-      let assets = 0
-      let liabilities = 0
-      for (const item of items) {
-        if (!item.isActive) continue
-        const val = valueMap.get(`${item.id}-${date}`) || 0
-        if (item.type === 'asset') assets += val
-        else liabilities += val
-      }
-      return assets - liabilities
-    })
-  }, [values, items, selectedMonth])
+    const activeItems = items.filter(i => i.isActive)
+    return calculateDailyNetWorth(selectedMonth, activeItems, allValues).map(s => s.netWorth)
+  }, [allValues, items, selectedMonth])
 
   const dates = useMemo(() => getMonthDates(selectedMonth), [selectedMonth])
   const hasData = netWorths.some(v => v !== 0)

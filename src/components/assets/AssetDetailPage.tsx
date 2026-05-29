@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Pencil, Trash2, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Pencil, Trash2, ChevronLeft, ChevronRight, RefreshCw, Plus, TrendingUp, TrendingDown } from 'lucide-react'
 import { useAssetStore } from '@/stores/assetStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useMemberStore } from '@/stores/memberStore'
@@ -10,7 +10,9 @@ import { Card } from '@/components/ui/Card'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { formatKRW, formatChange } from '@/utils/format'
 import { Amount } from '@/components/ui/Amount'
-import { getMonthDates, formatMonthLabel, getPreviousMonth, getNextMonth } from '@/lib/dateUtils'
+import { Sparkline } from '@/components/ui/Sparkline'
+import { getMonthDates, formatMonthLabel, getPreviousMonth, getNextMonth, getCurrentMonthString, getTodayString } from '@/lib/dateUtils'
+import { latestAndPrev, valueAsOf } from '@/services/assetAnalytics'
 import { clsx } from 'clsx'
 import { format } from 'date-fns'
 import { UI_DELAYS } from '@/utils/constants'
@@ -46,9 +48,11 @@ export function AssetDetailPage() {
   const openAssetEditModal = useUIStore((s) => s.openAssetEditModal)
 
   const values = useDailyValueStore((s) => s.values)
+  const allValues = useDailyValueStore((s) => s.allValues)
   const selectedMonth = useDailyValueStore((s) => s.selectedMonth)
   const setSelectedMonth = useDailyValueStore((s) => s.setSelectedMonth)
   const loadValues = useDailyValueStore((s) => s.loadValues)
+  const loadAllValues = useDailyValueStore((s) => s.loadAllValues)
   const setValue = useDailyValueStore((s) => s.setValue)
 
   const item = items.find(i => i.id === itemId)
@@ -58,7 +62,7 @@ export function AssetDetailPage() {
   const isSeverancePay = !!category && category.name.includes('퇴직금')
 
   const loadData = async () => {
-    await Promise.all([loadAll(), loadValues(), loadMembers()])
+    await Promise.all([loadAll(), loadValues(), loadAllValues(), loadMembers()])
     setIsLoading(false)
   }
 
@@ -161,12 +165,36 @@ export function AssetDetailPage() {
     )
   }
 
-  // Get latest value and previous
-  const itemValues = values
+  // 전체 이력에서 현재 가치/직전 값 산출 (이번 달 기록이 없어도 정확)
+  const itemSeriesDesc = allValues
     .filter(v => v.assetItemId === itemId)
     .sort((a, b) => b.date.localeCompare(a.date))
-  const latestValue = itemValues[0]?.value || 0
-  const prevValue = itemValues[1]?.value || latestValue
+  const { latest: latestValue, prev: prevValue } = latestAndPrev(itemSeriesDesc)
+  const isLiability = item.type === 'liability'
+  const diff = latestValue - prevValue
+  // 부채는 감소가 긍정(green), 자산은 증가가 긍정.
+  const diffIsGood = isLiability ? diff < 0 : diff > 0
+
+  // 최근 90일 추이 (Forward-Fill)
+  const today = getTodayString()
+  const trendData: number[] = (() => {
+    if (itemSeriesDesc.length === 0) return []
+    const out: number[] = []
+    for (let i = 89; i >= 0; i--) {
+      // UTC 기준 — getTodayString()과 동일하게 맞춰 하루 어긋남 방지
+      const d = new Date(today + 'T00:00:00Z')
+      d.setUTCDate(d.getUTCDate() - i)
+      out.push(valueAsOf(itemSeriesDesc, d.toISOString().split('T')[0]))
+    }
+    return out
+  })()
+  const hasTrend = trendData.some((v, i) => i > 0 && v !== trendData[0])
+
+  const goToToday = () => {
+    const curMonth = getCurrentMonthString()
+    if (selectedMonth !== curMonth) setSelectedMonth(curMonth)
+    setTimeout(() => handleCellClick(today), UI_DELAYS.NAV)
+  }
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -211,25 +239,51 @@ export function AssetDetailPage() {
         transition={{ type: 'spring', stiffness: 320, damping: 24, mass: 0.8 }}
       >
         <Card className="card-pad-lg el-card-elevated surface-inset-top">
-          <span className="text-sm text-sub">현재 가치</span>
-          <Amount
-            as="p"
-            value={latestValue}
-            format="krw"
-            size="title"
-            className="text-heading mt-1 block"
-          />
-          {latestValue !== prevValue && (
-            <p className={clsx(
-              'text-sm tabular-nums mt-1',
-              latestValue > prevValue ? 'text-status-success' : 'text-status-danger'
-            )}>
-              {formatChange(latestValue - prevValue)}
-            </p>
-          )}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <span className="text-sm text-sub">{isLiability ? '현재 잔액' : '현재 가치'}</span>
+              <Amount
+                as="p"
+                value={latestValue}
+                format="krw"
+                size="title"
+                className={clsx('mt-1 block', isLiability ? 'text-status-danger' : 'text-heading')}
+              />
+              {diff !== 0 && (
+                <p className={clsx(
+                  'inline-flex items-center gap-1 text-sm tabular-nums mt-1',
+                  diffIsGood ? 'text-status-success' : 'text-status-danger'
+                )}>
+                  {diff > 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                  {formatChange(diff)}
+                </p>
+              )}
+            </div>
+            {hasTrend && (
+              <div className="flex-shrink-0 pt-1" aria-hidden="true">
+                <Sparkline
+                  data={trendData}
+                  width={108}
+                  height={44}
+                  color={diffIsGood ? '#10b981' : '#ef4444'}
+                  strokeWidth={2}
+                />
+                <p className="text-[10px] text-disabled text-right mt-0.5">최근 90일</p>
+              </div>
+            )}
+          </div>
           {item.memo && (
-            <p className="text-sm text-sub mt-2">{item.memo}</p>
+            <p className="text-sm text-sub mt-3 pt-3 border-t border-base">{item.memo}</p>
           )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={goToToday}
+            className="mt-4 w-full"
+          >
+            <Plus className="w-4 h-4" />
+            오늘 값 입력
+          </Button>
         </Card>
       </motion.div>
 
@@ -339,21 +393,30 @@ export function AssetDetailPage() {
           <div className="grid grid-cols-1 divide-y divide-[var(--border-default)]">
             {dates.map((date, idx) => {
               const val = values.find(v => v.assetItemId === itemId && v.date === date)
-              const prevDayVal = idx > 0
-                ? values.find(v => v.assetItemId === itemId && v.date === dates[idx - 1])
-                : null
-              const change = val && prevDayVal ? val.value - prevDayVal.value : 0
+              // 전일 대비 변동: 직전 날짜의 "유효값"(Forward-Fill, 전월 이월 포함)과 비교 (UTC 기준)
+              const prevDate = new Date(date + 'T00:00:00Z')
+              prevDate.setUTCDate(prevDate.getUTCDate() - 1)
+              const prevEffective = valueAsOf(itemSeriesDesc, prevDate.toISOString().split('T')[0])
+              const change = val ? val.value - prevEffective : 0
               const day = new Date(date).getDate()
               const isEditing = editingCell === `${itemId}-${date}`
+              const isToday = date === today
 
               return (
                 <div
                   key={date}
-                  className="flex items-center px-4 py-3 hover:bg-[var(--hover-bg)] cursor-pointer"
+                  className={clsx(
+                    'flex items-center px-4 py-3 cursor-pointer transition-colors',
+                    isToday ? 'bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20' : 'hover:bg-[var(--hover-bg)]'
+                  )}
                   onClick={() => !isEditing && handleCellClick(date)}
                 >
-                  <span className="w-10 text-sm text-sub tabular-nums">
+                  <span className={clsx(
+                    'w-12 text-sm tabular-nums flex items-center gap-1',
+                    isToday ? 'text-primary-600 dark:text-primary-400 font-semibold' : 'text-sub'
+                  )}>
                     {day}일
+                    {isToday && <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
                   </span>
                   <div className="flex-1">
                     {isEditing ? (

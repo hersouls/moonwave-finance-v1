@@ -9,10 +9,13 @@ import { LiabilityItemCard } from './LiabilityItemCard'
 import { LiabilityCreateModal } from './LiabilityCreateModal'
 import { LiabilityEmptyState } from './LiabilityEmptyState'
 import { AssetCategoryTabs } from '@/components/assets/AssetCategoryTabs'
+import { AssetSummaryHeader } from '@/components/assets/AssetSummaryHeader'
 import { FAB } from '@/components/ui/FAB'
 import { Tabs } from '@/components/ui/Tabs'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { useSyncListener } from '@/hooks/useSyncListener'
+import { groupValuesByItem, valueAsOf } from '@/services/assetAnalytics'
+import { getTodayString } from '@/lib/dateUtils'
 
 export function LiabilityListPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -25,13 +28,16 @@ export function LiabilityListPage() {
 
   const loadAll = useAssetStore((s) => s.loadAll)
   const loadValues = useDailyValueStore((s) => s.loadValues)
+  const loadAllValues = useDailyValueStore((s) => s.loadAllValues)
   const loadMembers = useMemberStore((s) => s.loadMembers)
   const items = useAssetStore((s) => s.items)
+  const allValues = useDailyValueStore((s) => s.allValues)
   const members = useMemberStore((s) => s.members)
   const openLiabilityCreateModal = useUIStore((s) => s.openLiabilityCreateModal)
+  const today = getTodayString()
 
   const loadData = async () => {
-    await Promise.all([loadAll(), loadValues(), loadMembers()])
+    await Promise.all([loadAll(), loadValues(), loadAllValues(), loadMembers()])
     setIsLoading(false)
   }
 
@@ -51,8 +57,12 @@ export function LiabilityListPage() {
     if (activeCategory !== null) {
       result = result.filter(i => i.categoryId === activeCategory)
     }
-    return result
-  }, [items, activeMember, activeCategory])
+    // 잔액 내림차순 정렬 — 큰 부채가 위로.
+    const byItem = groupValuesByItem(allValues)
+    return [...result].sort(
+      (a, b) => valueAsOf(byItem.get(b.id!), today) - valueAsOf(byItem.get(a.id!), today)
+    )
+  }, [items, activeMember, activeCategory, allValues, today])
 
   if (isLoading) {
     return (
@@ -72,6 +82,10 @@ export function LiabilityListPage() {
   return (
     <div className="p-4 lg:p-6">
       <div className="space-y-4">
+        {filteredItems.length > 0 && (
+          <AssetSummaryHeader items={filteredItems} type="liability" />
+        )}
+
         <Tabs
           tabs={memberTabs}
           activeTab={activeMember === null ? 'all' : String(activeMember)}

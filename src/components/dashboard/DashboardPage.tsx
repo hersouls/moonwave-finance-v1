@@ -44,6 +44,7 @@ export function DashboardPage() {
 
   const loadAll = useAssetStore((s) => s.loadAll)
   const loadValues = useDailyValueStore((s) => s.loadValues)
+  const loadAllValues = useDailyValueStore((s) => s.loadAllValues)
   const loadMembers = useMemberStore((s) => s.loadMembers)
   const loadGoals = useGoalStore((s) => s.loadGoals)
   const loadTransactions = useTransactionStore((s) => s.loadAll)
@@ -60,7 +61,7 @@ export function DashboardPage() {
     setError(null)
     setIsLoading(true)
     try {
-      await Promise.all([loadAll(), loadValues(), loadMembers(), loadGoals(), loadTransactions()])
+      await Promise.all([loadAll(), loadValues(), loadAllValues(), loadMembers(), loadGoals(), loadTransactions()])
     } catch {
       setError('데이터를 불러오는데 실패했습니다.')
     } finally {

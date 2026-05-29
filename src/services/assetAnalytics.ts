@@ -147,6 +147,66 @@ export function generateSeverancePayValues(
   return values
 }
 
+/* ──────────────────────────────────────────────
+ * 일별 가치(DailyValue) 조회 헬퍼 — 전체 이력 기반 Forward-Fill
+ *
+ * 자산/부채의 "현재 가치"는 매일 기록되지 않으므로, 특정 일자 기준
+ * "그 날 이전(포함)의 가장 최근 기록 값"을 사용해야 한다.
+ * 월 단위로 잘린 데이터(values)가 아니라 전체 이력(allValues)을 넣어야 정확하다.
+ * ────────────────────────────────────────────── */
+
+/**
+ * DailyValue 배열을 assetItemId 별로 그룹화하고, 각 그룹을 날짜 내림차순(최신 우선)으로 정렬한다.
+ * 반복 조회(valueAsOf) 전에 한 번만 만들어 두면 O(n) 으로 재사용할 수 있다.
+ */
+export function groupValuesByItem(values: DailyValue[]): Map<number, DailyValue[]> {
+  const map = new Map<number, DailyValue[]>()
+  for (const v of values) {
+    const arr = map.get(v.assetItemId)
+    if (arr) arr.push(v)
+    else map.set(v.assetItemId, [v])
+  }
+  for (const arr of map.values()) {
+    arr.sort((a, b) => b.date.localeCompare(a.date))
+  }
+  return map
+}
+
+/**
+ * 날짜 내림차순으로 정렬된 한 항목의 DailyValue 목록에서
+ * `asOf` (YYYY-MM-DD) 이전(포함)의 가장 최근 값을 반환한다 (Forward-Fill).
+ * 해당하는 기록이 없으면 0 을 반환한다.
+ *
+ * @param sortedDesc groupValuesByItem 으로 만든, 날짜 내림차순 정렬 배열
+ * @param asOf 기준일 (YYYY-MM-DD)
+ */
+export function valueAsOf(sortedDesc: DailyValue[] | undefined, asOf: string): number {
+  if (!sortedDesc || sortedDesc.length === 0) return 0
+  for (const v of sortedDesc) {
+    if (v.date <= asOf) return v.value
+  }
+  return 0
+}
+
+/**
+ * 한 항목의 "가장 최근 기록"과 "그 직전 기록"을 반환한다.
+ * 카드/상세 화면의 현재 가치·증감 표시에 사용한다.
+ *
+ * @param sortedDesc groupValuesByItem 으로 만든, 날짜 내림차순 정렬 배열
+ * @param asOf 이 일자 이후의 (미래) 기록은 무시. 기본값 없음 → 전체 최신
+ */
+export function latestAndPrev(
+  sortedDesc: DailyValue[] | undefined,
+  asOf?: string
+): { latest: number; prev: number; latestDate: string | null } {
+  if (!sortedDesc || sortedDesc.length === 0) return { latest: 0, prev: 0, latestDate: null }
+  const filtered = asOf ? sortedDesc.filter(v => v.date <= asOf) : sortedDesc
+  if (filtered.length === 0) return { latest: 0, prev: 0, latestDate: null }
+  const latest = filtered[0].value
+  const prev = filtered[1]?.value ?? latest
+  return { latest, prev, latestDate: filtered[0].date }
+}
+
 /**
  * 주어진 월(month)의 1일부터 말일까지 일자별 순자산(totalAssets - totalLiabilities)을 산출합니다.
  * 값이 매일 존재하지 않는 항목에 대해서는 "가져올 수 있는 가장 최근 과거 값(Forward Fill)"을 사용합니다.
@@ -217,7 +277,7 @@ export function calculateDailyNetWorth(month: string, items: AssetItem[], values
     })
     
     const netWorth = totalAssets - totalLiabilities
-    const debtRatio = netWorth > 0 ? (totalLiabilities / totalAssets) * 100 : 0
+    const debtRatio = totalAssets > 0 ? (totalLiabilities / totalAssets) * 100 : 0
     
     snapshots.push({
       date: currentDateStr,
