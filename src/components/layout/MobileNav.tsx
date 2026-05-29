@@ -12,6 +12,7 @@ import {
   Settings,
   X,
   Repeat,
+  TrendingUp,
   ChevronDown,
 } from 'lucide-react'
 import { Fragment, useEffect } from 'react'
@@ -250,6 +251,24 @@ export function MobileNav() {
                       </li>
                     )
                   })}
+
+                  {/* Investments (standalone) */}
+                  <li role="none">
+                    <button
+                      onClick={() => handleNavigate('/investments')}
+                      className={clsx(
+                        'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors min-h-[44px]',
+                        'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+                        location.pathname.startsWith('/investments')
+                          ? 'bg-accent-primary text-accent-primary font-medium'
+                          : 'text-sub hover:bg-[var(--hover-bg)]'
+                      )}
+                      role="menuitem"
+                    >
+                      <TrendingUp className="w-5 h-5" aria-hidden="true" />
+                      <span className="font-medium flex-1 text-left">투자수익</span>
+                    </button>
+                  </li>
 
                   {/* Divider */}
                   <li role="separator" className="nav-sidebar-divider" aria-hidden="true" />
