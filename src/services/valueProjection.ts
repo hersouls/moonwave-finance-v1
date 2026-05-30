@@ -1,7 +1,8 @@
-import { format, parseISO, differenceInCalendarDays, addDays } from 'date-fns'
+import { format, parseISO, addDays } from 'date-fns'
 import type { AssetValueProjection } from '@/lib/types'
 
 const ymd = (d: Date) => format(d, 'yyyy-MM-dd')
+const clamp = (n: number) => Math.max(0, Math.round(n))
 
 /** 백필 시작일 = (기준연도 - 1)-01-01 */
 export function backfillStart(baseYmd: string): string {
@@ -13,45 +14,21 @@ export function forwardEnd(baseYmd: string): string {
   return `${parseISO(baseYmd).getFullYear() + 1}-12-31`
 }
 
-/** (from, to] 구간에서 매월 dayOfMonth(말일 클램프)이 몇 번 등장하는지. */
-function monthlyOccurrences(fromYmd: string, toYmd: string, dayOfMonth: number): number {
-  const from = parseISO(fromYmd)
-  const to = parseISO(toYmd)
-  let count = 0
-  let y = from.getFullYear()
-  let m = from.getMonth()
-  // 안전 상한 (최대 ~40개월)
-  for (let i = 0; i < 60; i++) {
-    const lastDay = new Date(y, m + 1, 0).getDate()
-    const day = Math.min(dayOfMonth, lastDay)
-    const contrib = new Date(y, m, day)
-    if (contrib > to) break
-    if (contrib > from) count++ // (from, to] — from 당일은 base 에 이미 포함
-    m++
-    if (m > 11) { m = 0; y++ }
-  }
-  return count
+/** 다음 날(YYYY-MM-DD). */
+export function nextDayYmd(baseYmd: string): string {
+  return ymd(addDays(parseISO(baseYmd), 1))
 }
 
-/**
- * 기준값/기준일로부터 targetYmd 시점의 투영 값.
- * - target <= base: 평탄(기준값) — 과거 백필은 동일 값.
- * - target  > base: dailyDelta(일수) + monthlyAmount(가산 횟수) 적용.
- * 음수 방지 클램프(자산 가치는 0 미만 불가).
- */
-export function projectedValueOn(
-  baseValue: number,
-  baseYmd: string,
-  targetYmd: string,
-  p?: AssetValueProjection,
-): number {
-  if (targetYmd <= baseYmd) return Math.max(0, Math.round(baseValue))
-  const days = differenceInCalendarDays(parseISO(targetYmd), parseISO(baseYmd))
-  let v = baseValue + (p?.dailyDelta ?? 0) * days
-  if (p?.monthlyAmount && p?.monthlyDay) {
-    v += p.monthlyAmount * monthlyOccurrences(baseYmd, targetYmd, p.monthlyDay)
-  }
-  return Math.max(0, Math.round(v))
+/** 규칙이 비어있는지(평탄) 여부. */
+export function isFlatProjection(p?: AssetValueProjection): boolean {
+  if (!p) return true
+  return !p.dailyDelta && !(p.monthlyAmount && p.monthlyDay) && !p.annualRatePct
+}
+
+/** d 가 매월 적용일(말일 클램프)인지. */
+function isContribDay(d: Date, monthlyDay: number): boolean {
+  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+  return d.getDate() === Math.min(monthlyDay, last)
 }
 
 export interface ValueEntry {
@@ -60,10 +37,9 @@ export interface ValueEntry {
 }
 
 /**
- * 전방(forward): 기준일 ~ (Y+1)-12-31. 값 유무와 무관하게 규칙대로 덮어쓴다.
- * - 규칙 없음(평탄): 동일 값
- * - dailyDelta: 매일 ± 반영
- * - monthlyAmount/Day: 매월 지정일 가산
+ * 전방(forward): 기준일 ~ (Y+1)-12-31. 하루씩 잔액을 이어가며(반복) 규칙 적용.
+ * 적용 순서(매일): ① 연 정률(복리=잔액 기준 / 단리=기준값 기준) ② 매일 정액 ③ 매월 정액(적용일).
+ * 음수 클램프(0 미만 불가). 기준일 값은 baseValue 그대로.
  */
 export function buildForward(
   baseValue: number,
@@ -71,38 +47,62 @@ export function buildForward(
   p?: AssetValueProjection,
 ): ValueEntry[] {
   const endYmd = forwardEnd(baseYmd)
-  const forward: ValueEntry[] = []
-  for (let d = parseISO(baseYmd); ymd(d) <= endYmd; d = addDays(d, 1)) {
-    const dateStr = ymd(d)
-    forward.push({ date: dateStr, value: projectedValueOn(baseValue, baseYmd, dateStr, p) })
-  }
-  return forward
-}
+  const r = (p?.annualRatePct ?? 0) / 100
+  const compound = !!p?.compound
+  const daily = p?.dailyDelta ?? 0
+  const monthly = p?.monthlyAmount ?? 0
+  const monthlyDay = p?.monthlyDay ?? 0
 
-/**
- * 백필(backfill): 기준일 직전(D-1)부터 과거로, **빈 날짜만** 평탄값(기준값)으로 채운다.
- * 값이 있는 날(이미 기록된 날)을 만나면 **즉시 중단**(기존 값 보존). 하한은 (Y-1)-01-01.
- * "D-1 값이 있으면 수정하지 말고, 없으면 현재값으로 중간에 값이 있는 날까지 자동입력".
- */
-export function buildBackfill(
-  baseValue: number,
-  baseYmd: string,
-  hasValue: (date: string) => boolean,
-): ValueEntry[] {
-  const start = backfillStart(baseYmd)
-  const flat = Math.max(0, Math.round(baseValue))
-  const entries: ValueEntry[] = []
-  let d = addDays(parseISO(baseYmd), -1)
-  while (ymd(d) >= start) {
-    const dateStr = ymd(d)
-    if (hasValue(dateStr)) break // 값이 있는 날을 만나면 중단
-    entries.push({ date: dateStr, value: flat })
-    d = addDays(d, -1)
+  const entries: ValueEntry[] = [{ date: baseYmd, value: clamp(baseValue) }]
+  let bal = baseValue
+  let d = addDays(parseISO(baseYmd), 1)
+  while (ymd(d) <= endYmd) {
+    if (r) bal += (compound ? bal : baseValue) * r / 365
+    bal += daily
+    if (monthly && monthlyDay && isContribDay(d, monthlyDay)) bal += monthly
+    bal = Math.max(0, bal)
+    entries.push({ date: ymd(d), value: Math.round(bal) })
+    d = addDays(d, 1)
   }
   return entries
 }
 
-/** 규칙이 비어있는지(평탄) 여부. */
-export function isFlatProjection(p?: AssetValueProjection): boolean {
-  return !p || (!p.dailyDelta && !(p.monthlyAmount && p.monthlyDay))
+/**
+ * 백필(backfill): 기준일 직전(D-1)부터 과거로 — 규칙을 **역산**(Q1=B)해 값 생성.
+ * 평탄이면 동일 값. 매 단계 isManual(date)을 만나면 **즉시 중단**(직전 수동기록 보존, Q7).
+ * 하한 (Y-1)-01-01. 음수 클램프.
+ */
+export function buildBackfill(
+  baseValue: number,
+  baseYmd: string,
+  isManual: (date: string) => boolean,
+  p?: AssetValueProjection,
+): ValueEntry[] {
+  const startYmd = backfillStart(baseYmd)
+  const flat = isFlatProjection(p)
+  const r = (p?.annualRatePct ?? 0) / 100
+  const compound = !!p?.compound
+  const daily = p?.dailyDelta ?? 0
+  const monthly = p?.monthlyAmount ?? 0
+  const monthlyDay = p?.monthlyDay ?? 0
+
+  const entries: ValueEntry[] = []
+  let bal = baseValue // 기준일(=baseYmd)의 값
+  let d = addDays(parseISO(baseYmd), -1)
+  while (ymd(d) >= startYmd) {
+    const ds = ymd(d)
+    if (isManual(ds)) break // 직전 수동기록을 만나면 중단
+
+    if (!flat) {
+      // d+1 → d 로 역산: 전방 적용(정률→정액→월)의 역순으로 되돌린다.
+      const dPlus1 = addDays(d, 1)
+      if (monthly && monthlyDay && isContribDay(dPlus1, monthlyDay)) bal -= monthly
+      bal -= daily
+      if (r) bal = compound ? bal / (1 + r / 365) : bal - baseValue * r / 365
+      bal = Math.max(0, bal)
+    }
+    entries.push({ date: ds, value: flat ? clamp(baseValue) : Math.round(bal) })
+    d = addDays(d, -1)
+  }
+  return entries
 }

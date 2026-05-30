@@ -28,15 +28,20 @@ export interface AssetCategory {
 // ─── Asset Item Types ──────────────────────────────
 /**
  * 자산 가치 변동 규칙 — 입력 시점부터 미래 값을 자동 투영(projection)한다.
- * 둘 다 없으면 평탄(flat: 동일 값 유지).
+ * 모두 비어있으면 평탄(flat: 동일 값 유지). 여러 규칙을 동시에 조합할 수 있다
+ * (예: 부채 = 매월 상환(−) + 연 이자(+), 연금 = 매월 불입(+) + 연 수익(+)).
  */
 export interface AssetValueProjection {
-  /** 매일 ±금액 (예: 자동차 감가상각 = 음수, 일일이자 = 양수) */
+  /** 매일 ±정액 (예: 자동차 감가상각 = 음수, 일일이자 = 양수) */
   dailyDelta?: number
-  /** 매월 가산 금액 (예: 연금 불입액) */
+  /** 매월 ±정액 (예: 연금 불입 = 양수, 부채 상환 = 음수) */
   monthlyAmount?: number
-  /** 매월 가산 날짜 (1-31, 해당 월 마지막일로 클램프) */
+  /** 매월 적용 날짜 (1-31, 해당 월 말일로 클램프) */
   monthlyDay?: number
+  /** 연 정률 % (예: 예금이자 3.5, 물가 2, 부채이자 5). 음수도 가능. */
+  annualRatePct?: number
+  /** 정률 복리 여부 (true=복리/일복리, false·미지정=단리) */
+  compound?: boolean
 }
 
 export interface AssetItem {
@@ -62,6 +67,8 @@ export interface DailyValue {
   assetItemId: number
   date: string
   value: number
+  /** 'manual' = 사용자 직접 입력(앵커), 'projected' = 규칙으로 자동 생성. 미지정은 자동으로 간주. */
+  source?: 'manual' | 'projected'
   createdAt: string
   updatedAt: string
 }

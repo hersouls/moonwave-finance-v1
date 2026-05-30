@@ -24,13 +24,13 @@ const PERIODS = [
 export function NetWorthTracker() {
   const [days, setDays] = useState<number>(90)
   const stats = useAssetStats()
-  const { series, change, growthRatePct, dailySlope } = useNetWorthSeries(days)
+  const { change, growthRatePct, dailySlope, chart, todayIdx } = useNetWorthSeries(days, days)
   const hideAmounts = useSettingsStore((s) => !!s.settings.hideAmounts)
 
   const daily = stats.dailyChange
   const dailyGood = daily >= 0
   const periodGood = change >= 0
-  const trend = series.map((p) => p.value)
+  const trend = chart.map((p) => p.value)
 
   return (
     <div className="hero-gradient noise-overlay hero-shimmer el-glow-primary relative overflow-hidden rounded-2xl p-5 sm:p-6">
@@ -67,10 +67,14 @@ export function NetWorthTracker() {
           </div>
         </div>
 
-        {/* Trend */}
+        {/* Trend (실선=과거, 점선=미래 예측) */}
         {trend.length >= 3 && (
           <div className="mt-3">
-            <Sparkline data={trend} width={600} height={64} color="rgba(255,255,255,0.92)" strokeWidth={2} className="h-16 w-full" />
+            <Sparkline data={trend} width={600} height={64} color="rgba(255,255,255,0.92)" strokeWidth={2} className="h-16 w-full" dashFrom={todayIdx} />
+            <div className="mt-1 flex justify-end gap-3 text-micro text-white/50">
+              <span className="flex items-center gap-1"><span className="inline-block h-px w-3 bg-white/80" /> 과거 {days}일</span>
+              <span className="flex items-center gap-1"><span className="inline-block h-px w-3 border-t border-dashed border-white/70" /> 예측 {days}일</span>
+            </div>
           </div>
         )}
 

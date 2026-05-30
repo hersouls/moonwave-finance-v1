@@ -1,123 +1,129 @@
 import { useState } from 'react'
 import { clsx } from 'clsx'
-import { Minus, TrendingDown, CalendarPlus } from 'lucide-react'
 import type { AssetValueProjection } from '@/lib/types'
-
-type Mode = 'flat' | 'daily' | 'monthly'
 
 interface Props {
   value: AssetValueProjection | undefined
   onChange: (p: AssetValueProjection | undefined) => void
 }
 
-function deriveMode(p?: AssetValueProjection): Mode {
-  if (p?.dailyDelta) return 'daily'
-  if (p?.monthlyAmount && p?.monthlyDay) return 'monthly'
-  return 'flat'
+const fmtInt = (n: number) => (n ? Math.round(n).toLocaleString('ko-KR') : '')
+const parseInt0 = (s: string) => Number(s.replace(/[^0-9]/g, '')) || 0
+const parseRate = (s: string) => { const n = parseFloat(s.replace(/[^0-9.]/g, '')); return Number.isFinite(n) ? n : 0 }
+
+/** 증가/감소 또는 가산/차감 방향 토글 */
+function DirToggle({ dir, onChange, up, down }: { dir: 'up' | 'down'; onChange: (d: 'up' | 'down') => void; up: string; down: string }) {
+  return (
+    <div className="inline-flex flex-shrink-0 rounded-lg bg-surface-tertiary p-0.5">
+      {(['up', 'down'] as const).map((d) => (
+        <button key={d} type="button" onClick={() => onChange(d)}
+          className={clsx('rounded-md px-2.5 py-1.5 text-label3 font-medium transition-colors',
+            dir === d ? (d === 'up' ? 'bg-value-positive-soft text-value-positive' : 'bg-value-negative-soft text-value-negative') : 'text-sub')}>
+          {d === 'up' ? up : down}
+        </button>
+      ))}
+    </div>
+  )
 }
 
-const fmt = (n: number) => (n ? n.toLocaleString('ko-KR') : '')
-const parse = (s: string) => Number(s.replace(/[^0-9]/g, '')) || 0
-
 /**
- * 자본 특성별 가치 변동 규칙 입력. flat(변동 없음) / 매일 ±(감가상각·일일이자) /
- * 매월 가산(연금 불입). 입력일부터 (Y+1)-12-31 까지 자동 투영에 사용된다.
+ * 자본 특성별 가치 변동 규칙. 매일 정액 / 매월 정액 / 연 정률 을 **독립적으로 조합** 가능.
+ * (예: 부채 = 매월 상환 + 연 이자, 연금 = 매월 불입 + 연 수익)
  */
 export function AssetProjectionFields({ value, onChange }: Props) {
-  const [mode, setMode] = useState<Mode>(() => deriveMode(value))
-  const [dailyMag, setDailyMag] = useState<string>(() => fmt(Math.abs(value?.dailyDelta ?? 0)))
-  const [dailyDir, setDailyDir] = useState<'up' | 'down'>(() => ((value?.dailyDelta ?? 0) > 0 ? 'up' : 'down'))
-  const [monthlyAmt, setMonthlyAmt] = useState<string>(() => fmt(value?.monthlyAmount ?? 0))
-  const [monthlyDay, setMonthlyDay] = useState<number>(() => value?.monthlyDay ?? 1)
+  // 매일 정액
+  const [dailyOn, setDailyOn] = useState(() => !!value?.dailyDelta)
+  const [dailyMag, setDailyMag] = useState(() => fmtInt(Math.abs(value?.dailyDelta ?? 0)))
+  const [dailyDir, setDailyDir] = useState<'up' | 'down'>(() => ((value?.dailyDelta ?? 0) >= 0 ? 'up' : 'down'))
+  // 매월 정액
+  const [monthlyOn, setMonthlyOn] = useState(() => !!(value?.monthlyAmount && value?.monthlyDay))
+  const [monthlyAmt, setMonthlyAmt] = useState(() => fmtInt(Math.abs(value?.monthlyAmount ?? 0)))
+  const [monthlyDir, setMonthlyDir] = useState<'up' | 'down'>(() => ((value?.monthlyAmount ?? 0) >= 0 ? 'up' : 'down'))
+  const [monthlyDay, setMonthlyDay] = useState(() => value?.monthlyDay ?? 1)
+  // 연 정률
+  const [rateOn, setRateOn] = useState(() => !!value?.annualRatePct)
+  const [ratePct, setRatePct] = useState(() => (value?.annualRatePct ? String(Math.abs(value.annualRatePct)) : ''))
+  const [rateDir, setRateDir] = useState<'up' | 'down'>(() => ((value?.annualRatePct ?? 0) >= 0 ? 'up' : 'down'))
+  const [compound, setCompound] = useState(() => !!value?.compound)
 
-  const emit = (m: Mode, dMag: string, dDir: 'up' | 'down', mAmt: string, mDay: number) => {
-    if (m === 'daily') {
-      const mag = parse(dMag)
-      onChange(mag > 0 ? { dailyDelta: dDir === 'down' ? -mag : mag } : undefined)
-    } else if (m === 'monthly') {
-      const amt = parse(mAmt)
-      onChange(amt > 0 ? { monthlyAmount: amt, monthlyDay: mDay } : undefined)
-    } else {
-      onChange(undefined)
-    }
+  // 현재 로컬 상태로 projection 을 구성해 emit
+  const emit = (o: Partial<{ dOn: boolean; dMag: string; dDir: 'up' | 'down'; mOn: boolean; mAmt: string; mDir: 'up' | 'down'; mDay: number; rOn: boolean; rPct: string; rDir: 'up' | 'down'; comp: boolean }>) => {
+    const dOn = o.dOn ?? dailyOn, dMag = o.dMag ?? dailyMag, dDir = o.dDir ?? dailyDir
+    const mOn = o.mOn ?? monthlyOn, mAmt = o.mAmt ?? monthlyAmt, mDir = o.mDir ?? monthlyDir, mDay = o.mDay ?? monthlyDay
+    const rOn = o.rOn ?? rateOn, rPct = o.rPct ?? ratePct, rDir = o.rDir ?? rateDir, comp = o.comp ?? compound
+    const p: AssetValueProjection = {}
+    if (dOn && parseInt0(dMag) > 0) p.dailyDelta = (dDir === 'down' ? -1 : 1) * parseInt0(dMag)
+    if (mOn && parseInt0(mAmt) > 0) { p.monthlyAmount = (mDir === 'down' ? -1 : 1) * parseInt0(mAmt); p.monthlyDay = mDay }
+    if (rOn && parseRate(rPct) > 0) { p.annualRatePct = (rDir === 'down' ? -1 : 1) * parseRate(rPct); p.compound = comp }
+    onChange(Object.keys(p).length ? p : undefined)
   }
-
-  const pickMode = (m: Mode) => { setMode(m); emit(m, dailyMag, dailyDir, monthlyAmt, monthlyDay) }
-
-  const MODES: { key: Mode; label: string; icon: typeof Minus }[] = [
-    { key: 'flat', label: '변동 없음', icon: Minus },
-    { key: 'daily', label: '매일 변동', icon: TrendingDown },
-    { key: 'monthly', label: '매월 가산', icon: CalendarPlus },
-  ]
 
   return (
     <div>
-      <label className="mb-1.5 block text-body3 text-body">가치 변동 규칙</label>
-      <div className="grid grid-cols-3 gap-2">
-        {MODES.map(({ key, label, icon: Icon }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => pickMode(key)}
-            aria-pressed={mode === key}
-            className={clsx(
-              'flex flex-col items-center gap-1 rounded-lg border-2 py-2.5 text-caption font-medium transition-all',
-              mode === key ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300' : 'border-base text-sub hover:bg-[var(--hover-bg)]',
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            {label}
+      <label className="mb-1.5 block text-body3 text-body">가치 변동 규칙 <span className="text-disabled">(선택 · 조합 가능)</span></label>
+      <div className="space-y-2.5 rounded-xl bg-surface-secondary p-3">
+        {/* 매일 정액 */}
+        <div>
+          <button type="button" onClick={() => { const v = !dailyOn; setDailyOn(v); emit({ dOn: v }) }} aria-pressed={dailyOn}
+            className="flex w-full items-center justify-between text-body3 font-medium text-heading">
+            <span>매일 정액 변동 <span className="text-caption text-disabled">감가상각 등</span></span>
+            <span className={clsx('h-4 w-4 rounded-full border-2', dailyOn ? 'border-primary-500 bg-primary-500' : 'border-base')} />
           </button>
-        ))}
+          {dailyOn && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-caption text-sub">매일</span>
+              <input type="text" inputMode="numeric" value={dailyMag} onChange={(e) => { const v = fmtInt(parseInt0(e.target.value)); setDailyMag(v); emit({ dMag: v }) }} placeholder="0" className="input-base flex-1 text-right tabular-nums" />
+              <span className="text-caption text-sub">원</span>
+              <DirToggle dir={dailyDir} onChange={(d) => { setDailyDir(d); emit({ dDir: d }) }} up="증가" down="감소" />
+            </div>
+          )}
+        </div>
+
+        {/* 매월 정액 */}
+        <div className="border-t border-base pt-2.5">
+          <button type="button" onClick={() => { const v = !monthlyOn; setMonthlyOn(v); emit({ mOn: v }) }} aria-pressed={monthlyOn}
+            className="flex w-full items-center justify-between text-body3 font-medium text-heading">
+            <span>매월 정액 변동 <span className="text-caption text-disabled">연금 불입·부채 상환</span></span>
+            <span className={clsx('h-4 w-4 rounded-full border-2', monthlyOn ? 'border-primary-500 bg-primary-500' : 'border-base')} />
+          </button>
+          {monthlyOn && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="text-caption text-sub">매월</span>
+              <select value={monthlyDay} onChange={(e) => { const d = Number(e.target.value); setMonthlyDay(d); emit({ mDay: d }) }} className="input-base w-20 tabular-nums">
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => <option key={d} value={d}>{d}일</option>)}
+              </select>
+              <input type="text" inputMode="numeric" value={monthlyAmt} onChange={(e) => { const v = fmtInt(parseInt0(e.target.value)); setMonthlyAmt(v); emit({ mAmt: v }) }} placeholder="0" className="input-base flex-1 text-right tabular-nums" />
+              <span className="text-caption text-sub">원</span>
+              <DirToggle dir={monthlyDir} onChange={(d) => { setMonthlyDir(d); emit({ mDir: d }) }} up="가산" down="상환" />
+            </div>
+          )}
+        </div>
+
+        {/* 연 정률 */}
+        <div className="border-t border-base pt-2.5">
+          <button type="button" onClick={() => { const v = !rateOn; setRateOn(v); emit({ rOn: v }) }} aria-pressed={rateOn}
+            className="flex w-full items-center justify-between text-body3 font-medium text-heading">
+            <span>연 정률 <span className="text-caption text-disabled">예금이자·기대수익·물가</span></span>
+            <span className={clsx('h-4 w-4 rounded-full border-2', rateOn ? 'border-primary-500 bg-primary-500' : 'border-base')} />
+          </button>
+          {rateOn && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="text-caption text-sub">연</span>
+              <input type="text" inputMode="decimal" value={ratePct} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); setRatePct(v); emit({ rPct: v }) }} placeholder="0" className="input-base w-20 text-right tabular-nums" />
+              <span className="text-caption text-sub">%</span>
+              <DirToggle dir={rateDir} onChange={(d) => { setRateDir(d); emit({ rDir: d }) }} up="증가" down="감소" />
+              <div className="inline-flex flex-shrink-0 rounded-lg bg-surface-tertiary p-0.5">
+                {([['단리', false], ['복리', true]] as const).map(([lbl, c]) => (
+                  <button key={lbl} type="button" onClick={() => { setCompound(c); emit({ comp: c }) }}
+                    className={clsx('rounded-md px-2.5 py-1.5 text-label3 font-medium transition-colors', compound === c ? 'bg-surface-primary text-heading elevation-1' : 'text-sub')}>
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-
-      {mode === 'daily' && (
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-body3 text-sub">매일</span>
-          <input
-            type="text"
-            inputMode="numeric"
-            value={dailyMag}
-            onChange={(e) => { const v = fmt(parse(e.target.value)); setDailyMag(v); emit('daily', v, dailyDir, monthlyAmt, monthlyDay) }}
-            placeholder="0"
-            className="input-base flex-1 text-right tabular-nums"
-          />
-          <span className="text-body3 text-sub">원</span>
-          <div className="inline-flex rounded-lg bg-surface-tertiary p-0.5">
-            {(['down', 'up'] as const).map((d) => (
-              <button key={d} type="button" onClick={() => { setDailyDir(d); emit('daily', dailyMag, d, monthlyAmt, monthlyDay) }}
-                className={clsx('rounded-md px-2.5 py-1.5 text-label3 font-medium transition-colors', dailyDir === d ? (d === 'down' ? 'bg-value-negative-soft text-value-negative' : 'bg-value-positive-soft text-value-positive') : 'text-sub')}>
-                {d === 'down' ? '감소' : '증가'}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {mode === 'monthly' && (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <span className="text-body3 text-sub">매월</span>
-          <select value={monthlyDay} onChange={(e) => { const d = Number(e.target.value); setMonthlyDay(d); emit('monthly', dailyMag, dailyDir, monthlyAmt, d) }}
-            className="input-base w-20 tabular-nums">
-            {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => <option key={d} value={d}>{d}일</option>)}
-          </select>
-          <input
-            type="text"
-            inputMode="numeric"
-            value={monthlyAmt}
-            onChange={(e) => { const v = fmt(parse(e.target.value)); setMonthlyAmt(v); emit('monthly', dailyMag, dailyDir, v, monthlyDay) }}
-            placeholder="0"
-            className="input-base flex-1 text-right tabular-nums"
-          />
-          <span className="text-body3 text-sub">원 가산</span>
-        </div>
-      )}
-
-      <p className="mt-1.5 text-caption text-disabled">
-        {mode === 'flat' && '입력일부터 내년 말까지 동일한 값으로 자동 저장됩니다.'}
-        {mode === 'daily' && '매일 지정 금액만큼 자동 반영되어 저장됩니다 (예: 자동차 감가상각).'}
-        {mode === 'monthly' && '매월 지정일에 지정 금액이 더해져 저장됩니다 (예: 연금 불입).'}
-      </p>
     </div>
   )
 }
