@@ -54,7 +54,6 @@ export function AssetDetailPage() {
   const setSelectedMonth = useDailyValueStore((s) => s.setSelectedMonth)
   const loadValues = useDailyValueStore((s) => s.loadValues)
   const loadAllValues = useDailyValueStore((s) => s.loadAllValues)
-  const setValue = useDailyValueStore((s) => s.setValue)
 
   const item = items.find(i => i.id === itemId)
   const category = item ? categories.find(c => c.id === item.categoryId) : null
@@ -113,11 +112,22 @@ export function AssetDetailPage() {
   const handleCellSave = useCallback(async (date: string) => {
     const numVal = Number(editValue.replace(/,/g, ''))
     if (!isNaN(numVal)) {
-      await setValue(itemId, date, numVal)
+      const dv = useDailyValueStore.getState()
+      // 최신 수동 기록일
+      const latestManual = dv.allValues
+        .filter(v => v.assetItemId === itemId && v.source === 'manual')
+        .reduce((max, v) => (v.date > max ? v.date : max), '')
+      if (!latestManual || date >= latestManual) {
+        // 최신/당일 이후 편집 → v2 재투영(규칙 적용 + 미래 갱신)
+        await dv.applyValueSeries(itemId, numVal, date, item?.projection)
+      } else {
+        // 과거 이력 보정 → 비파괴적 수동 앵커(신규 데이터/미래 투영 보존)
+        await dv.bulkSetValues([{ assetItemId: itemId, date, value: numVal, source: 'manual' }])
+      }
     }
     setEditingCell(null)
     setEditValue('')
-  }, [editValue, itemId, setValue])
+  }, [editValue, itemId, item?.projection])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent, date: string, dateIndex: number) => {
     if (e.key === 'Enter') {
