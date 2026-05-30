@@ -16,14 +16,24 @@ export function useSyncListener(callback: () => void, tables?: SyncableTable[]) 
 
   useEffect(() => {
     const tableList = tablesKey ? tablesKey.split(',') : null
+    let timer: ReturnType<typeof setTimeout> | null = null
     const handler = (event: Event) => {
       if (tableList && tableList.length > 0) {
         const detail = (event as CustomEvent).detail
         if (!tableList.includes(detail?.table)) return
       }
-      callbackRef.current()
+      // Coalesce bursty sync echoes into a single quiet reload. One user action
+      // (e.g. a value projection writing ~1.6k daily rows) echoes back from
+      // Firestore as many snapshot events across multiple tables; firing
+      // loadData on each one causes visible flicker. Debounce so the whole
+      // burst settles into one background refresh.
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => { timer = null; callbackRef.current() }, 250)
     }
     window.addEventListener('fin-sync-update', handler)
-    return () => window.removeEventListener('fin-sync-update', handler)
+    return () => {
+      window.removeEventListener('fin-sync-update', handler)
+      if (timer) clearTimeout(timer)
+    }
   }, [tablesKey])
 }
