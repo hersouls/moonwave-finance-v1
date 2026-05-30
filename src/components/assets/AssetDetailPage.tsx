@@ -103,11 +103,15 @@ export function AssetDetailPage() {
 
   const handleCellClick = useCallback((date: string) => {
     const key = `${itemId}-${date}`
-    const val = values.find(v => v.assetItemId === itemId && v.date === date)
+    const all = useDailyValueStore.getState().allValues.filter(v => v.assetItemId === itemId)
+    const rec = all.find(v => v.date === date)
+    // 이월(forward-fill) 값으로 프리필 — 빈 칸이 아니라 현재 유효값에서 편집 시작
+    const series = [...all].sort((a, b) => b.date.localeCompare(a.date))
+    const eff = rec ? rec.value : valueAsOf(series, date)
     setEditingCell(key)
-    setEditValue(val ? String(val.value) : '')
+    setEditValue(eff > 0 ? String(eff) : '')
     setTimeout(() => inputRef.current?.focus(), UI_DELAYS.NAV)
-  }, [itemId, values])
+  }, [itemId])
 
   const handleCellSave = useCallback(async (date: string) => {
     const numVal = Number(editValue.replace(/,/g, ''))
@@ -404,11 +408,12 @@ export function AssetDetailPage() {
           <div className="grid grid-cols-1 divide-y divide-[var(--border-default)]">
             {dates.map((date, idx) => {
               const val = values.find(v => v.assetItemId === itemId && v.date === date)
-              // 전일 대비 변동: 직전 날짜의 "유효값"(Forward-Fill, 전월 이월 포함)과 비교 (UTC 기준)
+              // 표시값 = Forward-Fill 유효값(평탄/희소 저장이어도 전 구간 값이 보이도록).
+              const effective = valueAsOf(itemSeriesDesc, date)
               const prevDate = new Date(date + 'T00:00:00Z')
               prevDate.setUTCDate(prevDate.getUTCDate() - 1)
               const prevEffective = valueAsOf(itemSeriesDesc, prevDate.toISOString().split('T')[0])
-              const change = val ? val.value - prevEffective : 0
+              const change = effective - prevEffective
               const day = new Date(date).getDate()
               const isEditing = editingCell === `${itemId}-${date}`
               const isToday = date === today
@@ -444,9 +449,10 @@ export function AssetDetailPage() {
                     ) : (
                       <span className={clsx(
                         'text-sm tabular-nums',
-                        val ? 'text-heading font-medium' : 'text-disabled'
+                        effective > 0 ? (val ? 'text-heading font-medium' : 'text-sub') : 'text-disabled'
                       )}>
-                        {val ? formatKRW(val.value) : '-'}
+                        {effective > 0 ? formatKRW(effective) : '-'}
+                        {effective > 0 && !val && <span className="ml-1 text-label4 text-disabled">이월</span>}
                       </span>
                     )}
                   </div>
