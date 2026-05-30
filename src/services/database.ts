@@ -596,18 +596,19 @@ export async function setDailyValue(assetItemId: number, date: string, value: nu
   }
 }
 
-export async function bulkSetDailyValues(entries: { assetItemId: number; date: string; value: number }[]): Promise<void> {
+export async function bulkSetDailyValues(entries: { assetItemId: number; date: string; value: number; source?: 'manual' | 'projected' }[]): Promise<void> {
   const now = new Date().toISOString()
   await db.transaction('rw', db.dailyValues, async () => {
     for (const entry of entries) {
       const existing = await getDailyValue(entry.assetItemId, entry.date)
       if (existing) {
-        await db.dailyValues.update(existing.id!, { value: entry.value, updatedAt: now })
+        await db.dailyValues.update(existing.id!, { value: entry.value, source: entry.source ?? existing.source, updatedAt: now })
       } else {
         await db.dailyValues.add({
           assetItemId: entry.assetItemId,
           date: entry.date,
           value: entry.value,
+          source: entry.source,
           syncId: crypto.randomUUID(),
           createdAt: now,
           updatedAt: now,
@@ -615,6 +616,17 @@ export async function bulkSetDailyValues(entries: { assetItemId: number; date: s
       }
     }
   })
+}
+
+/** 항목의 자동 생성(projected) 일별 값을 모두 삭제한다. 수동 입력(manual)은 보존.
+ *  평탄 규칙으로 전환하거나 희소 저장으로 정리할 때 사용. 반환=삭제된 syncId 목록. */
+export async function clearProjectedDailyValues(assetItemId: number): Promise<string[]> {
+  const vals = await db.dailyValues.where('assetItemId').equals(assetItemId).toArray()
+  const toDelete = vals.filter(v => v.source !== 'manual' && v.source !== undefined) // 명시적 projected 만
+  const ids = toDelete.map(v => v.id!).filter((x): x is number => x != null)
+  const syncIds = toDelete.map(v => v.syncId).filter((x): x is string => !!x)
+  if (ids.length > 0) await db.dailyValues.bulkDelete(ids)
+  return syncIds
 }
 
 export async function getLatestDailyValues(assetItemId: number, limit: number = 30): Promise<DailyValue[]> {

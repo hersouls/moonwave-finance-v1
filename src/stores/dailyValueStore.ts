@@ -3,8 +3,7 @@ import { devtools } from 'zustand/middleware'
 import type { DailyValue, AssetValueProjection } from '@/lib/types'
 import * as db from '@/services/database'
 import { getCurrentMonthString, getTodayString } from '@/lib/dateUtils'
-import { groupValuesByItem, valueAsOf } from '@/services/assetAnalytics'
-import { buildForward, buildBackfill } from '@/services/valueProjection'
+import { buildForward, buildBackfill, backfillStart, isFlatProjection, nextDayYmd } from '@/services/valueProjection'
 import { useToastStore } from './toastStore'
 import { useAssetStore } from './assetStore'
 import { useSettingsStore } from './settingsStore'
@@ -21,7 +20,7 @@ interface DailyValueState {
   loadAllValues: () => Promise<void>
   setSelectedMonth: (month: string) => void
   setValue: (assetItemId: number, date: string, value: number) => Promise<void>
-  bulkSetValues: (entries: { assetItemId: number; date: string; value: number }[]) => Promise<void>
+  bulkSetValues: (entries: { assetItemId: number; date: string; value: number; source?: 'manual' | 'projected' }[]) => Promise<void>
   getValueForItemDate: (assetItemId: number, date: string) => number | null
   getLatestValueForItem: (assetItemId: number) => DailyValue | null
   /**
@@ -102,21 +101,42 @@ export const useDailyValueStore = create<DailyValueState>()(
       },
 
       applyValueSeries: async (assetItemId, baseValue, baseDate, projection) => {
-        // 항목의 기존 값 맵
-        const existing = new Map<string, number>()
-        for (const v of get().allValues) if (v.assetItemId === assetItemId) existing.set(v.date, v.value)
+        const flat = isFlatProjection(projection)
+        const forItem = get().allValues.filter(v => v.assetItemId === assetItemId)
+        const manualDates = new Set(forItem.filter(v => v.source === 'manual').map(v => v.date))
+        const existingVal = new Map(forItem.map(v => [v.date, v.value] as const))
+        let prevManual: string | null = null
+        for (const d of manualDates) if (d < baseDate && (prevManual === null || d > prevManual)) prevManual = d
 
-        const entries: { assetItemId: number; date: string; value: number }[] = []
-        // 전방(D ~ (Y+1)-12-31): 규칙대로 덮어쓰기. 변경분만 기록(결과는 동일, 멱등).
-        for (const e of buildForward(baseValue, baseDate, projection)) {
-          if (existing.get(e.date) !== e.value) entries.push({ assetItemId, date: e.date, value: e.value })
-        }
-        // 백필(D-1 ~ (Y-1)-01-01): 빈 날만, 값 있는 날 만나면 중단(기존 보존).
-        for (const e of buildBackfill(baseValue, baseDate, (d) => existing.has(d))) {
-          entries.push({ assetItemId, date: e.date, value: e.value })
+        const base0 = Math.max(0, Math.round(baseValue))
+        const entries: { assetItemId: number; date: string; value: number; source: 'manual' | 'projected' }[] = []
+        // 입력일 = 수동 앵커
+        entries.push({ assetItemId, date: baseDate, value: base0, source: 'manual' })
+
+        if (flat) {
+          // 평탄 = 희소 저장: 기존 자동(projected) 정리 + 소급/백필 앵커 1개. 미래는 forward-fill 이 커버.
+          const removed = await db.clearProjectedDailyValues(assetItemId)
+          if (removed.length > 0) {
+            import('@/services/firestoreSync').then(({ deleteMultipleFromCloud }) =>
+              import('./authStore').then(({ useAuthStore }) => {
+                const user = useAuthStore.getState().user
+                if (user) deleteMultipleFromCloud(user.uid, 'dailyValues', removed)
+              })).catch(err => console.error('[projection] cloud cleanup failed:', err))
+          }
+          const soupStart = prevManual ? nextDayYmd(prevManual) : backfillStart(baseDate)
+          if (soupStart < baseDate) entries.push({ assetItemId, date: soupStart, value: base0, source: 'projected' })
+        } else {
+          // 변동 규칙 = dense: 전방 덮어쓰기(변경분만) + 역산 백필(직전 수동기록에서 중단).
+          for (const e of buildForward(baseValue, baseDate, projection)) {
+            if (e.date === baseDate) continue
+            if (existingVal.get(e.date) !== e.value) entries.push({ assetItemId, date: e.date, value: e.value, source: 'projected' })
+          }
+          for (const e of buildBackfill(baseValue, baseDate, (d) => manualDates.has(d), projection)) {
+            entries.push({ assetItemId, date: e.date, value: e.value, source: 'projected' })
+          }
         }
 
-        if (entries.length > 0) await get().bulkSetValues(entries)
+        await get().bulkSetValues(entries)
         return entries.length
       },
 
@@ -128,32 +148,30 @@ export const useDailyValueStore = create<DailyValueState>()(
         } catch { /* ignore */ }
 
         const items = useAssetStore.getState().items.filter(i => i.isActive && i.id != null)
-        const allVals = get().allValues
-        const byItem = groupValuesByItem(allVals)
-        // 항목별 기존 날짜→값 맵 (한 번만 구성)
-        const existingByItem = new Map<number, Map<string, number>>()
-        for (const v of allVals) {
-          let m = existingByItem.get(v.assetItemId)
-          if (!m) { m = new Map(); existingByItem.set(v.assetItemId, m) }
-          m.set(v.date, v.value)
+        const byItemRecs = new Map<number, DailyValue[]>()
+        for (const v of get().allValues) {
+          let a = byItemRecs.get(v.assetItemId)
+          if (!a) { a = []; byItemRecs.set(v.assetItemId, a) }
+          a.push(v)
         }
 
-        const allEntries: { assetItemId: number; date: string; value: number }[] = []
+        const allEntries: { assetItemId: number; date: string; value: number; source: 'projected' }[] = []
         for (const item of items) {
-          const series = byItem.get(item.id!)
-          if (!series || series.length === 0) continue        // 값이 한 번도 없는 항목은 건드리지 않음
-          const current = valueAsOf(series, today)
-          if (current <= 0) continue
-          const existing = existingByItem.get(item.id!) ?? new Map<string, number>()
-          for (const e of buildForward(current, today, item.projection)) {
-            if (existing.get(e.date) !== e.value) allEntries.push({ assetItemId: item.id!, date: e.date, value: e.value })
-          }
-          for (const e of buildBackfill(current, today, (d) => existing.has(d))) {
-            allEntries.push({ assetItemId: item.id!, date: e.date, value: e.value })
+          if (isFlatProjection(item.projection)) continue // 평탄은 forward-fill 이 미래 커버 → 저장 불필요
+          const recs = byItemRecs.get(item.id!)
+          if (!recs || recs.length === 0) continue
+          // 기준 앵커 = 최신 수동기록(없으면 최신 기록)
+          const pool = recs.some(r => r.source === 'manual') ? recs.filter(r => r.source === 'manual') : recs
+          let anchor = pool[0]
+          for (const r of pool) if (r.date > anchor.date) anchor = r
+          const existingVal = new Map(recs.map(r => [r.date, r.value] as const))
+          for (const e of buildForward(anchor.value, anchor.date, item.projection)) {
+            if (e.date === anchor.date) continue
+            if (existingVal.get(e.date) !== e.value) allEntries.push({ assetItemId: item.id!, date: e.date, value: e.value, source: 'projected' })
           }
         }
 
-        if (allEntries.length > 0) await get().bulkSetValues(allEntries) // 1회 쓰기 + 1회 재로딩
+        if (allEntries.length > 0) await get().bulkSetValues(allEntries)
         try {
           if (typeof localStorage !== 'undefined') localStorage.setItem(CARRY_FORWARD_KEY, today)
         } catch { /* ignore */ }

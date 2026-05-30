@@ -24,8 +24,12 @@ function addDaysStr(base: string, delta: number): string {
 }
 
 export interface NetWorthSeries {
-  /** Forward-filled net worth per day (chronological). */
+  /** 과거 구간(통계용) 일별 순자산. */
   series: { date: string; value: number }[]
+  /** 차트용 결합 시리즈(과거 + 미래 예측). */
+  chart: { date: string; value: number }[]
+  /** chart 에서 "오늘"의 인덱스 (이후가 미래 예측 = 점선). */
+  todayIdx: number
   start: number
   end: number
   change: number
@@ -36,21 +40,18 @@ export interface NetWorthSeries {
 }
 
 /**
- * Net worth as a continuous daily series (forward-fill) over the last `days`,
- * with the wealth-accumulation slope (avg KRW/day) and period growth rate.
- * This is the core "자산증식 기울기" the dashboard surfaces.
+ * Net worth as a continuous daily series (forward-fill + projection) over the
+ * last `days` (and optionally `futureDays` forecast), with the
+ * wealth-accumulation slope (avg KRW/day) and period growth rate.
  */
-export function useNetWorthSeries(days: number): NetWorthSeries {
+export function useNetWorthSeries(days: number, futureDays = 0): NetWorthSeries {
   const items = useAssetStore((s) => s.items)
   const allValues = useDailyValueStore((s) => s.allValues)
 
   return useMemo(() => {
     const byItem = groupValuesByItem(allValues)
     const today = getTodayString()
-    const series: { date: string; value: number }[] = []
-
-    for (let i = days - 1; i >= 0; i--) {
-      const date = addDaysStr(today, -i)
+    const netWorthOn = (date: string) => {
       let assets = 0
       let liabilities = 0
       for (const item of items) {
@@ -59,7 +60,21 @@ export function useNetWorthSeries(days: number): NetWorthSeries {
         if (item.type === 'asset') assets += v
         else liabilities += v
       }
-      series.push({ date, value: assets - liabilities })
+      return assets - liabilities
+    }
+
+    const series: { date: string; value: number }[] = []
+    for (let i = days - 1; i >= 0; i--) {
+      const date = addDaysStr(today, -i)
+      series.push({ date, value: netWorthOn(date) })
+    }
+
+    // 차트용: 과거(series) + 오늘 이후 미래 예측
+    const chart = series.slice()
+    const todayIdx = chart.length - 1
+    for (let i = 1; i <= futureDays; i++) {
+      const date = addDaysStr(today, i)
+      chart.push({ date, value: netWorthOn(date) })
     }
 
     const start = series[0]?.value ?? 0
@@ -68,8 +83,8 @@ export function useNetWorthSeries(days: number): NetWorthSeries {
     const growthRatePct = start !== 0 ? (change / Math.abs(start)) * 100 : 0
     const dailySlope = days > 1 ? change / (days - 1) : 0
 
-    return { series, start, end, change, growthRatePct, dailySlope }
-  }, [items, allValues, days])
+    return { series, chart, todayIdx, start, end, change, growthRatePct, dailySlope }
+  }, [items, allValues, days, futureDays])
 }
 
 export function useAssetStats(): AssetStats {
