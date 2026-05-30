@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { clsx } from 'clsx'
 import type { AssetValueProjection } from '@/lib/types'
 
@@ -45,6 +45,32 @@ export function AssetProjectionFields({ value, onChange }: Props) {
   const [ratePct, setRatePct] = useState(() => (value?.annualRatePct ? String(Math.abs(value.annualRatePct)) : ''))
   const [rateDir, setRateDir] = useState<'up' | 'down'>(() => ((value?.annualRatePct ?? 0) >= 0 ? 'up' : 'down'))
   const [compound, setCompound] = useState(() => !!value?.compound)
+
+  // 로컬 상태 → projection (현재 커밋된 상태 기준)
+  const composeLocal = (): AssetValueProjection | undefined => {
+    const p: AssetValueProjection = {}
+    if (dailyOn && parseInt0(dailyMag) > 0) p.dailyDelta = (dailyDir === 'down' ? -1 : 1) * parseInt0(dailyMag)
+    if (monthlyOn && parseInt0(monthlyAmt) > 0) { p.monthlyAmount = (monthlyDir === 'down' ? -1 : 1) * parseInt0(monthlyAmt); p.monthlyDay = monthlyDay }
+    if (rateOn && parseRate(ratePct) > 0) { p.annualRatePct = (rateDir === 'down' ? -1 : 1) * parseRate(ratePct); p.compound = compound }
+    return Object.keys(p).length ? p : undefined
+  }
+
+  // value 가 외부에서 바뀌면(편집 모달 오픈 등) 로컬 입력 필드를 재동기화. 자체 입력 변경은 건너뜀(루프 방지).
+  useEffect(() => {
+    const norm = (x?: AssetValueProjection) => JSON.stringify(x ?? null)
+    if (norm(value) === norm(composeLocal())) return
+    setDailyOn(!!value?.dailyDelta)
+    setDailyMag(fmtInt(Math.abs(value?.dailyDelta ?? 0)))
+    setDailyDir((value?.dailyDelta ?? 0) >= 0 ? 'up' : 'down')
+    setMonthlyOn(!!(value?.monthlyAmount && value?.monthlyDay))
+    setMonthlyAmt(fmtInt(Math.abs(value?.monthlyAmount ?? 0)))
+    setMonthlyDir((value?.monthlyAmount ?? 0) >= 0 ? 'up' : 'down')
+    setMonthlyDay(value?.monthlyDay ?? 1)
+    setRateOn(!!value?.annualRatePct)
+    setRatePct(value?.annualRatePct ? String(Math.abs(value.annualRatePct)) : '')
+    setRateDir((value?.annualRatePct ?? 0) >= 0 ? 'up' : 'down')
+    setCompound(!!value?.compound)
+  }, [value]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 현재 로컬 상태로 projection 을 구성해 emit
   const emit = (o: Partial<{ dOn: boolean; dMag: string; dDir: 'up' | 'down'; mOn: boolean; mAmt: string; mDir: 'up' | 'down'; mDay: number; rOn: boolean; rPct: string; rDir: 'up' | 'down'; comp: boolean }>) => {
