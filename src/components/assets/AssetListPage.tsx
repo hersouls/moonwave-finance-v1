@@ -12,13 +12,14 @@ import { AssetCreateModal } from './AssetCreateModal'
 import { AssetEmptyState } from './AssetEmptyState'
 import { AssetListSkeleton } from './AssetListSkeleton'
 import { AssetInspectorBody } from './AssetInspectorBody'
+import { AssetTableView } from './AssetTableView'
 import { FAB } from '@/components/ui/FAB'
 import { Tabs } from '@/components/ui/Tabs'
 import { ErrorEmptyState } from '@/components/ui/EmptyState'
 import { InspectorPanel } from '@/components/ui/InspectorPanel'
 import { SwipeableRow } from '@/components/ui/SwipeableRow'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, LayoutGrid, Table2 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useBreakpoint } from '@/hooks/useBreakpoint'
 import { useSyncListener } from '@/hooks/useSyncListener'
@@ -32,6 +33,7 @@ export function AssetListPage() {
   const [activeCategory, setActiveCategory] = useState<number | null>(null)
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
 
   const { isDesktop } = useBreakpoint()
   const today = getTodayString()
@@ -123,14 +125,40 @@ export function AssetListPage() {
         {filteredItems.length === 0 ? (
           <AssetEmptyState />
         ) : (
-          <div className={clsx('master-detail', isDesktop && selectedId != null && 'has-inspector')}>
-            <motion.div
-              className={clsx('grid grid-cols-1 gap-3', isDesktop && selectedId == null && 'xl:grid-cols-2')}
-              variants={containerV}
-              initial="hidden"
-              animate="visible"
-              key={`${activeMember}-${activeCategory}`}
-            >
+          <>
+            {isDesktop && (
+              <div className="mb-1 flex justify-end">
+                <div className="inline-flex rounded-lg bg-surface-tertiary p-0.5" role="group" aria-label="보기 방식">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('cards')}
+                    aria-pressed={viewMode === 'cards'}
+                    className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3 font-medium transition-colors', viewMode === 'cards' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
+                  >
+                    <LayoutGrid className="h-4 w-4" /> 카드
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('table')}
+                    aria-pressed={viewMode === 'table'}
+                    className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3 font-medium transition-colors', viewMode === 'table' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
+                  >
+                    <Table2 className="h-4 w-4" /> 표
+                  </button>
+                </div>
+              </div>
+            )}
+            <div className={clsx('master-detail', isDesktop && selectedId != null && 'has-inspector')}>
+              {isDesktop && viewMode === 'table' ? (
+                <AssetTableView items={filteredItems} selectedId={selectedId} onSelect={setSelectedId} />
+              ) : (
+                <motion.div
+                  className={clsx('grid grid-cols-1 gap-3', isDesktop && selectedId == null && 'xl:grid-cols-2')}
+                  variants={containerV}
+                  initial="hidden"
+                  animate="visible"
+                  key={`${activeMember}-${activeCategory}`}
+                >
               {filteredItems.map(item => {
                 const id = item.id!
                 const card = (
@@ -158,25 +186,27 @@ export function AssetListPage() {
                   </motion.div>
                 )
               })}
-            </motion.div>
+                </motion.div>
+              )}
 
-            {isDesktop && (
-              <InspectorPanel
-                open={selectedId != null}
-                onClose={() => setSelectedId(null)}
-                title={selectedItem?.name}
-              >
-                {selectedId != null && (
-                  <AssetInspectorBody
-                    itemId={selectedId}
-                    type="asset"
-                    onEdit={() => openAssetEditModal(selectedId)}
-                    onDelete={() => setDeleteId(selectedId)}
-                  />
-                )}
-              </InspectorPanel>
-            )}
-          </div>
+              {isDesktop && (
+                <InspectorPanel
+                  open={selectedId != null}
+                  onClose={() => setSelectedId(null)}
+                  title={selectedItem?.name}
+                >
+                  {selectedId != null && (
+                    <AssetInspectorBody
+                      itemId={selectedId}
+                      type="asset"
+                      onEdit={() => openAssetEditModal(selectedId)}
+                      onDelete={() => setDeleteId(selectedId)}
+                    />
+                  )}
+                </InspectorPanel>
+              )}
+            </div>
+          </>
         )}
       </div>
 
