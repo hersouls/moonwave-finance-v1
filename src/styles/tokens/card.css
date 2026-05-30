@@ -7,8 +7,9 @@
   --card-radius: 16px;
   --card-radius-lg: 20px;
   --card-radius-xl: 24px;
-  --card-padding: 16px;
-  --card-padding-lg: 20px;
+  /* Density-aware padding — scales with <html data-density> (default 1 = no change). */
+  --card-padding: calc(16px * var(--density-spacing-scale, 1));
+  --card-padding-lg: calc(20px * var(--density-spacing-scale, 1));
   --card-border-width: 1px;
 
   /* --- Card Colors (Light) — surface tokens 참조 --- */

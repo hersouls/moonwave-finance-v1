@@ -104,10 +104,10 @@ export function LedgerPage() {
   if (isLoading) {
     return (
       <div className="fold:p-3 p-4 lg:p-6 space-y-4">
-        <div className="h-[220px] bg-[var(--surface-tertiary)] rounded-3xl animate-pulse" />
+        <div className="h-56 bg-[var(--surface-tertiary)] rounded-3xl animate-pulse" />
         <div className="flex gap-3 overflow-hidden">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="flex-shrink-0 w-[180px] h-[160px] bg-[var(--surface-tertiary)] rounded-2xl animate-pulse" />
+            <div key={i} className="flex-shrink-0 w-44 h-40 bg-[var(--surface-tertiary)] rounded-2xl animate-pulse" />
           ))}
         </div>
         {Array.from({ length: 3 }).map((_, i) => (
@@ -297,7 +297,7 @@ function CardStatementImportTrigger({ onOpen }: { onOpen: () => void }) {
         <div className="flex-1 min-w-0">
           <p className="text-body3 font-bold text-heading flex items-center gap-1.5">
             카드 명세서 가져오기
-            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[color:var(--color-primary-100)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/40 dark:text-[color:var(--color-primary-300)]">
+            <span className="text-micro-bold leading-none uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[color:var(--color-primary-100)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/40 dark:text-[color:var(--color-primary-300)]">
               NEW
             </span>
           </p>

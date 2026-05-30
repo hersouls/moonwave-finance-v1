@@ -42,7 +42,7 @@ function TypeBadge({ children, color, tone = 'soft' }: { children: React.ReactNo
   if (tone === 'solid' && color) {
     return (
       <span
-        className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold text-white tabular-nums flex-shrink-0"
+        className="text-caption leading-none px-1.5 py-0.5 rounded-full font-semibold text-white tabular-nums flex-shrink-0"
         style={{ backgroundColor: color }}
       >
         {children}
@@ -51,7 +51,7 @@ function TypeBadge({ children, color, tone = 'soft' }: { children: React.ReactNo
   }
   return (
     <span
-      className="text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0"
+      className="text-caption leading-none px-1.5 py-0.5 rounded-full font-medium flex-shrink-0"
       style={{
         backgroundColor: color ? `color-mix(in srgb, ${color} 14%, transparent)` : 'var(--surface-tertiary)',
         color: color ?? 'var(--text-sub)',
@@ -151,7 +151,7 @@ function TransactionRow({ result }: { result: SearchResult }) {
             isIncome ? 'text-value-positive' : 'text-value-negative',
           )}
         />
-        <span className="text-[10px] text-disabled">
+        <span className="text-caption leading-none text-disabled">
           {isIncome ? '수입' : '지출'}
         </span>
       </div>
@@ -217,7 +217,7 @@ function SubscriptionRow({ result }: { result: SearchResult }) {
         <p className="text-body3-semi tabular-nums text-heading">
           {meta.currency === 'USD' ? `$${meta.amount.toFixed(2)}` : `${Math.round(meta.amount).toLocaleString('ko-KR')}원`}
         </p>
-        <span className="text-[10px] text-disabled">구독</span>
+        <span className="text-caption leading-none text-disabled">구독</span>
       </div>
     </>
   )

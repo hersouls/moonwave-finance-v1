@@ -82,6 +82,31 @@ export function getNegativeColor(): string {
   return cssVar('--viz-negative', isDark() ? '#f87171' : '#ef4444')
 }
 
+/** Neutral "기타/그 외" color for charts/legends — tracks text-muted token. */
+export function getOtherColor(): string {
+  return cssVar('--text-muted', isDark() ? '#8a8a94' : '#71717a')
+}
+
+/**
+ * Shared color bridge for NON-Chart.js consumers (SVG fills, calendar dots,
+ * sparklines) so they follow palette-switch + dark/OLED instead of raw hex.
+ */
+export function getCalendarFallbackColors(): {
+  sun: string
+  sat: string
+  income: string
+  expense: string
+  other: string
+} {
+  return {
+    sun: cssVar('--text-weekend-sun', isDark() ? '#f87171' : '#dc2626'),
+    sat: cssVar('--text-weekend-sat', isDark() ? '#93c5fd' : '#2563eb'),
+    income: getPositiveColor(),
+    expense: getNegativeColor(),
+    other: getOtherColor(),
+  }
+}
+
 // ─── Premium Tooltip Config (동적 생성) ───────────
 // Chart.js는 options를 run-time에 해석하므로, getter로 감싸면 최신 CSS 변수 반영
 export const premiumTooltip = {

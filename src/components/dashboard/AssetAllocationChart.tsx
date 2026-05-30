@@ -46,8 +46,8 @@ export function AssetAllocationChart() {
           extra: formatPercent(b.percentage, 0),
         }))}
       />
-      <div className="flex items-center gap-6" aria-hidden="true">
-        <div className="relative w-36 h-36 flex-shrink-0">
+      <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6" aria-hidden="true">
+        <div className="relative w-28 h-28 sm:w-36 sm:h-36 flex-shrink-0">
           <Doughnut
             data={chartData}
             options={{
@@ -74,12 +74,12 @@ export function AssetAllocationChart() {
           {/* Center text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-caption text-disabled">총 자산</span>
-            <span className="text-sm font-bold text-heading tabular-nums">
+            <span className="text-body2-bold text-heading tabular-nums">
               {formatKoreanUnit(animatedTotal)}
             </span>
           </div>
         </div>
-        <div className="flex-1 space-y-2.5 min-w-0">
+        <div className="w-full sm:flex-1 space-y-2.5 min-w-0">
           {breakdown.slice(0, 5).map((b) => (
             <div key={b.categoryId} className="flex items-center gap-2.5">
               <div

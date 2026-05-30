@@ -178,11 +178,11 @@ export function ProfilePage() {
               )}
               <div>
                 <p className="font-medium text-heading">{user.displayName}</p>
-                <p className="text-sm text-sub">{user.email}</p>
+                <p className="text-body3 text-sub">{user.email}</p>
               </div>
             </div>
           ) : (
-            <p className="text-sm text-sub">로그인하면 데이터를 클라우드에 동기화할 수 있습니다.</p>
+            <p className="text-body3 text-sub">로그인하면 데이터를 클라우드에 동기화할 수 있습니다.</p>
           )}
         </Card>
       </section>
@@ -358,10 +358,10 @@ export function ProfilePage() {
             </div>
           </Card>
           {user && (
-            <Card className="border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
+            <Card className="border border-warning-500/30 bg-warning-50/50 dark:bg-warning-500/10">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-body3 text-amber-700 dark:text-amber-400">테스트 데이터 생성</p>
+                  <p className="text-body3 text-warning-600 dark:text-warning-500">테스트 데이터 생성</p>
                   <p className="text-caption text-sub">가상의 자산/거래/예산/목표 데이터를 생성하고 Firebase에 업로드합니다</p>
                 </div>
                 <Button
@@ -426,7 +426,7 @@ export function ProfilePage() {
                   <button
                     key={c}
                     onClick={() => setMemberColor(c)}
-                    className={`w-8 h-8 rounded-full transition-all ${memberColor === c ? 'ring-2 ring-offset-2 ring-primary-500 scale-110' : 'hover:scale-105'}`}
+                    className={`touch-target-inset w-8 h-8 rounded-full transition-all ${memberColor === c ? 'ring-2 ring-offset-2 ring-primary-500 scale-110' : 'hover:scale-105'}`}
                     style={{ backgroundColor: c }}
                     aria-label={`색상 ${c}`}
                   />
@@ -474,10 +474,10 @@ function SyncStatusIndicator({ status }: { status: SyncStatus }) {
     return <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
   }
   if (status === 'synced') {
-    return <CheckCircle2 className="w-5 h-5 text-green-500" />
+    return <CheckCircle2 className="w-5 h-5 text-success-500" />
   }
   if (status === 'error') {
-    return <AlertCircle className="w-5 h-5 text-red-500" />
+    return <AlertCircle className="w-5 h-5 text-danger-500" />
   }
   return <CloudOff className="w-5 h-5 text-disabled" />
 }
@@ -542,17 +542,17 @@ function MemberDeleteDialog({
               <div className="flex-1 min-w-0">
                 <p className="text-body2 text-heading font-medium truncate">{member.name}</p>
                 {isDefault && (
-                  <span className="inline-block mt-0.5 text-caption px-2 py-0.5 rounded-full bg-warning-50 dark:bg-warning-900/30 text-warning-700 dark:text-warning-300">
+                  <span className="inline-block mt-0.5 text-caption px-2 py-0.5 rounded-full bg-status-warning text-status-warning">
                     기본 구성원
                   </span>
                 )}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-danger-200 dark:border-danger-800 bg-danger-50/40 dark:bg-danger-950/20 p-3">
+            <div className="rounded-2xl border border-status-danger bg-status-danger-soft p-3">
               <div className="flex items-start gap-2 mb-2">
-                <AlertTriangle className="w-4 h-4 text-danger-600 dark:text-danger-400 mt-0.5 flex-shrink-0" />
-                <p className="text-body3 text-danger-700 dark:text-danger-300">
+                <AlertTriangle className="w-4 h-4 text-status-danger mt-0.5 flex-shrink-0" />
+                <p className="text-body3 text-status-danger">
                   삭제 시 아래 데이터가 함께 제거됩니다. 되돌릴 수 없습니다.
                 </p>
               </div>

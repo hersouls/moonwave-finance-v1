@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Line } from 'react-chartjs-2'
 import { Card } from '@/components/ui/Card'
 import { useMultiMonthTransactions } from '@/hooks/useMultiMonthTransactions'
-import { commonLineOptions } from '@/lib/chartConfig'
+import { commonLineOptions, getChartColor, createLineGradientRGBA } from '@/lib/chartConfig'
 import { format, subMonths } from 'date-fns'
 
 export function SavingsRateChart() {
@@ -39,12 +39,18 @@ export function SavingsRateChart() {
             datasets: [{
               label: '저축률 (%)',
               data,
-              borderColor: '#8B5CF6',
-              backgroundColor: 'rgba(139, 92, 246, 0.1)',
+              borderColor: getChartColor('savings').line,
+              backgroundColor: (ctx) => {
+                const chart = ctx.chart
+                const { ctx: context, chartArea } = chart
+                const c = getChartColor('savings').fill
+                if (!chartArea) return `rgba(${c.join(',')}, 0.1)`
+                return createLineGradientRGBA(context, chartArea, c[0], c[1], c[2], 0.2, 0.01)
+              },
               fill: true,
               tension: 0.3,
               pointRadius: 4,
-              pointBackgroundColor: '#8B5CF6',
+              pointBackgroundColor: getChartColor('savings').line,
             }],
           }}
           options={{

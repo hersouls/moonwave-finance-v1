@@ -45,7 +45,7 @@ export function QuickRecordStrip() {
       <div className="flex items-center gap-1.5 mb-2.5">
         <Zap className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" aria-hidden="true" />
         <h3 className="text-caption font-bold text-heading">빠른 기록</h3>
-        <span className="text-[10px] text-disabled">탭 1회로 오늘 날짜 기록</span>
+        <span className="text-label4 text-disabled">탭 1회로 오늘 날짜 기록</span>
       </div>
 
       <div className="flex gap-2.5 overflow-x-auto scrollbar-none -mx-4 px-4 -my-1 py-1 snap-x">
@@ -63,10 +63,9 @@ export function QuickRecordStrip() {
               whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
               transition={springSnappy}
               className={clsx(
-                'flex-shrink-0 snap-start flex items-center gap-2 pl-2 pr-3 py-2 rounded-2xl bg-surface-primary text-left',
-                'hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all min-w-[140px] max-w-[200px]',
+                'card-base flex-shrink-0 snap-start flex items-center gap-2 pl-2 pr-3 py-2 rounded-2xl bg-surface-primary text-left',
+                'transition-all min-w-[140px] max-w-[200px]',
               )}
-              style={{ boxShadow: 'inset 0 0 0 1px var(--border-default), 0 1px 3px rgba(0,0,0,0.04)' }}
               aria-label={`${cat?.name ?? '미분류'} ${formatKoreanUnit(t.amount)}원 기록하기`}
             >
               <div
@@ -76,7 +75,7 @@ export function QuickRecordStrip() {
                 <Icon className="w-4 h-4" style={{ color }} />
               </div>
               <div className="flex flex-col items-start min-w-0 flex-1">
-                <span className="text-[11px] text-sub truncate w-full leading-tight">
+                <span className="text-caption text-sub truncate w-full leading-tight">
                   {cat?.name ?? '미분류'}{t.memo ? ` · ${t.memo}` : ''}
                 </span>
                 <span

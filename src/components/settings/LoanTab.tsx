@@ -202,14 +202,14 @@ export function LoanTab() {
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => openEdit(loan)}
-                    className="p-1.5 rounded-md text-disabled hover:text-body hover:bg-[var(--hover-bg)] opacity-0 group-hover:opacity-100 transition-all"
+                    className="touch-target-inset p-1.5 rounded-md text-disabled hover:text-body hover:bg-[var(--hover-bg)] opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
                     aria-label="수정"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => openDelete(loan)}
-                    className="p-1.5 rounded-md text-disabled hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
+                    className="touch-target-inset p-1.5 rounded-md text-disabled hover:text-status-danger hover:bg-status-danger-soft opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
                     aria-label="삭제"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -237,7 +237,7 @@ export function LoanTab() {
                 <span className="flex-1 text-sm text-sub truncate">{loan.name}</span>
                 <button
                   onClick={() => openEdit(loan)}
-                  className="p-1.5 rounded-md text-disabled hover:text-body opacity-0 group-hover:opacity-100 transition-all"
+                  className="touch-target-inset p-1.5 rounded-md text-disabled hover:text-body opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
                   aria-label="수정"
                 >
                   <Pencil className="w-3.5 h-3.5" />
@@ -279,7 +279,7 @@ export function LoanTab() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-body3 text-body mb-1.5">대출일 *</label>
                 <input
@@ -300,7 +300,7 @@ export function LoanTab() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-body3 text-body mb-1.5">대출원금 *</label>
                 <input
@@ -325,7 +325,7 @@ export function LoanTab() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-body3 text-body mb-1.5">연이율(%) *</label>
                 <input

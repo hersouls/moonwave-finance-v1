@@ -65,10 +65,10 @@ export function LedgerInsightsRow({ insights, onAnchor }: Props) {
     >
       <div className="flex items-center gap-1.5 mb-2.5">
         <Sparkles className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" />
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-sub">
+        <span className="text-caption font-semibold uppercase tracking-wider text-sub">
           이번 달 인사이트
         </span>
-        <span className="text-[11px] font-normal text-disabled normal-case">
+        <span className="text-caption font-normal text-disabled normal-case">
           · {insights.length}건 감지됨
         </span>
       </div>
@@ -90,7 +90,7 @@ export function LedgerInsightsRow({ insights, onAnchor }: Props) {
               className={clsx(
                 'group flex-shrink-0 min-w-[240px] sm:min-w-0 text-left rounded-2xl bg-surface-primary ring-1 px-3 py-2.5 transition-all',
                 tone.ring,
-                clickable ? 'hover:bg-[var(--hover-bg)] hover:shadow-[0_2px_10px_rgba(0,0,0,0.05)] cursor-pointer' : 'cursor-default',
+                clickable ? 'hover:bg-[var(--hover-bg)] hover:elevation-1 cursor-pointer' : 'cursor-default',
               )}
             >
               <div className="flex items-start gap-2.5">
@@ -102,7 +102,7 @@ export function LedgerInsightsRow({ insights, onAnchor }: Props) {
                     {it.title}
                   </p>
                   {it.detail && (
-                    <p className="text-[10.5px] text-sub mt-0.5 leading-snug truncate">
+                    <p className="text-label4 text-sub mt-0.5 leading-snug truncate">
                       {it.detail}
                     </p>
                   )}

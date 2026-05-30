@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { Line } from 'react-chartjs-2'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import '@/lib/chartConfig'
-import { commonLineOptions, getGridColor, getTextColor, formatChartLabel } from '@/lib/chartConfig'
+import { commonLineOptions, getGridColor, getTextColor, formatChartLabel, getPositiveColor, getNegativeColor, getChartColor } from '@/lib/chartConfig'
 import { useAssetStore } from '@/stores/assetStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { calculateDailyNetWorth } from '@/services/assetAnalytics'
@@ -34,8 +34,8 @@ export function DailyNetWorthChart() {
         {
           label: '순자산',
           data: snapshots.map(s => s.netWorth),
-          borderColor: '#10b981',
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          borderColor: getPositiveColor(),
+          backgroundColor: `rgba(${getChartColor('income').fill.join(',')}, 0.1)`,
           fill: true,
           tension: 0.3,
           pointRadius: 0,
@@ -45,7 +45,7 @@ export function DailyNetWorthChart() {
         {
           label: '총 자산',
           data: snapshots.map(s => s.totalAssets),
-          borderColor: '#3b82f6',
+          borderColor: getChartColor('netWorth').line,
           borderDash: [5, 5],
           tension: 0.3,
           pointRadius: 0,
@@ -55,7 +55,7 @@ export function DailyNetWorthChart() {
         {
           label: '총 부채',
           data: snapshots.map(s => s.totalLiabilities),
-          borderColor: '#ef4444',
+          borderColor: getNegativeColor(),
           borderDash: [5, 5],
           tension: 0.3,
           pointRadius: 0,
@@ -77,7 +77,7 @@ export function DailyNetWorthChart() {
           <button
             type="button"
             onClick={() => setDisplayMonth(getPreviousMonth(displayMonth))}
-            className="p-1.5 rounded-lg hover:bg-[var(--hover-bg)] transition-colors"
+            className="touch-target-inset p-1.5 rounded-lg hover:bg-[var(--hover-bg)] transition-colors"
             aria-label="이전 월"
           >
             <ChevronLeft className="w-4 h-4 text-sub" />
@@ -89,7 +89,7 @@ export function DailyNetWorthChart() {
             type="button"
             onClick={() => setDisplayMonth(getNextMonth(displayMonth))}
             disabled={isCurrentMonth}
-            className="p-1.5 rounded-lg hover:bg-[var(--hover-bg)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="touch-target-inset p-1.5 rounded-lg hover:bg-[var(--hover-bg)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label="다음 월"
           >
             <ChevronRight className="w-4 h-4 text-sub" />
@@ -99,19 +99,19 @@ export function DailyNetWorthChart() {
 
       {/* Summary row */}
       {hasData && snapshots.length > 0 && (
-        <div className="flex gap-4 mb-4 text-caption">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 mb-4 text-caption">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'var(--viz-positive)' }} />
             <span className="text-sub">순자산</span>
             <Amount value={snapshots[snapshots.length - 1].netWorth} size="caption" className="text-heading font-medium" unit="" />
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'var(--chart-series-1)' }} />
             <span className="text-sub">자산</span>
             <Amount value={snapshots[snapshots.length - 1].totalAssets} size="caption" className="text-heading font-medium" unit="" />
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'var(--viz-negative)' }} />
             <span className="text-sub">부채</span>
             <Amount value={snapshots[snapshots.length - 1].totalLiabilities} size="caption" className="text-heading font-medium" unit="" />
           </div>

@@ -49,7 +49,7 @@ export function IOSInstallBanner() {
           <button
             type="button"
             onClick={dismissPermanently}
-            className="mt-3 text-[11px] text-white/40 hover:text-white/70 underline underline-offset-2 transition-colors"
+            className="mt-3 text-caption text-white/40 hover:text-white/70 underline underline-offset-2 transition-colors"
           >
             다시 보지 않기
           </button>

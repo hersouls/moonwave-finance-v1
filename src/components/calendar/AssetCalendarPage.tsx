@@ -154,7 +154,7 @@ export function AssetCalendarPage() {
                 key={d}
                 className={clsx(
                   'text-center text-caption py-1',
-                  i === 0 ? 'text-red-400' : i === 6 ? 'text-blue-400' : 'text-disabled'
+                  i === 0 ? 'text-weekend-sun' : i === 6 ? 'text-weekend-sat' : 'text-disabled'
                 )}
               >
                 {d}
@@ -205,11 +205,11 @@ export function AssetCalendarPage() {
             {selectedData.change !== 0 && (
               <div className="flex items-center justify-end gap-1 text-caption">
                 {selectedData.change > 0 ? (
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                  <TrendingUp className="w-3.5 h-3.5 value-positive" />
                 ) : (
-                  <TrendingDown className="w-3.5 h-3.5 text-status-danger" />
+                  <TrendingDown className="w-3.5 h-3.5 value-negative" />
                 )}
-                <span className={selectedData.change > 0 ? 'text-emerald-500' : 'text-status-danger'}>
+                <span className={selectedData.change > 0 ? 'value-positive' : 'value-negative'}>
                   전일 대비 {selectedData.change > 0 ? '+' : ''}{formatKRW(selectedData.change)}
                 </span>
               </div>
@@ -255,7 +255,7 @@ function AssetDayCell({ day, data, isSelected, onSelect }: AssetDayCellProps) {
       </span>
       {data && data.netWorth !== 0 && (
         <span className={clsx(
-          'text-[9px] sm:text-[10px] tabular-nums mt-auto truncate w-full',
+          'text-label4 leading-none tabular-nums mt-auto truncate w-full',
           data.netWorth >= 0 ? 'text-status-success' : 'text-status-danger'
         )}>
           {formatKoreanUnit(data.netWorth)}
@@ -263,8 +263,8 @@ function AssetDayCell({ day, data, isSelected, onSelect }: AssetDayCellProps) {
       )}
       {data && data.change !== 0 && (
         <span className={clsx(
-          'text-[8px] sm:text-[9px] tabular-nums truncate w-full',
-          data.change > 0 ? 'text-emerald-500/70' : 'text-red-400/70'
+          'text-micro leading-none tabular-nums truncate w-full',
+          data.change > 0 ? 'value-positive' : 'value-negative'
         )}>
           {data.change > 0 ? '▲' : '▼'}{formatKoreanUnit(Math.abs(data.change))}
         </span>

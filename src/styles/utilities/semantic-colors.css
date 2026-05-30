@@ -52,3 +52,24 @@
 /* Muted / Glass */
 .bg-surface-muted { background-color: var(--surface-muted); }
 .bg-surface-glass { background-color: var(--surface-glass); }
+
+/* ── Overlay scrim — shared modal/sheet/drawer backdrop ──── */
+/* Pair with `fixed inset-0`. Replaces raw bg-black/40·50·60 + backdrop-blur-*. */
+.scrim {
+  background-color: var(--overlay-scrim);
+  backdrop-filter: blur(var(--blur-overlay)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--blur-overlay)) saturate(1.4);
+}
+.scrim-plain {
+  background-color: var(--overlay-scrim);
+}
+
+/* ── Weekend / day-of-week (캘린더 공용, palette/dark/OLED aware) ── */
+.text-weekend-sun { color: var(--text-weekend-sun); }
+.text-weekend-sat { color: var(--text-weekend-sat); }
+.bg-weekend-sun { background-color: var(--text-weekend-sun); }
+.bg-weekend-sat { background-color: var(--text-weekend-sat); }
+
+/* ── Value colors on always-dark hero surfaces ──────────── */
+.text-value-positive-on-dark { color: var(--value-positive-on-dark); }
+.text-value-negative-on-dark { color: var(--value-negative-on-dark); }

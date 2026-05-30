@@ -85,10 +85,7 @@ export function CategoryDonutCard({
 
   if (segments.length === 0) {
     return (
-      <motion.div
-        className="flex-shrink-0 w-[220px] rounded-2xl bg-surface-primary p-4 text-left transition-all"
-        style={{ boxShadow: 'inset 0 0 0 1px var(--border-default), 0 1px 3px rgba(0,0,0,0.04)' }}
-      >
+      <motion.div className="card-base flex-shrink-0 w-[220px] rounded-2xl bg-surface-primary p-4 text-left transition-all">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-7 h-7 rounded-lg bg-surface-tertiary flex items-center justify-center">
             <PieChart className="w-3.5 h-3.5 text-sub" />
@@ -103,10 +100,7 @@ export function CategoryDonutCard({
   const topSeg = segments[0]
 
   return (
-    <motion.div
-      className="flex-shrink-0 w-[220px] rounded-2xl bg-surface-primary p-4 text-left transition-all"
-      style={{ boxShadow: 'inset 0 0 0 1px var(--border-default), 0 1px 3px rgba(0,0,0,0.04)' }}
-    >
+    <motion.div className="card-base flex-shrink-0 w-[220px] rounded-2xl bg-surface-primary p-4 text-left transition-all">
       <div className="flex items-center gap-2 mb-2">
         <div className="w-7 h-7 rounded-lg bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/30 flex items-center justify-center">
           <PieChart className="w-3.5 h-3.5 text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]" />
@@ -138,7 +132,7 @@ export function CategoryDonutCard({
           </svg>
           {/* 중앙 top 카테고리 */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-[10px] text-disabled leading-none mb-0.5">Top</span>
+            <span className="text-label4 text-disabled leading-none mb-0.5">Top</span>
             <span className="text-caption font-bold text-heading tabular-nums leading-none">
               {topSeg.percent.toFixed(0)}%
             </span>
@@ -164,8 +158,8 @@ export function CategoryDonutCard({
                 style={{ backgroundColor: seg.color }}
                 aria-hidden="true"
               />
-              <span className="text-[11px] text-body truncate flex-1 leading-tight">{seg.name}</span>
-              <span className="text-[11px] text-sub font-semibold tabular-nums">
+              <span className="text-caption text-body truncate flex-1 leading-tight">{seg.name}</span>
+              <span className="text-caption text-sub font-semibold tabular-nums leading-tight">
                 {seg.percent.toFixed(0)}%
               </span>
             </button>
@@ -174,7 +168,7 @@ export function CategoryDonutCard({
       </div>
 
       {segments.length > 3 && (
-        <p className="mt-2 text-[10px] text-disabled text-center">
+        <p className="mt-2 text-label4 text-disabled text-center">
           +{segments.length - 3}개 더
         </p>
       )}

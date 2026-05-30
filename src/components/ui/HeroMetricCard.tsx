@@ -65,7 +65,7 @@ function AnimatedNumber({
 
 function TrendIcon({ value }: { value: number }) {
   const Icon = value > 0 ? TrendingUp : value < 0 ? TrendingDown : Minus
-  const color = value > 0 ? 'text-emerald-300' : value < 0 ? 'text-red-300' : 'text-white/50'
+  const color = value > 0 ? 'text-value-positive-on-dark' : value < 0 ? 'text-value-negative-on-dark' : 'text-white/50'
   return (
     <motion.span
       initial={{ scale: 0.5, opacity: 0 }}
@@ -125,9 +125,9 @@ export function HeroMetricCard({
         shimmer && 'hero-shimmer',
         spotlight && 'spotlight',
         onClick && 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--surface-primary)]',
+        'el-glow-primary',
         className,
       )}
-      style={{ boxShadow: '0 8px 32px var(--glow-primary)' }}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={
@@ -168,8 +168,8 @@ export function HeroMetricCard({
                   <span
                     className={clsx(
                       'text-body3 tabular-nums',
-                      isPos && 'text-emerald-300',
-                      isNeg && 'text-red-300',
+                      isPos && 'text-value-positive-on-dark',
+                      isNeg && 'text-value-negative-on-dark',
                       !isPos && !isNeg && 'text-white/50',
                       hideAmounts && 'amount-masked',
                     )}

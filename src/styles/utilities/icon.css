@@ -25,3 +25,30 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+/* ── Touch targets (Apple HIG / Material 44px minimum) ────── */
+/* Generic version — grows the element itself to >=44px. */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Inset version — keeps the VISUAL size of a small control (icon, swatch,
+ * chip) but expands the clickable hit area to >=44px via an invisible
+ * pseudo-element, so layout/visuals never shift. */
+.touch-target-inset {
+  position: relative;
+}
+.touch-target-inset::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+  /* hit-area only — no paint */
+}

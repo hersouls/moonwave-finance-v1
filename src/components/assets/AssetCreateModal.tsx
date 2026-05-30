@@ -138,7 +138,7 @@ export function AssetCreateModal() {
                 onClick={() => { setType('asset'); setCategoryId('') }}
                 className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'asset'
-                    ? 'bg-status-success text-emerald-700 dark:text-emerald-400'
+                    ? 'bg-value-positive-soft text-value-positive'
                     : 'bg-surface-tertiary text-sub'
                 }`}
               >
@@ -149,7 +149,7 @@ export function AssetCreateModal() {
                 onClick={() => { setType('liability'); setCategoryId('') }}
                 className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'liability'
-                    ? 'bg-status-danger text-red-700 dark:text-red-400'
+                    ? 'bg-value-negative-soft text-value-negative'
                     : 'bg-surface-tertiary text-sub'
                 }`}
               >
@@ -160,10 +160,10 @@ export function AssetCreateModal() {
 
           {/* Loan Import (liability only) */}
           {type === 'liability' && activeLoans.length > 0 && (
-            <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3">
+            <div className="rounded-lg bg-primary-50 dark:bg-primary-900/20 p-3">
               <div className="flex items-center gap-2 mb-2">
-                <Landmark className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-body3-semi text-blue-700 dark:text-blue-300">대출정보 불러오기</span>
+                <Landmark className="w-4 h-4 text-accent-primary" />
+                <span className="text-body3-semi text-accent-primary">대출정보 불러오기</span>
               </div>
               <Select
                 value={String(selectedLoanId ?? '')}

@@ -17,7 +17,7 @@ export function AssetLiabilityBreakdown({ stats }: AssetLiabilityBreakdownProps)
       <div className="card-base card-pad-lg el-card-elevated surface-inset-top">
         <div className="flex items-center gap-3 mb-3">
           <div className="p-2.5 rounded-lg bg-status-success">
-            <Landmark className="w-5 h-5 text-status-success" />
+            <Landmark className="w-5 h-5 text-success-600" />
           </div>
           <span className="text-body3 text-sub">총 자산</span>
         </div>
@@ -30,7 +30,7 @@ export function AssetLiabilityBreakdown({ stats }: AssetLiabilityBreakdownProps)
       <div className="card-base card-pad-lg el-card-elevated surface-inset-top">
         <div className="flex items-center gap-3 mb-3">
           <div className="p-2.5 rounded-lg bg-status-danger">
-            <CreditCard className="w-5 h-5 text-status-danger" />
+            <CreditCard className="w-5 h-5 text-danger-600" />
           </div>
           <div className="flex items-center gap-2">
             <span className="text-body3 text-sub">총 부채</span>

@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Bar } from 'react-chartjs-2'
 import { Card } from '@/components/ui/Card'
 import { useMultiMonthTransactions } from '@/hooks/useMultiMonthTransactions'
-import { commonBarOptions } from '@/lib/chartConfig'
+import { commonBarOptions, getChartColor } from '@/lib/chartConfig'
 import { format, subMonths } from 'date-fns'
 
 export function IncomeExpenseTrendChart() {
@@ -42,13 +42,13 @@ export function IncomeExpenseTrendChart() {
               {
                 label: '수입',
                 data: incomeData,
-                backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                backgroundColor: `rgba(${getChartColor('income').fill.join(',')}, 0.7)`,
                 borderRadius: 4,
               },
               {
                 label: '지출',
                 data: expenseData,
-                backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                backgroundColor: `rgba(${getChartColor('expense').fill.join(',')}, 0.7)`,
                 borderRadius: 4,
               },
             ],

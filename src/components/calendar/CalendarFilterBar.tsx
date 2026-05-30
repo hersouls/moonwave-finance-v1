@@ -180,14 +180,14 @@ export function CalendarFilterBar({
           <Tag className="w-3.5 h-3.5" />
           카테고리
           {filters.categoryIds.length > 0 && (
-            <span className="tabular-nums text-[10px] bg-primary-500 text-white rounded-full px-1.5 leading-[14px]">
+            <span className="tabular-nums text-micro bg-primary-500 text-[color:var(--text-on-accent)] rounded-full px-1.5 leading-none">
               {filters.categoryIds.length}
             </span>
           )}
         </button>
         {categoryOpen && (
           <div
-            className="absolute top-full left-0 mt-1 w-64 max-h-72 overflow-y-auto rounded-lg bg-surface-primary shadow-lg ring-1 ring-[color:var(--border-subtle)] z-20 p-1"
+            className="absolute top-full left-0 mt-1 w-64 max-h-72 overflow-y-auto rounded-lg bg-surface-primary elevation-2 ring-1 ring-[color:var(--border-subtle)] z-20 p-1"
             role="listbox"
             aria-multiselectable="true"
           >
@@ -214,10 +214,10 @@ export function CalendarFilterBar({
                   <span className="flex-1 truncate">{c.name}</span>
                   <span
                     className={clsx(
-                      'text-[10px] px-1.5 rounded-full',
+                      'text-label4 px-1.5 rounded-full',
                       c.type === 'income'
-                        ? 'text-status-success bg-emerald-50 dark:bg-emerald-950/40'
-                        : 'text-status-danger bg-red-50 dark:bg-red-950/40',
+                        ? 'text-status-success bg-status-success'
+                        : 'text-status-danger bg-status-danger',
                     )}
                   >
                     {c.type === 'income' ? '수입' : '지출'}

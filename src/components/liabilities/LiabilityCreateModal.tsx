@@ -105,10 +105,10 @@ export function LiabilityCreateModal() {
         <div className="space-y-4">
           {/* Loan Import */}
           {activeLoans.length > 0 && (
-            <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3">
+            <div className="rounded-lg bg-accent-primary p-3">
               <div className="flex items-center gap-2 mb-2">
-                <Landmark className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-body3-semi text-blue-700 dark:text-blue-300">대출정보 불러오기</span>
+                <Landmark className="w-4 h-4 text-accent-primary" />
+                <span className="text-body3-semi text-accent-primary">대출정보 불러오기</span>
               </div>
               <Select
                 value={String(selectedLoanId ?? '')}

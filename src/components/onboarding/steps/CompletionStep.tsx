@@ -19,11 +19,11 @@ export function CompletionStep({ onComplete }: CompletionStepProps) {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-full px-6 py-12">
-      <div className="w-16 h-16 rounded-2xl bg-status-success flex items-center justify-center mb-6">
-        <PartyPopper className="w-8 h-8 text-status-success" />
+      <div className="w-16 h-16 rounded-2xl bg-success-50 dark:bg-success-500/15 flex items-center justify-center mb-6">
+        <PartyPopper className="w-8 h-8 text-success-600 dark:text-success-500" />
       </div>
       <h2 className="text-heading2 text-heading mb-2">설정 완료!</h2>
-      <p className="text-sm text-sub mb-2 text-center">FIN을 시작할 준비가 되었습니다.</p>
+      <p className="text-body3 text-sub mb-2 text-center">FIN을 시작할 준비가 되었습니다.</p>
       <p className="text-caption text-disabled mb-10 text-center">대시보드에서 자산을 추가하고 매일 기록해보세요.</p>
 
       <Button variant="primary" size="lg" onClick={onComplete} className="w-full max-w-sm" rightIcon={<ArrowRight className="w-5 h-5" />}>

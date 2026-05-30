@@ -155,14 +155,14 @@ export function PaymentMethodManagement() {
                       </span>
                       <button
                         onClick={() => openEdit(item)}
-                        className="p-1.5 rounded-md text-disabled hover:text-body hover:bg-[var(--hover-bg)] opacity-0 group-hover:opacity-100 transition-all"
+                        className="touch-target-inset p-1.5 rounded-md text-disabled hover:text-body hover:bg-[var(--hover-bg)] opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
                         aria-label="수정"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => openDelete(item)}
-                        className="p-1.5 rounded-md text-disabled hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
+                        className="touch-target-inset p-1.5 rounded-md text-disabled hover:text-status-danger hover:bg-status-danger-soft opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
                         aria-label="삭제"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

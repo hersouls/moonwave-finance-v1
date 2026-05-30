@@ -14,8 +14,8 @@ import { EasyLedgerImportDialog } from './EasyLedgerImportDialog'
 
 function SyncStatusIndicator({ status }: { status: SyncStatus }) {
   if (status === 'syncing') return <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
-  if (status === 'synced') return <CheckCircle2 className="w-5 h-5 text-green-500" />
-  if (status === 'error') return <AlertCircle className="w-5 h-5 text-red-500" />
+  if (status === 'synced') return <CheckCircle2 className="w-5 h-5 text-status-success" />
+  if (status === 'error') return <AlertCircle className="w-5 h-5 text-status-danger" />
   return <CloudOff className="w-5 h-5 text-disabled" />
 }
 
@@ -120,7 +120,7 @@ export function DataTab() {
                   <p className="text-body3 text-heading">
                     {SYNC_LABELS[syncStatus]}
                     {pendingChangesCount > 0 && syncStatus !== 'syncing' && (
-                      <span className="text-caption text-amber-500 dark:text-amber-400 ml-2">
+                      <span className="text-caption text-status-warning ml-2">
                         ({pendingChangesCount}건 대기 중)
                       </span>
                     )}
@@ -176,7 +176,7 @@ export function DataTab() {
           백업 및 복원
         </h3>
         <div className="space-y-3">
-          <div className="flex items-center justify-between p-4 bg-surface-secondary rounded-xl">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-surface-secondary rounded-xl">
             <div>
               <p className="text-body3 text-heading">백업 다운로드</p>
               <p className="text-caption text-sub">
@@ -191,11 +191,12 @@ export function DataTab() {
               onClick={handleExportBackup}
               disabled={isBackingUp}
               leftIcon={isBackingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              className="w-full sm:w-auto"
             >
               {isBackingUp ? '백업 중...' : '내보내기'}
             </Button>
           </div>
-          <div className="flex items-center justify-between p-4 bg-surface-secondary rounded-xl">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-surface-secondary rounded-xl">
             <div>
               <p className="text-body3 text-heading">데이터 복원</p>
               <p className="text-caption text-sub">JSON 백업 파일에서 복원합니다</p>
@@ -206,6 +207,7 @@ export function DataTab() {
               onClick={handleImportBackup}
               disabled={isRestoring}
               leftIcon={isRestoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              className="w-full sm:w-auto"
             >
               {isRestoring ? '복원 중...' : '복원'}
             </Button>
@@ -219,7 +221,7 @@ export function DataTab() {
           <FileUp className="w-4 h-4" />
           편한가계부 가져오기
         </h3>
-        <div className="flex items-center justify-between p-4 bg-surface-secondary rounded-xl">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-surface-secondary rounded-xl">
           <div>
             <p className="text-body3 text-heading">외부 데이터 가져오기</p>
             <p className="text-caption text-sub">
@@ -231,6 +233,7 @@ export function DataTab() {
             size="sm"
             onClick={handleEasyLedgerImport}
             leftIcon={<FileUp className="w-4 h-4" />}
+            className="w-full sm:w-auto"
           >
             파일 선택
           </Button>

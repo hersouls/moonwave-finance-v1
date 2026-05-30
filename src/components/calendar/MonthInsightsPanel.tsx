@@ -4,6 +4,7 @@ import { TrendingUp, TrendingDown, Crown, RefreshCw, CalendarDays, Wallet } from
 import { Sparkline } from '@/components/ui/Sparkline'
 import { formatKoreanUnit, formatKRW, formatPercent } from '@/utils/format'
 import { getCategoryColor, getCategoryName, type MonthAggregates } from '@/lib/calendarUtils'
+import { getCalendarFallbackColors, getPositiveColor, getNegativeColor } from '@/lib/chartConfig'
 import type { TransactionCategory } from '@/lib/types'
 
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -38,6 +39,7 @@ export function MonthInsightsPanel({
     )
   }
 
+  const calFallback = getCalendarFallbackColors()
   const savingsRate = aggregates.income > 0 ? ((aggregates.income - aggregates.expense) / aggregates.income) * 100 : 0
   const recurringShare = aggregates.expense > 0 ? (aggregates.recurringExpense / aggregates.expense) * 100 : 0
   const topExpense = aggregates.topExpenseCategories.slice(0, 5)
@@ -70,7 +72,7 @@ export function MonthInsightsPanel({
                 data={sparklineSeries}
                 width={96}
                 height={32}
-                color={aggregates.net >= 0 ? '#10b981' : '#ef4444'}
+                color={aggregates.net >= 0 ? getPositiveColor() : getNegativeColor()}
                 showFill
               />
             </div>
@@ -116,12 +118,12 @@ export function MonthInsightsPanel({
       {topExpense.length > 0 && (
         <div className="card-base el-card">
           <div className="flex items-center gap-1.5 mb-2">
-            <Crown className="w-4 h-4 text-amber-500" />
+            <Crown className="w-4 h-4 text-status-warning" />
             <h4 className="text-body3-semi text-heading">지출 상위 카테고리</h4>
           </div>
           <div className="space-y-2">
             {topExpense.map((entry, i) => {
-              const color = getCategoryColor(entry.categoryId, categories, '#ef4444')
+              const color = getCategoryColor(entry.categoryId, categories, calFallback.expense)
               const name = getCategoryName(entry.categoryId, categories)
               const share = aggregates.expense > 0 ? (entry.amount / aggregates.expense) * 100 : 0
               const widthPct = expenseMax > 0 ? (entry.amount / expenseMax) * 100 : 0
@@ -131,7 +133,7 @@ export function MonthInsightsPanel({
                     <div className="flex items-center gap-1.5 min-w-0 flex-1">
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
                       <span className="text-heading truncate">{name}</span>
-                      <span className="text-sub text-[10px] tabular-nums shrink-0">
+                      <span className="text-sub text-label4 tabular-nums shrink-0">
                         {formatPercent(share, 0)}
                       </span>
                     </div>
@@ -183,7 +185,7 @@ export function MonthInsightsPanel({
                     <span
                       className={clsx(
                         'text-caption',
-                        dow === 0 ? 'text-red-500/80' : dow === 6 ? 'text-blue-500/80' : 'text-sub',
+                        dow === 0 ? 'text-weekend-sun' : dow === 6 ? 'text-weekend-sat' : 'text-sub',
                       )}
                     >
                       ({WEEKDAY_LABELS[dow]})
@@ -215,7 +217,7 @@ export function MonthInsightsPanel({
                     <div
                       className={clsx(
                         'w-full rounded-t-md transition-all',
-                        i === 0 ? 'bg-red-400/70' : i === 6 ? 'bg-blue-400/70' : 'bg-primary-500/70',
+                        i === 0 ? 'bg-weekend-sun' : i === 6 ? 'bg-weekend-sat' : 'bg-primary-500/70',
                         amount === 0 && 'bg-[var(--surface-tertiary)] min-h-[4px]',
                       )}
                       style={{ height: amount > 0 ? `${Math.max(8, heightPct)}%` : undefined }}
@@ -224,8 +226,8 @@ export function MonthInsightsPanel({
                   </div>
                   <span
                     className={clsx(
-                      'text-[10px]',
-                      i === 0 ? 'text-red-500/80' : i === 6 ? 'text-blue-500/80' : 'text-sub',
+                      'text-label4',
+                      i === 0 ? 'text-weekend-sun' : i === 6 ? 'text-weekend-sat' : 'text-sub',
                     )}
                   >
                     {WEEKDAY_LABELS[i]}
@@ -256,7 +258,7 @@ export function MonthInsightsPanel({
               style={{ width: `${recurringShare}%` }}
             />
           </div>
-          <p className="mt-1 text-[10px] text-sub text-right tabular-nums">
+          <p className="mt-1 text-label4 text-sub text-right tabular-nums">
             전체 지출의 {formatPercent(recurringShare, 0)}
           </p>
         </div>

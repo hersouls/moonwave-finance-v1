@@ -94,7 +94,7 @@ export function LedgerHero({
       className="relative overflow-hidden rounded-3xl bg-surface-primary"
       style={{
         boxShadow:
-          'inset 0 0 0 1px var(--border-default), inset 0 1px 0 0 rgba(255,255,255,0.6), 0 4px 20px rgba(0,0,0,0.05)',
+          'inset 0 0 0 1px var(--border-default), var(--shadow-1)',
       }}
     >
       {/* ─── Aurora gradient mesh (decorative) ───────── */}
@@ -122,7 +122,7 @@ export function LedgerHero({
           type="button"
           onClick={() => onMonthChange(getPreviousMonth(selectedMonth))}
           whileTap={shouldReduceMotion ? undefined : { scale: 0.9 }}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
+          className="touch-target rounded-full text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
           aria-label="이전 달"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -143,7 +143,7 @@ export function LedgerHero({
                 exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.7 }}
                 transition={springSnappy}
                 whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
-                className="text-[11px] px-2.5 py-0.5 rounded-full bg-[color:var(--color-primary-50)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/30 dark:text-[color:var(--color-primary-300)] font-semibold ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)] hover:brightness-95 transition-all"
+                className="text-caption leading-none px-2.5 py-0.5 rounded-full bg-[color:var(--color-primary-50)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/30 dark:text-[color:var(--color-primary-300)] font-semibold ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)] hover:brightness-95 transition-all"
               >
                 오늘
               </motion.button>
@@ -155,7 +155,7 @@ export function LedgerHero({
           type="button"
           onClick={() => onMonthChange(getNextMonth(selectedMonth))}
           whileTap={shouldReduceMotion ? undefined : { scale: 0.9 }}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
+          className="touch-target rounded-full text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
           aria-label="다음 달"
         >
           <ChevronRight className="w-4 h-4" />
@@ -181,7 +181,7 @@ export function LedgerHero({
               />
               <p
                 id="ledger-hero-label"
-                className="text-[10px] sm:text-[11px] font-bold tracking-[0.14em] uppercase"
+                className="text-label4 sm:text-caption leading-none font-bold tracking-[0.14em] uppercase"
                 style={{ color: `color-mix(in srgb, ${valueColorVar} 75%, var(--text-sub))` }}
               >
                 {isCurrentMonth ? '이번 달' : formatMonthLabel(selectedMonth)} {isExpense ? '지출' : '수입'}
@@ -203,10 +203,9 @@ export function LedgerHero({
               </span>
               <span
                 className={clsx(
-                  'font-bold tabular-nums',
+                  'text-h3-fluid font-bold tabular-nums',
                   isExpense ? 'text-value-negative/80' : 'text-value-positive/80',
                 )}
-                style={{ fontSize: 'clamp(18px, 4vw, 22px)' }}
               >
                 원
               </span>
@@ -241,7 +240,7 @@ export function LedgerHero({
 
               {/* Daily average (in current month) */}
               {totalAmount > 0 && dailyValues.length > 0 && (
-                <span className="text-[11px] text-sub tabular-nums font-medium">
+                <span className="text-caption text-sub tabular-nums font-medium">
                   일평균 <span className="text-body font-bold">{formatKoreanUnit(Math.round(totalAmount / Math.max(1, dailyValues.filter(v => v > 0).length)))}원</span>
                 </span>
               )}
@@ -310,7 +309,7 @@ export function LedgerHero({
 
         {/* Savings rate with mini arc */}
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] text-sub mb-0.5 font-medium">저축률</p>
+          <p className="text-caption text-sub mb-0.5 font-medium">저축률</p>
           <div className="flex items-center gap-2">
             <svg width={ARC_SIZE} height={ARC_SIZE} viewBox={`0 0 ${ARC_SIZE} ${ARC_SIZE}`} className="flex-shrink-0 -rotate-90">
               <circle
@@ -355,7 +354,7 @@ function Metric({ label, value, colorClass, hidden }: { label: string; value: nu
   const animated = useCountUp(value, 900)
   return (
     <div className="flex-1 min-w-0">
-      <p className="text-[11px] text-sub mb-0.5 font-medium">{label}</p>
+      <p className="text-caption text-sub mb-0.5 font-medium">{label}</p>
       <p className={clsx('text-body3-semi font-bold tabular-nums truncate', colorClass)}>
         {hidden ? '••••' : formatKoreanUnit(animated)}
       </p>

@@ -20,8 +20,8 @@
   --density-space-6: calc(24px * var(--density-spacing-scale));
   --density-space-8: calc(32px * var(--density-spacing-scale));
 
-  /* Touch targets */
-  --density-touch-target: calc(44px * var(--density-touch-scale));
+  /* Touch targets — never below the 44px HIG minimum even in compact mode */
+  --density-touch-target: max(44px, calc(44px * var(--density-touch-scale)));
 }
 
 html[data-density="compact"] {
@@ -36,4 +36,14 @@ html[data-density="spacious"] {
   --density-font-scale: 1.06;
   --density-radius-scale: 1.1;
   --density-touch-scale: 1.1;
+}
+
+/* On coarse (touch) pointers, density must NOT shrink hit areas — keep full
+ * touch scale regardless of the compact setting. Density there only affects
+ * spacing/font density, not tap targets. */
+@media (pointer: coarse) {
+  :root,
+  html[data-density="compact"] {
+    --density-touch-scale: 1;
+  }
 }

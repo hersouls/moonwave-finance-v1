@@ -106,7 +106,7 @@ export function TransactionCreateModal() {
                 onClick={() => setType('expense')}
                 className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'expense'
-                    ? 'bg-status-danger text-red-700 dark:text-red-400'
+                    ? 'bg-status-danger-soft text-status-danger'
                     : 'bg-surface-tertiary text-sub'
                 }`}
               >
@@ -117,7 +117,7 @@ export function TransactionCreateModal() {
                 onClick={() => setType('income')}
                 className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
                   type === 'income'
-                    ? 'bg-status-success text-emerald-700 dark:text-emerald-400'
+                    ? 'bg-status-success-soft text-status-success'
                     : 'bg-surface-tertiary text-sub'
                 }`}
               >

@@ -33,22 +33,22 @@ export function EmptyState({
       container: 'py-8',
       iconWrapper: 'p-3 mb-3',
       iconSize: 'w-8 h-8',
-      title: 'text-lg',
-      description: 'text-sm',
+      title: 'text-title2',
+      description: 'text-body3',
     },
     md: {
       container: 'py-12',
       iconWrapper: 'p-5 mb-4',
       iconSize: 'w-10 h-10',
-      title: 'text-xl',
-      description: 'text-base',
+      title: 'text-title1',
+      description: 'text-body2',
     },
     lg: {
       container: 'py-16',
       iconWrapper: 'p-6 mb-6',
       iconSize: 'w-12 h-12',
-      title: 'text-2xl',
-      description: 'text-base',
+      title: 'text-h2-fluid',
+      description: 'text-body2',
     },
   }
 
@@ -75,8 +75,9 @@ export function EmptyState({
 
       <h3
         className={clsx(
-          'font-bold text-heading mb-2',
-          styles.title
+          'text-heading mb-2',
+          styles.title,
+          'font-bold'
         )}
       >
         {title}

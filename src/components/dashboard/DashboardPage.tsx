@@ -156,7 +156,19 @@ export function DashboardPage() {
         className="grid grid-cols-1 lg:grid-cols-3 gap-4"
         aria-label="재무 요약"
       >
-        <motion.div variants={heroItemV} onClick={() => navigate('/assets')} className="cursor-pointer">
+        <motion.div
+          variants={heroItemV}
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate('/assets')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              navigate('/assets')
+            }
+          }}
+          className="cursor-pointer"
+        >
           <HeroMetricCard
             label="순자산"
             value={stats.netWorth}
@@ -192,7 +204,7 @@ export function DashboardPage() {
       </motion.section>
 
       {/* 3-Pillar Summary: Asset + Ledger */}
-      <motion.div variants={itemV} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <motion.div variants={itemV} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
         <AssetLiabilityBreakdown stats={stats} />
         <LedgerSummaryCard />
       </motion.div>
@@ -203,7 +215,7 @@ export function DashboardPage() {
       {/* Budget Overview */}
 
       {/* Charts */}
-      <motion.div variants={itemV} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <motion.div variants={itemV} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
         <NetWorthTrendChart />
         <AssetAllocationChart />
       </motion.div>
@@ -211,7 +223,7 @@ export function DashboardPage() {
       <motion.div variants={itemV}><DailyChangeChart /></motion.div>
 
       {/* Category Breakdown Cards */}
-      <motion.div variants={itemV} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <motion.div variants={itemV} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
         {/* Asset Categories */}
         {assetBreakdown.length > 0 && (
           <Card className="card-pad-lg">
@@ -219,7 +231,7 @@ export function DashboardPage() {
               <h3 className="text-body3-semi text-heading">자산 구성</h3>
               <button
                 onClick={() => navigate('/assets')}
-                className="text-caption text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
+                className="text-caption text-accent-primary hover:underline flex items-center gap-0.5 min-h-11 px-1 -mr-1"
               >
                 전체보기 <ArrowRight className="w-3 h-3" />
               </button>
@@ -228,7 +240,7 @@ export function DashboardPage() {
               {assetBreakdown.slice(0, 5).map((bd) => (
                 <div key={bd.categoryId} className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: bd.categoryColor }} />
-                  <span className="text-sm text-body flex-1 truncate">{bd.categoryName}</span>
+                  <span className="text-body3 text-heading flex-1 truncate">{bd.categoryName}</span>
                   <Amount value={bd.total} size="emphasis" className="text-heading" />
                   <span className="text-caption text-disabled w-12 text-right tabular-nums">
                     {formatPercent(bd.percentage, 0)}
@@ -246,7 +258,7 @@ export function DashboardPage() {
               <h3 className="text-body3-semi text-heading">부채 구성</h3>
               <button
                 onClick={() => navigate('/liabilities')}
-                className="text-caption text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
+                className="text-caption text-accent-primary hover:underline flex items-center gap-0.5 min-h-11 px-1 -mr-1"
               >
                 전체보기 <ArrowRight className="w-3 h-3" />
               </button>
@@ -255,7 +267,7 @@ export function DashboardPage() {
               {liabilityBreakdown.slice(0, 5).map((bd) => (
                 <div key={bd.categoryId} className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: bd.categoryColor }} />
-                  <span className="text-sm text-body flex-1 truncate">{bd.categoryName}</span>
+                  <span className="text-body3 text-heading flex-1 truncate">{bd.categoryName}</span>
                   <Amount value={bd.total} size="emphasis" className="text-heading" />
                   <span className="text-caption text-disabled w-12 text-right tabular-nums">
                     {formatPercent(bd.percentage, 0)}
@@ -274,12 +286,12 @@ export function DashboardPage() {
             <h3 className="text-body3-semi text-heading">진행 중인 목표</h3>
             <button
               onClick={() => navigate('/profile')}
-              className="text-caption text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
+              className="text-caption text-accent-primary hover:underline flex items-center gap-0.5 min-h-11 px-1 -mr-1"
             >
               전체보기 <ArrowRight className="w-3 h-3" />
             </button>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3">
             {activeGoals.slice(0, 4).map((goal) => (
               <GoalCard key={goal.id} goal={goal} />
             ))}

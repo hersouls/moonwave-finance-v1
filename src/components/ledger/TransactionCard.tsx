@@ -174,7 +174,7 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
                 </div>
                 {/* Sign badge — +/- in tiny corner pill */}
                 <span
-                  className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white ring-2 ring-[color:var(--surface-primary)]"
+                  className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-label4 leading-none font-extrabold text-white ring-2 ring-[color:var(--surface-primary)]"
                   style={{
                     lineHeight: 1,
                     backgroundColor: isInflow ? 'var(--value-positive)' : 'var(--value-negative)',
@@ -193,7 +193,7 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
                   </span>
                   {member && (
                     <span
-                      className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold text-white flex-shrink-0 ring-1"
+                      className="text-label4 leading-none px-1.5 py-0.5 rounded-full font-semibold text-white flex-shrink-0 ring-1"
                       style={{
                         backgroundColor: member.color,
                         boxShadow: `0 1px 4px color-mix(in srgb, ${member.color} 40%, transparent)`,
@@ -203,19 +203,19 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
                     </span>
                   )}
                   {isSubscription && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-status-info-soft text-status-info flex items-center gap-0.5 flex-shrink-0 ring-1 ring-status-info/15">
+                    <span className="text-label4 leading-none px-1.5 py-0.5 rounded-full bg-status-info-soft text-status-info flex items-center gap-0.5 flex-shrink-0 ring-1 ring-status-info/15">
                       <RefreshCw className="w-2.5 h-2.5" />
                       {subCategoryLabel ? `구독 · ${subCategoryLabel}` : '구독'}
                     </span>
                   )}
                   {isRefund && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-status-success-soft text-status-success flex items-center gap-0.5 flex-shrink-0 ring-1 ring-status-success/15">
+                    <span className="text-label4 leading-none px-1.5 py-0.5 rounded-full bg-status-success-soft text-status-success flex items-center gap-0.5 flex-shrink-0 ring-1 ring-status-success/15">
                       <Undo2 className="w-2.5 h-2.5" />
                       환급
                     </span>
                   )}
                   {pmLabel && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-tertiary text-sub truncate max-w-[100px] flex-shrink-0 ring-1 ring-base">
+                    <span className="text-label4 leading-none px-1.5 py-0.5 rounded-full bg-surface-tertiary text-sub truncate max-w-[100px] flex-shrink-0 ring-1 ring-base">
                       {pmLabel}
                     </span>
                   )}
@@ -225,7 +225,7 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
                     {transaction.memo}
                   </p>
                 )}
-                <p className="text-[11px] text-disabled mt-0.5 tabular-nums">
+                <p className="text-caption text-disabled mt-0.5 tabular-nums">
                   {formatDate(transaction.date)}
                 </p>
               </div>

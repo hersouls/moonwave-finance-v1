@@ -20,7 +20,7 @@ export function FAQModal() {
           {faqs.map((faq, i) => (
             <div key={i} className="p-4 bg-surface-secondary rounded-lg">
               <h3 className="text-body3-semi text-heading mb-2">Q. {faq.q}</h3>
-              <p className="text-sm text-sub">{faq.a}</p>
+              <p className="text-body3 text-sub">{faq.a}</p>
             </div>
           ))}
         </div>

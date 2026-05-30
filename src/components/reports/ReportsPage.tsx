@@ -94,7 +94,7 @@ export function ReportsPage() {
       {activeTab === 'asset' && (
         <div className="space-y-6">
           {/* Summary Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Card className="text-center">
               <span className="text-caption text-sub">순자산</span>
               <p className="text-title2 text-heading tabular-nums mt-1">
@@ -118,7 +118,7 @@ export function ReportsPage() {
               <p className={clsx(
                 'text-title2 tabular-nums mt-1',
                 stats.debtRatio < 30 ? 'text-status-success'
-                  : stats.debtRatio < 60 ? 'text-amber-600 dark:text-amber-400'
+                  : stats.debtRatio < 60 ? 'text-status-warning'
                   : 'text-status-danger'
               )}>
                 {formatPercent(stats.debtRatio)}
@@ -130,7 +130,7 @@ export function ReportsPage() {
           <DailyNetWorthChart />
 
           {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <NetWorthTrendChart />
             <AssetAllocationChart />
           </div>
@@ -190,7 +190,7 @@ function LedgerAnalysisTab() {
       <CategoryDeepDive analysis={analysis} />
 
       {/* Supporting: month-over-month context (collapsed visual weight) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <IncomeExpenseTrendChart />
         <SavingsRateChart />
       </div>

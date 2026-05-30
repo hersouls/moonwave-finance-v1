@@ -26,3 +26,19 @@
 .dim-overlay {
   background-color: var(--dim-overlay);
 }
+
+/* ── Elevation glow — tokenized hero/metric/FAB glow ──────── */
+/* Replaces inline boxShadow:'0 8px 32px var(--glow-primary)' duplicated 6+ times. */
+.el-glow-primary {
+  box-shadow: 0 8px 32px var(--glow-primary);
+}
+.el-glow-success {
+  box-shadow: 0 8px 32px var(--glow-success);
+}
+.el-glow-danger {
+  box-shadow: 0 8px 32px var(--glow-danger);
+}
+/* Softer ambient glow for resting cards / pull-to-refresh */
+.el-glow-soft {
+  box-shadow: 0 4px 20px -6px var(--glow-primary);
+}

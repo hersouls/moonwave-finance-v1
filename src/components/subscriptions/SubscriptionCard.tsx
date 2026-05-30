@@ -72,7 +72,7 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
         {/* Color circle */}
         <div
           className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ backgroundColor: subscription.color + '20' }}
+          style={{ background: `color-mix(in srgb, ${subscription.color} 14%, transparent)` }}
         >
           <span className="text-sm font-bold" style={{ color: subscription.color }}>
             {subscription.name.charAt(0)}
@@ -89,12 +89,12 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
               {subscription.name}
             </span>
             {isPaused && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">
+              <span className="text-label4 leading-none px-1.5 py-0.5 rounded-full bg-status-warning-soft text-status-warning">
                 일시정지{pauseDays != null ? ` ${pauseDays}일째` : ''}
               </span>
             )}
             {isCancelled && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-status-danger text-status-danger">
+              <span className="text-label4 leading-none px-1.5 py-0.5 rounded-full bg-status-danger-soft text-status-danger">
                 해지됨
               </span>
             )}
@@ -139,7 +139,7 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
         <div className="relative flex-shrink-0" ref={menuRef}>
           <button
             onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen) }}
-            className="p-1.5 rounded-lg text-disabled hover:text-body hover:bg-[var(--hover-bg)] transition-colors"
+            className="touch-target-inset p-1.5 rounded-lg text-disabled hover:text-body hover:bg-[var(--hover-bg)] transition-colors"
             aria-label="메뉴"
           >
             <MoreVertical className="w-4 h-4" />
@@ -172,14 +172,14 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
               {!isCancelled && (
                 <button
                   onClick={() => { setMenuOpen(false); changeStatus(subscription.id!, 'cancelled') }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-status-danger hover:bg-red-50 dark:hover:bg-red-900/20"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-status-danger hover:bg-status-danger-soft"
                 >
                   <XCircle className="w-3.5 h-3.5" /> 해지
                 </button>
               )}
               <button
                 onClick={() => { setMenuOpen(false); deleteSubscription(subscription.id!) }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-status-danger hover:bg-red-50 dark:hover:bg-red-900/20"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-status-danger hover:bg-status-danger-soft"
               >
                 <Trash2 className="w-3.5 h-3.5" /> 삭제
               </button>

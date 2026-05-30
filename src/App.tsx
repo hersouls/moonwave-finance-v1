@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Sidebar } from './components/layout/Sidebar'
 import { Header } from './components/layout/Header'
 import { Footer } from './components/layout/Footer'
@@ -15,17 +15,22 @@ import { IOSInstallBanner } from './components/ui/IOSInstallBanner'
 import { OfflineBanner } from './components/ui/OfflineBanner'
 import { AppLoadingScreen } from './components/ui/AppLoadingScreen'
 import { SearchModal } from './components/search/SearchModal'
+import { PullToRefreshIndicator } from './components/ui/PullToRefreshIndicator'
+import { CommandPalette } from './components/ui/CommandPalette'
+import { KeyboardShortcutsModal } from './components/ui/KeyboardShortcutsModal'
 import { AnimatedOutlet } from './components/ui/AnimatedOutlet'
 import { SkipLink } from './components/ui/SkipLink'
 import { OnboardingWizard } from './components/onboarding/OnboardingWizard'
 import { useSettingsStore } from './stores/settingsStore'
 import { useUIStore } from './stores/uiStore'
 import { useAuthStore } from './stores/authStore'
-import { useUndoStore } from './stores/undoStore'
 import { useSubscriptionStore } from './stores/subscriptionStore'
 import { showBillingNotifications } from './services/notificationService'
 import { useOnlineStatus } from './hooks/useOnlineStatus'
 import { useAutoSync } from './hooks/useAutoSync'
+import { useGlobalShortcuts } from './hooks/useGlobalShortcuts'
+import { usePullToRefresh } from './hooks/usePullToRefresh'
+import { incrementalUpload, startRealtimeSync } from './services/firestoreSync'
 import { ensureDefaultCategories } from './services/database'
 import { startTimePeriodWatcher } from './lib/timeTheme'
 
@@ -38,6 +43,22 @@ export default function App() {
   const timeBasedTheme = useSettingsStore((s) => !!s.settings.timeBasedTheme)
   const isOnline = useOnlineStatus()
   useAutoSync()
+  useGlobalShortcuts()
+
+  // Mobile pull-to-refresh → push local changes + force-restart realtime sync
+  const handleRefresh = useCallback(async () => {
+    const u = useAuthStore.getState().user
+    if (u) {
+      try {
+        await incrementalUpload(u.uid)
+        startRealtimeSync(u.uid, true)
+      } catch (err) {
+        console.error('[pull-refresh] failed:', err)
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 350))
+  }, [])
+  const pull = usePullToRefresh({ onRefresh: handleRefresh })
 
   useEffect(() => {
     const dispose = startTimePeriodWatcher(timeBasedTheme)
@@ -65,26 +86,6 @@ export default function App() {
     initApp()
   }, [])
 
-  // Global keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault()
-        useUndoStore.getState().undo()
-      }
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-        e.preventDefault()
-        useUndoStore.getState().redo()
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault()
-        useUIStore.getState().openSearchModal()
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
-
   const location = useLocation()
   const setCurrentView = useUIStore((s) => s.setCurrentView)
 
@@ -103,6 +104,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-surface-secondary flex flex-col">
       <SkipLink />
+      <PullToRefreshIndicator distance={pull.distance} progress={pull.progress} refreshing={pull.refreshing} />
       {!isOnline && <OfflineBanner />}
       <Sidebar />
       <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'}`}>
@@ -122,6 +124,8 @@ export default function App() {
       <UpdateBanner />
       <IOSInstallBanner />
       <SearchModal />
+      <CommandPalette />
+      <KeyboardShortcutsModal />
       {!hasCompletedOnboarding && (
         <OnboardingWizard onComplete={() => setHasCompletedOnboarding(true)} />
       )}

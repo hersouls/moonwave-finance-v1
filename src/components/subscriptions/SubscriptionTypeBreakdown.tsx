@@ -98,7 +98,7 @@ export function SubscriptionTypeBreakdown({ detected }: Props) {
       initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: durations.base, ease: easeOutExpo }}
-      className="relative overflow-hidden rounded-3xl bg-surface-primary ring-1 ring-base shadow-[0_4px_18px_rgba(0,0,0,0.05)]"
+      className="relative overflow-hidden rounded-3xl bg-surface-primary ring-1 ring-base elevation-1"
     >
       {/* Subtle aurora background */}
       <div
@@ -126,7 +126,7 @@ export function SubscriptionTypeBreakdown({ detected }: Props) {
         </div>
         <div className="min-w-0">
           <h3 className="text-body3 font-extrabold text-heading tracking-tight">구독 분류별 분포</h3>
-          <p className="text-[11px] text-sub mt-0.5">
+          <p className="text-caption text-sub mt-0.5">
             {rows.length}개 분류 · 월 환산 합계 {formatKoreanUnit(total)}원
           </p>
         </div>
@@ -308,7 +308,7 @@ function BreakdownRowItem({
         className={clsx(
           'group w-full flex items-center gap-3 rounded-2xl px-3 py-2.5 ring-1 transition-all text-left',
           isActive
-            ? 'bg-surface-tertiary ring-[color:var(--border-strong)] shadow-[0_2px_10px_rgba(0,0,0,0.04)]'
+            ? 'bg-surface-tertiary ring-[color:var(--border-strong)] elevation-2'
             : 'bg-surface-primary ring-base hover:bg-[var(--hover-bg)]',
         )}
       >
@@ -323,7 +323,7 @@ function BreakdownRowItem({
           >
             <Icon className="w-4 h-4" style={{ color: row.color }} aria-hidden="true" />
           </div>
-          <span className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-surface-primary ring-1 ring-base flex items-center justify-center text-[9px] font-extrabold text-sub tabular-nums">
+          <span className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-surface-primary ring-1 ring-base flex items-center justify-center text-label4 leading-none font-extrabold text-sub tabular-nums">
             {rank}
           </span>
         </div>
@@ -333,7 +333,7 @@ function BreakdownRowItem({
             <p className="text-caption font-bold text-heading truncate">{row.label}</p>
             <p className="text-body3 font-extrabold text-heading tabular-nums flex-shrink-0">
               {formatKoreanUnit(row.totalMonthly)}
-              <span className="text-[10px] font-bold text-disabled ml-0.5">원</span>
+              <span className="text-label4 leading-none font-bold text-disabled ml-0.5">원</span>
             </p>
           </div>
           <div className="flex items-center gap-2 mt-1">
@@ -346,10 +346,10 @@ function BreakdownRowItem({
                 transition={{ duration: 0.7, ease: easeOutExpo }}
               />
             </div>
-            <span className="text-[10px] text-sub font-semibold tabular-nums w-9 text-right">
+            <span className="text-label4 leading-none text-sub font-semibold tabular-nums w-9 text-right">
               {(row.percent * 100).toFixed(0)}%
             </span>
-            <span className="text-[10px] text-disabled font-semibold tabular-nums w-12 text-right">
+            <span className="text-label4 leading-none text-disabled font-semibold tabular-nums w-12 text-right">
               {row.count}개
             </span>
           </div>

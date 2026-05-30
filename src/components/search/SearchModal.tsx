@@ -24,7 +24,7 @@ function Kbd({ children, className }: { children: React.ReactNode; className?: s
     <kbd
       className={clsx(
         'inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded',
-        'bg-surface-tertiary/70 border border-base text-[10px] font-semibold text-sub tabular-nums',
+        'bg-surface-tertiary/70 border border-base text-caption leading-none font-semibold text-sub tabular-nums',
         className,
       )}
     >
@@ -111,7 +111,7 @@ export function SearchModal() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-md"
+            className="scrim fixed inset-0"
             style={{
               backgroundImage:
                 'radial-gradient(800px circle at 50% 0%, color-mix(in srgb, var(--color-primary-500) 12%, transparent), transparent 60%)',
@@ -128,8 +128,8 @@ export function SearchModal() {
               'relative w-full max-w-xl',
               'bg-surface-primary/90 glass-heavy',
               'rounded-2xl overflow-hidden',
-              'ring-1 ring-base',
-              'shadow-[0_24px_60px_-12px_rgba(0,0,0,0.25),0_0_0_1px_color-mix(in_srgb,var(--color-primary-400)_20%,transparent)]',
+              'ring-1 ring-primary-400/20',
+              'elevation-4',
             )}
             onClick={(e) => e.stopPropagation()}
           >
@@ -180,7 +180,7 @@ export function SearchModal() {
               )}
               <button
                 onClick={close}
-                className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-md border border-base text-[10px] text-sub hover:bg-[var(--hover-bg)] transition-colors"
+                className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-md border border-base text-caption leading-none text-sub hover:bg-[var(--hover-bg)] transition-colors"
                 aria-label="닫기"
               >
                 <span>ESC</span>
@@ -207,7 +207,7 @@ export function SearchModal() {
                         </div>
                         <button
                           onClick={clearRecent}
-                          className="text-[11px] text-disabled hover:text-heading transition-colors"
+                          className="touch-target-inset text-caption text-disabled hover:text-heading transition-colors"
                         >
                           지우기
                         </button>
@@ -226,7 +226,7 @@ export function SearchModal() {
                             </button>
                             <button
                               onClick={() => removeRecent(r)}
-                              className="pr-2 pl-0.5 py-1 text-disabled hover:text-heading transition-colors"
+                              className="touch-target-inset pr-2 pl-0.5 py-1 text-disabled hover:text-heading transition-colors"
                               aria-label={`${r} 제거`}
                             >
                               <X className="w-3 h-3" />
@@ -256,7 +256,7 @@ export function SearchModal() {
                   </section>
 
                   <section className="pt-2 border-t border-base">
-                    <p className="text-[11px] text-disabled leading-relaxed">
+                    <p className="text-caption text-disabled leading-relaxed">
                       거래 메모, 자산 이름, 구독 서비스, 카테고리를 한번에 검색하세요.
                       메모 내용은 <span className="text-heading font-semibold">하이라이트</span>로 강조됩니다.
                     </p>
@@ -289,11 +289,11 @@ export function SearchModal() {
                     return (
                       <section key={type} className="py-1">
                         <div className="flex items-center justify-between px-5 py-1.5">
-                          <div className="flex items-center gap-1.5 text-[10px] text-sub font-semibold uppercase tracking-[0.08em]">
+                          <div className="flex items-center gap-1.5 text-caption leading-none text-sub font-semibold uppercase tracking-[0.08em]">
                             <span className="text-[color:var(--color-primary-500)]">{GROUP_META[type].icon}</span>
                             {GROUP_META[type].label}
                           </div>
-                          <span className="text-[10px] text-disabled tabular-nums">{items.length}</span>
+                          <span className="text-caption leading-none text-disabled tabular-nums">{items.length}</span>
                         </div>
                         {items.map((r, i) => {
                           const globalIdx = startIndex + i
@@ -316,7 +316,7 @@ export function SearchModal() {
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-2.5 border-t border-base flex items-center justify-between text-[11px] text-sub bg-surface-secondary/50">
+            <div className="px-5 py-2.5 border-t border-base flex items-center justify-between text-caption text-sub bg-surface-secondary/50">
               <div className="flex items-center gap-3">
                 <span className="inline-flex items-center gap-1">
                   <Kbd><ArrowUp className="w-2.5 h-2.5" /></Kbd>

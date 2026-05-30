@@ -345,28 +345,28 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
 
               {/* Duplicate filter actions */}
               {stats.dupTotal > 0 && (
-                <div className="rounded-2xl p-3 bg-amber-50 dark:bg-amber-900/15 ring-1 ring-amber-200 dark:ring-amber-800">
+                <div className="rounded-2xl p-3 bg-status-warning-soft ring-1 ring-[color:var(--status-warning-border)]">
                   <div className="flex items-start gap-2">
-                    <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                    <ShieldCheck className="w-4 h-4 text-status-warning flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-caption font-bold text-amber-700 dark:text-amber-300 mb-0.5">
+                      <p className="text-caption font-bold text-status-warning mb-0.5">
                         중복 가능성 {stats.dupTotal}건 감지
                       </p>
-                      <p className="text-[11px] text-amber-600 dark:text-amber-400 leading-relaxed">
+                      <p className="text-caption text-status-warning leading-relaxed">
                         완전 중복 {stats.dupExact} · 유사 {stats.dupLikely} · 가능성 {stats.dupPossible}
                       </p>
                       <div className="flex gap-2 mt-2 flex-wrap">
                         <button
                           type="button"
                           onClick={skipAllDuplicates}
-                          className="text-[11px] font-semibold px-2.5 h-7 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200 hover:brightness-95"
+                          className="text-caption font-semibold px-2.5 min-h-11 sm:h-7 rounded-full bg-status-warning-soft text-status-warning ring-1 ring-[color:var(--status-warning-border)] hover:brightness-95"
                         >
                           중복 전체 제외
                         </button>
                         <button
                           type="button"
                           onClick={includeAll}
-                          className="text-[11px] font-semibold px-2.5 h-7 rounded-full bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]"
+                          className="text-caption font-semibold px-2.5 min-h-11 sm:h-7 rounded-full bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]"
                         >
                           전체 포함
                         </button>
@@ -378,14 +378,14 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
 
               {/* AI fallback for unmatched merchants */}
               {uniqueAiMerchants.length > 0 && (
-                <div className="rounded-2xl p-3 bg-violet-50 dark:bg-violet-900/15 ring-1 ring-violet-200 dark:ring-violet-800">
+                <div className="rounded-2xl p-3 bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/15 ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)]">
                   <div className="flex items-start gap-2">
-                    <Sparkles className="w-4 h-4 text-violet-600 dark:text-violet-400 flex-shrink-0 mt-0.5" />
+                    <Sparkles className="w-4 h-4 text-accent-primary flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-caption font-bold text-violet-700 dark:text-violet-300 mb-0.5">
+                      <p className="text-caption font-bold text-accent-primary mb-0.5">
                         AI 자동 분류 가능 — 미분류·낮은 신뢰도 가맹점 {uniqueAiMerchants.length}곳
                       </p>
-                      <p className="text-[11px] text-violet-600 dark:text-violet-400 leading-relaxed">
+                      <p className="text-caption text-accent-primary leading-relaxed">
                         Claude API로 한 번에 분류하고 학습된 매핑을 영구 저장 (다음 import부터 즉시 적용).
                         {!hasApiKey() && ' API 키는 설정 → 시스템에서 등록.'}
                       </p>
@@ -394,7 +394,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
                           type="button"
                           onClick={handleAiClassify}
                           disabled={aiClassifying}
-                          className="text-[11px] font-semibold px-2.5 h-7 rounded-full bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="text-caption font-semibold px-2.5 min-h-11 sm:h-7 rounded-full bg-[color:var(--color-primary-600)] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {aiClassifying ? '분류 중…' : 'AI 분류 받기'}
                         </button>
@@ -456,8 +456,11 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
                 initial={shouldReduceMotion ? undefined : { scale: 0, rotate: -90 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ ...springSnappy, delay: 0.1 }}
-                className="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center mb-4"
-                style={{ boxShadow: '0 8px 24px rgba(16,185,129,0.40)' }}
+                className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
+                style={{
+                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--value-positive) 70%, white), var(--value-positive))',
+                  boxShadow: '0 8px 24px color-mix(in srgb, var(--value-positive) 40%, transparent)',
+                }}
               >
                 <Check className="w-10 h-10 text-white" strokeWidth={3} />
               </motion.div>
@@ -563,7 +566,7 @@ function PremiumHeader({ step, onClose, canClose }: { step: Step; onClose: () =>
               <h2 className="text-title2 font-bold text-heading tracking-tight truncate">
                 {info.title}
               </h2>
-              <p className="text-[11px] text-sub font-medium mt-0.5 truncate">
+              <p className="text-caption text-sub font-medium mt-0.5 truncate">
                 {info.subtitle}
               </p>
             </div>
@@ -588,7 +591,7 @@ function PremiumHeader({ step, onClose, canClose }: { step: Step; onClose: () =>
               <div key={label} className="flex items-center gap-2">
                 <div
                   className={clsx(
-                    'flex items-center gap-1.5 px-2.5 h-6 rounded-full text-[11px] font-bold transition-all',
+                    'flex items-center gap-1.5 px-2.5 h-6 rounded-full text-caption font-bold leading-none transition-all',
                     active
                       ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_2px_8px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
                       : done
@@ -628,7 +631,7 @@ function InputStep({
     <div className="space-y-4 pt-1">
       {/* Textarea */}
       <div className="relative">
-        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sub mb-2">
+        <label className="flex items-center gap-1.5 text-caption font-semibold uppercase tracking-wider text-sub mb-2">
           <ClipboardPaste className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" />
           명세서 텍스트
         </label>
@@ -651,7 +654,7 @@ function InputStep({
             <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
               <span
                 className={clsx(
-                  'inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold shadow-md',
+                  'inline-flex items-center gap-1 px-2 py-1 rounded-full text-label4 font-bold leading-none shadow-md',
                   detectedCompany === 'unknown'
                     ? 'bg-surface-tertiary text-sub ring-1 ring-base'
                     : 'bg-surface-primary text-heading ring-1 ring-[color:var(--color-primary-300)]',
@@ -660,7 +663,7 @@ function InputStep({
                 <CreditCard className="w-3 h-3" />
                 {companyLabel}
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[color:var(--color-primary-500)] text-white text-[10px] font-bold shadow-md">
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[color:var(--color-primary-500)] text-white text-label4 font-bold leading-none shadow-md">
                 <Sparkles className="w-3 h-3" />
                 ~{estimatedRows}건 감지
               </span>
@@ -673,7 +676,7 @@ function InputStep({
       <button
         type="button"
         onClick={onToggleSample}
-        className="flex items-center gap-1.5 text-[11px] font-semibold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] hover:underline"
+        className="flex items-center gap-1.5 text-caption font-semibold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] hover:underline"
       >
         {showSample ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
         예시 형식 보기
@@ -690,20 +693,20 @@ function InputStep({
           >
             <div className="rounded-2xl bg-surface-tertiary ring-1 ring-base p-3.5 space-y-3">
               <div>
-                <p className="text-[11px] text-sub mb-2 font-semibold">
+                <p className="text-caption text-sub mb-2 font-semibold">
                   <FileText className="inline w-3 h-3 mr-1" />
                   신한카드 — 4줄 블록 (가맹점 / 금액 / 날짜 / 카드주인) + 선택 항목
                 </p>
-                <pre className="text-[11px] text-body whitespace-pre-wrap tabular-nums font-mono leading-relaxed">
+                <pre className="text-caption text-body whitespace-pre-wrap tabular-nums font-mono leading-relaxed">
                   {SAMPLE_TEXT_SHINHAN}
                 </pre>
               </div>
               <div className="pt-2 border-t border-dashed border-[color:var(--border-default)]">
-                <p className="text-[11px] text-sub mb-2 font-semibold">
+                <p className="text-caption text-sub mb-2 font-semibold">
                   <FileText className="inline w-3 h-3 mr-1" />
                   삼성카드 — 가맹점 / 금액 / "YY. M. DD본 인 XXXX" 3줄 + 할인 라인(자유 라벨)
                 </p>
-                <pre className="text-[11px] text-body whitespace-pre-wrap tabular-nums font-mono leading-relaxed">
+                <pre className="text-caption text-body whitespace-pre-wrap tabular-nums font-mono leading-relaxed">
                   {SAMPLE_TEXT_SAMSUNG}
                 </pre>
               </div>
@@ -723,7 +726,7 @@ function ReviewSummary({
   overrideDate: string | null
 }) {
   return (
-    <div className="rounded-3xl p-4 bg-surface-primary ring-1 ring-base shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+    <div className="elevation-1 rounded-3xl p-4 bg-surface-primary ring-1 ring-base">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <div
@@ -736,7 +739,7 @@ function ReviewSummary({
             <Receipt className="w-5 h-5" style={{ color: 'var(--value-negative)' }} />
           </div>
           <div>
-            <p className="text-[10px] text-sub font-bold tracking-wider uppercase">선택된 거래</p>
+            <p className="text-label4 text-sub font-bold tracking-wider uppercase">선택된 거래</p>
             <p className="text-title2 font-extrabold text-heading tabular-nums">
               <span style={{ color: 'var(--value-negative)' }}>{stats.selected}</span>
               <span className="text-disabled font-semibold mx-1">/</span>
@@ -746,16 +749,16 @@ function ReviewSummary({
           </div>
         </div>
         <div className="text-right">
-          <p className="text-[10px] text-sub font-bold tracking-wider uppercase">합계</p>
+          <p className="text-label4 text-sub font-bold tracking-wider uppercase">합계</p>
           <p className="text-body3-semi font-bold tabular-nums text-value-negative">
             −{stats.totalAmount.toLocaleString('ko-KR')}원
           </p>
           {overrideDate ? (
-            <p className="text-[10px] mt-0.5 tabular-nums font-semibold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]">
+            <p className="text-label4 mt-0.5 tabular-nums font-semibold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]">
               지급일 {formatDate(overrideDate)}
             </p>
           ) : stats.dateRange && (
-            <p className="text-[10px] text-disabled mt-0.5 tabular-nums">
+            <p className="text-label4 text-disabled mt-0.5 tabular-nums">
               {stats.dateRange.from} ~ {stats.dateRange.to}
             </p>
           )}
@@ -817,7 +820,7 @@ function BillingDatePicker({
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sub">
+        <label className="flex items-center gap-1.5 text-caption font-semibold uppercase tracking-wider text-sub">
           <CalendarIcon className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" />
           지급일 일괄 설정
         </label>
@@ -828,7 +831,7 @@ function BillingDatePicker({
           transition={springSnappy}
           aria-pressed={enabled}
           className={clsx(
-            'inline-flex items-center gap-1 px-3 h-7 rounded-full text-[11px] font-bold transition-all',
+            'inline-flex items-center gap-1 px-3 h-7 rounded-full text-caption font-bold leading-none transition-all',
             enabled
               ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_2px_8px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
               : 'bg-surface-tertiary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -860,7 +863,7 @@ function BillingDatePicker({
               {selected ? (
                 <div className="flex items-end justify-between gap-3 flex-wrap">
                   <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] mb-0.5">
+                    <p className="text-label4 font-bold uppercase tracking-wider text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] mb-0.5">
                       카드 대금 지급일
                     </p>
                     <p className="text-title2 font-extrabold text-heading tabular-nums leading-tight">
@@ -868,7 +871,7 @@ function BillingDatePicker({
                       <span className="ml-1.5 text-body3 font-bold text-sub">({dow})</span>
                     </p>
                   </div>
-                  <span className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full bg-surface-primary/80 backdrop-blur-sm ring-1 ring-base text-[11px] font-semibold text-sub tabular-nums">
+                  <span className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full bg-surface-primary/80 backdrop-blur-sm ring-1 ring-base text-caption font-semibold leading-none text-sub tabular-nums">
                     <CalendarIcon className="w-3 h-3" />
                     {formatDate(date)}
                   </span>
@@ -893,7 +896,7 @@ function BillingDatePicker({
                     transition={springSnappy}
                     aria-pressed={isActive}
                     className={clsx(
-                      'inline-flex items-center gap-1 px-3 h-7 rounded-full text-[11px] font-bold transition-all',
+                      'inline-flex items-center gap-1 px-3 h-7 rounded-full text-caption font-bold leading-none transition-all',
                       isActive
                         ? 'bg-[color:var(--color-primary-100)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/40 dark:text-[color:var(--color-primary-300)] ring-1 ring-[color:var(--color-primary-300)] dark:ring-[color:var(--color-primary-700)]'
                         : 'bg-surface-tertiary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -914,7 +917,7 @@ function BillingDatePicker({
               className="!p-3 sm:!p-4"
             />
 
-            <p className="text-[11px] text-sub leading-relaxed">
+            <p className="text-caption text-sub leading-relaxed">
               명세서의 거래일을 무시하고 위 날짜로 모든 거래를 등록합니다. 카드 대금 지급일에 맞춰 일별 현금흐름을 정확히 확인할 수 있어요.
             </p>
           </motion.div>
@@ -927,7 +930,7 @@ function BillingDatePicker({
             transition={{ duration: durations.fast, ease: easeOutExpo }}
             className="rounded-2xl p-3.5 bg-surface-tertiary ring-1 ring-base"
           >
-            <p className="text-[11px] text-sub leading-relaxed">
+            <p className="text-caption text-sub leading-relaxed">
               명세서에 적힌 거래일을 그대로 사용합니다.
             </p>
           </motion.div>
@@ -949,7 +952,7 @@ function PaymentMethodPicker({
   const shouldReduceMotion = useReducedMotion()
   return (
     <div>
-      <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sub mb-2">
+      <label className="flex items-center gap-1.5 text-caption font-semibold uppercase tracking-wider text-sub mb-2">
         <Wallet className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" />
         거래수단 (전체 일괄)
       </label>
@@ -992,7 +995,7 @@ function PaymentMethodPicker({
                 type="button"
                 onClick={() => onItemChange('')}
                 className={clsx(
-                  'inline-flex items-center gap-1 px-3 h-7 rounded-full text-[11px] font-semibold transition-all',
+                  'inline-flex items-center gap-1 px-3 h-7 rounded-full text-caption font-semibold leading-none transition-all',
                   selectedItemId === ''
                     ? 'bg-surface-primary text-heading ring-1 ring-[color:var(--border-strong)]'
                     : 'bg-surface-secondary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -1006,7 +1009,7 @@ function PaymentMethodPicker({
                   type="button"
                   onClick={() => onItemChange(item.id!)}
                   className={clsx(
-                    'inline-flex items-center gap-1 px-3 h-7 rounded-full text-[11px] font-semibold transition-all',
+                    'inline-flex items-center gap-1 px-3 h-7 rounded-full text-caption font-semibold leading-none transition-all',
                     selectedItemId === item.id
                       ? 'bg-[color:var(--color-primary-100)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/40 dark:text-[color:var(--color-primary-300)] ring-1 ring-[color:var(--color-primary-300)] dark:ring-[color:var(--color-primary-700)]'
                       : 'bg-surface-secondary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -1036,7 +1039,7 @@ function MemberMappingPicker({
   if (members.length === 0) return null
   return (
     <div>
-      <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sub mb-2">
+      <label className="flex items-center gap-1.5 text-caption font-semibold uppercase tracking-wider text-sub mb-2">
         <Users className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" />
         카드 끝자리 → 멤버 매핑
       </label>
@@ -1062,7 +1065,7 @@ function MemberMappingPicker({
                     whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
                     transition={springSnappy}
                     className={clsx(
-                      'inline-flex items-center gap-1.5 pl-1 pr-2.5 h-7 rounded-full text-[11px] font-bold transition-all',
+                      'inline-flex items-center gap-1.5 pl-1 pr-2.5 h-7 rounded-full text-caption font-bold leading-none transition-all',
                       isActive ? 'text-white' : 'text-sub',
                     )}
                     style={
@@ -1075,7 +1078,7 @@ function MemberMappingPicker({
                     }
                   >
                     <span
-                      className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-label4 leading-none font-bold text-white"
                       style={{
                         backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : m.color,
                       }}
@@ -1108,7 +1111,7 @@ function SubscriptionCategoryPicker({
   const shouldReduceMotion = useReducedMotion()
   return (
     <div>
-      <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sub mb-2">
+      <label className="flex items-center gap-1.5 text-caption font-semibold uppercase tracking-wider text-sub mb-2">
         <Sparkles className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" />
         구독 분류 일괄 라벨
         <span className="font-normal text-disabled normal-case">선택</span>
@@ -1121,7 +1124,7 @@ function SubscriptionCategoryPicker({
           transition={springSnappy}
           aria-pressed={value === ''}
           className={clsx(
-            'inline-flex items-center gap-1 px-3 h-7 rounded-full text-[11px] font-semibold transition-all',
+            'inline-flex items-center gap-1 px-3 h-7 rounded-full text-caption font-semibold leading-none transition-all',
             value === ''
               ? 'bg-surface-primary text-heading ring-1 ring-[color:var(--border-strong)]'
               : 'bg-surface-secondary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -1140,7 +1143,7 @@ function SubscriptionCategoryPicker({
               transition={springSnappy}
               aria-pressed={isActive}
               className={clsx(
-                'inline-flex items-center gap-1.5 pl-1 pr-2.5 h-7 rounded-full text-[11px] font-bold transition-all',
+                'inline-flex items-center gap-1.5 pl-1 pr-2.5 h-7 rounded-full text-caption font-bold leading-none transition-all',
                 isActive ? 'text-white' : 'text-sub',
               )}
               style={
@@ -1183,7 +1186,7 @@ function RowList({
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sub">
+        <label className="flex items-center gap-1.5 text-caption font-semibold uppercase tracking-wider text-sub">
           <Tag className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" />
           거래 미리보기
           <span className="font-normal text-disabled normal-case">{rows.length}건</span>
@@ -1207,7 +1210,7 @@ function RowList({
         <button
           type="button"
           onClick={onToggleShowAll}
-          className="mt-2.5 w-full inline-flex items-center justify-center gap-1 py-2 rounded-2xl bg-surface-tertiary ring-1 ring-base text-[11px] font-semibold text-sub hover:bg-[var(--hover-bg)] transition-colors"
+          className="mt-2.5 w-full inline-flex items-center justify-center gap-1 py-2 rounded-2xl bg-surface-tertiary ring-1 ring-base text-caption font-semibold text-sub hover:bg-[var(--hover-bg)] transition-colors"
         >
           {showAll ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           {showAll ? '접기' : `+${rows.length - COLLAPSED}건 더보기`}
@@ -1247,7 +1250,7 @@ function RowItem({
         'group relative w-full text-left rounded-2xl pl-3 pr-2.5 py-2.5 transition-all ring-1',
         skip
           ? 'bg-surface-tertiary/60 ring-base opacity-60'
-          : 'bg-surface-primary ring-base hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]',
+          : 'bg-surface-primary ring-base hover:elevation-2',
       )}
     >
       <div className="flex items-center gap-2.5">
@@ -1282,12 +1285,12 @@ function RowItem({
             </span>
             {dup !== 'none' && <DuplicateBadge level={dup} />}
             {row.suggestion.confidence !== 'high' && cat && (
-              <span className="text-[9px] font-semibold uppercase tracking-wider text-disabled">
+              <span className="text-micro font-semibold uppercase tracking-wider text-disabled">
                 {row.suggestion.confidence === 'medium' ? '추정' : '낮음'}
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-sub tabular-nums">
+          <div className="flex items-center gap-2 mt-0.5 text-label4 leading-none text-sub tabular-nums">
             <span
               className={clsx(
                 'inline-flex items-center gap-0.5',
@@ -1297,7 +1300,7 @@ function RowItem({
               <CalendarIcon className="w-2.5 h-2.5" />
               {formatDate(effectiveDate)}
               {isDateOverridden && (
-                <span className="ml-1 text-[9px] text-disabled line-through font-normal">
+                <span className="ml-1 text-micro text-disabled line-through font-normal">
                   {formatDate(row.date)}
                 </span>
               )}
@@ -1331,7 +1334,7 @@ function RowItem({
           <p className="text-caption font-bold text-value-negative tabular-nums">
             −{row.amount.toLocaleString('ko-KR')}
           </p>
-          <p className="text-[9px] text-disabled">원</p>
+          <p className="text-micro text-disabled">원</p>
         </div>
       </div>
     </motion.button>
@@ -1342,13 +1345,13 @@ function DuplicateBadge({ level }: { level: DuplicateLevel }) {
   if (level === 'none') return null
   const map: Record<Exclude<DuplicateLevel, 'none'>, { label: string; cls: string; icon: typeof AlertTriangle }> = {
     exact: { label: '중복', cls: 'bg-status-danger-soft text-status-danger ring-status-danger/20', icon: AlertTriangle },
-    likely: { label: '유사', cls: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 ring-amber-300/40', icon: AlertTriangle },
+    likely: { label: '유사', cls: 'bg-status-warning-soft text-status-warning ring-[color:var(--status-warning-border)]/40', icon: AlertTriangle },
     possible: { label: '가능', cls: 'bg-surface-tertiary text-sub ring-base', icon: AlertTriangle },
   }
   const item = map[level]
   const Icon = item.icon
   return (
-    <span className={clsx('inline-flex items-center gap-0.5 px-1.5 h-[14px] rounded-full text-[9px] font-bold ring-1', item.cls)}>
+    <span className={clsx('inline-flex items-center gap-0.5 px-1.5 h-[14px] rounded-full text-micro leading-none font-bold ring-1', item.cls)}>
       <Icon className="w-2 h-2" />
       {item.label}
     </span>
@@ -1360,7 +1363,7 @@ function ResultStat({ label, value, color }: { label: string; value: number; col
     <div
       className="rounded-2xl p-3 bg-surface-primary ring-1 ring-base text-center"
     >
-      <p className="text-[10px] text-sub font-semibold uppercase tracking-wider mb-0.5">{label}</p>
+      <p className="text-label4 text-sub font-semibold uppercase tracking-wider mb-0.5">{label}</p>
       <p className="text-title2 font-extrabold tabular-nums" style={{ color }}>
         {value}
       </p>

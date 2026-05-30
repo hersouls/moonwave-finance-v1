@@ -49,7 +49,7 @@ export function CategoryBadge({ name, color, size = 'sm' }: CategoryBadgeProps) 
         'badge-category',
         size === 'sm' ? 'badge-sm' : 'badge-md'
       )}
-      style={{ backgroundColor: `${color}20`, color }}
+      style={{ backgroundColor: `color-mix(in srgb, ${color} 12%, transparent)`, color }}
     >
       <span className="badge-category-dot" style={{ backgroundColor: color }} />
       {name}

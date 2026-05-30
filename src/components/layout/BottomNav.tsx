@@ -47,8 +47,8 @@ export function BottomNav() {
                 className={clsx(
                   'nav-bottom-item relative w-full flex flex-col items-center justify-center gap-0.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--ring-focus)]',
                   isActive
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-disabled hover:text-primary-600'
+                    ? 'text-accent-primary'
+                    : 'text-sub hover:text-accent-primary'
                 )}
                 role="menuitem"
                 aria-current={isActive ? 'page' : undefined}
@@ -59,7 +59,7 @@ export function BottomNav() {
                     <motion.span
                       layoutId="bottomNavBlob"
                       aria-hidden="true"
-                      className="absolute inset-0 rounded-full bg-primary-500/10 dark:bg-primary-400/15"
+                      className="absolute inset-0 rounded-full bg-[color:var(--accent-primary-bg)]"
                       style={{ boxShadow: 'var(--el-glow-soft)' }}
                       transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                     />
@@ -87,7 +87,7 @@ export function BottomNav() {
                 {isActive && (
                   <motion.span
                     layoutId="bottomNavIndicator"
-                    className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-5 h-1 rounded-full bg-primary-500"
+                    className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-5 h-1 rounded-full bg-accent-primary"
                     aria-hidden="true"
                     transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                   />

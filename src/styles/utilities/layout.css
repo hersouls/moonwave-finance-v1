@@ -27,3 +27,45 @@
     max-width: 1600px;         /* 3xl: 대형 모니터 */
   }
 }
+
+/* ===============================================
+ * Master-detail — list + docked right inspector
+ * Single column below xl (1024); two columns at desktop where the inspector
+ * docks. Below xl, callers fall back to a Dialog / bottom sheet for detail.
+ * =============================================== */
+.master-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .master-detail.has-inspector {
+    grid-template-columns: minmax(0, 1fr) var(--inspector-width, 380px);
+  }
+}
+
+@media (min-width: 1280px) {
+  .master-detail.has-inspector {
+    --inspector-width: 420px;
+    gap: 2rem;
+  }
+}
+
+.inspector-panel {
+  position: sticky;
+  top: calc(var(--app-bar-height, 52px) + 1rem);
+  max-height: calc(100dvh - var(--app-bar-height, 52px) - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--card-radius, 16px);
+  background: var(--surface-primary);
+}
+
+/* The docked inspector only exists at desktop; below xl use a sheet instead. */
+@media (max-width: 1023px) {
+  .inspector-panel--docked {
+    display: none;
+  }
+}

@@ -3,7 +3,7 @@ import { Doughnut, Bar } from 'react-chartjs-2'
 import { Card } from '@/components/ui/Card'
 import { useSubscriptionData } from '@/hooks/useSubscriptionData'
 import { formatKRW, formatKoreanUnit } from '@/utils/format'
-import { commonBarOptions } from '@/lib/chartConfig'
+import { commonBarOptions, getChartColor } from '@/lib/chartConfig'
 import type { DetectedCycle } from '@/services/subscriptionDetection'
 
 const CYCLE_LABEL: Record<DetectedCycle, string> = {
@@ -41,7 +41,7 @@ export function SubscriptionAnalysis() {
 
   if (detected.length === 0) {
     return (
-      <div className="text-center py-12 text-disabled text-sm">
+      <div className="text-center py-12 text-disabled text-body3">
         활성 구독이 없습니다. 거래내역에서 구독 분류 라벨을 지정해 보세요.
       </div>
     )
@@ -50,7 +50,7 @@ export function SubscriptionAnalysis() {
   return (
     <div className="space-y-6">
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="text-center">
           <span className="text-caption text-sub">활성 구독</span>
           <p className="text-title2 text-heading mt-1">
@@ -78,7 +78,7 @@ export function SubscriptionAnalysis() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Category Distribution */}
         <Card className="card-pad-lg">
           <h3 className="text-body3-semi text-heading mb-4">카테고리별 구독</h3>
@@ -107,7 +107,7 @@ export function SubscriptionAnalysis() {
               />
             </div>
           ) : (
-            <p className="text-sm text-disabled text-center py-8">데이터 없음</p>
+            <p className="text-caption text-disabled text-center py-8">데이터 없음</p>
           )}
         </Card>
 
@@ -121,7 +121,7 @@ export function SubscriptionAnalysis() {
                 datasets: [{
                   label: '월 환산 (원)',
                   data: cycleData.monthly,
-                  backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                  backgroundColor: `rgba(${getChartColor('netWorth').fill.join(',')}, 0.7)`,
                   borderRadius: 6,
                 }],
               }}
@@ -144,15 +144,15 @@ export function SubscriptionAnalysis() {
             .map((sub) => {
               const pct = stats.totalMonthly > 0 ? (sub.monthlyEquivalent / stats.totalMonthly) * 100 : 0
               return (
-                <div key={sub.key} className="flex items-center gap-3 py-2">
+                <div key={sub.key} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
                   <div
                     className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: sub.color }}
                   />
-                  <span className="text-sm text-body flex-1 truncate">
+                  <span className="text-body3 text-body flex-1 min-w-0 truncate">
                     {sub.name}
                   </span>
-                  <span className="text-body3 text-heading tabular-nums">
+                  <span className="text-body3 text-heading tabular-nums min-w-0 ml-auto sm:ml-0">
                     {formatKRW(sub.monthlyEquivalent)}/월
                   </span>
                   <span className="text-caption text-disabled w-12 text-right tabular-nums">

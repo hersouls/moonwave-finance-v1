@@ -39,7 +39,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-surface-primary flex flex-col">
+    <div className="fixed inset-0 z-50 bg-surface-primary flex flex-col pt-safe-only pb-safe-only">
       {/* Progress */}
       <div className="flex gap-1.5 px-6 pt-6">
         {Array.from({ length: 4 }).map((_, i) => (

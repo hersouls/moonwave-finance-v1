@@ -154,3 +154,20 @@
   font-feature-settings: 'tnum' 1;
   letter-spacing: var(--letter-snug);
 }
+
+/* ── Micro — dense badges/pills only (legit home for sub-11px) ── */
+/* The KT scale bottoms out at label4 (10px) / caption (12px); .text-micro is
+ * the sanctioned target for text-[8px]/[9px]/[10px] arbitraries so the codemod
+ * has a token to land on. Never below 10px for legibility. */
+.text-micro {
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.text-micro-bold {
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0;
+}

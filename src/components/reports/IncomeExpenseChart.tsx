@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Bar } from 'react-chartjs-2'
 import '@/lib/chartConfig'
-import { commonBarOptions, getGridColor, getTextColor } from '@/lib/chartConfig'
+import { commonBarOptions, getGridColor, getTextColor, getChartColor } from '@/lib/chartConfig'
 import { Card } from '@/components/ui/Card'
 import type { MonthlyTransactionSummary } from '@/lib/types'
 
@@ -22,13 +22,13 @@ export function IncomeExpenseChart({ summaries }: IncomeExpenseChartProps) {
         {
           label: '수입',
           data: summaries.map(s => s.totalIncome),
-          backgroundColor: 'rgba(16, 185, 129, 0.7)',
+          backgroundColor: `rgba(${getChartColor('income').fill.join(',')}, 0.7)`,
           borderRadius: 4,
         },
         {
           label: '지출',
           data: summaries.map(s => s.totalExpense),
-          backgroundColor: 'rgba(239, 68, 68, 0.7)',
+          backgroundColor: `rgba(${getChartColor('expense').fill.join(',')}, 0.7)`,
           borderRadius: 4,
         },
       ],

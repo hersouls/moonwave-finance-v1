@@ -116,8 +116,8 @@ export function CategoryManagement() {
               'px-4 py-1.5 rounded-lg text-body3 transition-colors',
               activeType === t
                 ? t === 'expense'
-                  ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                  : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                  ? 'bg-status-danger-soft text-status-danger'
+                  : 'bg-status-success-soft text-status-success'
                 : 'bg-surface-tertiary text-sub'
             )}
           >
@@ -140,14 +140,14 @@ export function CategoryManagement() {
             <span className="flex-1 text-sm text-heading">{cat.name}</span>
             <button
               onClick={() => openEdit(cat)}
-              className="p-1.5 rounded-md text-disabled hover:text-body hover:bg-[var(--hover-bg)] opacity-0 group-hover:opacity-100 transition-all"
+              className="touch-target-inset p-1.5 rounded-md text-disabled hover:text-body hover:bg-[var(--hover-bg)] opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
               aria-label="수정"
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => openDelete(cat)}
-              className="p-1.5 rounded-md text-disabled hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
+              className="touch-target-inset p-1.5 rounded-md text-disabled hover:text-status-danger hover:bg-status-danger-soft opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
               aria-label="삭제"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -186,13 +186,13 @@ export function CategoryManagement() {
             </div>
             <div>
               <label className="block text-body3 text-body mb-1.5">색상</label>
-              <div className="grid grid-cols-9 gap-2">
+              <div className="grid grid-cols-6 sm:grid-cols-9 gap-2 justify-items-center">
                 {PRESET_COLORS.map(c => (
                   <button
                     key={c}
                     onClick={() => setColor(c)}
                     className={clsx(
-                      'w-7 h-7 rounded-full transition-all',
+                      'touch-target-inset w-7 h-7 rounded-full transition-all',
                       color === c ? 'ring-2 ring-offset-2 ring-primary-500 dark:ring-offset-[var(--surface-primary)]' : 'hover:scale-110'
                     )}
                     style={{ backgroundColor: c }}
@@ -288,9 +288,9 @@ export function CategoryManagement() {
 
               {/* Linked subscription warning */}
               {usage.linkedSubscriptions.length > 0 && (
-                <div className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-3 py-2">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-                  <div className="text-caption text-amber-700 dark:text-amber-300">
+                <div className="flex items-start gap-2 rounded-lg bg-status-warning-soft border border-[var(--status-warning-border)] px-3 py-2">
+                  <AlertTriangle className="w-3.5 h-3.5 text-status-warning mt-0.5 shrink-0" />
+                  <div className="text-caption text-status-warning">
                     구독 <span className="font-medium">{usage.linkedSubscriptions.map(s => s.name).join(', ')}</span>의 연결 카테고리가 해제됩니다.
                   </div>
                 </div>

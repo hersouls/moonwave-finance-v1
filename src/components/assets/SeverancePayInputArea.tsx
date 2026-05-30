@@ -39,7 +39,7 @@ export function SeverancePayInputArea({ onValuesChange }: SeverancePayInputAreaP
       </h4>
       <div className="space-y-3">
         <div>
-          <label className="block text-[13px] text-sub mb-1.5">입사일</label>
+          <label className="block text-label2 text-sub mb-1.5">입사일</label>
           <input
             type="date"
             value={joinDate}
@@ -48,7 +48,7 @@ export function SeverancePayInputArea({ onValuesChange }: SeverancePayInputAreaP
           />
         </div>
         <div>
-          <label className="block text-[13px] text-sub mb-1.5">월 평균임금 (30일분)</label>
+          <label className="block text-label2 text-sub mb-1.5">월 평균임금 (30일분)</label>
           <div className="relative">
             <input
               type="text"
@@ -63,7 +63,7 @@ export function SeverancePayInputArea({ onValuesChange }: SeverancePayInputAreaP
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-disabled">원</span>
           </div>
-          <p className="text-[12px] text-sub mt-1">최근 3개월 급여총액 / 해당 기간 총일수 x 30</p>
+          <p className="text-caption text-sub mt-1">최근 3개월 급여총액 / 해당 기간 총일수 x 30</p>
         </div>
 
         {estimatedAmount > 0 && (
@@ -76,13 +76,13 @@ export function SeverancePayInputArea({ onValuesChange }: SeverancePayInputAreaP
             </div>
             {tax && tax.totalTax > 0 && (
               <>
-                <div className="flex justify-between items-center text-[13px]">
+                <div className="flex justify-between items-center text-label2 leading-none">
                   <span className="text-sub">퇴직소득세</span>
                   <span className="text-sub tabular-nums">
                     -{tax.incomeTax.toLocaleString('ko-KR')}원
                   </span>
                 </div>
-                <div className="flex justify-between items-center text-[13px]">
+                <div className="flex justify-between items-center text-label2 leading-none">
                   <span className="text-sub">퇴직주민세</span>
                   <span className="text-sub tabular-nums">
                     -{tax.residentTax.toLocaleString('ko-KR')}원
@@ -90,7 +90,7 @@ export function SeverancePayInputArea({ onValuesChange }: SeverancePayInputAreaP
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t border-base">
                   <span className="text-sm font-medium text-body">세후 예상 수령액</span>
-                  <span className="text-base font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                  <span className="text-body1 font-bold text-accent-primary tabular-nums">
                     {tax.netSeverance.toLocaleString('ko-KR')} <span className="text-sm font-normal">원</span>
                   </span>
                 </div>
