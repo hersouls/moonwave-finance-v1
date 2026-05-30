@@ -150,7 +150,7 @@ export function AssetListPage() {
             )}
             <div className={clsx('master-detail', isDesktop && selectedId != null && 'has-inspector')}>
               {isDesktop && viewMode === 'table' ? (
-                <AssetTableView items={filteredItems} selectedId={selectedId} onSelect={setSelectedId} />
+                <AssetTableView items={filteredItems} type="asset" selectedId={selectedId} onSelect={setSelectedId} />
               ) : (
                 <motion.div
                   className={clsx('grid grid-cols-1 gap-3', isDesktop && selectedId == null && 'xl:grid-cols-2')}
