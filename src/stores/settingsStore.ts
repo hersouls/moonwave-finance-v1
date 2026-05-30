@@ -22,6 +22,7 @@ interface SettingsState {
   toggleOledMode: () => void
   toggleHideAmounts: () => void
   toggleTimeBasedTheme: () => void
+  toggleAutoCarryForward: () => void
 }
 
 let themeListenerAdded = false
@@ -142,6 +143,10 @@ export const useSettingsStore = create<SettingsState>()(
           newSettings.timeBasedTheme = false
           hasChanges = true
         }
+        if (newSettings.autoCarryForward === undefined) {
+          newSettings.autoCarryForward = true
+          hasChanges = true
+        }
         if (hasChanges) set({ settings: newSettings })
 
         applyTheme(theme)
@@ -253,6 +258,10 @@ export const useSettingsStore = create<SettingsState>()(
 
       toggleTimeBasedTheme: () => {
         set((state) => ({ settings: { ...state.settings, timeBasedTheme: !state.settings.timeBasedTheme } }))
+      },
+
+      toggleAutoCarryForward: () => {
+        set((state) => ({ settings: { ...state.settings, autoCarryForward: state.settings.autoCarryForward === false } }))
       },
     }),
     {

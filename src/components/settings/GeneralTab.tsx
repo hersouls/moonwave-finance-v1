@@ -36,6 +36,8 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
   const toggleOledMode = useSettingsStore((s) => s.toggleOledMode)
   const toggleHideAmounts = useSettingsStore((s) => s.toggleHideAmounts)
   const toggleTimeBasedTheme = useSettingsStore((s) => s.toggleTimeBasedTheme)
+  const toggleAutoCarryForward = useSettingsStore((s) => s.toggleAutoCarryForward)
+  const autoCarryForward = useSettingsStore((s) => s.settings.autoCarryForward !== false)
   const density = useSettingsStore((s) => s.settings.density) ?? 'comfortable'
   const oledMode = useSettingsStore((s) => !!s.settings.oledMode)
   const hideAmounts = useSettingsStore((s) => !!s.settings.hideAmounts)
@@ -232,6 +234,19 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
           <p className="text-caption text-disabled">
             구독 합산 금액 계산에 사용됩니다
           </p>
+        </div>
+      </section>
+
+      {/* 자산 가치 기록 — 자동 이어쓰기 */}
+      <section>
+        <h3 className="text-body3-semi text-heading mb-3">자산 가치 기록</h3>
+        <div className="p-4 bg-surface-secondary rounded-xl">
+          <ToggleSwitch
+            checked={autoCarryForward}
+            onChange={() => toggleAutoCarryForward()}
+            label="값 자동 이어쓰기"
+            description="별도 입력이 없으면 어제 값을 오늘로 자동 저장해 일자별 연속성을 유지합니다"
+          />
         </div>
       </section>
 

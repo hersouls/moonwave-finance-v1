@@ -369,6 +369,8 @@ export interface Settings {
   hideAmounts?: boolean
   /** v2 UI — 시간대 자동 테마 적용 */
   timeBasedTheme?: boolean
+  /** 자산 값 자동 이어쓰기 — 별도 입력이 없으면 어제 값을 오늘로 자동 저장 (기본 ON) */
+  autoCarryForward?: boolean
 }
 
 // ─── Computed Types ────────────────────────────────
