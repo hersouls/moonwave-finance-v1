@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { format } from 'date-fns'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import { clsx } from 'clsx'
 import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/Dialog'
@@ -10,6 +9,8 @@ import { useAssetStore } from '@/stores/assetStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { valueAsOf } from '@/services/assetAnalytics'
+import { getTodayString } from '@/lib/dateUtils'
 import { formatChange } from '@/utils/format'
 
 /**
@@ -30,19 +31,19 @@ export function QuickValueModal() {
   const isLiability = item?.type === 'liability'
 
   const [amount, setAmount] = useState('')
-  const [date, setDate] = useState(() => format(new Date(), 'yyyy-MM-dd'))
+  const [date, setDate] = useState(() => getTodayString())
   const [busy, setBusy] = useState(false)
 
-  // Latest recorded value (for delta hint + prefill)
+  // 현재 유효값(오늘 기준 forward-fill) — delta 힌트 + 프리필
   const latest = useMemo(() => {
     if (itemId == null) return 0
     const vals = allValues.filter((v) => v.assetItemId === itemId).sort((a, b) => b.date.localeCompare(a.date))
-    return vals[0]?.value ?? 0
+    return valueAsOf(vals, getTodayString())
   }, [allValues, itemId])
 
   useEffect(() => {
     if (itemId != null) {
-      setDate(format(new Date(), 'yyyy-MM-dd'))
+      setDate(getTodayString())
       setAmount(latest ? latest.toLocaleString('ko-KR') : '')
     }
   }, [itemId, latest])
@@ -103,7 +104,7 @@ export function QuickValueModal() {
           {/* Date */}
           <div>
             <label className="mb-1.5 block text-body3 text-body">기록일</label>
-            <input type="date" value={date} max={format(new Date(), 'yyyy-MM-dd')} onChange={(e) => setDate(e.target.value)} className="input-base tabular-nums" />
+            <input type="date" value={date} max={getTodayString()} onChange={(e) => setDate(e.target.value)} className="input-base tabular-nums" />
           </div>
 
           {autoCarry && (

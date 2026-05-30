@@ -9,6 +9,7 @@ import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useToastStore } from '@/stores/toastStore'
 import { AssetProjectionFields } from './AssetProjectionFields'
 import { valueAsOf } from '@/services/assetAnalytics'
+import { isFlatProjection } from '@/services/valueProjection'
 import { getTodayString } from '@/lib/dateUtils'
 import type { AssetValueProjection } from '@/lib/types'
 
@@ -61,7 +62,8 @@ export function AssetEditModal() {
       // 규칙이 바뀌면 현재 값 기준으로 미래 값을 재투영한다.
       const series = allValues.filter((v) => v.assetItemId === item.id).sort((a, b) => b.date.localeCompare(a.date))
       const current = valueAsOf(series, getTodayString())
-      if (current > 0) await applyValueSeries(item.id!, current, getTodayString(), projection)
+      // 현재값이 있거나 규칙이 설정되면 재투영(0값 항목에 규칙만 추가한 경우도 반영).
+      if (current > 0 || !isFlatProjection(projection)) await applyValueSeries(item.id!, current, getTodayString(), projection)
       useToastStore.getState().addToast(`${name.trim()} 항목이 수정되었습니다.`, 'success')
       close()
     } catch {

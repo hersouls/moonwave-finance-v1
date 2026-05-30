@@ -8,7 +8,7 @@ import { useAssetStore } from '@/stores/assetStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { getPositiveColor, getNegativeColor } from '@/lib/chartConfig'
-import { valueAsOf } from '@/services/assetAnalytics'
+import { valueAsOf, recentForwardFill } from '@/services/assetAnalytics'
 import { formatChange } from '@/utils/format'
 import { formatDate, getTodayString, getYesterdayString } from '@/lib/dateUtils'
 
@@ -47,7 +47,9 @@ export function AssetInspectorBody({ itemId, type, onEdit, onDelete, onRecordVal
   // 자산: 증가=긍정. 부채: 감소=긍정(빚이 줄어드는 것).
   const changeIsGood = type === 'liability' ? change < 0 : change > 0
   const sparkIsGood = type === 'liability' ? change <= 0 : change >= 0
-  const sparkData = useMemo(() => values.slice(0, 30).reverse().map((v) => v.value), [values])
+  // 추이: 희소 저장이어도 항상 렌더되도록 forward-fill 30일. 최근 기록: 사용자 입력만(내부 앵커 숨김).
+  const sparkData = useMemo(() => recentForwardFill(values, 30, getTodayString()), [values])
+  const records = useMemo(() => values.filter((v) => v.source !== 'projected'), [values])
   const sparkColor = sparkIsGood ? getPositiveColor() : getNegativeColor()
   const basePath = type === 'asset' ? '/assets' : '/liabilities'
 
@@ -89,11 +91,11 @@ export function AssetInspectorBody({ itemId, type, onEdit, onDelete, onRecordVal
       )}
 
       {/* Recent values */}
-      {values.length > 0 && (
+      {records.length > 0 && (
         <div>
           <p className="mb-2 text-label3 font-semibold text-disabled">최근 기록</p>
           <ul className="divide-y divide-[color:var(--border-subtle)]">
-            {values.slice(0, 6).map((v) => (
+            {records.slice(0, 6).map((v) => (
               <li key={v.id ?? v.date} className="flex items-center justify-between py-2">
                 <span className="text-body3 text-sub">{formatDate(v.date)}</span>
                 <Amount value={v.value} size="emphasis" className="text-heading" />

@@ -36,7 +36,7 @@ export function AssetProjectionFields({ value, onChange }: Props) {
   const [dailyMag, setDailyMag] = useState(() => fmtInt(Math.abs(value?.dailyDelta ?? 0)))
   const [dailyDir, setDailyDir] = useState<'up' | 'down'>(() => ((value?.dailyDelta ?? 0) >= 0 ? 'up' : 'down'))
   // 매월 정액
-  const [monthlyOn, setMonthlyOn] = useState(() => !!(value?.monthlyAmount && value?.monthlyDay))
+  const [monthlyOn, setMonthlyOn] = useState(() => !!value?.monthlyAmount)
   const [monthlyAmt, setMonthlyAmt] = useState(() => fmtInt(Math.abs(value?.monthlyAmount ?? 0)))
   const [monthlyDir, setMonthlyDir] = useState<'up' | 'down'>(() => ((value?.monthlyAmount ?? 0) >= 0 ? 'up' : 'down'))
   const [monthlyDay, setMonthlyDay] = useState(() => value?.monthlyDay ?? 1)
@@ -62,7 +62,7 @@ export function AssetProjectionFields({ value, onChange }: Props) {
     setDailyOn(!!value?.dailyDelta)
     setDailyMag(fmtInt(Math.abs(value?.dailyDelta ?? 0)))
     setDailyDir((value?.dailyDelta ?? 0) >= 0 ? 'up' : 'down')
-    setMonthlyOn(!!(value?.monthlyAmount && value?.monthlyDay))
+    setMonthlyOn(!!value?.monthlyAmount)
     setMonthlyAmt(fmtInt(Math.abs(value?.monthlyAmount ?? 0)))
     setMonthlyDir((value?.monthlyAmount ?? 0) >= 0 ? 'up' : 'down')
     setMonthlyDay(value?.monthlyDay ?? 1)

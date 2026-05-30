@@ -189,6 +189,21 @@ export function valueAsOf(sortedDesc: DailyValue[] | undefined, asOf: string): n
 }
 
 /**
+ * 최근 `days`일의 Forward-Fill 값 배열(시간순). 희소 저장(평탄 자산: 앵커 2개)이어도
+ * 매일 유효값을 채워 스파크라인/추이가 항상 렌더되도록 한다. endYmd 기준 UTC 일계산.
+ */
+export function recentForwardFill(sortedDesc: DailyValue[] | undefined, days: number, endYmd: string): number[] {
+  const out: number[] = []
+  const end = new Date(endYmd + 'T00:00:00Z')
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(end)
+    d.setUTCDate(d.getUTCDate() - i)
+    out.push(valueAsOf(sortedDesc, d.toISOString().split('T')[0]))
+  }
+  return out
+}
+
+/**
  * 한 항목의 "가장 최근 기록"과 "그 직전 기록"을 반환한다.
  * 카드/상세 화면의 현재 가치·증감 표시에 사용한다.
  *

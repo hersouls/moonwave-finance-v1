@@ -7,7 +7,7 @@ import { useAssetStore } from '@/stores/assetStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { getPositiveColor, getNegativeColor } from '@/lib/chartConfig'
-import { valueAsOf } from '@/services/assetAnalytics'
+import { valueAsOf, recentForwardFill } from '@/services/assetAnalytics'
 import { getTodayString, getYesterdayString } from '@/lib/dateUtils'
 import { formatChange } from '@/utils/format'
 
@@ -60,7 +60,7 @@ export function AssetTableView({ items, type, selectedId, onSelect }: Props) {
       map.set(item.id, {
         value,
         change: value - valueAsOf(vals, yesterday),
-        spark: vals.slice(0, 14).reverse().map((v) => v.value),
+        spark: recentForwardFill(vals, 14, today),
       })
     }
     return map
