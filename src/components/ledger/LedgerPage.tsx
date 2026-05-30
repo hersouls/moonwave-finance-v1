@@ -15,6 +15,7 @@ import { LedgerInsightsSidebar } from './LedgerInsightsSidebar'
 import { MonthlyReportCard } from './MonthlyReportCard'
 import { QuickRecordStrip } from './QuickRecordStrip'
 import { TransactionListGrouped } from './TransactionListGrouped'
+import { TransactionTableView } from './TransactionTableView'
 import { TransactionFormModal } from './TransactionFormModal'
 import { TransactionWizard } from './TransactionWizard'
 import { TransactionFilters } from './TransactionFilters'
@@ -25,6 +26,9 @@ import { FAB } from '@/components/ui/FAB'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { ErrorEmptyState } from '@/components/ui/EmptyState'
 import { useSwipe } from '@/hooks/useSwipe'
+import { useBreakpoint } from '@/hooks/useBreakpoint'
+import { LayoutGrid, Table2 } from 'lucide-react'
+import { clsx } from 'clsx'
 import { LEDGER_SEGMENTS } from '@/lib/ledgerConstants'
 import { getNextMonth, getPreviousMonth } from '@/lib/dateUtils'
 
@@ -35,6 +39,8 @@ export function LedgerPage() {
   const [error, setError] = useState<string | null>(null)
 
   const [isCardImportOpen, setIsCardImportOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
+  const { isDesktop } = useBreakpoint()
 
   const loadAll = useTransactionStore((s) => s.loadAll)
   const loadMembers = useMemberStore((s) => s.loadMembers)
@@ -206,20 +212,48 @@ export function LedgerPage() {
             onReset={resetFilters}
           />
 
-          {/* Transaction List — 날짜 그룹핑 + 가상화 (200건+) */}
+          {/* Transaction List — 날짜 그룹핑 + 가상화 (200건+) / 데스크톱 표 뷰 */}
           {filtered.length === 0 ? (
             <LedgerEmptyState />
           ) : (
-            <motion.div
-              variants={containerV}
-              initial="hidden"
-              animate="visible"
-              key={`${selectedMonth}-${defaultType}`}
-            >
-              <motion.div variants={itemV}>
-                <TransactionListGrouped transactions={filtered} />
-              </motion.div>
-            </motion.div>
+            <div className="space-y-3">
+              {isDesktop && (
+                <div className="flex justify-end">
+                  <div className="inline-flex rounded-lg bg-surface-tertiary p-0.5" role="group" aria-label="보기 방식">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('cards')}
+                      aria-pressed={viewMode === 'cards'}
+                      className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3 font-medium transition-colors', viewMode === 'cards' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
+                    >
+                      <LayoutGrid className="h-4 w-4" /> 카드
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('table')}
+                      aria-pressed={viewMode === 'table'}
+                      className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3 font-medium transition-colors', viewMode === 'table' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
+                    >
+                      <Table2 className="h-4 w-4" /> 표
+                    </button>
+                  </div>
+                </div>
+              )}
+              {isDesktop && viewMode === 'table' ? (
+                <TransactionTableView transactions={filtered} />
+              ) : (
+                <motion.div
+                  variants={containerV}
+                  initial="hidden"
+                  animate="visible"
+                  key={`${selectedMonth}-${defaultType}`}
+                >
+                  <motion.div variants={itemV}>
+                    <TransactionListGrouped transactions={filtered} />
+                  </motion.div>
+                </motion.div>
+              )}
+            </div>
           )}
         </div>
 
