@@ -4,6 +4,8 @@ import {
   HeartPulse, Gift, Landmark, Percent, ShoppingCart, Shield,
   Package, Map, CreditCard, TrendingUp, Shirt, MoreHorizontal,
   Briefcase, Coins, Plane, Bitcoin, LineChart, Tag,
+  Banknote, Gem, Building2, Building, Users, MinusCircle,
+  PiggyBank, Wallet, DollarSign, Receipt, Repeat, Wifi,
 } from 'lucide-react'
 
 const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
@@ -11,6 +13,9 @@ const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   HeartPulse, Gift, Landmark, Percent, ShoppingCart, Shield,
   Package, Map, CreditCard, TrendingUp, Shirt, MoreHorizontal,
   Briefcase, Coins, Plane, Bitcoin, LineChart, Tag,
+  // Asset / liability icons (used by default asset categories + the picker)
+  Banknote, Gem, Building2, Building, Users, MinusCircle,
+  PiggyBank, Wallet, DollarSign, Receipt, Repeat, Wifi,
 }
 
 export function getCategoryIcon(iconName?: string): LucideIcon {

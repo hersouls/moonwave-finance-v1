@@ -9,7 +9,7 @@ import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useLoanStore } from '@/stores/loanStore'
 import { format } from 'date-fns'
 import { Select } from '@/components/ui/Select'
-import { Landmark } from 'lucide-react'
+import { Landmark, Plus } from 'lucide-react'
 import type { AssetLiabilityType } from '@/lib/types'
 import { SeverancePayInputArea } from './SeverancePayInputArea'
 import { RealEstateInputArea } from './RealEstateInputArea'
@@ -18,6 +18,7 @@ import { generateSeverancePayValues } from '@/services/assetAnalytics'
 export function AssetCreateModal() {
   const isOpen = useUIStore((s) => s.isAssetCreateModalOpen)
   const close = useUIStore((s) => s.closeAssetCreateModal)
+  const openAssetCategoryManager = useUIStore((s) => s.openAssetCategoryManager)
   const addItem = useAssetStore((s) => s.addItem)
   const categories = useAssetStore((s) => s.categories)
   const members = useMemberStore((s) => s.members)
@@ -193,12 +194,22 @@ export function AssetCreateModal() {
           {/* Category */}
           <div>
             <label className="block text-body3 text-body mb-1.5">카테고리</label>
-            <Select
-              value={String(categoryId)}
-              onChange={(v) => setCategoryId(v ? Number(v) : '')}
-              options={currentCategories.map(c => ({ value: String(c.id), label: c.name }))}
-              placeholder="카테고리 선택"
-            />
+            {currentCategories.length === 0 ? (
+              <button
+                type="button"
+                onClick={openAssetCategoryManager}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-base bg-surface-secondary px-3 py-3 text-body3 font-medium text-accent-primary transition-colors hover:bg-[var(--hover-bg)]"
+              >
+                <Plus className="h-4 w-4" /> {type === 'asset' ? '자산' : '부채'} 카테고리 추가하기
+              </button>
+            ) : (
+              <Select
+                value={String(categoryId)}
+                onChange={(v) => setCategoryId(v ? Number(v) : '')}
+                options={currentCategories.map(c => ({ value: String(c.id), label: c.name }))}
+                placeholder="카테고리 선택"
+              />
+            )}
           </div>
 
           {/* Specialized Input Forms or Default Initial Amount */}

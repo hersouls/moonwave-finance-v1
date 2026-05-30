@@ -20,6 +20,7 @@ import { useAssetStats, useCategoryBreakdown } from '@/hooks/useAssetStats'
 import { HeroMetricCard } from '@/components/ui/HeroMetricCard'
 import { AssetLiabilityBreakdown } from './AssetLiabilityBreakdown'
 import { LedgerSummaryCard } from './LedgerSummaryCard'
+import { NetWorthTracker } from './NetWorthTracker'
 import { NetWorthTrendChart } from './NetWorthTrendChart'
 import { AssetAllocationChart } from './AssetAllocationChart'
 import { DailyChangeChart } from './DailyChangeChart'
@@ -202,6 +203,11 @@ export function DashboardPage() {
           />
         </motion.div>
       </motion.section>
+
+      {/* 자산증식 추세 — 순자산 일자별 증감 + 증가율(기울기) */}
+      <motion.div variants={itemV}>
+        <NetWorthTracker />
+      </motion.div>
 
       {/* 3-Pillar Summary: Asset + Ledger */}
       <motion.div variants={itemV} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">

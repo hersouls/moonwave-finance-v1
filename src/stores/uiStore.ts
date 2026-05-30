@@ -34,6 +34,9 @@ interface UIState {
   isAssetEditModalOpen: boolean
   editingAssetItemId: number | null
 
+  isAssetCategoryManagerOpen: boolean
+  assetQuickValueItemId: number | null
+
   isSelectionMode: boolean
   selectedItemIds: Set<number>
 
@@ -67,6 +70,11 @@ interface UIState {
 
   openAssetEditModal: (id: number) => void
   closeAssetEditModal: () => void
+
+  openAssetCategoryManager: () => void
+  closeAssetCategoryManager: () => void
+  openAssetQuickValue: (id: number) => void
+  closeAssetQuickValue: () => void
 
   openAssetCreateModal: () => void
   closeAssetCreateModal: () => void
@@ -104,6 +112,8 @@ export const useUIStore = create<UIState>()(
       editingSubscriptionId: null,
       isAssetEditModalOpen: false,
       editingAssetItemId: null,
+      isAssetCategoryManagerOpen: false,
+      assetQuickValueItemId: null,
       isAssetCreateModalOpen: false,
       isLiabilityCreateModalOpen: false,
       isTransactionCreateModalOpen: false,
@@ -148,6 +158,11 @@ export const useUIStore = create<UIState>()(
 
       openAssetEditModal: (id: number) => set({ isAssetEditModalOpen: true, editingAssetItemId: id }),
       closeAssetEditModal: () => set({ isAssetEditModalOpen: false, editingAssetItemId: null }),
+
+      openAssetCategoryManager: () => set({ isAssetCategoryManagerOpen: true }),
+      closeAssetCategoryManager: () => set({ isAssetCategoryManagerOpen: false }),
+      openAssetQuickValue: (id: number) => set({ assetQuickValueItemId: id }),
+      closeAssetQuickValue: () => set({ assetQuickValueItemId: null }),
 
       openAssetCreateModal: () => set({ isAssetCreateModalOpen: true }),
       closeAssetCreateModal: () => set({ isAssetCreateModalOpen: false }),

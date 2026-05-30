@@ -12,13 +12,16 @@ import { AssetCategoryTabs } from '@/components/assets/AssetCategoryTabs'
 import { AssetSummaryHeader } from '@/components/assets/AssetSummaryHeader'
 import { AssetInspectorBody } from '@/components/assets/AssetInspectorBody'
 import { AssetTableView } from '@/components/assets/AssetTableView'
+import { AssetEditModal } from '@/components/assets/AssetEditModal'
+import { AssetCategoryManagement } from '@/components/assets/AssetCategoryManagement'
+import { QuickValueModal } from '@/components/assets/QuickValueModal'
 import { FAB } from '@/components/ui/FAB'
 import { Tabs } from '@/components/ui/Tabs'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { SwipeableRow } from '@/components/ui/SwipeableRow'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { InspectorPanel } from '@/components/ui/InspectorPanel'
-import { Pencil, Trash2, LayoutGrid, Table2 } from 'lucide-react'
+import { Pencil, Trash2, LayoutGrid, Table2, Tags, Wallet } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useBreakpoint } from '@/hooks/useBreakpoint'
 import { useSyncListener } from '@/hooks/useSyncListener'
@@ -47,6 +50,8 @@ export function LiabilityListPage() {
   const members = useMemberStore((s) => s.members)
   const openLiabilityCreateModal = useUIStore((s) => s.openLiabilityCreateModal)
   const openAssetEditModal = useUIStore((s) => s.openAssetEditModal)
+  const openAssetCategoryManager = useUIStore((s) => s.openAssetCategoryManager)
+  const openAssetQuickValue = useUIStore((s) => s.openAssetQuickValue)
   const deleteItem = useAssetStore((s) => s.deleteItem)
   const today = getTodayString()
 
@@ -108,11 +113,23 @@ export function LiabilityListPage() {
           onChange={(id) => { setActiveMember(id === 'all' ? null : Number(id)); setSelectedId(null) }}
         />
 
-        <AssetCategoryTabs
-          activeCategory={activeCategory}
-          onChange={(c) => { setActiveCategory(c); setSelectedId(null) }}
-          type="liability"
-        />
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <AssetCategoryTabs
+              activeCategory={activeCategory}
+              onChange={(c) => { setActiveCategory(c); setSelectedId(null) }}
+              type="liability"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={openAssetCategoryManager}
+            className="touch-target inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg bg-surface-tertiary px-3 text-label3 font-medium text-sub transition-colors hover:text-heading"
+            aria-label="카테고리 관리"
+          >
+            <Tags className="h-4 w-4" /> <span className="hidden sm:inline">카테고리</span>
+          </button>
+        </div>
 
         {filteredItems.length === 0 ? (
           <LiabilityEmptyState />
@@ -167,7 +184,8 @@ export function LiabilityListPage() {
                         {isDesktop ? card : (
                           <SwipeableRow
                             actions={[
-                              { icon: Pencil, label: '수정', variant: 'primary', onClick: () => openAssetEditModal(id) },
+                              { icon: Wallet, label: '값', variant: 'primary', onClick: () => openAssetQuickValue(id) },
+                              { icon: Pencil, label: '수정', onClick: () => openAssetEditModal(id) },
                               { icon: Trash2, label: '삭제', variant: 'danger', onClick: () => setDeleteId(id) },
                             ]}
                           >
@@ -192,6 +210,7 @@ export function LiabilityListPage() {
                       type="liability"
                       onEdit={() => openAssetEditModal(selectedId)}
                       onDelete={() => setDeleteId(selectedId)}
+                      onRecordValue={() => openAssetQuickValue(selectedId)}
                     />
                   )}
                 </InspectorPanel>
@@ -203,6 +222,9 @@ export function LiabilityListPage() {
 
       <FAB onClick={openLiabilityCreateModal} label="새 부채 추가" />
       <LiabilityCreateModal />
+      <AssetEditModal />
+      <AssetCategoryManagement />
+      <QuickValueModal />
       <ConfirmDialog
         open={deleteId != null}
         onClose={() => setDeleteId(null)}

@@ -13,13 +13,16 @@ import { AssetEmptyState } from './AssetEmptyState'
 import { AssetListSkeleton } from './AssetListSkeleton'
 import { AssetInspectorBody } from './AssetInspectorBody'
 import { AssetTableView } from './AssetTableView'
+import { AssetEditModal } from './AssetEditModal'
+import { AssetCategoryManagement } from './AssetCategoryManagement'
+import { QuickValueModal } from './QuickValueModal'
 import { FAB } from '@/components/ui/FAB'
 import { Tabs } from '@/components/ui/Tabs'
 import { ErrorEmptyState } from '@/components/ui/EmptyState'
 import { InspectorPanel } from '@/components/ui/InspectorPanel'
 import { SwipeableRow } from '@/components/ui/SwipeableRow'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { Pencil, Trash2, LayoutGrid, Table2 } from 'lucide-react'
+import { Pencil, Trash2, LayoutGrid, Table2, Tags, Wallet } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useBreakpoint } from '@/hooks/useBreakpoint'
 import { useSyncListener } from '@/hooks/useSyncListener'
@@ -50,6 +53,8 @@ export function AssetListPage() {
   const members = useMemberStore((s) => s.members)
   const openAssetCreateModal = useUIStore((s) => s.openAssetCreateModal)
   const openAssetEditModal = useUIStore((s) => s.openAssetEditModal)
+  const openAssetCategoryManager = useUIStore((s) => s.openAssetCategoryManager)
+  const openAssetQuickValue = useUIStore((s) => s.openAssetQuickValue)
   const deleteItem = useAssetStore((s) => s.deleteItem)
 
   const loadData = async () => {
@@ -114,12 +119,24 @@ export function AssetListPage() {
           onChange={(id) => { setActiveMember(id === 'all' ? null : Number(id)); setSelectedId(null) }}
         />
 
-        {/* Category Filter */}
-        <AssetCategoryTabs
-          activeCategory={activeCategory}
-          onChange={(c) => { setActiveCategory(c); setSelectedId(null) }}
-          type="asset"
-        />
+        {/* Category Filter + management */}
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <AssetCategoryTabs
+              activeCategory={activeCategory}
+              onChange={(c) => { setActiveCategory(c); setSelectedId(null) }}
+              type="asset"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={openAssetCategoryManager}
+            className="touch-target inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg bg-surface-tertiary px-3 text-label3 font-medium text-sub transition-colors hover:text-heading"
+            aria-label="카테고리 관리"
+          >
+            <Tags className="h-4 w-4" /> <span className="hidden sm:inline">카테고리</span>
+          </button>
+        </div>
 
         {/* Item List + desktop inspector (master-detail) */}
         {filteredItems.length === 0 ? (
@@ -176,7 +193,8 @@ export function AssetListPage() {
                     {isDesktop ? card : (
                       <SwipeableRow
                         actions={[
-                          { icon: Pencil, label: '수정', variant: 'primary', onClick: () => openAssetEditModal(id) },
+                          { icon: Wallet, label: '값', variant: 'primary', onClick: () => openAssetQuickValue(id) },
+                          { icon: Pencil, label: '수정', onClick: () => openAssetEditModal(id) },
                           { icon: Trash2, label: '삭제', variant: 'danger', onClick: () => setDeleteId(id) },
                         ]}
                       >
@@ -201,6 +219,7 @@ export function AssetListPage() {
                       type="asset"
                       onEdit={() => openAssetEditModal(selectedId)}
                       onDelete={() => setDeleteId(selectedId)}
+                      onRecordValue={() => openAssetQuickValue(selectedId)}
                     />
                   )}
                 </InspectorPanel>
@@ -212,6 +231,9 @@ export function AssetListPage() {
 
       <FAB onClick={openAssetCreateModal} label="새 자산 추가" />
       <AssetCreateModal />
+      <AssetEditModal />
+      <AssetCategoryManagement />
+      <QuickValueModal />
       <ConfirmDialog
         open={deleteId != null}
         onClose={() => setDeleteId(null)}
