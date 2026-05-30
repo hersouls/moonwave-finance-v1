@@ -9,7 +9,10 @@ import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useLoanStore } from '@/stores/loanStore'
 import { useSyncListener } from '@/hooks/useSyncListener'
 import { Select } from '@/components/ui/Select'
-import { format } from 'date-fns'
+import { AssetProjectionFields } from '@/components/assets/AssetProjectionFields'
+import { isFlatProjection } from '@/services/valueProjection'
+import { getTodayString } from '@/lib/dateUtils'
+import type { AssetValueProjection } from '@/lib/types'
 import { Landmark } from 'lucide-react'
 
 export function LiabilityCreateModal() {
@@ -18,7 +21,7 @@ export function LiabilityCreateModal() {
   const addItem = useAssetStore((s) => s.addItem)
   const categories = useAssetStore((s) => s.categories)
   const members = useMemberStore((s) => s.members)
-  const setValue = useDailyValueStore((s) => s.setValue)
+  const applyValueSeries = useDailyValueStore((s) => s.applyValueSeries)
   const loans = useLoanStore((s) => s.loans)
   const updateLoan = useLoanStore((s) => s.updateLoan)
   const loadLoans = useLoanStore((s) => s.loadLoans)
@@ -36,6 +39,7 @@ export function LiabilityCreateModal() {
   const [memo, setMemo] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedLoanId, setSelectedLoanId] = useState<number | null>(null)
+  const [projection, setProjection] = useState<AssetValueProjection | undefined>(undefined)
 
   useEffect(() => {
     if (isOpen) {
@@ -45,6 +49,7 @@ export function LiabilityCreateModal() {
       setInitialAmount('')
       setMemo('')
       setSelectedLoanId(null)
+      setProjection(undefined)
       loadLoans()
     }
   }, [isOpen, members, loadLoans])
@@ -81,10 +86,13 @@ export function LiabilityCreateModal() {
         name: name.trim(),
         type: 'liability',
         memo: memo.trim() || undefined,
+        projection,
       })
-      const amount = Number(initialAmount.replace(/,/g, ''))
-      if (amount > 0) {
-        await setValue(id, format(new Date(), 'yyyy-MM-dd'), amount)
+      const amount = Number(initialAmount.replace(/,/g, '')) || 0
+      // v2 통일: UTC 오늘 기준 시리즈 기록(과거 백필 앵커 포함 → forward-fill 이 항상 잡힘).
+      // 잔액이 있거나(평탄 포함) 변동 규칙이 있으면 기록.
+      if (amount > 0 || !isFlatProjection(projection)) {
+        await applyValueSeries(id, amount, getTodayString(), projection)
       }
       // Link loan to this liability item
       if (selectedLoanId) {
@@ -105,7 +113,7 @@ export function LiabilityCreateModal() {
         <div className="space-y-4">
           {/* Loan Import */}
           {activeLoans.length > 0 && (
-            <div className="rounded-lg bg-accent-primary p-3">
+            <div className="rounded-lg bg-primary-50 dark:bg-primary-900/20 p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Landmark className="w-4 h-4 text-accent-primary" />
                 <span className="text-body3-semi text-accent-primary">대출정보 불러오기</span>
@@ -159,6 +167,9 @@ export function LiabilityCreateModal() {
               className="input-base text-right tabular-nums"
             />
           </div>
+
+          {/* 가치 변동 규칙 (매월 상환 / 연 이자 등) */}
+          <AssetProjectionFields value={projection} onChange={setProjection} />
 
           <div>
             <label className="block text-body3 text-body mb-1.5">구성원</label>

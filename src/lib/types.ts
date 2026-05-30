@@ -411,6 +411,10 @@ export interface AssetStats {
   debtRatio: number
   dailyChange: number
   monthlyChange: number
+  /** 총자산 월초 대비 증감 (대시보드 '총자산' 카드 '이번달'). */
+  assetMonthlyChange: number
+  /** 총부채 월초 대비 증감 (대시보드 '총부채' 카드 '이번달'). */
+  liabilityMonthlyChange: number
 }
 
 export interface CategoryBreakdown {

@@ -129,9 +129,9 @@ export function DashboardPage() {
     )
   }
 
-  // 월초 대비 자산/부채 변화 (stats.dailyChange 는 순자산 기준이므로 근사치로 사용)
-  const assetTrend = stats.totalAssets - (stats.totalAssets - stats.monthlyChange - stats.totalLiabilities)
-  const liabilityTrend = 0 // 표시 전용 플레이스홀더; 미래 훅에서 주입 가능
+  // 월초 대비 자산/부채 변화 (각각 전용 집계 — 순자산 기준 근사치 아님)
+  const assetTrend = stats.assetMonthlyChange
+  const liabilityTrend = stats.liabilityMonthlyChange
 
   return (
     <motion.div
@@ -199,7 +199,7 @@ export function DashboardPage() {
             label="총부채"
             value={stats.totalLiabilities}
             variant={stats.totalLiabilities > stats.totalAssets * 0.5 ? 'warning' : 'accent'}
-            deltas={stats.totalLiabilities > 0 ? [{ value: liabilityTrend, label: '이번달' }] : undefined}
+            deltas={stats.totalLiabilities > 0 ? [{ value: liabilityTrend, label: '이번달', goodWhenUp: false }] : undefined}
           />
         </motion.div>
       </motion.section>

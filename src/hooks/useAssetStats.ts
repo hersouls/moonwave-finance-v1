@@ -3,19 +3,8 @@ import type { AssetStats, CategoryBreakdown, MemberBreakdown } from '@/lib/types
 import { useAssetStore } from '@/stores/assetStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useMemberStore } from '@/stores/memberStore'
-import { getTodayString } from '@/lib/dateUtils'
+import { getTodayString, getYesterdayString } from '@/lib/dateUtils'
 import { groupValuesByItem, valueAsOf } from '@/services/assetAnalytics'
-
-function getYesterday(): string {
-  const d = new Date()
-  d.setDate(d.getDate() - 1)
-  return d.toISOString().split('T')[0]
-}
-
-function getFirstDayOfMonth(): string {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
-}
 
 function addDaysStr(base: string, delta: number): string {
   const d = new Date(base + 'T00:00:00Z')
@@ -93,9 +82,12 @@ export function useAssetStats(): AssetStats {
   const allValues = useDailyValueStore((s) => s.allValues)
 
   return useMemo(() => {
+    // today/yesterday/monthStart 를 모두 UTC 프레임으로 통일 — DailyValue.date(UTC) 및
+    // forward-fill 기준일과 일치시킨다. 로컬시간 파생은 매월 1일 KST 새벽에 monthStart>today 가 되어
+    // 미래 투영값을 읽는 버그를 유발한다. (AssetSummaryHeader 와도 동일 방식으로 일치)
     const today = getTodayString()
-    const yesterday = getYesterday()
-    const monthStart = getFirstDayOfMonth()
+    const yesterday = getYesterdayString()
+    const monthStart = today.slice(0, 8) + '01'
     const byItem = groupValuesByItem(allValues)
 
     let totalAssets = 0
@@ -137,6 +129,9 @@ export function useAssetStats(): AssetStats {
       debtRatio,
       dailyChange: netWorth - netWorthYesterday,
       monthlyChange: netWorth - netWorthMonthStart,
+      // 자산/부채 각각의 월초 대비 증감(대시보드 '총자산/총부채' 카드 '이번달' 배지용).
+      assetMonthlyChange: totalAssets - totalAssetsMonthStart,
+      liabilityMonthlyChange: totalLiabilities - totalLiabilitiesMonthStart,
     }
   }, [items, allValues])
 }

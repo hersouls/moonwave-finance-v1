@@ -32,6 +32,13 @@ interface DailyValueState {
   applyValueSeries: (assetItemId: number, baseValue: number, baseDate: string, projection?: AssetValueProjection) => Promise<number>
   /** 활성 항목 전체에 대해 오늘 기준 투영을 보장(일 1회, self-guard). carry-forward 대체. */
   ensureValueProjections: () => Promise<number>
+  /**
+   * 레거시 복구: 기록이 전부 미래(>오늘 UTC)인 항목에 오늘 수동 앵커를 추가한다.
+   * (구 부채 생성 모달이 로컬시간 날짜로 기록 → KST 새벽엔 UTC보다 하루 앞서 저장되어
+   * forward-fill 이 오늘 0 을 반환하던 버그) "전부 미래" 는 정상 항목엔 없는 조건이라 안전.
+   * 오늘 앵커가 생기면 더는 조건에 안 걸려 자동 멱등.
+   */
+  healLegacyFutureValues: () => Promise<number>
 }
 
 export const useDailyValueStore = create<DailyValueState>()(
@@ -182,6 +189,30 @@ export const useDailyValueStore = create<DailyValueState>()(
           if (typeof localStorage !== 'undefined') localStorage.setItem(CARRY_FORWARD_KEY, today)
         } catch { /* ignore */ }
         return allEntries.length
+      },
+
+      healLegacyFutureValues: async () => {
+        const today = getTodayString()
+        const items = useAssetStore.getState().items.filter(i => i.isActive && i.id != null)
+        const byItem = new Map<number, DailyValue[]>()
+        for (const v of get().allValues) {
+          let a = byItem.get(v.assetItemId)
+          if (!a) { a = []; byItem.set(v.assetItemId, a) }
+          a.push(v)
+        }
+        const entries: { assetItemId: number; date: string; value: number; source: 'manual' }[] = []
+        for (const item of items) {
+          const recs = byItem.get(item.id!)
+          if (!recs || recs.length === 0) continue
+          // 정상 항목은 항상 오늘 이하 기록이 있다. "전부 미래" = 레거시 미스데이트 버그.
+          if (recs.every(r => r.date > today)) {
+            let earliest = recs[0]
+            for (const r of recs) if (r.date < earliest.date) earliest = r
+            entries.push({ assetItemId: item.id!, date: today, value: earliest.value, source: 'manual' })
+          }
+        }
+        if (entries.length > 0) await get().bulkSetValues(entries)
+        return entries.length
       },
     }),
     { name: 'daily-value-store' }
