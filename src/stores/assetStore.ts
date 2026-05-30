@@ -165,15 +165,16 @@ export const useAssetStore = create<AssetState>()(
         // Collect dailyValue syncIds before deletion
         const values = await db.getDailyValuesByItem(id)
         const valueSyncIds = values.map(v => v.syncId).filter(Boolean) as string[]
-        await db.deleteAssetItem(id)
+        const clearedLoans = await db.deleteAssetItem(id)
         await get().loadItems()
-        // Delete from Firestore
-        import('@/services/firestoreSync').then(({ deleteFromCloud, deleteMultipleFromCloud }) => {
+        // Delete from Firestore (+ 연결 해제된 대출의 FK 정리도 클라우드 반영)
+        import('@/services/firestoreSync').then(({ deleteFromCloud, deleteMultipleFromCloud, uploadSingleRecord }) => {
           import('./authStore').then(({ useAuthStore }) => {
             const user = useAuthStore.getState().user
             if (!user) return
             if (prev.syncId) deleteFromCloud(user.uid, 'assetItems', prev.syncId)
             deleteMultipleFromCloud(user.uid, 'dailyValues', valueSyncIds)
+            for (const loan of clearedLoans) uploadSingleRecord(user.uid, 'loans', loan)
           })
         }).catch(err => console.error('[asset] delete item sync failed:', err))
         useToastStore.getState().addToast(`${prev.name} 항목이 삭제되었습니다.`, 'info')

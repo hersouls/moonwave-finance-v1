@@ -18,6 +18,8 @@ const VARIANT_BG: Record<HeroVariant, string> = {
 interface Delta {
   value: number
   label?: string
+  /** true(기본): 증가=긍정(초록). 부채처럼 증가가 나쁜 지표는 false → 증가=빨강. 아이콘 방향(↑/↓)은 실제 증감 유지. */
+  goodWhenUp?: boolean
 }
 
 export interface HeroMetricCardProps {
@@ -63,9 +65,11 @@ function AnimatedNumber({
   return <motion.span>{display}</motion.span>
 }
 
-function TrendIcon({ value }: { value: number }) {
+function TrendIcon({ value, goodWhenUp = true }: { value: number; goodWhenUp?: boolean }) {
   const Icon = value > 0 ? TrendingUp : value < 0 ? TrendingDown : Minus
-  const color = value > 0 ? 'text-value-positive-on-dark' : value < 0 ? 'text-value-negative-on-dark' : 'text-white/50'
+  const good = goodWhenUp ? value > 0 : value < 0
+  const bad = goodWhenUp ? value < 0 : value > 0
+  const color = good ? 'text-value-positive-on-dark' : bad ? 'text-value-negative-on-dark' : 'text-white/50'
   return (
     <motion.span
       initial={{ scale: 0.5, opacity: 0 }}
@@ -160,17 +164,18 @@ export function HeroMetricCard({
         {deltas && deltas.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1">
             {deltas.map((d, i) => {
-              const isPos = d.value > 0
-              const isNeg = d.value < 0
+              const goodWhenUp = d.goodWhenUp ?? true
+              const good = goodWhenUp ? d.value > 0 : d.value < 0
+              const bad = goodWhenUp ? d.value < 0 : d.value > 0
               return (
                 <div key={i} className="flex items-center gap-1.5">
-                  <TrendIcon value={d.value} />
+                  <TrendIcon value={d.value} goodWhenUp={goodWhenUp} />
                   <span
                     className={clsx(
                       'text-body3 tabular-nums',
-                      isPos && 'text-value-positive-on-dark',
-                      isNeg && 'text-value-negative-on-dark',
-                      !isPos && !isNeg && 'text-white/50',
+                      good && 'text-value-positive-on-dark',
+                      bad && 'text-value-negative-on-dark',
+                      !good && !bad && 'text-white/50',
                       hideAmounts && 'amount-masked',
                     )}
                   >

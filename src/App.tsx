@@ -97,6 +97,9 @@ export default function App() {
       try {
         await useAssetStore.getState().loadAll()
         await useDailyValueStore.getState().loadAllValues()
+        if (cancelled) return
+        // 레거시 복구: 로컬-날짜 기록으로 전부 미래에 저장돼 오늘 0 으로 보이던 항목을 오늘 앵커로 치유.
+        await useDailyValueStore.getState().healLegacyFutureValues()
         if (!cancelled) await useDailyValueStore.getState().ensureValueProjections()
       } catch (err) {
         console.error('[carry-forward] failed:', err)

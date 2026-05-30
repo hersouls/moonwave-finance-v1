@@ -57,7 +57,9 @@ export function buildForward(
   let bal = baseValue
   let d = addDays(parseISO(baseYmd), 1)
   while (ymd(d) <= endYmd) {
-    if (r) bal += (compound ? bal : baseValue) * r / 365
+    // 잔액이 0(완납·소진)이면 이자 미가산. 단리는 baseValue 기준이라 가드 없으면
+    // 0 도달 후에도 매일 baseValue*r/365 만큼 되살아나는 '유령 잔액'이 생긴다.
+    if (r && bal > 0) bal += (compound ? bal : baseValue) * r / 365
     bal += daily
     if (monthly && monthlyDay && isContribDay(d, monthlyDay)) bal += monthly
     bal = Math.max(0, bal)
@@ -98,7 +100,7 @@ export function buildBackfill(
       const dPlus1 = addDays(d, 1)
       if (monthly && monthlyDay && isContribDay(dPlus1, monthlyDay)) bal -= monthly
       bal -= daily
-      if (r) bal = compound ? bal / (1 + r / 365) : bal - baseValue * r / 365
+      if (r && bal > 0) bal = compound ? bal / (1 + r / 365) : bal - baseValue * r / 365
       bal = Math.max(0, bal)
     }
     entries.push({ date: ds, value: flat ? clamp(baseValue) : Math.round(bal) })

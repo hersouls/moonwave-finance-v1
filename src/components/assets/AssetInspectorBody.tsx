@@ -49,6 +49,8 @@ export function AssetInspectorBody({ itemId, type, onEdit, onDelete, onRecordVal
   const sparkIsGood = type === 'liability' ? change <= 0 : change >= 0
   // 추이: 희소 저장이어도 항상 렌더되도록 forward-fill 30일. 최근 기록: 사용자 입력만(내부 앵커 숨김).
   const sparkData = useMemo(() => recentForwardFill(values, 30, getTodayString()), [values])
+  // 변화가 있을 때만 추이 렌더 — 평탄(전부 동일값)이면 오해 유발(부채는 평탄도 '좋음' 초록선)이라 숨긴다.
+  const sparkHasVariation = useMemo(() => sparkData.some((v, i) => i > 0 && v !== sparkData[0]), [sparkData])
   const records = useMemo(() => values.filter((v) => v.source !== 'projected'), [values])
   const sparkColor = sparkIsGood ? getPositiveColor() : getNegativeColor()
   const basePath = type === 'asset' ? '/assets' : '/liabilities'
@@ -83,7 +85,7 @@ export function AssetInspectorBody({ itemId, type, onEdit, onDelete, onRecordVal
       </div>
 
       {/* Trend */}
-      {sparkData.length >= 3 && (
+      {sparkData.length >= 3 && sparkHasVariation && (
         <div className="rounded-xl bg-surface-secondary p-3">
           <p className="mb-2 text-caption text-sub">최근 {sparkData.length}일 추이</p>
           <Sparkline data={sparkData} width={320} height={56} color={sparkColor} strokeWidth={2} className="h-14 w-full" />

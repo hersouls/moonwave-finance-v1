@@ -67,8 +67,30 @@ export const useLoanStore = create<LoanState>()(
       },
 
       updateLoan: async (id, updates) => {
+        const prev = get().loans.find(l => l.id === id)
         await db.updateLoan(id, updates)
         await get().loadLoans()
+        // 대출=SOT: 현재 잔액이 바뀌고 연결된 부채 항목이 있으면 그 부채 잔액(DailyValue)도 함께 동기화.
+        // (UI '자동으로 연동' 약속 이행. UTC 오늘 기준 applyValueSeries — 부채 규칙 있으면 그 규칙으로 재투영)
+        if (
+          updates.currentBalance != null &&
+          prev?.linkedAssetItemId != null &&
+          updates.currentBalance !== prev.currentBalance
+        ) {
+          try {
+            const [{ useDailyValueStore }, { useAssetStore }, { getTodayString }] = await Promise.all([
+              import('./dailyValueStore'),
+              import('./assetStore'),
+              import('@/lib/dateUtils'),
+            ])
+            const linked = useAssetStore.getState().items.find(i => i.id === prev.linkedAssetItemId)
+            await useDailyValueStore.getState().applyValueSeries(
+              prev.linkedAssetItemId, updates.currentBalance, getTodayString(), linked?.projection,
+            )
+          } catch (err) {
+            console.error('[loan] linked liability sync failed:', err)
+          }
+        }
         useToastStore.getState().addToast('대출 정보가 수정되었습니다.', 'success')
       },
 

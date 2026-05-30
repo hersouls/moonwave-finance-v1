@@ -163,7 +163,7 @@ export function AssetTableView({ items, type, selectedId, onSelect }: Props) {
                   </td>
                   <td>
                     <div className="flex justify-end">
-                      {m && m.spark.length >= 3 && (
+                      {m && m.spark.length >= 3 && m.spark.some((v, i) => i > 0 && v !== m.spark[0]) && (
                         <Sparkline data={m.spark} width={72} height={24} color={sparkGood ? getPositiveColor() : getNegativeColor()} strokeWidth={1.5} />
                       )}
                     </div>

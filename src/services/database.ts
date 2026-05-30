@@ -552,11 +552,22 @@ export async function updateAssetItem(id: number, updates: Partial<AssetItem>): 
   await db.assetItems.update(id, { ...updates, updatedAt: new Date().toISOString() })
 }
 
-export async function deleteAssetItem(id: number): Promise<void> {
-  await db.transaction('rw', [db.assetItems, db.dailyValues], async () => {
+/** 자산/부채 항목 삭제 + 일별값 삭제 + 연결된 대출의 댕글링 FK(linkedAssetItemId) 정리.
+ *  반환 = FK 가 해제된 대출 레코드들(호출부에서 클라우드에도 반영하도록). */
+export async function deleteAssetItem(id: number): Promise<Loan[]> {
+  const now = new Date().toISOString()
+  let cleared: Loan[] = []
+  await db.transaction('rw', [db.assetItems, db.dailyValues, db.loans], async () => {
     await db.dailyValues.where('assetItemId').equals(id).delete()
     await db.assetItems.delete(id)
+    // linkedAssetItemId 는 인덱스가 아니므로 인메모리 filter 로 조회 후 일괄 해제.
+    const linked = await db.loans.filter(l => l.linkedAssetItemId === id).toArray()
+    if (linked.length > 0) {
+      cleared = linked.map(l => ({ ...l, linkedAssetItemId: undefined, updatedAt: now }))
+      await db.loans.bulkPut(cleared)
+    }
   })
+  return cleared
 }
 
 // ─── DailyValue CRUD ──────────────────────────────
@@ -878,7 +889,9 @@ export async function getAllLoans(): Promise<Loan[]> {
 }
 
 export async function getActiveLoans(): Promise<Loan[]> {
-  return db.loans.where('isActive').equals(1).sortBy('sortOrder')
+  // isActive 는 JS boolean 으로 저장 — IndexedDB 인덱스에서 .equals(1) 은 매칭되지 않으므로
+  // 인메모리 filter 로 평가한다.
+  return (await db.loans.orderBy('sortOrder').toArray()).filter(l => l.isActive)
 }
 
 export async function addLoan(loan: Omit<Loan, 'id'>): Promise<number> {
