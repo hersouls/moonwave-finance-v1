@@ -6,6 +6,8 @@ import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useAssetStore } from '@/stores/assetStore'
 import { formatChange } from '@/utils/format'
 import { Amount } from '@/components/ui/Amount'
+import { valueAsOf } from '@/services/assetAnalytics'
+import { getTodayString, getYesterdayString } from '@/lib/dateUtils'
 import { clsx } from 'clsx'
 
 interface LiabilityItemCardProps {
@@ -32,9 +34,9 @@ export function LiabilityItemCard({ itemId, name, categoryId, onSelect, selected
       .sort((a, b) => b.date.localeCompare(a.date)),
     [allValues, itemId]
   )
-  const latestValue = itemValues[0]?.value || 0
-  const prevValue = itemValues[1]?.value || latestValue
-  const change = latestValue - prevValue
+  // 현재 잔액 = 오늘 기준 forward-fill 값. 변동 = 어제 대비(일자별 연속성).
+  const latestValue = valueAsOf(itemValues, getTodayString())
+  const change = latestValue - valueAsOf(itemValues, getYesterdayString())
 
   return (
     <Card
@@ -64,7 +66,7 @@ export function LiabilityItemCard({ itemId, name, categoryId, onSelect, selected
           {change !== 0 && (
             <p className={clsx(
               'text-caption tabular-nums mt-0.5',
-              change < 0 ? 'text-status-success' : 'text-status-danger'
+              change < 0 ? 'text-value-positive' : 'text-value-negative'
             )}>
               {formatChange(change)}
             </p>

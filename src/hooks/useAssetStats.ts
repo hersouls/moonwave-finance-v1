@@ -17,6 +17,61 @@ function getFirstDayOfMonth(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
 }
 
+function addDaysStr(base: string, delta: number): string {
+  const d = new Date(base + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() + delta)
+  return d.toISOString().split('T')[0]
+}
+
+export interface NetWorthSeries {
+  /** Forward-filled net worth per day (chronological). */
+  series: { date: string; value: number }[]
+  start: number
+  end: number
+  change: number
+  /** Period growth rate (%) = change / |start| × 100. */
+  growthRatePct: number
+  /** 자산증식 기울기 — average net-worth change per day (KRW/day). */
+  dailySlope: number
+}
+
+/**
+ * Net worth as a continuous daily series (forward-fill) over the last `days`,
+ * with the wealth-accumulation slope (avg KRW/day) and period growth rate.
+ * This is the core "자산증식 기울기" the dashboard surfaces.
+ */
+export function useNetWorthSeries(days: number): NetWorthSeries {
+  const items = useAssetStore((s) => s.items)
+  const allValues = useDailyValueStore((s) => s.allValues)
+
+  return useMemo(() => {
+    const byItem = groupValuesByItem(allValues)
+    const today = getTodayString()
+    const series: { date: string; value: number }[] = []
+
+    for (let i = days - 1; i >= 0; i--) {
+      const date = addDaysStr(today, -i)
+      let assets = 0
+      let liabilities = 0
+      for (const item of items) {
+        if (!item.isActive || item.id == null) continue
+        const v = valueAsOf(byItem.get(item.id), date)
+        if (item.type === 'asset') assets += v
+        else liabilities += v
+      }
+      series.push({ date, value: assets - liabilities })
+    }
+
+    const start = series[0]?.value ?? 0
+    const end = series[series.length - 1]?.value ?? 0
+    const change = end - start
+    const growthRatePct = start !== 0 ? (change / Math.abs(start)) * 100 : 0
+    const dailySlope = days > 1 ? change / (days - 1) : 0
+
+    return { series, start, end, change, growthRatePct, dailySlope }
+  }, [items, allValues, days])
+}
+
 export function useAssetStats(): AssetStats {
   const items = useAssetStore((s) => s.items)
   // 전체 이력을 사용해야 "현재 가치"가 지난 달 기록이어도 0으로 사라지지 않는다.

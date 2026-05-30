@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Pencil, Trash2, ArrowUpRight } from 'lucide-react'
+import { Pencil, Trash2, ArrowUpRight, Wallet } from 'lucide-react'
 import { clsx } from 'clsx'
 import { Amount } from '@/components/ui/Amount'
 import { Sparkline } from '@/components/ui/Sparkline'
@@ -8,14 +8,16 @@ import { useAssetStore } from '@/stores/assetStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { getPositiveColor, getNegativeColor } from '@/lib/chartConfig'
+import { valueAsOf } from '@/services/assetAnalytics'
 import { formatChange } from '@/utils/format'
-import { formatDate } from '@/lib/dateUtils'
+import { formatDate, getTodayString, getYesterdayString } from '@/lib/dateUtils'
 
 interface Props {
   itemId: number
   type: 'asset' | 'liability'
   onEdit: () => void
   onDelete: () => void
+  onRecordValue: () => void
 }
 
 /**
@@ -23,7 +25,7 @@ interface Props {
  * (master-detail). Keeps the list in context; "전체 보기" deep-links to the
  * full AssetDetailPage for advanced analysis.
  */
-export function AssetInspectorBody({ itemId, type, onEdit, onDelete }: Props) {
+export function AssetInspectorBody({ itemId, type, onEdit, onDelete, onRecordValue }: Props) {
   const navigate = useNavigate()
   const items = useAssetStore((s) => s.items)
   const categories = useAssetStore((s) => s.categories)
@@ -39,9 +41,9 @@ export function AssetInspectorBody({ itemId, type, onEdit, onDelete }: Props) {
     [allValues, itemId],
   )
 
-  const latest = values[0]?.value || 0
-  const prev = values[1]?.value || latest
-  const change = latest - prev
+  // 현재 값 = 오늘 forward-fill. 변동 = 어제 대비(일자별 연속성).
+  const latest = valueAsOf(values, getTodayString())
+  const change = latest - valueAsOf(values, getYesterdayString())
   // 자산: 증가=긍정. 부채: 감소=긍정(빚이 줄어드는 것).
   const changeIsGood = type === 'liability' ? change < 0 : change > 0
   const sparkIsGood = type === 'liability' ? change <= 0 : change >= 0
@@ -102,29 +104,38 @@ export function AssetInspectorBody({ itemId, type, onEdit, onDelete }: Props) {
       )}
 
       {/* Actions */}
-      <div className="flex flex-wrap gap-2 pt-1">
+      <div className="space-y-2 pt-1">
         <button
           type="button"
-          onClick={onEdit}
-          className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg bg-surface-secondary px-3 text-body3 font-medium text-heading transition-colors hover:bg-[var(--hover-bg)]"
+          onClick={onRecordValue}
+          className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary-500 px-3 text-body3 font-semibold text-white transition-colors hover:bg-primary-600"
         >
-          <Pencil className="h-4 w-4" /> 수정
+          <Wallet className="h-4 w-4" /> 오늘 값 기록
         </button>
-        <button
-          type="button"
-          onClick={() => navigate(`${basePath}/${itemId}`)}
-          className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary-500 px-3 text-body3 font-medium text-white transition-colors hover:bg-primary-600"
-        >
-          전체 보기 <ArrowUpRight className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          aria-label="삭제"
-          className="inline-flex min-h-11 w-11 items-center justify-center rounded-lg bg-status-danger-soft text-status-danger transition-colors hover:bg-[color:var(--status-danger-border)]"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onEdit}
+            className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg bg-surface-secondary px-3 text-body3 font-medium text-heading transition-colors hover:bg-[var(--hover-bg)]"
+          >
+            <Pencil className="h-4 w-4" /> 수정
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate(`${basePath}/${itemId}`)}
+            className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg bg-surface-secondary px-3 text-body3 font-medium text-heading transition-colors hover:bg-[var(--hover-bg)]"
+          >
+            전체 보기 <ArrowUpRight className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label="삭제"
+            className="inline-flex min-h-11 w-11 items-center justify-center rounded-lg bg-status-danger-soft text-status-danger transition-colors hover:bg-[color:var(--status-danger-border)]"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
   )

@@ -5,6 +5,18 @@ export function getTodayString(): string {
   return new Date().toISOString().split('T')[0]
 }
 
+/**
+ * Yesterday in the SAME UTC frame as getTodayString(), so forward-fill
+ * day-over-day deltas (valueAsOf(today) - valueAsOf(yesterday)) line up with
+ * the summary header. Asset values are a continuous daily series (forward-fill),
+ * so "어제 대비" must compare the value AS OF each day, not the gap between records.
+ */
+export function getYesterdayString(): string {
+  const d = new Date(getTodayString() + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() - 1)
+  return d.toISOString().split('T')[0]
+}
+
 export function getCurrentMonthString(): string {
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`

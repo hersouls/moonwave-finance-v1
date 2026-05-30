@@ -8,6 +8,8 @@ import { useAssetStore } from '@/stores/assetStore'
 import { formatChange } from '@/utils/format'
 import { Amount } from '@/components/ui/Amount'
 import { getPositiveColor, getNegativeColor } from '@/lib/chartConfig'
+import { valueAsOf } from '@/services/assetAnalytics'
+import { getTodayString, getYesterdayString } from '@/lib/dateUtils'
 import { clsx } from 'clsx'
 
 interface AssetItemCardProps {
@@ -37,9 +39,9 @@ function AssetItemCardInner({ itemId, name, categoryId, type, onSelect, selected
     [allValues, itemId]
   )
 
-  const latestValue = itemValues[0]?.value || 0
-  const prevValue = itemValues[1]?.value || latestValue
-  const change = latestValue - prevValue
+  // 현재 가치 = 오늘 기준 forward-fill 값. 변동 = 어제 대비(일자별 연속성).
+  const latestValue = valueAsOf(itemValues, getTodayString())
+  const change = latestValue - valueAsOf(itemValues, getYesterdayString())
 
   // Sparkline data: last 14 days, chronological order
   const sparklineData = useMemo(() => {

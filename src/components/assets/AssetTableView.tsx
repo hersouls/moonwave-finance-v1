@@ -7,6 +7,8 @@ import { useAssetStore } from '@/stores/assetStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { getPositiveColor, getNegativeColor } from '@/lib/chartConfig'
+import { valueAsOf } from '@/services/assetAnalytics'
+import { getTodayString, getYesterdayString } from '@/lib/dateUtils'
 import { formatChange } from '@/utils/format'
 
 interface AssetRow {
@@ -45,17 +47,19 @@ export function AssetTableView({ items, type, selectedId, onSelect }: Props) {
   const [sortDir, setSortDir] = useState<SortDir>('desc')
 
   const metrics = useMemo(() => {
+    const today = getTodayString()
+    const yesterday = getYesterdayString()
     const map = new Map<number, Metric>()
     for (const item of items) {
       if (item.id == null) continue
       const vals = allValues
         .filter((v) => v.assetItemId === item.id)
         .sort((a, b) => b.date.localeCompare(a.date))
-      const value = vals[0]?.value || 0
-      const prev = vals[1]?.value ?? value
+      // 현재 값 = 오늘 forward-fill, 변동 = 어제 대비 (일자별 연속성)
+      const value = valueAsOf(vals, today)
       map.set(item.id, {
         value,
-        change: value - prev,
+        change: value - valueAsOf(vals, yesterday),
         spark: vals.slice(0, 14).reverse().map((v) => v.value),
       })
     }
