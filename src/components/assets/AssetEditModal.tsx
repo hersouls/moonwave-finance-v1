@@ -5,7 +5,12 @@ import { Select } from '@/components/ui/Select'
 import { useUIStore } from '@/stores/uiStore'
 import { useAssetStore } from '@/stores/assetStore'
 import { useMemberStore } from '@/stores/memberStore'
+import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useToastStore } from '@/stores/toastStore'
+import { AssetProjectionFields } from './AssetProjectionFields'
+import { valueAsOf } from '@/services/assetAnalytics'
+import { getTodayString } from '@/lib/dateUtils'
+import type { AssetValueProjection } from '@/lib/types'
 
 export function AssetEditModal() {
   const isOpen = useUIStore((s) => s.isAssetEditModalOpen)
@@ -16,6 +21,8 @@ export function AssetEditModal() {
   const categories = useAssetStore((s) => s.categories)
   const updateItem = useAssetStore((s) => s.updateItem)
   const members = useMemberStore((s) => s.members)
+  const allValues = useDailyValueStore((s) => s.allValues)
+  const applyValueSeries = useDailyValueStore((s) => s.applyValueSeries)
 
   const item = editingId ? items.find(i => i.id === editingId) : null
 
@@ -23,6 +30,7 @@ export function AssetEditModal() {
   const [categoryId, setCategoryId] = useState<number | ''>('')
   const [memberId, setMemberId] = useState<number | ''>('')
   const [memo, setMemo] = useState('')
+  const [projection, setProjection] = useState<AssetValueProjection | undefined>(undefined)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -31,6 +39,7 @@ export function AssetEditModal() {
       setCategoryId(item.categoryId)
       setMemberId(item.memberId)
       setMemo(item.memo || '')
+      setProjection(item.projection)
     }
   }, [isOpen, item])
 
@@ -47,7 +56,12 @@ export function AssetEditModal() {
         categoryId: categoryId as number,
         memberId: memberId as number,
         memo: memo.trim() || undefined,
+        projection,
       })
+      // 규칙이 바뀌면 현재 값 기준으로 미래 값을 재투영한다.
+      const series = allValues.filter((v) => v.assetItemId === item.id).sort((a, b) => b.date.localeCompare(a.date))
+      const current = valueAsOf(series, getTodayString())
+      if (current > 0) await applyValueSeries(item.id!, current, getTodayString(), projection)
       useToastStore.getState().addToast(`${name.trim()} 항목이 수정되었습니다.`, 'success')
       close()
     } catch {
@@ -106,6 +120,8 @@ export function AssetEditModal() {
               className="input-base"
             />
           </div>
+
+          <AssetProjectionFields value={projection} onChange={setProjection} />
         </div>
       </DialogBody>
       <DialogFooter>

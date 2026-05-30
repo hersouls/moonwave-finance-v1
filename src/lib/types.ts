@@ -26,6 +26,19 @@ export interface AssetCategory {
 }
 
 // ─── Asset Item Types ──────────────────────────────
+/**
+ * 자산 가치 변동 규칙 — 입력 시점부터 미래 값을 자동 투영(projection)한다.
+ * 둘 다 없으면 평탄(flat: 동일 값 유지).
+ */
+export interface AssetValueProjection {
+  /** 매일 ±금액 (예: 자동차 감가상각 = 음수, 일일이자 = 양수) */
+  dailyDelta?: number
+  /** 매월 가산 금액 (예: 연금 불입액) */
+  monthlyAmount?: number
+  /** 매월 가산 날짜 (1-31, 해당 월 마지막일로 클램프) */
+  monthlyDay?: number
+}
+
 export interface AssetItem {
   id?: number
   syncId?: string
@@ -36,6 +49,8 @@ export interface AssetItem {
   memo?: string
   isActive: boolean
   sortOrder: number
+  /** 가치 변동 규칙 (감가상각/월 불입 등). 없으면 평탄 유지. */
+  projection?: AssetValueProjection
   createdAt: string
   updatedAt: string
 }

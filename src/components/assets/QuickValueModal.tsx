@@ -22,7 +22,7 @@ export function QuickValueModal() {
   const close = useUIStore((s) => s.closeAssetQuickValue)
   const items = useAssetStore((s) => s.items)
   const allValues = useDailyValueStore((s) => s.allValues)
-  const setValue = useDailyValueStore((s) => s.setValue)
+  const applyValueSeries = useDailyValueStore((s) => s.applyValueSeries)
 
   const autoCarry = useSettingsStore((s) => s.settings.autoCarryForward !== false)
 
@@ -55,7 +55,8 @@ export function QuickValueModal() {
     if (itemId == null || numeric <= 0) return
     setBusy(true)
     try {
-      await setValue(itemId, date, numeric)
+      // 입력일 기준으로 전방 재투영(항목 규칙 적용) + 과거 백필
+      await applyValueSeries(itemId, numeric, date, item?.projection)
       useToastStore.getState().addToast('가치가 기록되었습니다.', 'success')
       close()
     } catch {
