@@ -2,8 +2,13 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import type { DailyValue } from '@/lib/types'
 import * as db from '@/services/database'
-import { getCurrentMonthString } from '@/lib/dateUtils'
+import { getCurrentMonthString, getTodayString } from '@/lib/dateUtils'
+import { groupValuesByItem, valueAsOf } from '@/services/assetAnalytics'
 import { useToastStore } from './toastStore'
+import { useAssetStore } from './assetStore'
+import { useSettingsStore } from './settingsStore'
+
+const CARRY_FORWARD_KEY = 'finance:lastCarryForward'
 
 interface DailyValueState {
   values: DailyValue[]
@@ -18,6 +23,8 @@ interface DailyValueState {
   bulkSetValues: (entries: { assetItemId: number; date: string; value: number }[]) => Promise<void>
   getValueForItemDate: (assetItemId: number, date: string) => number | null
   getLatestValueForItem: (assetItemId: number) => DailyValue | null
+  /** 오늘 값을 자동 이어쓰기(carry-forward). 하루 1회만 실행(self-guard). 반환=기록한 항목 수. */
+  carryForwardToday: () => Promise<number>
 }
 
 export const useDailyValueStore = create<DailyValueState>()(
@@ -84,6 +91,33 @@ export const useDailyValueStore = create<DailyValueState>()(
           .filter(v => v.assetItemId === assetItemId)
           .sort((a, b) => b.date.localeCompare(a.date))
         return itemValues[0] || null
+      },
+
+      carryForwardToday: async () => {
+        // 설정으로 끌 수 있음(기본 ON). 사용자가 별도 입력을 안 해도 어제 값이 오늘로 자동 저장된다.
+        if (useSettingsStore.getState().settings.autoCarryForward === false) return 0
+        const today = getTodayString()
+        // 하루 1회만 — 같은 날 중복 실행 방지
+        try {
+          if (typeof localStorage !== 'undefined' && localStorage.getItem(CARRY_FORWARD_KEY) === today) return 0
+        } catch { /* ignore */ }
+
+        const items = useAssetStore.getState().items.filter(i => i.isActive && i.id != null)
+        const byItem = groupValuesByItem(get().allValues)
+        const entries: { assetItemId: number; date: string; value: number }[] = []
+        for (const item of items) {
+          const series = byItem.get(item.id!)
+          if (!series || series.length === 0) continue          // 이전 값이 없으면 이어쓸 게 없음
+          if (series.some(v => v.date === today)) continue       // 오늘 이미 기록됨(수기 입력 포함)
+          const value = valueAsOf(series, today)                 // 마지막 알려진 값(forward-fill)
+          if (value > 0) entries.push({ assetItemId: item.id!, date: today, value })
+        }
+
+        if (entries.length > 0) await get().bulkSetValues(entries)
+        try {
+          if (typeof localStorage !== 'undefined') localStorage.setItem(CARRY_FORWARD_KEY, today)
+        } catch { /* ignore */ }
+        return entries.length
       },
     }),
     { name: 'daily-value-store' }

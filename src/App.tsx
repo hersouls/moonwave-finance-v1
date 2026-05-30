@@ -24,6 +24,8 @@ import { OnboardingWizard } from './components/onboarding/OnboardingWizard'
 import { useSettingsStore } from './stores/settingsStore'
 import { useUIStore } from './stores/uiStore'
 import { useAuthStore } from './stores/authStore'
+import { useAssetStore } from './stores/assetStore'
+import { useDailyValueStore } from './stores/dailyValueStore'
 import { useSubscriptionStore } from './stores/subscriptionStore'
 import { showBillingNotifications } from './services/notificationService'
 import { useOnlineStatus } from './hooks/useOnlineStatus'
@@ -85,6 +87,23 @@ export default function App() {
     }
     initApp()
   }, [])
+
+  // Auto carry-forward today's asset values (once per day, self-guarded).
+  // 사용자가 별도 입력을 안 해도 어제 값이 오늘로 자동 저장되어 일자별 연속성이 유지된다.
+  useEffect(() => {
+    if (!isInitialized) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        await useAssetStore.getState().loadAll()
+        await useDailyValueStore.getState().loadAllValues()
+        if (!cancelled) await useDailyValueStore.getState().carryForwardToday()
+      } catch (err) {
+        console.error('[carry-forward] failed:', err)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [isInitialized])
 
   const location = useLocation()
   const setCurrentView = useUIStore((s) => s.setCurrentView)

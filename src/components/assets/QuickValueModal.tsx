@@ -9,6 +9,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { useAssetStore } from '@/stores/assetStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useToastStore } from '@/stores/toastStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { formatChange } from '@/utils/format'
 
 /**
@@ -22,6 +23,8 @@ export function QuickValueModal() {
   const items = useAssetStore((s) => s.items)
   const allValues = useDailyValueStore((s) => s.allValues)
   const setValue = useDailyValueStore((s) => s.setValue)
+
+  const autoCarry = useSettingsStore((s) => s.settings.autoCarryForward !== false)
 
   const item = itemId != null ? items.find((i) => i.id === itemId) : null
   const isLiability = item?.type === 'liability'
@@ -101,6 +104,10 @@ export function QuickValueModal() {
             <label className="mb-1.5 block text-body3 text-body">기록일</label>
             <input type="date" value={date} max={format(new Date(), 'yyyy-MM-dd')} onChange={(e) => setDate(e.target.value)} className="input-base tabular-nums" />
           </div>
+
+          {autoCarry && (
+            <p className="text-caption text-disabled">입력하지 않아도 어제 값이 오늘로 자동 저장됩니다. 값이 바뀔 때만 기록하세요.</p>
+          )}
         </div>
       </DialogBody>
       <DialogFooter>
