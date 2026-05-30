@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import type { AssetCategory, AssetItem, AssetLiabilityType } from '@/lib/types'
+import type { AssetCategory, AssetItem, AssetLiabilityType, AssetValueProjection } from '@/lib/types'
 import * as db from '@/services/database'
 import { useUndoStore } from './undoStore'
 import { useToastStore } from './toastStore'
@@ -24,6 +24,7 @@ interface AssetState {
     name: string
     type: AssetLiabilityType
     memo?: string
+    projection?: AssetValueProjection
   }) => Promise<number>
   updateItem: (id: number, updates: Partial<AssetItem>) => Promise<void>
   deleteItem: (id: number) => Promise<void>

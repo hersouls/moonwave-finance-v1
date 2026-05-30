@@ -97,7 +97,7 @@ export default function App() {
       try {
         await useAssetStore.getState().loadAll()
         await useDailyValueStore.getState().loadAllValues()
-        if (!cancelled) await useDailyValueStore.getState().carryForwardToday()
+        if (!cancelled) await useDailyValueStore.getState().ensureValueProjections()
       } catch (err) {
         console.error('[carry-forward] failed:', err)
       }

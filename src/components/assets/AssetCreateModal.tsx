@@ -10,9 +10,10 @@ import { useLoanStore } from '@/stores/loanStore'
 import { format } from 'date-fns'
 import { Select } from '@/components/ui/Select'
 import { Landmark, Plus } from 'lucide-react'
-import type { AssetLiabilityType } from '@/lib/types'
+import type { AssetLiabilityType, AssetValueProjection } from '@/lib/types'
 import { SeverancePayInputArea } from './SeverancePayInputArea'
 import { RealEstateInputArea } from './RealEstateInputArea'
+import { AssetProjectionFields } from './AssetProjectionFields'
 import { generateSeverancePayValues } from '@/services/assetAnalytics'
 
 export function AssetCreateModal() {
@@ -22,7 +23,7 @@ export function AssetCreateModal() {
   const addItem = useAssetStore((s) => s.addItem)
   const categories = useAssetStore((s) => s.categories)
   const members = useMemberStore((s) => s.members)
-  const setValue = useDailyValueStore((s) => s.setValue)
+  const applyValueSeries = useDailyValueStore((s) => s.applyValueSeries)
   const loans = useLoanStore((s) => s.loans)
   const updateLoan = useLoanStore((s) => s.updateLoan)
   const loadLoans = useLoanStore((s) => s.loadLoans)
@@ -38,6 +39,7 @@ export function AssetCreateModal() {
   const [severanceData, setSeveranceData] = useState<{ joinDate: string; monthlyAvgWage: number; estimatedAmount: number } | null>(null)
   const [realEstateAmount, setRealEstateAmount] = useState<number>(0)
   const [selectedLoanId, setSelectedLoanId] = useState<number | null>(null)
+  const [projection, setProjection] = useState<AssetValueProjection | undefined>(undefined)
 
   const assetCategories = categories.filter(c => c.type === 'asset')
   const liabilityCategories = categories.filter(c => c.type === 'liability')
@@ -58,6 +60,7 @@ export function AssetCreateModal() {
       setSeveranceData(null)
       setRealEstateAmount(0)
       setSelectedLoanId(null)
+      setProjection(undefined)
       loadLoans()
     }
   }, [isOpen, members, loadLoans])
@@ -95,22 +98,23 @@ export function AssetCreateModal() {
         name: name.trim(),
         type,
         memo: memo.trim() || undefined,
+        projection: isSeverancePay ? undefined : projection,
       })
 
+      const today = format(new Date(), 'yyyy-MM-dd')
       if (isSeverancePay && severanceData && severanceData.estimatedAmount > 0) {
-        // 일별 초기 데이터 자동 생성 및 저장
-        const targetEndDate = format(new Date(), 'yyyy-MM-dd')
-        const values = generateSeverancePayValues(id, severanceData.joinDate, severanceData.monthlyAvgWage, targetEndDate)
+        // 퇴직금: 입사일~현재 일별 데이터 자동 생성 (별도 투영 규칙 사용 안 함)
+        const values = generateSeverancePayValues(id, severanceData.joinDate, severanceData.monthlyAvgWage, today)
         if (values.length > 0) {
           await useDailyValueStore.getState().bulkSetValues(values.map(v => ({ ...v, assetItemId: id })))
         }
       } else if (isRealEstate && realEstateAmount > 0) {
-        // 부동산 금액 저장 (현재일 기준 단건, 이후 가격 수정 전까지 유지됨)
-        await setValue(id, format(new Date(), 'yyyy-MM-dd'), realEstateAmount)
+        // 입력일부터 (Y+1)-12-31 까지 투영 저장 + (Y-1) 백필
+        await applyValueSeries(id, realEstateAmount, today, projection)
       } else {
         const amount = Number(initialAmount.replace(/,/g, ''))
         if (amount > 0) {
-          await setValue(id, format(new Date(), 'yyyy-MM-dd'), amount)
+          await applyValueSeries(id, amount, today, projection)
         }
       }
       // Link loan to this liability item
@@ -232,6 +236,11 @@ export function AssetCreateModal() {
                 className="input-base text-right tabular-nums"
               />
             </div>
+          )}
+
+          {/* Value projection rule (감가상각 / 월 불입 등) */}
+          {!isSeverancePay && (
+            <AssetProjectionFields value={projection} onChange={setProjection} />
           )}
 
           {/* Member */}
