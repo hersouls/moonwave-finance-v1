@@ -18,6 +18,7 @@ interface AssetRow {
 
 interface Props {
   items: AssetRow[]
+  type: 'asset' | 'liability'
   selectedId: number | null
   onSelect: (id: number) => void
 }
@@ -36,7 +37,7 @@ interface Metric {
  * tabular numbers. A row click opens the master-detail InspectorPanel
  * (same `onSelect` as the card grid). Rendered only at >=lg by the caller.
  */
-export function AssetTableView({ items, selectedId, onSelect }: Props) {
+export function AssetTableView({ items, type, selectedId, onSelect }: Props) {
   const categories = useAssetStore((s) => s.categories)
   const members = useMemberStore((s) => s.members)
   const allValues = useDailyValueStore((s) => s.allValues)
@@ -117,6 +118,8 @@ export function AssetTableView({ items, selectedId, onSelect }: Props) {
               const category = categories.find((c) => c.id === item.categoryId)
               const member = members.find((mem) => mem.id === item.memberId)
               const change = m?.change ?? 0
+              const good = type === 'liability' ? change < 0 : change > 0
+              const sparkGood = type === 'liability' ? change <= 0 : change >= 0
               return (
                 <tr
                   key={id}
@@ -147,7 +150,7 @@ export function AssetTableView({ items, selectedId, onSelect }: Props) {
                   </td>
                   <td className="text-right">
                     {change !== 0 ? (
-                      <span className={clsx('tabular-nums', change > 0 ? 'text-value-positive' : 'text-value-negative')}>
+                      <span className={clsx('tabular-nums', good ? 'text-value-positive' : 'text-value-negative')}>
                         {formatChange(change)}
                       </span>
                     ) : (
@@ -157,7 +160,7 @@ export function AssetTableView({ items, selectedId, onSelect }: Props) {
                   <td>
                     <div className="flex justify-end">
                       {m && m.spark.length >= 3 && (
-                        <Sparkline data={m.spark} width={72} height={24} color={change >= 0 ? getPositiveColor() : getNegativeColor()} strokeWidth={1.5} />
+                        <Sparkline data={m.spark} width={72} height={24} color={sparkGood ? getPositiveColor() : getNegativeColor()} strokeWidth={1.5} />
                       )}
                     </div>
                   </td>

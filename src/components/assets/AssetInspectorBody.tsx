@@ -42,8 +42,11 @@ export function AssetInspectorBody({ itemId, type, onEdit, onDelete }: Props) {
   const latest = values[0]?.value || 0
   const prev = values[1]?.value || latest
   const change = latest - prev
+  // 자산: 증가=긍정. 부채: 감소=긍정(빚이 줄어드는 것).
+  const changeIsGood = type === 'liability' ? change < 0 : change > 0
+  const sparkIsGood = type === 'liability' ? change <= 0 : change >= 0
   const sparkData = useMemo(() => values.slice(0, 30).reverse().map((v) => v.value), [values])
-  const sparkColor = change >= 0 ? getPositiveColor() : getNegativeColor()
+  const sparkColor = sparkIsGood ? getPositiveColor() : getNegativeColor()
   const basePath = type === 'asset' ? '/assets' : '/liabilities'
 
   if (!item) {
@@ -69,7 +72,7 @@ export function AssetInspectorBody({ itemId, type, onEdit, onDelete }: Props) {
       <div>
         <Amount as="p" value={latest} size="display" className="text-heading" />
         {change !== 0 && (
-          <p className={clsx('mt-1 text-body3 tabular-nums', change > 0 ? 'text-value-positive' : 'text-value-negative')}>
+          <p className={clsx('mt-1 text-body3 tabular-nums', changeIsGood ? 'text-value-positive' : 'text-value-negative')}>
             {formatChange(change)} <span className="text-sub">전일 대비</span>
           </p>
         )}

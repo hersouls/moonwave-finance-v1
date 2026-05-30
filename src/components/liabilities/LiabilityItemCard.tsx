@@ -12,9 +12,13 @@ interface LiabilityItemCardProps {
   itemId: number
   name: string
   categoryId: number
+  /** Desktop master-detail: select into the inspector instead of navigating. */
+  onSelect?: (id: number) => void
+  /** Highlight when shown in the inspector. */
+  selected?: boolean
 }
 
-export function LiabilityItemCard({ itemId, name, categoryId }: LiabilityItemCardProps) {
+export function LiabilityItemCard({ itemId, name, categoryId, onSelect, selected }: LiabilityItemCardProps) {
   const navigate = useNavigate()
   const categories = useAssetStore((s) => s.categories)
   // 전체 이력 사용: 이번 달 기록이 없어도 잔액이 사라지지 않도록.
@@ -35,7 +39,8 @@ export function LiabilityItemCard({ itemId, name, categoryId }: LiabilityItemCar
   return (
     <Card
       variant="interactive"
-      onClick={() => navigate(`/liabilities/${itemId}`)}
+      onClick={() => (onSelect ? onSelect(itemId) : navigate(`/liabilities/${itemId}`))}
+      className={clsx(selected && 'ring-2 ring-primary-500 ring-offset-2 ring-offset-[color:var(--surface-secondary)]')}
     >
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">
