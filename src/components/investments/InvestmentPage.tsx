@@ -22,6 +22,7 @@ import {
   LayoutList,
   LayoutGrid,
   TableProperties,
+  Table2,
   ChevronRight,
   Save,
   Plus,
@@ -39,6 +40,8 @@ import { springSnappy } from '@/lib/motionConfig'
 import { useInvestmentInsights, type InvestmentInsights } from '@/hooks/useInvestmentInsights'
 import { CumulativeProfitChart, AssetTypeDonutChart, SeasonHeatmap, PeriodComparison } from './InvestmentCharts'
 import { InvestmentFormSheet } from './InvestmentForm'
+import { InvestmentTableView } from './InvestmentTableView'
+import { useMediaQuery, BREAKPOINTS } from '@/hooks/useBreakpoint'
 import { formatKRW, formatKoreanUnit, formatChange, formatPercent, formatShares, formatRatePercent, formatExchangeRate } from '@/utils/format'
 import type { InvestmentTrade, Dividend, AccountInterest, InvestmentAssetType, InvestmentMarket, InterestCurrency } from '@/lib/types'
 
@@ -1625,16 +1628,19 @@ function InvestmentDashboard({
 }
 
 // ─── View Mode Toggle ────────────────────────────
-const VIEW_MODES = [
-  { key: 'list' as const, icon: LayoutList, label: '리스트' },
-  { key: 'grid' as const, icon: LayoutGrid, label: '그리드' },
-  { key: 'compact' as const, icon: TableProperties, label: '컴팩트' },
+type InvViewMode = 'list' | 'grid' | 'compact' | 'table'
+const VIEW_MODES: { key: InvViewMode; icon: typeof LayoutList; label: string; desktopOnly?: boolean }[] = [
+  { key: 'list', icon: LayoutList, label: '리스트' },
+  { key: 'grid', icon: LayoutGrid, label: '그리드' },
+  { key: 'compact', icon: TableProperties, label: '컴팩트' },
+  { key: 'table', icon: Table2, label: '표', desktopOnly: true },
 ]
 
-function ViewModeToggle({ value, onChange }: { value: 'list' | 'grid' | 'compact'; onChange: (v: 'list' | 'grid' | 'compact') => void }) {
+function ViewModeToggle({ value, onChange, isDesktop }: { value: InvViewMode; onChange: (v: InvViewMode) => void; isDesktop: boolean }) {
+  const modes = VIEW_MODES.filter(m => !m.desktopOnly || isDesktop)
   return (
     <div className="inline-flex items-center rounded-xl ring-1 ring-base overflow-hidden bg-surface-primary">
-      {VIEW_MODES.map(m => {
+      {modes.map(m => {
         const Icon = m.icon
         const isActive = value === m.key
         return (
@@ -2067,7 +2073,8 @@ export function InvestmentPage() {
   const [editingTrade, setEditingTrade] = useState<InvestmentTrade | null>(null)
   const [editingDiv, setEditingDiv] = useState<Dividend | null>(null)
   const [editingInterest, setEditingInterest] = useState<AccountInterest | null>(null)
-  const [viewMode, setViewMode] = useState<'list' | 'grid' | 'compact'>('list')
+  const [viewMode, setViewMode] = useState<InvViewMode>('list')
+  const isDesktop = useMediaQuery(`(min-width: ${BREAKPOINTS.xl}px)`)
   const [marketFilter, setMarketFilter] = useState<'all' | InvestmentMarket>('all')
   const [monthFilter, setMonthFilter] = useState('all')
   const [memberFilter, setMemberFilter] = useState<number | 'all'>('all')
@@ -2295,7 +2302,7 @@ export function InvestmentPage() {
               <input type="text" aria-label="종목명 검색" placeholder="종목명 검색..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-3 h-10 rounded-2xl bg-surface-primary text-heading text-label3 ring-1 ring-base placeholder:text-disabled focus:outline-none focus:ring-[color:var(--color-primary-400)] transition-all" />
             </div>
-            <ViewModeToggle value={viewMode} onChange={setViewMode} />
+            <ViewModeToggle value={viewMode} onChange={setViewMode} isDesktop={isDesktop} />
           </div>
         </div>
       )}
@@ -2335,6 +2342,18 @@ export function InvestmentPage() {
           <p className="text-body3">{!hasData ? (activeTab === 'trades' ? '등록된 투자수익이 없습니다' : activeTab === 'dividends' ? '등록된 배당금이 없습니다' : '등록된 계좌이자가 없습니다') : '검색 결과가 없습니다'}</p>
           {!hasData && <p className="text-micro text-muted mt-1">상단의 "가져오기" 버튼으로 증권사 데이터를 붙여넣기 하세요</p>}
         </div>
+      ) : isDesktop && viewMode === 'table' ? (
+        /* ═══ DESKTOP TABLE VIEW ═══ */
+        <InvestmentTableView
+          activeTab={activeTab as 'trades' | 'dividends' | 'interests'}
+          trades={filteredTrades}
+          dividends={filteredDivs}
+          interests={filteredInterests}
+          memberMap={memberMap}
+          onSelectTrade={setSelectedTrade}
+          onSelectDiv={setSelectedDiv}
+          onSelectInterest={setSelectedInterest}
+        />
       ) : viewMode === 'grid' ? (
         /* ═══ GRID VIEW ═══ */
         <div className="grid grid-cols-2 gap-3">

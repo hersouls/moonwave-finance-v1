@@ -15,6 +15,7 @@ import {
   TrendingUp, TrendingDown, Minus, Calendar as CalendarIcon, Tag,
   Sparkles, ChevronRight, ChevronLeft, X, ArrowUpRight, Layers,
   Repeat, Wallet, Receipt, ChevronDown, ChevronUp, EyeOff, RotateCcw,
+  LayoutGrid, Table2,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useTransactionStore } from '@/stores/transactionStore'
@@ -40,6 +41,7 @@ import {
 } from '@/services/subscriptionDetection'
 import { Dialog, DialogBody } from '@/components/ui/Dialog'
 import { SubscriptionTypeBreakdown } from './SubscriptionTypeBreakdown'
+import { SubscriptionTableView } from './SubscriptionTableView'
 
 // ════════════════════════════════════════════════════════
 // Main Page
@@ -57,6 +59,8 @@ export function SubscriptionPage() {
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [selectedMonth, setSelectedMonth] = useState<string>('all')
   const [showHidden, setShowHidden] = useState(false)
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
+  const isDesktop = useMediaQuery(`(min-width: ${BREAKPOINTS.xl}px)`)
   const hiddenSubs = useHiddenSubscriptions()
 
   useEffect(() => { loadAll(); loadMembers() }, [loadAll, loadMembers])
@@ -174,17 +178,43 @@ export function SubscriptionPage() {
               : `${active.length}개 활성 · 평균 월 ${formatKoreanUnit(stats.totalMonthly / Math.max(1, active.length))}원`
           }
         />
-        <div className="space-y-2 mt-3">
-          {active.map(sub => (
-            <SubscriptionItemCard
-              key={sub.key}
-              sub={sub}
-              categories={categories}
-              members={members}
-              onClick={() => setSelectedKey(sub.key)}
-            />
-          ))}
-        </div>
+        {isDesktop && (
+          <div className="mb-2 mt-3 flex justify-end">
+            <div className="inline-flex rounded-lg bg-surface-tertiary p-0.5" role="group" aria-label="보기 방식">
+              <button
+                type="button"
+                onClick={() => setViewMode('cards')}
+                aria-pressed={viewMode === 'cards'}
+                className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3 font-medium transition-colors', viewMode === 'cards' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
+              >
+                <LayoutGrid className="h-4 w-4" /> 카드
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('table')}
+                aria-pressed={viewMode === 'table'}
+                className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3 font-medium transition-colors', viewMode === 'table' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
+              >
+                <Table2 className="h-4 w-4" /> 표
+              </button>
+            </div>
+          </div>
+        )}
+        {isDesktop && viewMode === 'table' ? (
+          <SubscriptionTableView items={active} categories={categories} members={members} onClick={(key) => setSelectedKey(key)} />
+        ) : (
+          <div className="space-y-2 mt-3">
+            {active.map(sub => (
+              <SubscriptionItemCard
+                key={sub.key}
+                sub={sub}
+                categories={categories}
+                members={members}
+                onClick={() => setSelectedKey(sub.key)}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Hidden ("종료" 마킹) collapsible */}
         {hiddenList.length > 0 && (
