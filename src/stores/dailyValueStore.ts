@@ -71,19 +71,25 @@ export const useDailyValueStore = create<DailyValueState>()(
 
       setValue: async (assetItemId: number, date: string, value: number) => {
         await db.setDailyValue(assetItemId, date, value)
-        // Reload values for the month of the changed date
-        const month = date.substring(0, 7)
-        if (month === get().selectedMonth) {
-          await get().loadValues()
-        }
-        // 카드·통계·차트는 전체 이력(allValues)을 사용하므로 함께 갱신해야 일관성이 유지된다.
-        await get().loadAllValues()
+        // 단일 set 으로 합쳐 재렌더(깜빡임)를 최소화. 월/전체를 한 번에 다시 읽어 실제 DB id 보존.
+        const month = get().selectedMonth
+        const [values, allValues] = await Promise.all([
+          db.getDailyValuesByMonth(month),
+          db.getAllDailyValues(),
+        ])
+        set({ values, allValues })
       },
 
       bulkSetValues: async (entries) => {
         await db.bulkSetDailyValues(entries)
-        await get().loadValues()
-        await get().loadAllValues()
+        // loadValues+loadAllValues 를 따로 호출하면 set 이 2회 발생해 화면이 두 번 갱신된다.
+        // 월/전체를 병렬로 읽어 한 번의 set 으로 조용히 반영(isLoading 토글도 없음).
+        const month = get().selectedMonth
+        const [values, allValues] = await Promise.all([
+          db.getDailyValuesByMonth(month),
+          db.getAllDailyValues(),
+        ])
+        set({ values, allValues })
       },
 
       getValueForItemDate: (assetItemId: number, date: string) => {
