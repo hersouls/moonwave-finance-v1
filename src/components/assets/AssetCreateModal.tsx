@@ -7,7 +7,6 @@ import { useMemberStore } from '@/stores/memberStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useLoanStore } from '@/stores/loanStore'
-import { format } from 'date-fns'
 import { Select } from '@/components/ui/Select'
 import { Landmark, Plus } from 'lucide-react'
 import type { AssetLiabilityType, AssetValueProjection } from '@/lib/types'
@@ -15,6 +14,8 @@ import { SeverancePayInputArea } from './SeverancePayInputArea'
 import { RealEstateInputArea } from './RealEstateInputArea'
 import { AssetProjectionFields } from './AssetProjectionFields'
 import { generateSeverancePayValues } from '@/services/assetAnalytics'
+import { isFlatProjection } from '@/services/valueProjection'
+import { getTodayString } from '@/lib/dateUtils'
 
 export function AssetCreateModal() {
   const isOpen = useUIStore((s) => s.isAssetCreateModalOpen)
@@ -101,7 +102,7 @@ export function AssetCreateModal() {
         projection: isSeverancePay ? undefined : projection,
       })
 
-      const today = format(new Date(), 'yyyy-MM-dd')
+      const today = getTodayString()
       if (isSeverancePay && severanceData && severanceData.estimatedAmount > 0) {
         // 퇴직금: 입사일~현재 일별 데이터 자동 생성 (별도 투영 규칙 사용 안 함)
         const values = generateSeverancePayValues(id, severanceData.joinDate, severanceData.monthlyAvgWage, today)
@@ -112,8 +113,9 @@ export function AssetCreateModal() {
         // 입력일부터 (Y+1)-12-31 까지 투영 저장 + (Y-1) 백필
         await applyValueSeries(id, realEstateAmount, today, projection)
       } else {
-        const amount = Number(initialAmount.replace(/,/g, ''))
-        if (amount > 0) {
+        const amount = Number(initialAmount.replace(/,/g, '')) || 0
+        // 금액이 있거나(평탄 포함) 변동 규칙이 있으면 시리즈를 기록한다(규칙만 있어도 0 기준 투영).
+        if (amount > 0 || !isFlatProjection(projection)) {
           await applyValueSeries(id, amount, today, projection)
         }
       }

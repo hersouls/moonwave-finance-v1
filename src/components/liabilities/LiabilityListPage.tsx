@@ -56,8 +56,11 @@ export function LiabilityListPage() {
   const today = getTodayString()
 
   const loadData = async () => {
-    await Promise.all([loadAll(), loadValues(), loadAllValues(), loadMembers()])
-    setIsLoading(false)
+    try {
+      await Promise.all([loadAll(), loadValues(), loadAllValues(), loadMembers()])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   useEffect(() => { loadData() }, [])
