@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { PieChart, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { clsx } from 'clsx'
 import { formatKoreanUnit } from '@/utils/format'
+import { getOtherColor } from '@/lib/chartConfig'
 import { getCategoryIcon } from '@/utils/categoryIcons'
 import { Sparkline } from '@/components/ui/Sparkline'
 import { easeOutExpo, durations, springSnappy } from '@/lib/motionConfig'
@@ -42,7 +43,7 @@ export function CategoryDeepDive({ analysis }: Props) {
       color: c.color,
       value: c.current,
     }))
-    if (restSum > 0) slices.push({ key: '__rest', name: `기타 ${rest.length}건`, color: '#71717a', value: restSum })
+    if (restSum > 0) slices.push({ key: '__rest', name: `기타 ${rest.length}건`, color: getOtherColor(), value: restSum })
     const total = slices.reduce((s, c) => s + c.value, 0)
     return { donutSlices: slices, donutTotal: total }
   }, [positives])
@@ -62,7 +63,7 @@ export function CategoryDeepDive({ analysis }: Props) {
       initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: durations.base, ease: easeOutExpo }}
-      className="rounded-3xl bg-surface-primary ring-1 ring-base shadow-[0_4px_18px_rgba(0,0,0,0.05)] overflow-hidden"
+      className="rounded-3xl bg-surface-primary ring-1 ring-base elevation-2 overflow-hidden"
     >
       {/* Header */}
       <div className="px-5 pt-5 pb-3 flex items-center justify-between gap-3">
@@ -78,7 +79,7 @@ export function CategoryDeepDive({ analysis }: Props) {
           </div>
           <div>
             <h3 className="text-body3 font-extrabold text-heading tracking-tight">카테고리별 분석</h3>
-            <p className="text-[11px] text-sub mt-0.5">
+            <p className="text-caption text-sub mt-0.5">
               총 {positives.length}개 · 합계 {formatKoreanUnit(donutTotal)}원
             </p>
           </div>
@@ -286,7 +287,7 @@ function CategoryRow({
         className={clsx(
           'w-full flex items-center gap-3 rounded-2xl px-3 py-2.5 ring-1 transition-all text-left',
           isActive
-            ? 'bg-surface-tertiary ring-[color:var(--border-strong)] shadow-[0_2px_10px_rgba(0,0,0,0.04)]'
+            ? 'bg-surface-tertiary ring-[color:var(--border-strong)] elevation-1'
             : 'bg-surface-primary ring-base hover:bg-[var(--hover-bg)]',
         )}
       >
@@ -302,7 +303,7 @@ function CategoryRow({
             <Icon className="w-4 h-4" style={{ color: analysis.color }} />
           </div>
           <span
-            className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-surface-primary ring-1 ring-base flex items-center justify-center text-[9px] font-extrabold text-sub tabular-nums"
+            className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-surface-primary ring-1 ring-base flex items-center justify-center text-label4 font-extrabold leading-none text-sub tabular-nums"
           >
             {rank}
           </span>
@@ -320,7 +321,7 @@ function CategoryRow({
             >
               {isRefundSlice ? '+' : ''}
               {formatKoreanUnit(Math.abs(analysis.current))}
-              <span className="text-[10px] font-bold text-disabled ml-0.5">원</span>
+              <span className="text-label4 font-bold leading-none text-disabled ml-0.5">원</span>
             </p>
           </div>
 
@@ -335,7 +336,7 @@ function CategoryRow({
                 transition={{ duration: 0.7, ease: easeOutExpo }}
               />
             </div>
-            <span className="text-[10px] text-sub font-semibold tabular-nums w-9 text-right">
+            <span className="text-label4 text-sub font-semibold leading-none tabular-nums w-9 text-right">
               {(analysis.percentOfTotal * 100).toFixed(0)}%
             </span>
           </div>
@@ -357,7 +358,7 @@ function CategoryRow({
                 whileTap={{ scale: 0.97 }}
                 transition={springSnappy}
                 className={clsx(
-                  'inline-flex items-center gap-0.5 px-1.5 h-5 rounded-full text-[10px] font-bold tabular-nums ring-1 flex-shrink-0',
+                  'inline-flex items-center gap-0.5 px-1.5 h-5 rounded-full text-label4 font-bold leading-none tabular-nums ring-1 flex-shrink-0',
                   direction === 'flat'
                     ? 'text-sub bg-surface-tertiary ring-base'
                     : direction === 'up'
@@ -370,11 +371,11 @@ function CategoryRow({
                 {direction === 'flat' ? '평균' : `${pct > 0 ? '+' : ''}${Math.round(pct)}%`}
               </motion.span>
             ) : (
-              <span className="text-[10px] text-disabled font-semibold">신규</span>
+              <span className="text-label4 text-disabled font-semibold leading-none">신규</span>
             )}
           </div>
           {delta !== 0 && pct != null && (
-            <p className="text-[10px] text-disabled mt-0.5 tabular-nums">
+            <p className="text-label4 text-disabled leading-none mt-0.5 tabular-nums">
               평균 {formatKoreanUnit(analysis.avgBaseline)}원 · {delta > 0 ? '+' : '−'}{formatKoreanUnit(Math.abs(delta))}원
             </p>
           )}

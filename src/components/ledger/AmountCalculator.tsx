@@ -180,9 +180,8 @@ export function AmountCalculator({ value, onApply, onClose }: AmountCalculatorPr
             initial={shouldReduceMotion ? undefined : { y: -4, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={springSnappy}
-            className="text-heading font-extrabold tabular-nums tracking-tight break-all text-right"
+            className="text-financial-fluid text-heading font-extrabold tabular-nums tracking-tight break-all text-right"
             style={{
-              fontSize: 'clamp(24px, 6vw, 34px)',
               letterSpacing: '-0.02em',
               lineHeight: 1.15,
             }}
@@ -277,8 +276,8 @@ function KeyButton({ label, action, variant, reducedMotion, colSpan = 1 }: KeyBu
       className={clsx(
         'h-12 rounded-2xl text-body2-bold font-bold transition-all tabular-nums select-none',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring-focus)]',
-        variant === 'digit' && 'bg-surface-primary text-heading ring-1 ring-[color:var(--border-default)] hover:ring-[color:var(--color-primary-300)] shadow-[0_1px_3px_rgba(0,0,0,0.04)]',
-        variant === 'util' && 'bg-[color:var(--status-warning-bg)] text-status-warning ring-1 ring-[color:var(--status-warning-border)] hover:shadow-[0_4px_10px_color-mix(in_oklch,#f59e0b_22%,transparent)]',
+        variant === 'digit' && 'bg-surface-primary text-heading ring-1 ring-[color:var(--border-default)] hover:ring-[color:var(--color-primary-300)] elevation-1',
+        variant === 'util' && 'bg-[color:var(--status-warning-bg)] text-status-warning ring-1 ring-[color:var(--status-warning-border)] hover:shadow-[0_4px_10px_color-mix(in_oklch,var(--status-warning-text)_22%,transparent)]',
         variant === 'op' && 'bg-[color:var(--color-primary-50)] text-[color:var(--color-primary-700)] ring-1 ring-[color:var(--color-primary-200)] hover:shadow-[0_4px_10px_color-mix(in_oklch,var(--color-primary-500)_24%,transparent)] dark:bg-[color:var(--color-primary-900)]/30 dark:text-[color:var(--color-primary-200)]',
         variant === 'equals' && 'bg-gradient-to-br from-[color:var(--color-primary-500)] to-[color:var(--color-primary-700)] text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)] hover:shadow-[0_6px_20px_color-mix(in_oklch,var(--color-primary-500)_40%,transparent)]',
       )}

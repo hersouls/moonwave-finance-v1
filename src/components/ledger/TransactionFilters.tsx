@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion, type Variants } from 'framer-motion'
+import { useBreakpoint } from '@/hooks/useBreakpoint'
 import {
   Search, SlidersHorizontal, RotateCcw, X, Check,
   Users, Wallet, Coins, Tag, ArrowUpDown, CalendarRange,
@@ -143,15 +144,11 @@ export function TransactionFilters(props: TransactionFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const shouldReduceMotion = useReducedMotion()
 
-  const [isDesktop, setIsDesktop] = useState(false)
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const mq = window.matchMedia('(min-width: 1024px)')
-    const update = () => setIsDesktop(mq.matches)
-    update()
-    mq.addEventListener('change', update)
-    return () => mq.removeEventListener('change', update)
-  }, [])
+  // Mobile bottom-sheet | desktop side-drawer split aligned to the canonical
+  // lg (768px) MOBILE|PC boundary used by LedgerPage's lg:grid. The drawer's
+  // max-w-[92vw] cap keeps the 480px panel within 768–1023px viewports.
+  const { isMobile } = useBreakpoint()
+  const isDesktop = !isMobile
 
   useEffect(() => {
     if (!isExpanded) return
@@ -215,7 +212,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                   transition={{ duration: durations.fast }}
                   type="button"
                   onClick={() => onSearchChange('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
+                  className="touch-target-inset absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
                   aria-label="검색어 지우기"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -249,8 +246,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                 initial={{ scale: 0, rotate: -90 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={springSnappy}
-                className="min-w-[18px] h-[18px] px-1 rounded-full bg-white/95 text-[10px] font-bold leading-none flex items-center justify-center"
-                style={{ color: 'var(--color-primary-700)' }}
+                className="min-w-[18px] h-[18px] px-1 rounded-full bg-white/95 text-label4 leading-none font-bold flex items-center justify-center text-[color:var(--color-primary-700)]"
               >
                 {activeFilterCount}
               </motion.span>
@@ -297,7 +293,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                 {count !== null && (
                   <span
                     className={clsx(
-                      'min-w-[20px] px-1.5 h-[18px] rounded-full text-[10px] font-bold tabular-nums flex items-center justify-center leading-none',
+                      'min-w-[20px] px-1.5 h-[18px] rounded-full text-label4 font-bold tabular-nums flex items-center justify-center leading-none',
                       isActive
                         ? 'bg-[color:var(--color-primary-100)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/40 dark:text-[color:var(--color-primary-300)]'
                         : 'bg-surface-tertiary text-sub'
@@ -396,7 +392,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                     layout
                     type="button"
                     onClick={onReset}
-                    className="flex-shrink-0 flex items-center gap-1 px-3 h-7 rounded-full text-[11px] font-semibold text-status-danger hover:bg-status-danger-soft transition-colors"
+                    className="flex-shrink-0 flex items-center gap-1 px-3 h-7 rounded-full text-caption font-semibold text-status-danger hover:bg-status-danger-soft transition-colors"
                   >
                     <RotateCcw className="w-3 h-3" />
                     전체 초기화
@@ -420,7 +416,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setIsExpanded(false)}
-              className="fixed inset-0 z-[var(--z-overlay)] bg-black/40 dark:bg-black/60 backdrop-blur-[12px] saturate-[1.4]"
+              className="fixed inset-0 z-[var(--z-overlay)] scrim"
               aria-hidden="true"
             />
             {/* Drawer */}
@@ -493,14 +489,14 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                     <h2 id="filter-sheet-title" className="text-title2 font-bold text-heading leading-tight">
                       필터
                     </h2>
-                    <p className="text-[11px] text-sub leading-tight">
+                    <p className="text-caption text-sub leading-tight">
                       {activeFilterCount > 0
                         ? `${activeFilterCount}개 조건 적용 중`
                         : '거래를 세밀하게 탐색해 보세요'}
                     </p>
                   </div>
                   {activeFilterCount > 0 && (
-                    <span className="ml-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-[color:var(--color-primary-600)] text-white tabular-nums shadow-[0_2px_8px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]">
+                    <span className="ml-1 text-caption leading-none font-bold px-2 py-0.5 rounded-full bg-[color:var(--color-primary-600)] text-white tabular-nums shadow-[0_2px_8px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]">
                       {activeFilterCount}
                     </span>
                   )}
@@ -576,7 +572,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                           <span
                             className="w-6 h-6 rounded-lg flex items-center justify-center"
                             style={{
-                              backgroundColor: isActive ? 'rgba(255,255,255,0.22)' : `${c.color}1a`,
+                              backgroundColor: isActive ? 'rgba(255,255,255,0.22)' : `color-mix(in srgb, ${c.color} 10%, transparent)`,
                             }}
                           >
                             <Icon
@@ -621,7 +617,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                         >
                           <span
                             className={clsx(
-                              'w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold',
+                              'w-6 h-6 rounded-full flex items-center justify-center text-caption leading-none font-bold',
                               isActive ? 'bg-white/22' : 'bg-[color:var(--color-primary-100)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/40 dark:text-[color:var(--color-primary-300)]'
                             )}
                             style={isActive ? { backgroundColor: 'rgba(255,255,255,0.22)' } : undefined}
@@ -691,7 +687,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                           className={clsx(
                             'flex-shrink-0 flex items-center gap-2 pl-2.5 pr-3.5 h-9 rounded-2xl text-caption font-semibold transition-all',
                             isActive
-                              ? 'bg-[color:var(--surface-inverse,#1f2937)] text-white shadow-[0_4px_12px_rgba(0,0,0,0.18)]'
+                              ? 'bg-[color:var(--text-heading)] text-[color:var(--surface-primary)] elevation-2'
                               : 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]'
                           )}
                           whileHover={shouldReduceMotion ? undefined : { y: -1 }}
@@ -735,7 +731,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                           <span
                             className="w-6 h-6 rounded-lg flex items-center justify-center"
                             style={{
-                              backgroundColor: isActive ? 'rgba(255,255,255,0.22)' : `${opt.color}1a`,
+                              backgroundColor: isActive ? 'rgba(255,255,255,0.22)' : `color-mix(in srgb, ${opt.color} 10%, transparent)`,
                             }}
                           >
                             <Icon
@@ -768,7 +764,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                               isActive ? null : preset.max,
                             )}
                             className={clsx(
-                              'flex-shrink-0 flex items-center gap-1.5 px-3.5 h-8 rounded-full text-[12px] font-semibold tabular-nums transition-all',
+                              'flex-shrink-0 flex items-center gap-1.5 px-3.5 h-8 rounded-full text-label3 font-semibold tabular-nums transition-all',
                               isActive
                                 ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_3px_10px_color-mix(in_oklch,var(--color-primary-500)_26%,transparent)]'
                                 : 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]'
@@ -804,7 +800,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                       </div>
                     </div>
                     {(minAmount !== null || maxAmount !== null) && (
-                      <p className="text-[11px] text-sub tabular-nums">
+                      <p className="text-caption text-sub tabular-nums">
                         {formatAmountRange(minAmount, maxAmount)} 범위의 거래를 표시합니다.
                       </p>
                     )}
@@ -838,7 +834,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                     <RotateCcw className="w-3.5 h-3.5" />
                     초기화
                     {activeFilterCount > 0 && (
-                      <span className="ml-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-status-danger/15 text-[10px] font-bold tabular-nums flex items-center justify-center">
+                      <span className="ml-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-status-danger/15 text-label4 leading-none font-bold tabular-nums flex items-center justify-center">
                         {activeFilterCount}
                       </span>
                     )}
@@ -882,7 +878,7 @@ function Section({
   return (
     <div>
       <div className="flex items-center justify-between mb-2.5">
-        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sub">
+        <label className="flex items-center gap-1.5 text-caption font-semibold uppercase tracking-wider text-sub">
           <Icon className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" />
           {label}
         </label>
@@ -948,7 +944,7 @@ function SegmentedChips<T extends string>({
             type="button"
             onClick={() => onChange(opt.value)}
             className={clsx(
-              'relative flex-1 min-w-0 h-8 px-1 rounded-lg text-[11px] xs:text-[12px] font-semibold transition-colors tabular-nums',
+              'relative flex-1 min-w-0 h-8 px-1 rounded-lg text-caption xs:text-label3 font-semibold transition-colors tabular-nums',
               isActive ? 'text-heading' : 'text-sub hover:text-body'
             )}
             aria-pressed={isActive}
@@ -985,7 +981,7 @@ function ActivePill({
       animate="visible"
       exit="exit"
       layout
-      className="flex-shrink-0 inline-flex items-center gap-1.5 pl-2.5 pr-1 h-7 rounded-full bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/30 ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)] text-[11px] font-semibold text-[color:var(--color-primary-700)] dark:text-[color:var(--color-primary-200)]"
+      className="flex-shrink-0 inline-flex items-center gap-1.5 pl-2.5 pr-1 h-7 rounded-full bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/30 ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)] text-caption font-semibold text-[color:var(--color-primary-700)] dark:text-[color:var(--color-primary-200)]"
     >
       <Icon className="w-3 h-3" style={color ? { color } : undefined} />
       <span className="truncate max-w-[140px]">{label}</span>

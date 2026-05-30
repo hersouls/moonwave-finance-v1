@@ -53,11 +53,11 @@ export function PeriodComparisonCard() {
           {categories.map((cat) => (
             <div key={cat.categoryId ?? 'uncategorized'} className="flex items-center gap-2.5">
               <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
-              <span className="text-caption text-body flex-1 truncate">{cat.name}</span>
+              <span className="text-caption text-body flex-1 min-w-0 truncate">{cat.name}</span>
               <span className="text-caption text-sub tabular-nums">
                 {formatKoreanUnit(cat.current)}
               </span>
-              <span className="text-[10px] text-disabled tabular-nums w-14 text-right">
+              <span className="hidden sm:inline text-label4 leading-none text-disabled tabular-nums w-14 text-right">
                 (전월 {formatKoreanUnit(cat.previous)})
               </span>
               <DeltaBadge delta={cat.delta} percent={cat.deltaPercent} isExpense compact />
@@ -77,7 +77,7 @@ function DeltaBadge({ delta, percent, isExpense = false, compact = false }: {
 }) {
   if (delta === 0) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-[10px] text-disabled">
+      <span className="inline-flex items-center gap-0.5 text-label4 leading-none text-disabled">
         <Minus className="w-2.5 h-2.5" />
         {!compact && '변동 없음'}
       </span>
@@ -91,7 +91,7 @@ function DeltaBadge({ delta, percent, isExpense = false, compact = false }: {
 
   return (
     <span className={clsx(
-      'inline-flex items-center gap-0.5 text-[10px] font-medium tabular-nums',
+      'inline-flex items-center gap-0.5 text-label4 font-medium leading-none tabular-nums',
       isGood ? 'text-status-success' : 'text-status-danger'
     )}>
       {isPositive

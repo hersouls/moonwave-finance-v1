@@ -184,7 +184,7 @@ export function GoalCreateModal({ open, onClose, editGoal }: GoalCreateModalProp
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  className={`w-8 h-8 rounded-full transition-all ${color === c ? 'ring-2 ring-offset-2 ring-primary-500 scale-110' : 'hover:scale-105'}`}
+                  className={`touch-target-inset w-8 h-8 rounded-full transition-all ${color === c ? 'ring-2 ring-offset-2 ring-primary-500 scale-110' : 'hover:scale-105'}`}
                   style={{ backgroundColor: c }}
                 />
               ))}

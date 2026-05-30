@@ -29,7 +29,7 @@ export function SubscriptionWidget() {
         <h3 className="text-body3-semi text-heading">구독 현황</h3>
         <button
           onClick={() => navigate('/subscriptions')}
-          className="text-caption text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-0.5"
+          className="text-caption text-accent-primary hover:underline flex items-center gap-0.5 min-h-11 px-1 -mr-1"
         >
           전체보기 <ArrowRight className="w-3 h-3" />
         </button>
@@ -54,7 +54,7 @@ export function SubscriptionWidget() {
                   className="w-2 h-2 rounded-full flex-shrink-0"
                   style={{ backgroundColor: sub.color }}
                 />
-                <span className="text-sm text-body flex-1 truncate">
+                <span className="text-body3 text-heading flex-1 truncate">
                   {sub.name}
                 </span>
                 <Amount value={sub.avgAmount} format="krw" size="emphasis" className="text-heading" unit="" />

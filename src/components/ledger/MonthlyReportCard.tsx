@@ -187,15 +187,15 @@ export function MonthlyReportCard({
           {/* 주요 메트릭 3-card */}
           <div className="grid grid-cols-3 gap-2 mb-4">
             <div className="rounded-2xl bg-surface-primary/70 dark:bg-surface-primary/50 px-3 py-2.5 text-center backdrop-blur-sm">
-              <p className="text-[11px] text-sub mb-0.5">지출</p>
+              <p className="text-caption text-sub mb-0.5">지출</p>
               <Amount value={totalExpense} size="body" className="font-bold text-value-negative block" unit="" />
             </div>
             <div className="rounded-2xl bg-surface-primary/70 dark:bg-surface-primary/50 px-3 py-2.5 text-center backdrop-blur-sm">
-              <p className="text-[11px] text-sub mb-0.5">수입</p>
+              <p className="text-caption text-sub mb-0.5">수입</p>
               <Amount value={totalIncome} size="body" className="font-bold text-value-positive block" unit="" />
             </div>
             <div className="rounded-2xl bg-surface-primary/70 dark:bg-surface-primary/50 px-3 py-2.5 text-center backdrop-blur-sm">
-              <p className="text-[11px] text-sub mb-0.5">순저축</p>
+              <p className="text-caption text-sub mb-0.5">순저축</p>
               <Amount
                 value={netSavings}
                 size="body"
@@ -218,7 +218,7 @@ export function MonthlyReportCard({
                 <Icon className="w-4 h-4" style={{ color: topCategoryColor }} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] text-sub leading-tight">가장 많이 쓴 분야</p>
+                <p className="text-caption text-sub leading-tight">가장 많이 쓴 분야</p>
                 <p className="text-body3 font-bold text-heading truncate leading-tight">
                   {topCategory.category?.name ?? '미분류'}
                 </p>

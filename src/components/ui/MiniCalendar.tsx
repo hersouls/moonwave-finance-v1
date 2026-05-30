@@ -43,7 +43,7 @@ export function MiniCalendar({
   return (
     <div
       className={clsx(
-        'rounded-3xl bg-surface-primary ring-1 ring-base shadow-[0_4px_16px_rgba(0,0,0,0.04)] p-4 sm:p-5',
+        'rounded-3xl bg-surface-primary ring-1 ring-base elevation-1 p-4 sm:p-5',
         className,
       )}
       role="group"
@@ -88,9 +88,9 @@ export function MiniCalendar({
           <div
             key={label}
             className={clsx(
-              'text-center text-[11px] py-1.5 font-semibold',
-              i === 0 && 'text-value-negative',
-              i === 6 && 'text-[color:var(--color-primary-500)] dark:text-[color:var(--color-primary-400)]',
+              'text-center text-caption leading-none py-1.5 font-semibold',
+              i === 0 && 'text-weekend-sun',
+              i === 6 && 'text-weekend-sat',
               i !== 0 && i !== 6 && 'text-sub',
             )}
           >
@@ -122,11 +122,11 @@ export function MiniCalendar({
               transition={springSnappy}
               className={clsx(
                 'relative aspect-square flex items-center justify-center rounded-full text-caption tabular-nums font-semibold transition-all',
-                'min-h-[38px]',
+                'min-h-11',
                 isSelected && 'bg-[color:var(--color-primary-600)] text-white shadow-[0_6px_18px_color-mix(in_srgb,var(--color-primary-500)_40%,transparent)] scale-[1.02]',
                 !isSelected && d.isToday && 'bg-[color:var(--color-primary-50)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/30 dark:text-[color:var(--color-primary-300)]',
-                !isSelected && !d.isToday && !baseDim && weekday === 0 && 'text-value-negative hover:bg-[var(--hover-bg)]',
-                !isSelected && !d.isToday && !baseDim && weekday === 6 && 'text-[color:var(--color-primary-500)] dark:text-[color:var(--color-primary-400)] hover:bg-[var(--hover-bg)]',
+                !isSelected && !d.isToday && !baseDim && weekday === 0 && 'text-weekend-sun hover:bg-[var(--hover-bg)]',
+                !isSelected && !d.isToday && !baseDim && weekday === 6 && 'text-weekend-sat hover:bg-[var(--hover-bg)]',
                 !isSelected && !d.isToday && !baseDim && weekday !== 0 && weekday !== 6 && 'text-heading hover:bg-[var(--hover-bg)]',
                 !isSelected && baseDim && 'text-disabled/50',
                 isDisabled && 'opacity-30 cursor-not-allowed',

@@ -9,6 +9,7 @@ npm-debug.log*
 Thumbs.db
 .vite/
 *.sw?
+tsconfig.tsbuildinfo
 
 .vercel
 .env*.local

@@ -147,7 +147,7 @@ export function MobileNav() {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
+          <div className="fixed inset-0 scrim" aria-hidden="true" />
         </TransitionChild>
 
         <TransitionChild
@@ -160,7 +160,7 @@ export function MobileNav() {
           leaveTo="-translate-x-full"
         >
           <DialogPanel
-            className="fixed inset-y-0 left-0 w-full max-w-xs bg-surface-primary elevation-4 flex flex-col"
+            className="fixed inset-y-0 left-0 w-[85vw] max-w-xs bg-surface-primary elevation-4 flex flex-col"
             aria-labelledby="mobile-nav-title"
           >
             {/* Header */}

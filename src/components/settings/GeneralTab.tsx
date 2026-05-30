@@ -167,7 +167,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
               )}
             >
               <div
-                className="w-8 h-8 rounded-full ring-2 ring-white dark:ring-[var(--surface-primary)] elevation-1"
+                className="w-8 h-8 rounded-full ring-2 ring-[var(--surface-primary)] elevation-1"
                 style={{ backgroundColor: palette.colors.primary }}
               />
               <span className="text-caption text-sub">{palette.nameKo}</span>

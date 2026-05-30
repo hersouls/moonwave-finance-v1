@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
+import { getPositiveColor } from '@/lib/chartConfig'
 
 interface SuccessAnimationProps {
   size?: number
@@ -9,7 +10,7 @@ interface SuccessAnimationProps {
 
 export function SuccessAnimation({
   size = 64,
-  color = '#10b981',
+  color = getPositiveColor(),
   strokeWidth = 3,
   className,
 }: SuccessAnimationProps) {

@@ -9,6 +9,7 @@ import { groupValuesByItem, valueAsOf } from '@/services/assetAnalytics'
 import { getTodayString } from '@/lib/dateUtils'
 import { formatKoreanUnit, formatChangeUnit } from '@/utils/format'
 import { Sparkline } from '@/components/ui/Sparkline'
+import { getPositiveColor, getNegativeColor } from '@/lib/chartConfig'
 import { springSnappy } from '@/lib/motionConfig'
 
 interface AssetSummaryHeaderProps {
@@ -64,11 +65,11 @@ export function AssetSummaryHeader({ items, type }: AssetSummaryHeaderProps) {
   const deltaTone = (v: number) => {
     if (v === 0) return 'text-white/55'
     const positive = goodWhenUp ? v > 0 : v < 0
-    return positive ? 'text-emerald-300' : 'text-red-300'
+    return positive ? 'text-value-positive-on-dark' : 'text-value-negative-on-dark'
   }
   const sparkColor = (() => {
     const positive = goodWhenUp ? monthlyChange >= 0 : monthlyChange <= 0
-    return positive ? '#34d399' : '#f87171'
+    return positive ? getPositiveColor() : getNegativeColor()
   })()
 
   const heroClass = isAsset ? 'hero-gradient' : 'hero-gradient-warning'
@@ -81,8 +82,8 @@ export function AssetSummaryHeader({ items, type }: AssetSummaryHeaderProps) {
       className={clsx(
         'relative overflow-hidden rounded-2xl p-5 sm:p-6 noise-overlay hero-shimmer',
         heroClass,
+        'el-glow-primary',
       )}
-      style={{ boxShadow: '0 8px 32px var(--glow-primary)' }}
     >
       <div className="relative z-10">
         <div className="flex items-start justify-between gap-3">
@@ -113,7 +114,7 @@ export function AssetSummaryHeader({ items, type }: AssetSummaryHeaderProps) {
                 color={sparkColor}
                 strokeWidth={2}
               />
-              <p className="text-[10px] text-white/40 text-right mt-0.5">최근 30일</p>
+              <p className="text-label4 text-white/40 text-right mt-0.5">최근 30일</p>
             </div>
           )}
         </div>

@@ -20,7 +20,7 @@ export function MemberSummaryCards() {
             <Card key={mb.memberId}>
               <div className="flex items-center gap-2 mb-3">
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-label2 font-bold leading-none"
                   style={{ backgroundColor: mb.memberColor }}
                 >
                   {mb.memberName.charAt(0)}

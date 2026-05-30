@@ -52,15 +52,15 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
         <div className="p-4 bg-surface-secondary rounded-xl">
           {permission === 'granted' && (
             <div className="flex items-center gap-2">
-              <Bell className="w-4 h-4 text-green-500" />
-              <span className="text-sm text-green-700 dark:text-green-400 font-medium">알림이 허용되었습니다</span>
+              <Bell className="w-4 h-4 text-status-success" />
+              <span className="text-sm text-status-success font-medium">알림이 허용되었습니다</span>
             </div>
           )}
           {permission === 'denied' && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <BellOff className="w-4 h-4 text-red-500" />
-                <span className="text-sm text-red-700 dark:text-red-400 font-medium">알림이 차단되었습니다</span>
+                <BellOff className="w-4 h-4 text-status-danger" />
+                <span className="text-sm text-status-danger font-medium">알림이 차단되었습니다</span>
               </div>
               <p className="text-caption text-sub">
                 브라우저 설정에서 알림 권한을 허용해주세요
@@ -68,14 +68,14 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
             </div>
           )}
           {permission === 'default' && (
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-body3 text-heading">푸시 알림 활성화</p>
                 <p className="text-caption text-sub">알림을 받으려면 브라우저 권한이 필요합니다</p>
               </div>
               <button
                 onClick={handleRequestPermission}
-                className="px-3 py-1.5 text-body3 text-primary-700 dark:text-primary-300 bg-primary-100 dark:bg-primary-900/30 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-colors"
+                className="w-full sm:w-auto px-3 py-2.5 min-h-[44px] text-body3 text-primary-700 dark:text-primary-300 bg-primary-100 dark:bg-primary-900/30 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-colors"
               >
                 허용
               </button>
@@ -117,7 +117,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
                       'px-3 py-1.5 rounded-lg text-body3 transition-all',
                       draft.notifications.budgetThreshold === v
                         ? 'bg-primary-500 text-white'
-                        : 'bg-[var(--surface-tertiary)] text-sub hover:bg-[var(--hover-bg)]'
+                        : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]'
                     )}
                   >
                     {v}%
@@ -156,7 +156,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
                       'px-3 py-1.5 rounded-lg text-body3 transition-all',
                       draft.notifications.reminderTime === t
                         ? 'bg-primary-500 text-white'
-                        : 'bg-[var(--surface-tertiary)] text-sub hover:bg-[var(--hover-bg)]'
+                        : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]'
                     )}
                   >
                     {t}
@@ -205,7 +205,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
                         'px-3 py-1.5 rounded-lg text-body3 transition-all',
                         isSelected
                           ? 'bg-primary-500 text-white'
-                          : 'bg-[var(--surface-tertiary)] text-sub hover:bg-[var(--hover-bg)]'
+                          : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]'
                       )}
                     >
                       {opt.label}

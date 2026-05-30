@@ -62,7 +62,7 @@ const iconButtonColors = {
   },
   danger: {
     solid: 'bg-danger-500 hover:bg-danger-600 text-white',
-    plain: 'text-danger-600 hover:bg-danger-50 dark:text-danger-400 dark:hover:bg-danger-900/30',
+    plain: 'text-status-danger hover:bg-status-danger-soft',
   },
 }
 

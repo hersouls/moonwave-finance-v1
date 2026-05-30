@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useId, useMemo } from 'react'
+import { getPositiveColor } from '@/lib/chartConfig'
 
 interface SparklineProps {
   data: number[]
@@ -14,11 +15,12 @@ export function Sparkline({
   data,
   width = 80,
   height = 28,
-  color = '#10b981',
+  color = getPositiveColor(),
   showFill = true,
   strokeWidth = 1.5,
   className,
 }: SparklineProps) {
+  const reactId = useId()
   const { polyline, fill } = useMemo(() => {
     if (data.length < 2) return { polyline: '', fill: '' }
 
@@ -41,7 +43,7 @@ export function Sparkline({
 
   if (data.length < 2) return null
 
-  const gradientId = `sparkline-${color.replace('#', '')}`
+  const gradientId = `sparkline-${reactId.replace(/[^a-zA-Z0-9]/g, '')}`
 
   return (
     <svg

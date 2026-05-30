@@ -28,7 +28,7 @@ export function SubscriptionSummary({ currencyFilter }: SubscriptionSummaryProps
         </Card>
         <Card>
           <p className="text-caption text-sub mb-1">연간 환산</p>
-          <p className="text-title2 text-primary-600 dark:text-primary-400 tabular-nums">
+          <p className="text-title2 text-accent-primary tabular-nums">
             {formatKRW(monthlyKRW * 12)}
           </p>
           <p className="text-caption text-disabled">/년</p>
@@ -49,7 +49,7 @@ export function SubscriptionSummary({ currencyFilter }: SubscriptionSummaryProps
         </Card>
         <Card>
           <p className="text-caption text-sub mb-1">연간 환산</p>
-          <p className="text-title2 text-primary-600 dark:text-primary-400 tabular-nums">
+          <p className="text-title2 text-accent-primary tabular-nums">
             {formatUSD(monthlyUSD * 12)}
           </p>
           <p className="text-caption text-disabled">/년</p>
@@ -78,7 +78,7 @@ export function SubscriptionSummary({ currencyFilter }: SubscriptionSummaryProps
 
       <Card>
         <p className="text-caption text-sub mb-1">합계 (환산)</p>
-        <p className="text-title2 text-primary-600 dark:text-primary-400 tabular-nums">
+        <p className="text-title2 text-accent-primary tabular-nums">
           {formatKRW(monthlyCombined)}
         </p>
         <p className="text-caption text-disabled">

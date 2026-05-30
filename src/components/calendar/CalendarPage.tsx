@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { ChevronLeft, ChevronRight, Calendar, CalendarDays, CornerDownLeft, Keyboard } from 'lucide-react'
 import { useCalendar } from '@/hooks/useCalendar'
 import { useCalendarKeyboard } from '@/hooks/useCalendarKeyboard'
+import { useBreakpoint } from '@/hooks/useBreakpoint'
 import {
   computeDailySummaries,
   computeMonthAggregates,
@@ -40,8 +41,12 @@ export function CalendarPage() {
   const [focusedDate, setFocusedDate] = useState<string | null>(null)
   const [filters, setFilters] = useState<CalendarFilters>(DEFAULT_CALENDAR_FILTERS)
   const [hoverPreview, setHoverPreview] = useState<{ dateStr: string; rect: DOMRect } | null>(null)
-  const [isDesktop, setIsDesktop] = useState(false)
   const hoverDebounceRef = useRef<number | null>(null)
+
+  // Desktop (>=xl/1024) unlocks the right-rail panel, hover popover, detailed
+  // cells and keyboard nav. Aligned to the canonical xl=1024 boundary so the
+  // 1024-1279 laptop/iPad-landscape band gets the richer view (matches xl: CSS).
+  const { isDesktop } = useBreakpoint()
 
   const loadCategories = useTransactionStore((s) => s.loadCategories)
   const loadMembers = useMemberStore((s) => s.loadMembers)
@@ -57,16 +62,6 @@ export function CalendarPage() {
     goToNextMonth,
     goToToday,
   } = useCalendar()
-
-  // Detect desktop (xl+) for panel / popover / detailed cells
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const mql = window.matchMedia('(min-width: 1280px)')
-    const sync = () => setIsDesktop(mql.matches)
-    sync()
-    mql.addEventListener('change', sync)
-    return () => mql.removeEventListener('change', sync)
-  }, [])
 
   const swipeHandlers = useSwipe({
     onSwipeLeft: goToNextMonth,
@@ -427,8 +422,8 @@ export function CalendarPage() {
 
 function KeyRow({ k, d }: { k: string; d: string }) {
   return (
-    <div className="flex items-center gap-2 text-[11px]">
-      <kbd className="inline-flex items-center rounded px-1.5 py-0.5 bg-white/10 ring-1 ring-white/20 font-mono text-[10px]">
+    <div className="flex items-center gap-2 text-caption">
+      <kbd className="inline-flex items-center rounded px-1.5 py-0.5 bg-white/10 ring-1 ring-white/20 text-micro font-mono">
         {k}
       </kbd>
       <span>{d}</span>

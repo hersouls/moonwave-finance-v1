@@ -115,7 +115,7 @@ export function CashFlowTimeline({ analysis }: Props) {
       initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: durations.base, ease: easeOutExpo }}
-      className="rounded-3xl bg-surface-primary ring-1 ring-base shadow-[0_4px_18px_rgba(0,0,0,0.05)] overflow-hidden"
+      className="rounded-3xl bg-surface-primary ring-1 ring-base elevation-2 overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
@@ -131,7 +131,7 @@ export function CashFlowTimeline({ analysis }: Props) {
           </div>
           <div className="min-w-0">
             <h3 className="text-body3 font-extrabold text-heading tracking-tight">일별 누적 지출</h3>
-            <p className="text-[11px] text-sub mt-0.5">
+            <p className="text-caption text-sub mt-0.5">
               {isCurrent
                 ? `오늘 ${cashFlow.todayIndex}일차 · 일평균 ${formatKoreanUnit(cashFlow.dailyAvgSoFar)}원`
                 : '월 전체 누적'}
@@ -141,7 +141,7 @@ export function CashFlowTimeline({ analysis }: Props) {
 
         {isCurrent && cashFlow.projectedTotal > 0 && (
           <div className="text-right flex-shrink-0">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-sub">예상 월말</p>
+            <p className="text-label4 font-bold leading-none uppercase tracking-wider text-sub">예상 월말</p>
             <p className="text-body3 font-extrabold tabular-nums" style={{ color: accent }}>
               {formatKoreanUnit(cashFlow.projectedTotal)}원
             </p>
@@ -270,7 +270,7 @@ export function CashFlowTimeline({ analysis }: Props) {
         </div>
         <p
           className={clsx(
-            'text-[10.5px] font-bold tabular-nums inline-flex items-center gap-1',
+            'text-label4 font-bold leading-none tabular-nums inline-flex items-center gap-1',
             expectedDelta > 0 ? 'text-status-danger' : expectedDelta < 0 ? 'text-status-success' : 'text-sub',
           )}
         >
@@ -302,7 +302,7 @@ function LegendDot({
         }}
         aria-hidden="true"
       />
-      <span className="text-[11px] text-sub font-semibold">{label}</span>
+      <span className="text-caption text-sub font-semibold">{label}</span>
     </span>
   )
 }

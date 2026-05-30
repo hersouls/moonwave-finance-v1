@@ -48,7 +48,7 @@ export function TransactionActionSheet({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 z-[var(--z-overlay)] bg-black/40 dark:bg-black/60 backdrop-blur-[12px] saturate-[1.4]"
+            className="fixed inset-0 z-[var(--z-overlay)] scrim"
             aria-hidden="true"
           />
 
@@ -111,7 +111,7 @@ export function TransactionActionSheet({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
+                  className="touch-target-inset flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
                   aria-label="닫기"
                 >
                   <X className="w-4 h-4" />
@@ -217,10 +217,9 @@ function ActionButton({ icon: Icon, label, color, variant = 'primary', onClick }
     >
       <div
         className={clsx(
-          'w-9 h-9 rounded-xl flex items-center justify-center',
+          'w-9 h-9 rounded-xl flex items-center justify-center elevation-1',
           variant === 'danger' ? 'bg-white/50 dark:bg-black/20' : 'bg-surface-primary',
         )}
-        style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
       >
         <Icon className="w-4 h-4" style={{ color }} />
       </div>

@@ -64,8 +64,7 @@ export function Dialog({ open, onClose, children, size = 'lg', noPadding = false
       <DialogBackdrop
         transition
         className={clsx(
-          'fixed inset-0 bg-black/40 dark:bg-black/60',
-          'backdrop-blur-[12px] saturate-[1.4]',
+          'scrim fixed inset-0',
           'transition data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in'
         )}
       />

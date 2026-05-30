@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Line } from 'react-chartjs-2'
 import '@/lib/chartConfig'
-import { commonLineOptions, getGridColor, getTextColor } from '@/lib/chartConfig'
+import { commonLineOptions, getGridColor, getTextColor, getPositiveColor, getNegativeColor, getChartColor } from '@/lib/chartConfig'
 import { Card } from '@/components/ui/Card'
 import type { NetWorthSnapshot } from '@/lib/types'
 
@@ -22,8 +22,8 @@ export function NetWorthHistoryChart({ snapshots }: NetWorthHistoryChartProps) {
         {
           label: '순자산',
           data: snapshots.map(s => s.netWorth),
-          borderColor: '#10b981',
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          borderColor: getPositiveColor(),
+          backgroundColor: `rgba(${getChartColor('income').fill.join(',')}, 0.1)`,
           fill: true,
           tension: 0.3,
           pointRadius: 3,
@@ -33,7 +33,7 @@ export function NetWorthHistoryChart({ snapshots }: NetWorthHistoryChartProps) {
         {
           label: '총 자산',
           data: snapshots.map(s => s.totalAssets),
-          borderColor: '#3b82f6',
+          borderColor: getChartColor('netWorth').line,
           borderDash: [5, 5],
           tension: 0.3,
           pointRadius: 2,
@@ -42,7 +42,7 @@ export function NetWorthHistoryChart({ snapshots }: NetWorthHistoryChartProps) {
         {
           label: '총 부채',
           data: snapshots.map(s => s.totalLiabilities),
-          borderColor: '#ef4444',
+          borderColor: getNegativeColor(),
           borderDash: [5, 5],
           tension: 0.3,
           pointRadius: 2,

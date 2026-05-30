@@ -17,8 +17,7 @@ export function SubscriptionCard() {
         onClick={() => navigate('/ledger')}
         whileHover={shouldReduceMotion ? undefined : { y: -2 }}
         whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
-        className="flex-shrink-0 w-[180px] rounded-2xl bg-surface-primary p-4 text-left hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all"
-        style={{ boxShadow: 'inset 0 0 0 1px var(--border-default), 0 1px 3px rgba(0,0,0,0.04)' }}
+        className="card-base flex-shrink-0 w-[180px] rounded-2xl bg-surface-primary p-4 text-left transition-all"
       >
         <div className="flex items-center gap-2 mb-3">
           <div className="w-7 h-7 rounded-lg bg-[color:var(--status-info-bg)] flex items-center justify-center">
@@ -27,7 +26,7 @@ export function SubscriptionCard() {
           <span className="text-caption text-sub font-semibold">구독</span>
         </div>
         <p className="text-body3 text-disabled">없음</p>
-        <p className="text-[11px] text-sub mt-1">거래에 구독 분류 태그하기 →</p>
+        <p className="text-caption text-sub mt-1">거래에 구독 분류 태그하기 →</p>
       </motion.button>
     )
   }
@@ -38,8 +37,7 @@ export function SubscriptionCard() {
       onClick={() => navigate('/subscriptions')}
       whileHover={shouldReduceMotion ? undefined : { y: -2 }}
       whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
-      className="flex-shrink-0 w-[180px] rounded-2xl bg-surface-primary p-4 text-left hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all"
-      style={{ boxShadow: 'inset 0 0 0 1px var(--border-default), 0 1px 3px rgba(0,0,0,0.04)' }}
+      className="card-base flex-shrink-0 w-[180px] rounded-2xl bg-surface-primary p-4 text-left transition-all"
       aria-label={`구독 ${activeCount}개, 월 ${stats.totalMonthly}원`}
     >
       <div className="flex items-center gap-2 mb-3">
@@ -48,14 +46,14 @@ export function SubscriptionCard() {
         </div>
         <span className="text-caption text-sub font-semibold">구독 {activeCount}개</span>
       </div>
-      <p className="text-[11px] text-sub mb-0.5">월 합계</p>
+      <p className="text-caption text-sub mb-0.5">월 합계</p>
       <Amount
         value={stats.totalMonthly}
         size="emphasis"
         className="text-heading font-bold block"
         unit=""
       />
-      <p className="text-[10px] text-disabled mt-2">자세히 보기 →</p>
+      <p className="text-label4 text-disabled mt-2">자세히 보기 →</p>
     </motion.button>
   )
 }

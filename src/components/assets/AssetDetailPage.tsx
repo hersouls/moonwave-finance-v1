@@ -13,6 +13,7 @@ import { Amount } from '@/components/ui/Amount'
 import { Sparkline } from '@/components/ui/Sparkline'
 import { getMonthDates, formatMonthLabel, getPreviousMonth, getNextMonth, getCurrentMonthString, getTodayString } from '@/lib/dateUtils'
 import { latestAndPrev, valueAsOf } from '@/services/assetAnalytics'
+import { getPositiveColor, getNegativeColor } from '@/lib/chartConfig'
 import { clsx } from 'clsx'
 import { format } from 'date-fns'
 import { UI_DELAYS } from '@/utils/constants'
@@ -148,8 +149,8 @@ export function AssetDetailPage() {
   if (isLoading) {
     return (
       <div className="p-4 lg:p-6 animate-pulse space-y-4">
-        <div className="h-8 w-48 bg-[var(--surface-tertiary)] rounded" />
-        <div className="h-64 bg-[var(--surface-tertiary)] rounded-xl" />
+        <div className="h-8 w-48 bg-surface-secondary rounded" />
+        <div className="h-64 bg-surface-secondary rounded-xl" />
       </div>
     )
   }
@@ -265,10 +266,10 @@ export function AssetDetailPage() {
                   data={trendData}
                   width={108}
                   height={44}
-                  color={diffIsGood ? '#10b981' : '#ef4444'}
+                  color={diffIsGood ? getPositiveColor() : getNegativeColor()}
                   strokeWidth={2}
                 />
-                <p className="text-[10px] text-disabled text-right mt-0.5">최근 90일</p>
+                <p className="text-label4 text-disabled text-right mt-0.5">최근 90일</p>
               </div>
             )}
           </div>
@@ -303,7 +304,7 @@ export function AssetDetailPage() {
             </p>
             <div className="space-y-3">
               <div>
-                <label className="block text-[13px] text-sub mb-1.5">입사일</label>
+                <label className="block text-label2 text-sub mb-1.5">입사일</label>
                 <input
                   type="date"
                   value={sevJoinDate}
@@ -312,7 +313,7 @@ export function AssetDetailPage() {
                 />
               </div>
               <div>
-                <label className="block text-[13px] text-sub mb-1.5">월 평균임금 (30일분)</label>
+                <label className="block text-label2 text-sub mb-1.5">월 평균임금 (30일분)</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -327,7 +328,7 @@ export function AssetDetailPage() {
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-disabled">원</span>
                 </div>
-                <p className="text-[12px] text-sub mt-1">최근 3개월 급여총액 / 해당 기간 총일수 x 30</p>
+                <p className="text-caption text-sub mt-1">최근 3개월 급여총액 / 해당 기간 총일수 x 30</p>
               </div>
               {sevEstimated > 0 && (
                 <div className="pt-3 border-t border-base space-y-2">
@@ -339,13 +340,13 @@ export function AssetDetailPage() {
                   </div>
                   {sevTax && sevTax.totalTax > 0 && (
                     <>
-                      <div className="flex justify-between items-center text-[13px]">
+                      <div className="flex justify-between items-center text-label2 leading-none">
                         <span className="text-sub">퇴직소득세</span>
                         <span className="text-sub tabular-nums">
                           -{sevTax.incomeTax.toLocaleString('ko-KR')}원
                         </span>
                       </div>
-                      <div className="flex justify-between items-center text-[13px]">
+                      <div className="flex justify-between items-center text-label2 leading-none">
                         <span className="text-sub">퇴직주민세</span>
                         <span className="text-sub tabular-nums">
                           -{sevTax.residentTax.toLocaleString('ko-KR')}원
@@ -353,7 +354,7 @@ export function AssetDetailPage() {
                       </div>
                       <div className="flex justify-between items-center pt-2 border-t border-base">
                         <span className="text-sm font-medium text-body">세후 예상 수령액</span>
-                        <span className="text-base font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                        <span className="text-body1 font-bold text-accent-primary tabular-nums">
                           {sevTax.netSeverance.toLocaleString('ko-KR')} <span className="text-sm font-normal">원</span>
                         </span>
                       </div>

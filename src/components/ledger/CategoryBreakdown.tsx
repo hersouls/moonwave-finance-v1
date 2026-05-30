@@ -52,11 +52,11 @@ export function CategoryBreakdown({ transactions, type, budgets }: CategoryBreak
         {breakdown.map((b) => (
           <div key={b.categoryId ?? 'uncategorized'}>
             <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 <div className="badge-category-dot" style={{ backgroundColor: b.color }} />
-                <span className="text-sm text-body">{b.name}</span>
+                <span className="text-body3 text-body truncate">{b.name}</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <Amount value={b.total} size="emphasis" className="text-heading" unit="" />
                 <span className="text-caption text-disabled w-10 text-right tabular-nums">
                   {formatPercent(b.percentage, 0)}
@@ -71,10 +71,10 @@ export function CategoryBreakdown({ transactions, type, budgets }: CategoryBreak
             </div>
             {b.budget !== null && (
               <div className="flex items-center justify-between mt-1">
-                <span className="text-[10px] text-disabled">
+                <span className="text-label4 text-disabled">
                   예산 {formatKoreanUnit(b.budget)}
                 </span>
-                <span className={`text-[10px] font-medium tabular-nums ${
+                <span className={`text-label4 font-medium tabular-nums ${
                   b.total > b.budget
                     ? 'text-status-danger'
                     : 'text-status-success'

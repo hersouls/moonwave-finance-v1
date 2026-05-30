@@ -4,6 +4,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { useUIStore } from '@/stores/uiStore'
 import { useSettingsModal } from '@/hooks/useSettingsModal'
+import { useIsMobile } from '@/hooks/useBreakpoint'
 import { clsx } from 'clsx'
 import { GeneralTab } from './GeneralTab'
 import { AccountTab } from './AccountTab'
@@ -33,16 +34,16 @@ export function SettingsModal() {
   const [activeTab, setActiveTab] = useState<SettingsTabId>('general')
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const tabListRef = useRef<HTMLDivElement>(null)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     if (!isOpen) return
     const idx = TABS.findIndex((t) => t.id === activeTab)
     const el = tabRefs.current[idx]
     if (!el) return
-    const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
     if (!isMobile) return
     el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-  }, [activeTab, isOpen])
+  }, [activeTab, isOpen, isMobile])
 
   const handleClose = useCallback(() => {
     if (isDirty) cancel()
@@ -84,14 +85,14 @@ export function SettingsModal() {
 
   return (
     <Dialog open={isOpen} onClose={handleClose} size="4xl" noPadding>
-      <div className="flex flex-col md:flex-row md:min-h-[560px] max-h-[85dvh]">
+      <div className="flex flex-col lg:flex-row lg:min-h-[560px] max-h-[85dvh]">
         {/* Left sidebar / top bar */}
         <nav
           aria-label="설정 탭"
-          className="shrink-0 md:w-52 md:border-r border-base bg-surface-secondary"
+          className="shrink-0 lg:w-52 lg:border-r border-base bg-surface-secondary"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 pt-3 pb-2 md:p-5 md:pb-4">
+          <div className="flex items-center justify-between px-4 pt-3 pb-2 lg:p-5 lg:pb-4">
             <h2 id="settings-modal-title" className="text-title2 text-heading">설정</h2>
             <button
               onClick={handleClose}
@@ -108,11 +109,11 @@ export function SettingsModal() {
             role="tablist"
             aria-orientation="vertical"
             className={clsx(
-              'flex md:flex-col overflow-x-auto md:overflow-visible scrollbar-none',
-              'gap-1.5 md:gap-1 px-3 md:px-3 pb-3 md:pb-4',
-              'snap-x snap-proximity md:snap-none scroll-smooth',
+              'flex lg:flex-col overflow-x-auto lg:overflow-visible scrollbar-none',
+              'gap-1.5 lg:gap-1 px-3 lg:px-3 pb-3 lg:pb-4',
+              'snap-x snap-proximity lg:snap-none scroll-smooth',
               '[scroll-padding-inline:1rem]',
-              'border-b border-base md:border-b-0'
+              'border-b border-base lg:border-b-0'
             )}
           >
             {TABS.map((tab, index) => {
@@ -131,23 +132,23 @@ export function SettingsModal() {
                   onClick={() => setActiveTab(tab.id)}
                   onKeyDown={(e) => handleTabKeyDown(e, index)}
                   className={clsx(
-                    'group relative flex items-center justify-center md:justify-start gap-2 shrink-0 snap-start',
-                    'px-3 md:px-3 py-2 md:py-2.5 min-h-[40px] md:min-h-0',
+                    'group relative flex items-center justify-center lg:justify-start gap-2 shrink-0 snap-start',
+                    'px-3 lg:px-3 py-2 lg:py-2.5 min-h-[40px] lg:min-h-0',
                     'rounded-lg text-body3 whitespace-nowrap transition-all',
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                     isActive
-                      ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium elevation-1 md:elevation-0'
-                      : 'text-sub hover:bg-[var(--hover-bg)] active:bg-[var(--hover-bg)] md:bg-transparent'
+                      ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium elevation-1 lg:elevation-0'
+                      : 'text-sub hover:bg-[var(--hover-bg)] active:bg-[var(--hover-bg)] lg:bg-transparent'
                   )}
                 >
                   <tab.Icon
                     className={clsx(
                       'w-4 h-4 shrink-0 transition-transform',
-                      isActive && 'md:scale-100'
+                      isActive && 'lg:scale-100'
                     )}
                     aria-hidden="true"
                   />
-                  <span className="fold:sr-only md:not-sr-only">{tab.label}</span>
+                  <span className="fold:sr-only lg:not-sr-only">{tab.label}</span>
                 </button>
               )
             })}

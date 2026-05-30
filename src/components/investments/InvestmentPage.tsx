@@ -451,7 +451,7 @@ function parseInterests(text: string): ParsedInterest[] {
 // ─── ChipMetric (구독 페이지 패턴) ─────────────────
 function ChipMetric({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
-    <span className="inline-flex items-baseline gap-1 px-2 py-0.5 rounded-full text-[11px] bg-surface-tertiary ring-1 ring-base tabular-nums">
+    <span className="inline-flex items-baseline gap-1 px-2 py-0.5 rounded-full text-caption bg-surface-tertiary ring-1 ring-base tabular-nums">
       <span className="text-disabled font-medium">{label}</span>
       <span className="font-bold" style={{ color: color || 'var(--text-primary)' }}>{value}</span>
     </span>
@@ -464,16 +464,16 @@ function InvestmentHeroSection({ label, children, aurora }: { label: string; chi
     <section
       className="relative overflow-hidden rounded-3xl bg-surface-primary"
       style={{
-        boxShadow: 'inset 0 0 0 1px var(--border-default), inset 0 1px 0 0 rgba(255,255,255,0.5), 0 4px 20px rgba(0,0,0,0.05)',
+        boxShadow: 'inset 0 0 0 1px var(--border-default), inset 0 1px 0 0 var(--hero-soft-inset-highlight), var(--shadow-1)',
       }}
     >
       <div aria-hidden="true" className="absolute inset-0 pointer-events-none" style={{ background: aurora }} />
       <div aria-hidden="true" className="absolute inset-x-0 top-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.55) 50%, transparent)' }} />
+        style={{ background: 'linear-gradient(90deg, transparent, color-mix(in srgb, var(--hero-soft-inset-highlight) 100%, transparent) 50%, transparent)' }} />
       <div className="relative px-4 sm:px-6 py-5">
         <div className="flex items-center gap-1.5 mb-2">
           <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary-500) 70%, transparent)' }} />
-          <p className="text-[10px] sm:text-[11px] font-bold tracking-[0.14em] uppercase text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]">
+          <p className="text-micro sm:text-caption font-bold tracking-[0.14em] uppercase text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]">
             {label}
           </p>
         </div>
@@ -597,18 +597,18 @@ function MonthlyChart({ stats, valueKey, color }: {
           const [y, m] = s.month.split('-')
           return (
             <div key={s.month} className="flex items-center gap-2">
-              <span className="text-[10px] font-medium text-sub w-14 shrink-0 financial-value">{y}.{m}</span>
+              <span className="text-micro font-medium text-sub w-14 shrink-0 financial-value">{y}.{m}</span>
               <div className="flex-1 h-6 relative bg-surface-secondary rounded-md overflow-hidden">
                 <motion.div initial={{ width: 0 }} animate={{ width: `${w}%` }} transition={{ duration: 0.6, ease: 'easeOut' }}
                   className="absolute inset-y-0 left-0 rounded-md"
                   style={{ background: `linear-gradient(90deg, ${pos ? barColors.pos : barColors.neg}, color-mix(in srgb, ${pos ? barColors.pos : barColors.neg} 60%, transparent))` }} />
-                <span className={clsx('absolute inset-y-0 flex items-center px-2 text-[11px] font-bold tabular-nums',
+                <span className={clsx('absolute inset-y-0 flex items-center px-2 text-caption font-bold tabular-nums',
                   w > 50 ? 'text-white left-0' : pos ? `${barColors.textPos} right-0` : `${barColors.textNeg} right-0`
                 )}>
                   {formatChange(val)}
                 </span>
               </div>
-              <span className="text-[10px] text-muted w-8 text-right shrink-0">{s.count}건</span>
+              <span className="text-micro text-muted w-8 text-right shrink-0">{s.count}건</span>
             </div>
           )
         })}
@@ -620,22 +620,22 @@ function MonthlyChart({ stats, valueKey, color }: {
 // ─── Trade Card ──────────────────────────────────
 function TradeCard({ trade, memberName, onClick }: { trade: InvestmentTrade; memberName?: string; onClick: () => void }) {
   const pos = trade.totalProfit >= 0
-  const marketColor = trade.market === 'overseas' ? 'oklch(0.65 0.18 250)' : 'var(--color-primary-500)'
+  const marketColor = trade.market === 'overseas' ? 'var(--chart-series-6)' : 'var(--color-primary-500)'
   return (
     <motion.button layout onClick={onClick}
       whileTap={{ scale: 0.995 }}
       transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-      className="group relative w-full text-left rounded-2xl bg-surface-primary p-3.5 ring-1 ring-base hover:shadow-[0_4px_14px_rgba(0,0,0,0.06)] transition-all overflow-hidden">
+      className="group relative w-full text-left rounded-2xl bg-surface-primary p-3.5 ring-1 ring-base hover:elevation-2 transition-all overflow-hidden">
       <div className="flex items-center gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-body3 text-heading font-bold truncate">{trade.stockName}</span>
-            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 h-[14px] rounded-full inline-flex items-center"
+            <span className="text-micro font-bold uppercase tracking-wider px-1.5 h-[14px] rounded-full inline-flex items-center"
               style={{ backgroundColor: `color-mix(in srgb, ${marketColor} 14%, transparent)`, color: marketColor, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${marketColor} 22%, transparent)` }}>
               {trade.market === 'overseas' ? <Globe className="w-2 h-2 mr-0.5" /> : <Home className="w-2 h-2 mr-0.5" />}{trade.assetType}
             </span>
           </div>
-          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-sub tabular-nums">
+          <div className="flex items-center gap-2 mt-0.5 text-micro text-sub tabular-nums">
             <span>{trade.sellDate}</span>
             <span>{formatShares(trade.sellQuantity)}주 · {formatKoreanUnit(trade.totalSellAmount)}원</span>
             {memberName && <span className="inline-flex items-center gap-0.5"><Users className="w-2.5 h-2.5" />{memberName}</span>}
@@ -645,7 +645,7 @@ function TradeCard({ trade, memberName, onClick }: { trade: InvestmentTrade; mem
           <p className="text-body3 font-bold tabular-nums" style={{ color: pos ? 'var(--value-positive)' : 'var(--value-negative)' }}>
             {pos ? '+' : ''}{formatKoreanUnit(trade.totalProfit)}원
           </p>
-          <p className="text-[10px] tabular-nums mt-0.5" style={{ color: pos ? 'var(--value-positive)' : 'var(--value-negative)', opacity: 0.7 }}>
+          <p className="text-micro tabular-nums mt-0.5" style={{ color: pos ? 'var(--value-positive)' : 'var(--value-negative)', opacity: 0.7 }}>
             {pos ? '+' : ''}{trade.profitRate.toFixed(1)}%
           </p>
         </div>
@@ -657,22 +657,22 @@ function TradeCard({ trade, memberName, onClick }: { trade: InvestmentTrade; mem
 // ─── Dividend Card ───────────────────────────────
 function DividendCard({ div, memberName, onClick }: { div: Dividend; memberName?: string; onClick: () => void }) {
   const net = div.dividendAmount - div.tax
-  const marketColor = div.market === 'overseas' ? 'oklch(0.65 0.18 250)' : 'var(--color-primary-500)'
+  const marketColor = div.market === 'overseas' ? 'var(--chart-series-6)' : 'var(--color-primary-500)'
   return (
     <motion.button layout onClick={onClick}
       whileTap={{ scale: 0.995 }}
       transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-      className="group relative w-full text-left rounded-2xl bg-surface-primary p-3.5 ring-1 ring-base hover:shadow-[0_4px_14px_rgba(0,0,0,0.06)] transition-all overflow-hidden">
+      className="group relative w-full text-left rounded-2xl bg-surface-primary p-3.5 ring-1 ring-base hover:elevation-2 transition-all overflow-hidden">
       <div className="flex items-center gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-body3 text-heading font-bold truncate">{div.stockName}</span>
-            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 h-[14px] rounded-full inline-flex items-center"
+            <span className="text-micro font-bold uppercase tracking-wider px-1.5 h-[14px] rounded-full inline-flex items-center"
               style={{ backgroundColor: `color-mix(in srgb, ${marketColor} 14%, transparent)`, color: marketColor, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${marketColor} 22%, transparent)` }}>
               {div.market === 'overseas' ? <Globe className="w-2 h-2 mr-0.5" /> : <Home className="w-2 h-2 mr-0.5" />}{div.assetType}
             </span>
           </div>
-          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-sub tabular-nums">
+          <div className="flex items-center gap-2 mt-0.5 text-micro text-sub tabular-nums">
             <span>{div.paymentDate}</span>
             <span>{formatShares(div.quantity)}주 · 배당락 {div.exDividendDate}</span>
             {memberName && <span className="inline-flex items-center gap-0.5"><Users className="w-2.5 h-2.5" />{memberName}</span>}
@@ -680,7 +680,7 @@ function DividendCard({ div, memberName, onClick }: { div: Dividend; memberName?
         </div>
         <div className="text-right flex-shrink-0 ml-1">
           <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>+{formatKoreanUnit(net)}원</p>
-          {div.tax > 0 && <p className="text-[10px] text-disabled tabular-nums mt-0.5">세금 {formatKRW(div.tax)}</p>}
+          {div.tax > 0 && <p className="text-micro text-disabled tabular-nums mt-0.5">세금 {formatKRW(div.tax)}</p>}
         </div>
       </div>
     </motion.button>
@@ -724,17 +724,17 @@ function TradeDetailSheet({ trade, memberName, onClose, onDelete, onEdit }: {
               <span className={clsx('chip chip-sm mb-1', trade.market === 'overseas' ? 'badge-primary' : 'badge-default')}>
                 {trade.market === 'overseas' ? <Globe className="w-2.5 h-2.5" /> : <Home className="w-2.5 h-2.5" />}{trade.assetType}
               </span>
-              <h2 className="text-[16px] font-bold text-heading">{trade.stockName}</h2>
+              <h2 className="text-title2 font-bold text-heading">{trade.stockName}</h2>
             </div>
             <button onClick={onClose} className="sheet-close"><X className="w-5 h-5" /></button>
           </div>
           <div className={clsx('card-fill rounded-xl p-4 mb-4', pos ? 'bg-value-positive-soft' : 'bg-value-negative-soft')}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-sub">판매수익</p>
-                <p className={clsx('text-[20px] font-extrabold financial-value', pos ? 'value-positive' : 'value-negative')}>{formatChange(trade.totalProfit)}</p>
+                <p className="text-caption font-bold text-sub">판매수익</p>
+                <p className={clsx('text-title1 font-extrabold financial-value', pos ? 'value-positive' : 'value-negative')}>{formatChange(trade.totalProfit)}</p>
               </div>
-              <div className={clsx('flex items-center gap-1 text-[16px] font-bold', pos ? 'value-positive' : 'value-negative')}>
+              <div className={clsx('flex items-center gap-1 text-body1 font-bold', pos ? 'value-positive' : 'value-negative')}>
                 {pos ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />}{trade.profitRate >= 0 ? '+' : ''}{trade.profitRate.toFixed(1)}%
               </div>
             </div>
@@ -747,7 +747,7 @@ function TradeDetailSheet({ trade, memberName, onClose, onDelete, onEdit }: {
           ))}
           <div className="flex gap-2 mt-5">
             {onEdit && <button onClick={() => onEdit(trade)}
-              className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-2xl text-[13px] font-bold ring-1 ring-[color:var(--border-strong)] text-body hover:ring-[color:var(--color-primary-400)] transition-all bg-surface-primary">
+              className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-2xl text-label3 font-bold ring-1 ring-[color:var(--border-strong)] text-body hover:ring-[color:var(--color-primary-400)] transition-all bg-surface-primary">
               <Save className="w-4 h-4" />수정
             </button>}
             <button onClick={() => { if (trade.id != null) onDelete(trade.id) }}
@@ -790,13 +790,13 @@ function DividendDetailSheet({ div, memberName, onClose, onDelete, onEdit }: {
               <span className={clsx('chip chip-sm mb-1', div.market === 'overseas' ? 'badge-primary' : 'badge-default')}>
                 {div.market === 'overseas' ? <Globe className="w-2.5 h-2.5" /> : <Home className="w-2.5 h-2.5" />}{div.assetType}
               </span>
-              <h2 className="text-[16px] font-bold text-heading">{div.stockName}</h2>
+              <h2 className="text-title2 font-bold text-heading">{div.stockName}</h2>
             </div>
             <button onClick={onClose} className="sheet-close"><X className="w-5 h-5" /></button>
           </div>
           <div className="card-fill rounded-xl p-4 mb-4 bg-value-positive-soft">
-            <p className="text-[11px] font-bold text-sub">세후 수령액</p>
-            <p className="text-[20px] font-extrabold financial-value value-positive">+{formatKoreanUnit(net)}원</p>
+            <p className="text-caption font-bold text-sub">세후 수령액</p>
+            <p className="text-title1 font-extrabold financial-value value-positive">+{formatKoreanUnit(net)}원</p>
           </div>
           {rows.map((row, idx) => (
             <div key={row.label} className={clsx('list-item', idx < rows.length - 1 && 'border-b border-subtle')}>
@@ -806,7 +806,7 @@ function DividendDetailSheet({ div, memberName, onClose, onDelete, onEdit }: {
           ))}
           <div className="flex gap-2 mt-5">
             {onEdit && <button onClick={() => onEdit(div)}
-              className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-2xl text-[13px] font-bold ring-1 ring-[color:var(--border-strong)] text-body hover:ring-[color:var(--color-primary-400)] transition-all bg-surface-primary">
+              className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-2xl text-label3 font-bold ring-1 ring-[color:var(--border-strong)] text-body hover:ring-[color:var(--color-primary-400)] transition-all bg-surface-primary">
               <Save className="w-4 h-4" />수정
             </button>}
             <button onClick={() => { if (div.id != null) onDelete(div.id) }}
@@ -823,22 +823,22 @@ function DividendDetailSheet({ div, memberName, onClose, onDelete, onEdit }: {
 // ─── Interest Card ───────────────────────────────
 function InterestCard({ interest, memberName, onClick }: { interest: AccountInterest; memberName?: string; onClick: () => void }) {
   const net = interest.interestAmount - interest.tax
-  const typeColor = interest.currency === 'USD' ? 'oklch(0.65 0.18 250)' : 'var(--color-primary-500)'
+  const typeColor = interest.currency === 'USD' ? 'var(--chart-series-6)' : 'var(--color-primary-500)'
   return (
     <motion.button layout onClick={onClick}
       whileTap={{ scale: 0.995 }}
       transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-      className="group relative w-full text-left rounded-2xl bg-surface-primary p-3.5 ring-1 ring-base hover:shadow-[0_4px_14px_rgba(0,0,0,0.06)] transition-all overflow-hidden">
+      className="group relative w-full text-left rounded-2xl bg-surface-primary p-3.5 ring-1 ring-base hover:elevation-2 transition-all overflow-hidden">
       <div className="flex items-center gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-body3 text-heading font-bold">{interest.interestType}</span>
-            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 h-[14px] rounded-full inline-flex items-center"
+            <span className="text-micro font-bold uppercase tracking-wider px-1.5 h-[14px] rounded-full inline-flex items-center"
               style={{ backgroundColor: `color-mix(in srgb, ${typeColor} 14%, transparent)`, color: typeColor, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${typeColor} 22%, transparent)` }}>
               연 {formatRatePercent(interest.interestRate)}
             </span>
           </div>
-          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-sub tabular-nums">
+          <div className="flex items-center gap-2 mt-0.5 text-micro text-sub tabular-nums">
             <span>{interest.depositDate}</span>
             <span>{interest.periodStart} ~ {interest.periodEnd}</span>
             {memberName && <span className="inline-flex items-center gap-0.5"><Users className="w-2.5 h-2.5" />{memberName}</span>}
@@ -846,7 +846,7 @@ function InterestCard({ interest, memberName, onClick }: { interest: AccountInte
         </div>
         <div className="text-right flex-shrink-0 ml-1">
           <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>+{formatKoreanUnit(net)}원</p>
-          {interest.tax > 0 && <p className="text-[10px] text-disabled tabular-nums mt-0.5">세금 {formatKRW(interest.tax)}</p>}
+          {interest.tax > 0 && <p className="text-micro text-disabled tabular-nums mt-0.5">세금 {formatKRW(interest.tax)}</p>}
         </div>
       </div>
     </motion.button>
@@ -882,13 +882,13 @@ function InterestDetailSheet({ interest, memberName, onClose, onDelete, onEdit }
               <span className={clsx('chip chip-sm mb-1', interest.currency === 'USD' ? 'badge-primary' : 'badge-default')}>
                 {interest.interestType}
               </span>
-              <h2 className="text-[16px] font-bold text-heading">{interest.periodStart} ~ {interest.periodEnd}</h2>
+              <h2 className="text-title2 font-bold text-heading">{interest.periodStart} ~ {interest.periodEnd}</h2>
             </div>
             <button onClick={onClose} className="sheet-close"><X className="w-5 h-5" /></button>
           </div>
           <div className="card-fill rounded-xl p-4 mb-4 bg-value-positive-soft">
-            <p className="text-[11px] font-bold text-sub">세후 수령액</p>
-            <p className="text-[20px] font-extrabold financial-value value-positive">+{formatKoreanUnit(net)}원</p>
+            <p className="text-caption font-bold text-sub">세후 수령액</p>
+            <p className="text-title1 font-extrabold financial-value value-positive">+{formatKoreanUnit(net)}원</p>
           </div>
           {rows.map((row, idx) => (
             <div key={row.label} className={clsx('list-item', idx < rows.length - 1 && 'border-b border-subtle')}>
@@ -898,7 +898,7 @@ function InterestDetailSheet({ interest, memberName, onClose, onDelete, onEdit }
           ))}
           <div className="flex gap-2 mt-5">
             {onEdit && <button onClick={() => onEdit(interest)}
-              className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-2xl text-[13px] font-bold ring-1 ring-[color:var(--border-strong)] text-body hover:ring-[color:var(--color-primary-400)] transition-all bg-surface-primary">
+              className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-2xl text-label3 font-bold ring-1 ring-[color:var(--border-strong)] text-body hover:ring-[color:var(--color-primary-400)] transition-all bg-surface-primary">
               <Save className="w-4 h-4" />수정
             </button>}
             <button onClick={() => { if (interest.id != null) onDelete(interest.id) }}
@@ -982,7 +982,7 @@ function PasteImportModal({ isOpen, onClose, onImportTrades, onImportDividends, 
 
           {/* Member selector */}
           <div className="mb-4">
-            <label className="text-[11px] font-bold text-sub block mb-1.5">구성원 선택</label>
+            <label className="text-caption font-bold text-sub block mb-1.5">구성원 선택</label>
             <div className="chip-group-wrap">
               {members.map(m => (
                 <button key={m.id} onClick={() => setSelectedMemberId(m.id)}
@@ -995,7 +995,7 @@ function PasteImportModal({ isOpen, onClose, onImportTrades, onImportDividends, 
 
           {step === 'input' ? (
             <>
-              <p className="text-[11px] font-bold text-sub mb-2">{descriptions[importType]}</p>
+              <p className="text-caption font-bold text-sub mb-2">{descriptions[importType]}</p>
               <div className="textarea-field h-48">
                 <textarea ref={textareaRef} value={text} onChange={e => setText(e.target.value)}
                   placeholder={placeholders[importType]}
@@ -1020,17 +1020,17 @@ function PasteImportModal({ isOpen, onClose, onImportTrades, onImportDividends, 
                 <div className="space-y-1 max-h-60 overflow-y-auto mb-4">
                   {importType === 'trades' ? parsedTrades.map((t, i) => (
                     <div key={i} className="list-item card-fill rounded-lg">
-                      <div><p className="text-body3 font-bold text-heading">{t.stockName}</p><p className="text-[10px] text-sub">{t.sellDate} · {formatShares(t.sellQuantity)}주</p></div>
+                      <div><p className="text-body3 font-bold text-heading">{t.stockName}</p><p className="text-micro text-sub">{t.sellDate} · {formatShares(t.sellQuantity)}주</p></div>
                       <span className={clsx('text-body3 font-bold financial-value', t.totalProfit >= 0 ? 'value-positive' : 'value-negative')}>{formatChange(t.totalProfit)}</span>
                     </div>
                   )) : importType === 'dividends' ? parsedDivs.map((d, i) => (
                     <div key={i} className="list-item card-fill rounded-lg">
-                      <div><p className="text-body3 font-bold text-heading">{d.stockName}</p><p className="text-[10px] text-sub">{d.paymentDate} · {formatShares(d.quantity)}주</p></div>
+                      <div><p className="text-body3 font-bold text-heading">{d.stockName}</p><p className="text-micro text-sub">{d.paymentDate} · {formatShares(d.quantity)}주</p></div>
                       <span className="text-body3 font-bold financial-value value-positive">+{formatKoreanUnit(d.dividendAmount)}원</span>
                     </div>
                   )) : parsedInterests.map((r, i) => (
                     <div key={i} className="list-item card-fill rounded-lg">
-                      <div><p className="text-body3 font-bold text-heading">{r.interestType}</p><p className="text-[10px] text-sub">{r.depositDate} · 연 {r.interestRate}%</p></div>
+                      <div><p className="text-body3 font-bold text-heading">{r.interestType}</p><p className="text-micro text-sub">{r.depositDate} · 연 {r.interestRate}%</p></div>
                       <span className="text-body3 font-bold financial-value value-positive">+{formatKoreanUnit(r.interestAmount)}원</span>
                     </div>
                   ))}
@@ -1074,16 +1074,16 @@ function TopStocksSection({ gainers, losers }: { gainers: InvestmentTrade[]; los
           const pos = t.totalProfit >= 0
           return (
             <div key={t.id ?? i} className="list-item">
-              <span className={clsx('w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-bold shrink-0', i === 0 ? 'bg-status-warning-soft text-status-warning' : 'bg-surface-secondary text-sub')}>{i + 1}</span>
+              <span className={clsx('w-5 h-5 flex items-center justify-center rounded-full text-micro font-bold shrink-0', i === 0 ? 'bg-status-warning-soft text-status-warning' : 'bg-surface-secondary text-sub')}>{i + 1}</span>
               <span className="flex-1 text-body3 text-heading truncate">{t.stockName}</span>
-              <span className={clsx('text-[11px] font-bold financial-value', pos ? 'value-positive' : 'value-negative')}>{formatChange(t.totalProfit)}</span>
-              <span className={clsx('text-[10px] financial-value w-12 text-right', pos ? 'value-positive opacity-70' : 'value-negative opacity-70')}>
+              <span className={clsx('text-caption font-bold financial-value', pos ? 'value-positive' : 'value-negative')}>{formatChange(t.totalProfit)}</span>
+              <span className={clsx('text-micro financial-value w-12 text-right', pos ? 'value-positive opacity-70' : 'value-negative opacity-70')}>
                 {t.profitRate >= 0 ? '+' : ''}{t.profitRate.toFixed(1)}%
               </span>
             </div>
           )
         })}
-        {list.length === 0 && <p className="text-[11px] font-bold text-muted py-3 text-center">데이터가 없습니다</p>}
+        {list.length === 0 && <p className="text-caption font-bold text-muted py-3 text-center">데이터가 없습니다</p>}
       </div>
     </div>
   )
@@ -1100,10 +1100,10 @@ function TopDividendStocks({ stocks }: { stocks: { stockName: string; total: num
       <div className="space-y-0">
         {stocks.map((s, i) => (
           <div key={s.stockName} className="list-item">
-            <span className={clsx('w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-bold shrink-0', i === 0 ? 'bg-status-warning-soft text-status-warning' : 'bg-surface-tertiary text-sub')}>{i + 1}</span>
+            <span className={clsx('w-5 h-5 flex items-center justify-center rounded-full text-micro font-bold shrink-0', i === 0 ? 'bg-status-warning-soft text-status-warning' : 'bg-surface-tertiary text-sub')}>{i + 1}</span>
             <span className="flex-1 text-body3 text-heading truncate">{s.stockName}</span>
-            <span className="text-[11px] font-bold financial-value value-positive">{formatKRW(s.total)}</span>
-            <span className="text-[10px] text-muted w-8 text-right">{s.count}회</span>
+            <span className="text-caption font-bold financial-value value-positive">{formatKRW(s.total)}</span>
+            <span className="text-micro text-muted w-8 text-right">{s.count}회</span>
           </div>
         ))}
       </div>
@@ -1176,7 +1176,7 @@ function InvestmentDashboard({
             <span className="sr-only">총 투자수익 합계 {formatChange(totalIncome)}</span>
           </div>
           {(tradeCount + divCount + interestCount) > 0 && (
-            <span className="inline-flex items-center gap-1 px-2.5 h-6 rounded-full text-[10px] font-bold text-sub bg-surface-tertiary ring-1 ring-base tabular-nums">
+            <span className="inline-flex items-center gap-1 px-2.5 h-6 rounded-full text-micro font-bold text-sub bg-surface-tertiary ring-1 ring-base tabular-nums">
               총 {tradeCount + divCount + interestCount}건
             </span>
           )}
@@ -1186,7 +1186,7 @@ function InvestmentDashboard({
           <div className="grid grid-cols-3 gap-2.5 mt-5">
             {[
               { key: 'trades' as const, label: '판매수익', icon: TrendingUp, value: tradeProfit, count: tradeCount, rate: tradeRate, color: 'var(--value-positive)' },
-              { key: 'dividends' as const, label: '배당금', icon: Banknote, value: divNet, count: divCount, color: 'oklch(0.68 0.16 70)' },
+              { key: 'dividends' as const, label: '배당금', icon: Banknote, value: divNet, count: divCount, color: 'var(--chart-series-3)' },
               { key: 'interests' as const, label: '계좌이자', icon: Landmark, value: interestNet, count: interestCount, color: 'var(--color-primary-500)' },
             ].map(item => {
               const Icon = item.icon
@@ -1194,27 +1194,27 @@ function InvestmentDashboard({
               return (
                 <button key={item.key} onClick={() => onTabChange(item.key)}
                   aria-label={`${item.label} ${formatChange(item.value)}, ${item.count}건 — 자세히 보기`}
-                  className="group relative rounded-2xl p-3 text-left transition-all hover:-translate-y-0.5 active:translate-y-0 ring-1 ring-base bg-surface-primary hover:shadow-[0_6px_18px_rgba(0,0,0,0.07)] overflow-hidden">
+                  className="group relative rounded-2xl p-3 text-left transition-all hover:-translate-y-0.5 active:translate-y-0 ring-1 ring-base bg-surface-primary hover:elevation-2 overflow-hidden">
                   <div className="flex items-center justify-between mb-2">
                     <span aria-hidden="true" className="inline-flex items-center justify-center w-7 h-7 rounded-xl"
                       style={{
                         background: `linear-gradient(135deg, color-mix(in srgb, ${item.color} 22%, transparent), color-mix(in srgb, ${item.color} 7%, transparent))`,
                         color: item.color,
-                        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${item.color} 30%, transparent), inset 0 1px 0 0 rgba(255,255,255,0.35)`,
+                        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${item.color} 30%, transparent), inset 0 1px 0 0 var(--hero-soft-icon-inset-highlight)`,
                       }}>
                       <Icon className="w-3.5 h-3.5" />
                     </span>
                     <ChevronRight aria-hidden="true" className="w-3.5 h-3.5 text-disabled opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                   </div>
-                  <span className="block text-[9px] font-bold tracking-[0.12em] uppercase mb-0.5" style={{ color: item.color }}>{item.label}</span>
+                  <span className="block text-micro font-bold tracking-[0.12em] uppercase mb-0.5" style={{ color: item.color }}>{item.label}</span>
                   <p className="text-body3 font-bold tabular-nums" style={{ color: valPos ? 'var(--text-primary)' : 'var(--value-negative)' }}>
-                    {valPos ? '+' : '−'}{formatKoreanUnit(Math.abs(item.value))}<span className="text-[10px] font-medium text-sub">원</span>
+                    {valPos ? '+' : '−'}{formatKoreanUnit(Math.abs(item.value))}<span className="text-micro font-medium text-sub">원</span>
                   </p>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <span className="text-[10px] text-sub tabular-nums">{item.count}건</span>
+                    <span className="text-micro text-sub tabular-nums">{item.count}건</span>
                     {'rate' in item && item.rate != null && item.rate !== 0 && (
                       <span className={clsx(
-                        'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold tabular-nums ring-1',
+                        'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-micro font-bold tabular-nums ring-1',
                         item.rate >= 0
                           ? 'bg-status-success-soft text-status-success ring-[color:var(--status-success)]/15'
                           : 'bg-status-danger-soft text-status-danger ring-[color:var(--status-danger)]/15',
@@ -1237,7 +1237,7 @@ function InvestmentDashboard({
             if (posSum <= 0) return null
             const seg = [
               { label: '판매', v: posTrade, color: 'var(--value-positive)' },
-              { label: '배당', v: posDiv, color: 'oklch(0.68 0.16 70)' },
+              { label: '배당', v: posDiv, color: 'var(--chart-series-3)' },
               { label: '이자', v: posInt, color: 'var(--color-primary-500)' },
             ].filter(s => s.v > 0)
             return (
@@ -1247,7 +1247,7 @@ function InvestmentDashboard({
                 </div>
                 <div className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1 mt-2">
                   {seg.map(s => (
-                    <span key={s.label} className="flex items-center gap-1 text-[10px] text-sub">
+                    <span key={s.label} className="flex items-center gap-1 text-micro text-sub">
                       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />{s.label} {formatPercent((s.v / posSum) * 100, 0)}
                     </span>
                   ))}
@@ -1271,13 +1271,13 @@ function InvestmentDashboard({
               // 월별 막대 내부는 "양의 기여분 구성"으로 채워 합이 100%를 넘지 않도록 한다.
               const posParts = [
                 { v: Math.max(s.trade, 0), color: 'var(--value-positive)', op: 0.78, delay: 0 },
-                { v: Math.max(s.div, 0), color: 'oklch(0.68 0.16 70)', op: 0.7, delay: 0.08 },
+                { v: Math.max(s.div, 0), color: 'var(--chart-series-3)', op: 0.7, delay: 0.08 },
                 { v: Math.max(s.interest, 0), color: 'var(--color-primary-500)', op: 0.62, delay: 0.16 },
               ]
               const posSum = posParts.reduce((a, p) => a + p.v, 0)
               return (
                 <div key={s.month} className="flex items-center gap-2">
-                  <span className="text-[10px] font-medium text-sub w-14 shrink-0 financial-value">{y}.{m}</span>
+                  <span className="text-micro font-medium text-sub w-14 shrink-0 financial-value">{y}.{m}</span>
                   <div className="flex-1 h-7 relative bg-surface-secondary rounded-md overflow-hidden">
                     <div className="absolute inset-y-0 left-0 flex" style={{ width: `${w}%` }}>
                       {s.total >= 0 && posSum > 0 ? (
@@ -1292,7 +1292,7 @@ function InvestmentDashboard({
                           className="h-full" style={{ backgroundColor: 'var(--value-negative)', opacity: 0.78 }} />
                       )}
                     </div>
-                    <span className={clsx('absolute inset-y-0 flex items-center px-2 text-[11px] font-bold financial-value',
+                    <span className={clsx('absolute inset-y-0 flex items-center px-2 text-caption font-bold financial-value',
                       w > 45 ? 'text-inverse left-0' : s.total >= 0 ? 'value-positive right-0' : 'value-negative right-0'
                     )}>
                       {formatChange(s.total)}
@@ -1325,9 +1325,9 @@ function InvestmentDashboard({
             <div className="space-y-2">
               {topGainers.slice(0, 5).map((t, i) => (
                 <div key={t.id ?? i} className="list-item">
-                  <span className={clsx('w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-bold shrink-0', i === 0 ? 'bg-status-warning-soft text-status-warning' : 'bg-surface-secondary text-sub')}>{i + 1}</span>
+                  <span className={clsx('w-5 h-5 flex items-center justify-center rounded-full text-micro font-bold shrink-0', i === 0 ? 'bg-status-warning-soft text-status-warning' : 'bg-surface-secondary text-sub')}>{i + 1}</span>
                   <span className="flex-1 text-body3 text-heading truncate">{t.stockName}</span>
-                  <span className="text-[11px] font-bold financial-value value-positive shrink-0">{formatChange(t.totalProfit)}</span>
+                  <span className="text-caption font-bold financial-value value-positive shrink-0">{formatChange(t.totalProfit)}</span>
                 </div>
               ))}
             </div>
@@ -1341,9 +1341,9 @@ function InvestmentDashboard({
             <div className="space-y-2">
               {topDivStocks.slice(0, 5).map((s, i) => (
                 <div key={s.stockName} className="list-item">
-                  <span className={clsx('w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-bold shrink-0', i === 0 ? 'bg-status-warning-soft text-status-warning' : 'bg-surface-secondary text-sub')}>{i + 1}</span>
+                  <span className={clsx('w-5 h-5 flex items-center justify-center rounded-full text-micro font-bold shrink-0', i === 0 ? 'bg-status-warning-soft text-status-warning' : 'bg-surface-secondary text-sub')}>{i + 1}</span>
                   <span className="flex-1 text-body3 text-heading truncate">{s.stockName}</span>
-                  <span className="text-[11px] font-bold financial-value value-positive shrink-0">{formatKRW(s.total)}</span>
+                  <span className="text-caption font-bold financial-value value-positive shrink-0">{formatKRW(s.total)}</span>
                 </div>
               ))}
             </div>
@@ -1357,7 +1357,7 @@ function InvestmentDashboard({
           {/* Section title */}
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--color-primary-500)' }} />
-            <h3 className="text-[11px] font-bold tracking-[0.14em] uppercase text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]">
+            <h3 className="text-caption font-bold tracking-[0.14em] uppercase text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]">
               투자 인사이트
             </h3>
           </div>
@@ -1372,37 +1372,37 @@ function InvestmentDashboard({
                 </h3>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                   <div>
-                    <p className="text-[10px] text-disabled">평균 수익 (승)</p>
+                    <p className="text-micro text-disabled">평균 수익 (승)</p>
                     <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>
                       +{formatKoreanUnit(Math.round(insights.tradeEfficiency.avgWinProfit))}원
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-disabled">평균 손실 (패)</p>
+                    <p className="text-micro text-disabled">평균 손실 (패)</p>
                     <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-negative)' }}>
                       −{formatKoreanUnit(Math.round(insights.tradeEfficiency.avgLossAmount))}원
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-disabled">손익비</p>
+                    <p className="text-micro text-disabled">손익비</p>
                     <p className="text-body3 font-bold tabular-nums text-heading">
                       {insights.tradeEfficiency.profitFactor === Infinity ? '∞' : insights.tradeEfficiency.profitFactor.toFixed(2)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-disabled">평균 수익률</p>
+                    <p className="text-micro text-disabled">평균 수익률</p>
                     <p className="text-body3 font-bold tabular-nums text-heading">
                       {insights.tradeEfficiency.avgHoldReturn >= 0 ? '+' : ''}{insights.tradeEfficiency.avgHoldReturn.toFixed(1)}%
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-disabled">최대 연승</p>
+                    <p className="text-micro text-disabled">최대 연승</p>
                     <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>
                       {insights.tradeEfficiency.maxConsecutiveWins}연승
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-disabled">최대 연패</p>
+                    <p className="text-micro text-disabled">최대 연패</p>
                     <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-negative)' }}>
                       {insights.tradeEfficiency.maxConsecutiveLosses}연패
                     </p>
@@ -1418,18 +1418,18 @@ function InvestmentDashboard({
                   <BarChart3 className="w-4 h-4" style={{ color: 'var(--color-primary-500)' }} />수익 전망
                 </h3>
                 <div>
-                  <p className="text-[10px] text-disabled">월 평균 수익</p>
+                  <p className="text-micro text-disabled">월 평균 수익</p>
                   <p className="text-body3 font-bold tabular-nums text-heading">{formatKRW(Math.round(insights.projectedIncome.monthlyAvg))}</p>
                 </div>
                 <div className="mt-2">
-                  <p className="text-[10px] text-disabled">연간 예상</p>
-                  <p className="text-[18px] font-extrabold tabular-nums text-heading">
+                  <p className="text-micro text-disabled">연간 예상</p>
+                  <p className="text-title2 font-extrabold tabular-nums text-heading">
                     {formatKoreanUnit(Math.round(insights.projectedIncome.annualProjection))}원
                   </p>
                 </div>
                 <div className="mt-2 flex items-center gap-1.5">
                   <span className={clsx(
-                    'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold tabular-nums ring-1',
+                    'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-micro font-bold tabular-nums ring-1',
                     insights.projectedIncome.trend === 'up' && 'bg-status-success-soft text-status-success ring-[color:var(--status-success)]/15',
                     insights.projectedIncome.trend === 'down' && 'bg-status-danger-soft text-status-danger ring-[color:var(--status-danger)]/15',
                     insights.projectedIncome.trend === 'stable' && 'bg-surface-tertiary text-sub ring-base',
@@ -1438,7 +1438,7 @@ function InvestmentDashboard({
                     {insights.projectedIncome.trend === 'up' ? '상승' : insights.projectedIncome.trend === 'down' ? '하락' : '보합'}
                     {Math.abs(insights.projectedIncome.trendPercent) > 0 && ` ${Math.abs(insights.projectedIncome.trendPercent).toFixed(0)}%`}
                   </span>
-                  <span className="text-[9px] text-disabled">{insights.projectedIncome.monthsOfData}개월 데이터 기준</span>
+                  <span className="text-micro text-disabled">{insights.projectedIncome.monthsOfData}개월 데이터 기준</span>
                 </div>
               </div>
             )}
@@ -1450,18 +1450,18 @@ function InvestmentDashboard({
             {insights.assetTypePerfs.length > 0 && (
               <div className="rounded-2xl bg-surface-primary p-4 ring-1 ring-base">
                 <h3 className="text-body3-semi text-heading flex items-center gap-1.5 mb-3">
-                  <Landmark className="w-4 h-4" style={{ color: 'oklch(0.65 0.18 290)' }} />자산유형별 성과
+                  <Landmark className="w-4 h-4" style={{ color: 'var(--chart-series-5)' }} />자산유형별 성과
                 </h3>
                 <div className="space-y-2">
                   {insights.assetTypePerfs.slice(0, 4).map((a, i) => (
                     <div key={a.assetType} className="flex items-center gap-2">
-                      <span className={clsx('w-4 h-4 flex items-center justify-center rounded text-[8px] font-bold',
+                      <span className={clsx('w-4 h-4 flex items-center justify-center rounded text-micro font-bold',
                         i === 0 ? 'bg-status-warning-soft text-status-warning' : 'bg-surface-tertiary text-sub')}>{i + 1}</span>
-                      <span className="flex-1 text-[11px] font-bold text-heading truncate">{a.assetType}</span>
-                      <span className="text-[10px] font-bold tabular-nums" style={{ color: a.roi >= 0 ? 'var(--value-positive)' : 'var(--value-negative)' }}>
+                      <span className="flex-1 text-caption font-bold text-heading truncate">{a.assetType}</span>
+                      <span className="text-micro font-bold tabular-nums" style={{ color: a.roi >= 0 ? 'var(--value-positive)' : 'var(--value-negative)' }}>
                         {a.roi >= 0 ? '+' : ''}{a.roi.toFixed(1)}%
                       </span>
-                      <span className="text-[9px] text-disabled tabular-nums w-10 text-right">
+                      <span className="text-micro text-disabled tabular-nums w-10 text-right">
                         승률 {a.winRate.toFixed(0)}%
                       </span>
                     </div>
@@ -1478,7 +1478,7 @@ function InvestmentDashboard({
                     <AlertCircle className="w-4 h-4" style={{ color: insights.concentration.riskLevel === 'high' ? 'var(--status-danger-text)' : insights.concentration.riskLevel === 'medium' ? 'var(--status-warning-text)' : 'var(--value-positive)' }} />집중도 리스크
                   </h3>
                   <span className={clsx(
-                    'inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold ring-1',
+                    'inline-flex items-center px-1.5 py-0.5 rounded-full text-micro font-bold ring-1',
                     insights.concentration.riskLevel === 'high' && 'bg-status-danger-soft text-status-danger ring-[color:var(--status-danger)]/15',
                     insights.concentration.riskLevel === 'medium' && 'bg-status-warning-soft text-status-warning ring-[color:var(--status-warning)]/15',
                     insights.concentration.riskLevel === 'low' && 'bg-status-success-soft text-status-success ring-[color:var(--status-success)]/15',
@@ -1486,7 +1486,7 @@ function InvestmentDashboard({
                     {insights.concentration.riskLevel === 'high' ? '높음' : insights.concentration.riskLevel === 'medium' ? '보통' : '낮음'}
                   </span>
                 </div>
-                <p className="text-[10px] text-disabled mb-2">상위 5종목이 수익의 <span className="font-bold text-heading">{insights.concentration.top5Share.toFixed(0)}%</span>를 차지</p>
+                <p className="text-micro text-disabled mb-2">상위 5종목이 수익의 <span className="font-bold text-heading">{insights.concentration.top5Share.toFixed(0)}%</span>를 차지</p>
                 <div className="flex h-2 rounded-full overflow-hidden bg-surface-tertiary mb-2">
                   {insights.concentration.top5Stocks.map((s, i) => {
                     const totalP = insights.concentration.top5Stocks.reduce((sum, x) => sum + x.profit, 0)
@@ -1496,7 +1496,7 @@ function InvestmentDashboard({
                 </div>
                 <div className="space-y-1">
                   {insights.concentration.top5Stocks.map(s => (
-                    <div key={s.name} className="flex items-center justify-between text-[10px]">
+                    <div key={s.name} className="flex items-center justify-between text-micro">
                       <span className="text-sub truncate flex-1">{s.name}</span>
                       <span className="font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>{formatKRW(s.profit)}</span>
                     </div>
@@ -1515,16 +1515,16 @@ function InvestmentDashboard({
                   <Landmark className="w-4 h-4" style={{ color: 'var(--value-negative)' }} />수수료·세금
                 </h3>
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-[10px]">
+                  <div className="flex justify-between text-micro">
                     <span className="text-disabled">수수료</span>
                     <span className="font-bold tabular-nums text-heading">{formatKRW(insights.feeAndTax.totalFees)}</span>
                   </div>
-                  <div className="flex justify-between text-[10px]">
+                  <div className="flex justify-between text-micro">
                     <span className="text-disabled">세금 합계</span>
                     <span className="font-bold tabular-nums text-heading">{formatKRW(insights.feeAndTax.totalTaxAll)}</span>
                   </div>
                   <div className="pt-1.5 border-t border-[color:var(--border-subtle)]">
-                    <div className="flex justify-between text-[10px]">
+                    <div className="flex justify-between text-micro">
                       <span className="text-disabled">실효 세율</span>
                       <span className="font-bold tabular-nums" style={{ color: 'var(--value-negative)' }}>{insights.feeAndTax.effectiveTaxRate.toFixed(1)}%</span>
                     </div>
@@ -1537,18 +1537,18 @@ function InvestmentDashboard({
             {divCount > 0 && (
               <div className="rounded-2xl bg-surface-primary p-4 ring-1 ring-base">
                 <h3 className="text-body3-semi text-heading flex items-center gap-1.5 mb-3">
-                  <Banknote className="w-4 h-4" style={{ color: 'oklch(0.68 0.16 70)' }} />배당 분석
+                  <Banknote className="w-4 h-4" style={{ color: 'var(--chart-series-3)' }} />배당 분석
                 </h3>
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-[10px]">
+                  <div className="flex justify-between text-micro">
                     <span className="text-disabled">연간 예상</span>
                     <span className="font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>{formatKRW(Math.round(insights.dividendInsight.annualizedRate))}</span>
                   </div>
-                  <div className="flex justify-between text-[10px]">
+                  <div className="flex justify-between text-micro">
                     <span className="text-disabled">종목 수</span>
                     <span className="font-bold tabular-nums text-heading">{insights.dividendInsight.uniqueStocks}종</span>
                   </div>
-                  <div className="flex justify-between text-[10px]">
+                  <div className="flex justify-between text-micro">
                     <span className="text-disabled">TOP1 비중</span>
                     <span className={clsx('font-bold tabular-nums', insights.dividendInsight.topStockShare > 50 ? 'text-status-warning' : 'text-heading')}>
                       {insights.dividendInsight.topStockShare.toFixed(0)}%
@@ -1566,16 +1566,16 @@ function InvestmentDashboard({
                 </h3>
                 <div className="space-y-1.5">
                   <div>
-                    <p className="text-[10px] text-disabled">최고 수익 월</p>
+                    <p className="text-micro text-disabled">최고 수익 월</p>
                     <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>
-                      {insights.seasonality[0].month}월 <span className="text-[10px] font-medium text-sub">평균 +{formatKoreanUnit(Math.round(insights.seasonality[0].avgProfit))}원</span>
+                      {insights.seasonality[0].month}월 <span className="text-micro font-medium text-sub">평균 +{formatKoreanUnit(Math.round(insights.seasonality[0].avgProfit))}원</span>
                     </p>
                   </div>
                   {insights.seasonality.length >= 2 && insights.seasonality[insights.seasonality.length - 1].avgProfit < 0 && (
                     <div>
-                      <p className="text-[10px] text-disabled">최저 수익 월</p>
+                      <p className="text-micro text-disabled">최저 수익 월</p>
                       <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-negative)' }}>
-                        {insights.seasonality[insights.seasonality.length - 1].month}월 <span className="text-[10px] font-medium text-sub">평균 {formatKoreanUnit(Math.round(insights.seasonality[insights.seasonality.length - 1].avgProfit))}원</span>
+                        {insights.seasonality[insights.seasonality.length - 1].month}월 <span className="text-micro font-medium text-sub">평균 {formatKoreanUnit(Math.round(insights.seasonality[insights.seasonality.length - 1].avgProfit))}원</span>
                       </p>
                     </div>
                   )}
@@ -1593,9 +1593,9 @@ function InvestmentDashboard({
               <div className="space-y-2">
                 {insights.memberPerfs.map((m, i) => (
                   <div key={m.memberId} className="flex items-center gap-3 py-1">
-                    <span className={clsx('w-5 h-5 flex items-center justify-center rounded-full text-[9px] font-bold shrink-0',
+                    <span className={clsx('w-5 h-5 flex items-center justify-center rounded-full text-micro font-bold shrink-0',
                       i === 0 ? 'bg-status-warning-soft text-status-warning' : 'bg-surface-tertiary text-sub')}>{i + 1}</span>
-                    <span className="text-[12px] font-bold text-heading flex-shrink-0 w-16 truncate">{m.memberName}</span>
+                    <span className="text-caption font-bold text-heading flex-shrink-0 w-16 truncate">{m.memberName}</span>
                     <div className="flex-1 flex items-center gap-3">
                       <ChipMetric label="판매" value={`${m.tradeProfit >= 0 ? '+' : ''}${formatKoreanUnit(m.tradeProfit)}원`} color={m.tradeProfit >= 0 ? 'var(--value-positive)' : 'var(--value-negative)'} />
                       {m.dividendNet > 0 && <ChipMetric label="배당" value={`+${formatKoreanUnit(m.dividendNet)}원`} color="var(--value-positive)" />}
@@ -1617,7 +1617,7 @@ function InvestmentDashboard({
         <div className="flex flex-col items-center justify-center py-16 text-body">
           <BarChart3 className="w-12 h-12 mb-3 opacity-20" />
           <p className="text-body3">등록된 데이터가 없습니다</p>
-          <p className="text-[10px] text-muted mt-1">상단의 "가져오기" 버튼으로 증권사 데이터를 붙여넣기 하세요</p>
+          <p className="text-micro text-muted mt-1">상단의 "가져오기" 버튼으로 증권사 데이터를 붙여넣기 하세요</p>
         </div>
       )}
     </div>
@@ -1662,9 +1662,9 @@ function TradeGridCard({ trade, memberName, onClick }: { trade: InvestmentTrade;
   return (
     <motion.button onClick={onClick}
       whileTap={{ scale: 0.97 }} transition={springSnappy}
-      className="w-full text-left rounded-2xl bg-surface-primary p-3 ring-1 ring-base hover:shadow-[0_4px_14px_rgba(0,0,0,0.06)] transition-all overflow-hidden">
+      className="w-full text-left rounded-2xl bg-surface-primary p-3 ring-1 ring-base hover:elevation-2 transition-all overflow-hidden">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[9px] font-bold tracking-wider px-1.5 h-[14px] rounded-full inline-flex items-center"
+        <span className="text-micro font-bold tracking-wider px-1.5 h-[14px] rounded-full inline-flex items-center"
           style={{
             backgroundColor: `color-mix(in srgb, var(--color-primary-500) 14%, transparent)`,
             color: 'var(--color-primary-500)',
@@ -1672,22 +1672,22 @@ function TradeGridCard({ trade, memberName, onClick }: { trade: InvestmentTrade;
           }}>
           {trade.assetType}
         </span>
-        <span className="text-[9px] text-disabled tabular-nums">{trade.sellDate}</span>
+        <span className="text-micro text-disabled tabular-nums">{trade.sellDate}</span>
       </div>
-      <p className="text-[13px] font-bold text-heading truncate mb-1">{trade.stockName}</p>
-      <p className="text-[18px] font-extrabold tabular-nums tracking-tight" style={{ color: pos ? 'var(--value-positive)' : 'var(--value-negative)' }}>
-        {pos ? '+' : ''}{formatKoreanUnit(trade.totalProfit)}<span className="text-[11px]">원</span>
+      <p className="text-label3 font-bold text-heading truncate mb-1">{trade.stockName}</p>
+      <p className="text-title2 font-extrabold tabular-nums tracking-tight" style={{ color: pos ? 'var(--value-positive)' : 'var(--value-negative)' }}>
+        {pos ? '+' : ''}{formatKoreanUnit(trade.totalProfit)}<span className="text-caption">원</span>
       </p>
       <div className="flex items-center justify-between mt-1.5">
-        <span className="text-[10px] text-sub tabular-nums">{formatShares(trade.sellQuantity)}주</span>
-        <span className={clsx('inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold tabular-nums ring-1',
+        <span className="text-micro text-sub tabular-nums">{formatShares(trade.sellQuantity)}주</span>
+        <span className={clsx('inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-micro font-bold tabular-nums ring-1',
           pos ? 'bg-status-success-soft text-status-success ring-[color:var(--status-success)]/15'
             : 'bg-status-danger-soft text-status-danger ring-[color:var(--status-danger)]/15',
         )}>
           {pos ? '+' : ''}{trade.profitRate.toFixed(1)}%
         </span>
       </div>
-      {memberName && <p className="text-[9px] text-disabled mt-1 truncate">{memberName}</p>}
+      {memberName && <p className="text-micro text-disabled mt-1 truncate">{memberName}</p>}
     </motion.button>
   )
 }
@@ -1698,25 +1698,25 @@ function DividendGridCard({ div, onClick }: { div: Dividend; memberName?: string
   return (
     <motion.button onClick={onClick}
       whileTap={{ scale: 0.97 }} transition={springSnappy}
-      className="w-full text-left rounded-2xl bg-surface-primary p-3 ring-1 ring-base hover:shadow-[0_4px_14px_rgba(0,0,0,0.06)] transition-all overflow-hidden">
+      className="w-full text-left rounded-2xl bg-surface-primary p-3 ring-1 ring-base hover:elevation-2 transition-all overflow-hidden">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[9px] font-bold tracking-wider px-1.5 h-[14px] rounded-full inline-flex items-center"
+        <span className="text-micro font-bold tracking-wider px-1.5 h-[14px] rounded-full inline-flex items-center"
           style={{
-            backgroundColor: 'color-mix(in srgb, oklch(0.68 0.16 70) 14%, transparent)',
-            color: 'oklch(0.68 0.16 70)',
-            boxShadow: 'inset 0 0 0 1px color-mix(in srgb, oklch(0.68 0.16 70) 22%, transparent)',
+            backgroundColor: 'color-mix(in srgb, var(--chart-series-3) 14%, transparent)',
+            color: 'var(--chart-series-3)',
+            boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--chart-series-3) 22%, transparent)',
           }}>
           배당
         </span>
-        <span className="text-[9px] text-disabled tabular-nums">{div.paymentDate}</span>
+        <span className="text-micro text-disabled tabular-nums">{div.paymentDate}</span>
       </div>
-      <p className="text-[13px] font-bold text-heading truncate mb-1">{div.stockName}</p>
-      <p className="text-[18px] font-extrabold tabular-nums tracking-tight" style={{ color: 'var(--value-positive)' }}>
-        +{formatKoreanUnit(net)}<span className="text-[11px]">원</span>
+      <p className="text-label3 font-bold text-heading truncate mb-1">{div.stockName}</p>
+      <p className="text-title2 font-extrabold tabular-nums tracking-tight" style={{ color: 'var(--value-positive)' }}>
+        +{formatKoreanUnit(net)}<span className="text-caption">원</span>
       </p>
       <div className="flex items-center justify-between mt-1.5">
-        <span className="text-[10px] text-sub tabular-nums">{formatShares(div.quantity)}주</span>
-        {div.tax > 0 && <span className="text-[9px] text-disabled tabular-nums">세금 {formatKRW(div.tax)}</span>}
+        <span className="text-micro text-sub tabular-nums">{formatShares(div.quantity)}주</span>
+        {div.tax > 0 && <span className="text-micro text-disabled tabular-nums">세금 {formatKRW(div.tax)}</span>}
       </div>
     </motion.button>
   )
@@ -1728,9 +1728,9 @@ function InterestGridCard({ interest, onClick }: { interest: AccountInterest; me
   return (
     <motion.button onClick={onClick}
       whileTap={{ scale: 0.97 }} transition={springSnappy}
-      className="w-full text-left rounded-2xl bg-surface-primary p-3 ring-1 ring-base hover:shadow-[0_4px_14px_rgba(0,0,0,0.06)] transition-all overflow-hidden">
+      className="w-full text-left rounded-2xl bg-surface-primary p-3 ring-1 ring-base hover:elevation-2 transition-all overflow-hidden">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[9px] font-bold tracking-wider px-1.5 h-[14px] rounded-full inline-flex items-center"
+        <span className="text-micro font-bold tracking-wider px-1.5 h-[14px] rounded-full inline-flex items-center"
           style={{
             backgroundColor: 'color-mix(in srgb, var(--color-primary-500) 14%, transparent)',
             color: 'var(--color-primary-500)',
@@ -1738,13 +1738,13 @@ function InterestGridCard({ interest, onClick }: { interest: AccountInterest; me
           }}>
           연 {formatRatePercent(interest.interestRate)}
         </span>
-        <span className="text-[9px] text-disabled tabular-nums">{interest.depositDate}</span>
+        <span className="text-micro text-disabled tabular-nums">{interest.depositDate}</span>
       </div>
-      <p className="text-[13px] font-bold text-heading truncate mb-1">{interest.interestType}</p>
-      <p className="text-[18px] font-extrabold tabular-nums tracking-tight" style={{ color: 'var(--value-positive)' }}>
-        +{formatKoreanUnit(net)}<span className="text-[11px]">원</span>
+      <p className="text-label3 font-bold text-heading truncate mb-1">{interest.interestType}</p>
+      <p className="text-title2 font-extrabold tabular-nums tracking-tight" style={{ color: 'var(--value-positive)' }}>
+        +{formatKoreanUnit(net)}<span className="text-caption">원</span>
       </p>
-      <div className="text-[10px] text-sub mt-1.5 tabular-nums">{interest.periodStart} ~ {interest.periodEnd}</div>
+      <div className="text-micro text-sub mt-1.5 tabular-nums">{interest.periodStart} ~ {interest.periodEnd}</div>
     </motion.button>
   )
 }
@@ -1755,13 +1755,13 @@ function CompactTradeRow({ trade, onClick }: { trade: InvestmentTrade; onClick: 
   return (
     <button onClick={onClick}
       className="group w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-[var(--hover-bg)] transition-colors border-b border-[color:var(--border-subtle)]">
-      <span className="text-[10px] text-sub tabular-nums w-[70px] shrink-0">{trade.sellDate}</span>
-      <span className="text-[11px] font-bold text-heading flex-1 truncate">{trade.stockName}</span>
-      <span className="text-[10px] text-sub tabular-nums w-10 text-right shrink-0">{formatShares(trade.sellQuantity)}주</span>
-      <span className="text-[11px] font-bold tabular-nums w-24 text-right shrink-0" style={{ color: pos ? 'var(--value-positive)' : 'var(--value-negative)' }}>
+      <span className="text-micro text-sub tabular-nums w-[70px] shrink-0">{trade.sellDate}</span>
+      <span className="text-caption font-bold text-heading flex-1 truncate">{trade.stockName}</span>
+      <span className="text-micro text-sub tabular-nums w-10 text-right shrink-0">{formatShares(trade.sellQuantity)}주</span>
+      <span className="text-caption font-bold tabular-nums w-24 text-right shrink-0" style={{ color: pos ? 'var(--value-positive)' : 'var(--value-negative)' }}>
         {pos ? '+' : ''}{formatKoreanUnit(trade.totalProfit)}
       </span>
-      <span className={clsx('text-[10px] font-bold tabular-nums w-14 text-right shrink-0', pos ? 'text-status-success' : 'text-status-danger')}>
+      <span className={clsx('text-micro font-bold tabular-nums w-14 text-right shrink-0', pos ? 'value-positive' : 'value-negative')}>
         {pos ? '+' : ''}{trade.profitRate.toFixed(1)}%
       </span>
       <ChevronRight className="w-3.5 h-3.5 text-disabled opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
@@ -1774,13 +1774,13 @@ function CompactDividendRow({ div, onClick }: { div: Dividend; onClick: () => vo
   return (
     <button onClick={onClick}
       className="group w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-[var(--hover-bg)] transition-colors border-b border-[color:var(--border-subtle)]">
-      <span className="text-[10px] text-sub tabular-nums w-[70px] shrink-0">{div.paymentDate}</span>
-      <span className="text-[11px] font-bold text-heading flex-1 truncate">{div.stockName}</span>
-      <span className="text-[10px] text-sub tabular-nums w-10 text-right shrink-0">{formatShares(div.quantity)}주</span>
-      <span className="text-[11px] font-bold tabular-nums w-24 text-right shrink-0" style={{ color: 'var(--value-positive)' }}>
+      <span className="text-micro text-sub tabular-nums w-[70px] shrink-0">{div.paymentDate}</span>
+      <span className="text-caption font-bold text-heading flex-1 truncate">{div.stockName}</span>
+      <span className="text-micro text-sub tabular-nums w-10 text-right shrink-0">{formatShares(div.quantity)}주</span>
+      <span className="text-caption font-bold tabular-nums w-24 text-right shrink-0" style={{ color: 'var(--value-positive)' }}>
         +{formatKoreanUnit(net)}
       </span>
-      <span className="text-[10px] text-sub tabular-nums w-14 text-right shrink-0">세금 {formatKRW(div.tax)}</span>
+      <span className="text-micro text-sub tabular-nums w-14 text-right shrink-0">세금 {formatKRW(div.tax)}</span>
       <ChevronRight className="w-3.5 h-3.5 text-disabled opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
     </button>
   )
@@ -1791,10 +1791,10 @@ function CompactInterestRow({ interest, onClick }: { interest: AccountInterest; 
   return (
     <button onClick={onClick}
       className="group w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-[var(--hover-bg)] transition-colors border-b border-[color:var(--border-subtle)]">
-      <span className="text-[10px] text-sub tabular-nums w-[70px] shrink-0">{interest.depositDate}</span>
-      <span className="text-[11px] font-bold text-heading flex-1 truncate">{interest.interestType}</span>
-      <span className="text-[10px] text-sub tabular-nums w-14 text-right shrink-0">연 {formatRatePercent(interest.interestRate)}</span>
-      <span className="text-[11px] font-bold tabular-nums w-24 text-right shrink-0" style={{ color: 'var(--value-positive)' }}>
+      <span className="text-micro text-sub tabular-nums w-[70px] shrink-0">{interest.depositDate}</span>
+      <span className="text-caption font-bold text-heading flex-1 truncate">{interest.interestType}</span>
+      <span className="text-micro text-sub tabular-nums w-14 text-right shrink-0">연 {formatRatePercent(interest.interestRate)}</span>
+      <span className="text-caption font-bold tabular-nums w-24 text-right shrink-0" style={{ color: 'var(--value-positive)' }}>
         +{formatKoreanUnit(net)}
       </span>
       <ChevronRight className="w-3.5 h-3.5 text-disabled opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
@@ -1805,7 +1805,7 @@ function CompactInterestRow({ interest, onClick }: { interest: AccountInterest; 
 // ─── Compact Table Header ────────────────────────
 function CompactHeader({ type }: { type: 'trades' | 'dividends' | 'interests' }) {
   if (type === 'trades') return (
-    <div className="flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-disabled border-b border-[color:var(--border-default)] bg-surface-tertiary rounded-t-xl sticky top-0 z-10">
+    <div className="flex items-center gap-2 px-3 py-1.5 text-micro font-bold uppercase tracking-[0.12em] text-disabled border-b border-[color:var(--border-default)] bg-surface-tertiary rounded-t-xl sticky top-0 z-10">
       <span className="w-[70px] shrink-0">날짜</span>
       <span className="flex-1">종목</span>
       <span className="w-10 text-right shrink-0">수량</span>
@@ -1815,7 +1815,7 @@ function CompactHeader({ type }: { type: 'trades' | 'dividends' | 'interests' })
     </div>
   )
   if (type === 'dividends') return (
-    <div className="flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-disabled border-b border-[color:var(--border-default)] bg-surface-tertiary rounded-t-xl sticky top-0 z-10">
+    <div className="flex items-center gap-2 px-3 py-1.5 text-micro font-bold uppercase tracking-[0.12em] text-disabled border-b border-[color:var(--border-default)] bg-surface-tertiary rounded-t-xl sticky top-0 z-10">
       <span className="w-[70px] shrink-0">지급일</span>
       <span className="flex-1">종목</span>
       <span className="w-10 text-right shrink-0">수량</span>
@@ -1825,7 +1825,7 @@ function CompactHeader({ type }: { type: 'trades' | 'dividends' | 'interests' })
     </div>
   )
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-disabled border-b border-[color:var(--border-default)] bg-surface-tertiary rounded-t-xl sticky top-0 z-10">
+    <div className="flex items-center gap-2 px-3 py-1.5 text-micro font-bold uppercase tracking-[0.12em] text-disabled border-b border-[color:var(--border-default)] bg-surface-tertiary rounded-t-xl sticky top-0 z-10">
       <span className="w-[70px] shrink-0">입금일</span>
       <span className="flex-1">유형</span>
       <span className="w-14 text-right shrink-0">이자율</span>
@@ -1861,7 +1861,7 @@ function MarketFilterChips({ value, onChange, trades, dividends }: {
             whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
             transition={springSnappy}
             className={clsx(
-              'flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[11px] font-bold transition-all',
+              'flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-caption font-bold transition-all',
               isActive
                 ? 'text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
                 : 'bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -1870,7 +1870,7 @@ function MarketFilterChips({ value, onChange, trades, dividends }: {
           >
             {MARKET_LABELS[m]}
             <span className={clsx(
-              'min-w-[18px] px-1 h-[16px] rounded-full text-[9px] font-bold tabular-nums flex items-center justify-center',
+              'min-w-[18px] px-1 h-[16px] rounded-full text-micro font-bold tabular-nums flex items-center justify-center',
               isActive ? 'bg-white/22 text-white' : 'bg-surface-tertiary text-sub',
             )}>{count}</span>
           </motion.button>
@@ -1906,7 +1906,7 @@ function MonthFilterChips({ value, onChange, months }: {
             transition={springSnappy}
             aria-pressed={isActive}
             className={clsx(
-              'flex-shrink-0 inline-flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold transition-all tabular-nums',
+              'flex-shrink-0 inline-flex items-center gap-1 px-3 h-8 rounded-full text-caption font-bold transition-all tabular-nums',
               isActive
                 ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
                 : 'bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -1934,7 +1934,7 @@ function MemberFilterChips({ value, onChange, members }: {
         whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
         transition={springSnappy}
         className={clsx(
-          'flex-shrink-0 inline-flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold transition-all',
+          'flex-shrink-0 inline-flex items-center gap-1 px-3 h-8 rounded-full text-caption font-bold transition-all',
           value === 'all'
             ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
             : 'bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -1950,7 +1950,7 @@ function MemberFilterChips({ value, onChange, members }: {
             whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
             transition={springSnappy}
             className={clsx(
-              'flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[11px] font-bold transition-all',
+              'flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-caption font-bold transition-all',
               isActive
                 ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
                 : 'bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -1983,7 +1983,7 @@ function SortChips({ value, onChange }: { value: string; onChange: (v: 'date' | 
             whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
             transition={springSnappy}
             className={clsx(
-              'flex-shrink-0 inline-flex items-center px-2.5 h-7 rounded-full text-[10px] font-bold transition-all',
+              'flex-shrink-0 inline-flex items-center px-2.5 h-7 rounded-full text-micro font-bold transition-all',
               isActive
                 ? 'bg-[color:var(--color-primary-500)] text-white'
                 : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]',
@@ -2207,19 +2207,19 @@ export function InvestmentPage() {
         <div className="flex items-center gap-2">
           {activeTab !== 'dashboard' && hasData && (
             <button onClick={() => setShowResetConfirm(true)}
-              className="inline-flex items-center gap-1 h-9 px-3 rounded-2xl text-[12px] font-bold ring-1 transition-all"
+              className="inline-flex items-center gap-1 h-9 px-3 rounded-2xl text-caption font-bold ring-1 transition-all"
               style={{ color: 'var(--status-danger-text)', borderColor: 'color-mix(in srgb, var(--status-danger-text) 30%, transparent)', backgroundColor: 'var(--status-danger-bg)' }}>
               <RotateCcw className="w-3.5 h-3.5" />초기화
             </button>
           )}
           {activeTab !== 'dashboard' && (
             <button onClick={openNewForm}
-              className="inline-flex items-center gap-1 h-9 px-3 rounded-2xl text-[12px] font-bold text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] bg-surface-primary transition-all">
+              className="inline-flex items-center gap-1 h-9 px-3 rounded-2xl text-caption font-bold text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] bg-surface-primary transition-all">
               <Plus className="w-4 h-4" />등록
             </button>
           )}
           <button onClick={() => setShowImport(true)}
-            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-2xl text-[12px] font-bold text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]"
+            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-2xl text-caption font-bold text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]"
             style={{ background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))' }}>
             <Upload className="w-4 h-4" />가져오기
           </button>
@@ -2293,7 +2293,7 @@ export function InvestmentPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-disabled pointer-events-none" />
               <input type="text" aria-label="종목명 검색" placeholder="종목명 검색..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 h-10 rounded-2xl bg-surface-primary text-heading text-[13px] ring-1 ring-base placeholder:text-disabled focus:outline-none focus:ring-[color:var(--color-primary-400)] transition-all" />
+                className="w-full pl-9 pr-3 h-10 rounded-2xl bg-surface-primary text-heading text-label3 ring-1 ring-base placeholder:text-disabled focus:outline-none focus:ring-[color:var(--color-primary-400)] transition-all" />
             </div>
             <ViewModeToggle value={viewMode} onChange={setViewMode} />
           </div>
@@ -2333,7 +2333,7 @@ export function InvestmentPage() {
         <div className="flex flex-col items-center justify-center py-16 text-body">
           {activeTab === 'trades' ? <TrendingUp className="w-12 h-12 mb-3 opacity-20" /> : <Banknote className="w-12 h-12 mb-3 opacity-20" />}
           <p className="text-body3">{!hasData ? (activeTab === 'trades' ? '등록된 투자수익이 없습니다' : activeTab === 'dividends' ? '등록된 배당금이 없습니다' : '등록된 계좌이자가 없습니다') : '검색 결과가 없습니다'}</p>
-          {!hasData && <p className="text-[10px] text-muted mt-1">상단의 "가져오기" 버튼으로 증권사 데이터를 붙여넣기 하세요</p>}
+          {!hasData && <p className="text-micro text-muted mt-1">상단의 "가져오기" 버튼으로 증권사 데이터를 붙여넣기 하세요</p>}
         </div>
       ) : viewMode === 'grid' ? (
         /* ═══ GRID VIEW ═══ */
@@ -2373,8 +2373,8 @@ export function InvestmentPage() {
               return (
                 <div key={date}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold text-sub flex items-center gap-1"><Calendar className="w-3 h-3" />{date}</span>
-                    <span className="text-[10px] font-bold tabular-nums" style={{ color: dayProfit >= 0 ? 'var(--value-positive)' : 'var(--value-negative)' }}>{formatChange(dayProfit)}</span>
+                    <span className="text-micro font-bold text-sub flex items-center gap-1"><Calendar className="w-3 h-3" />{date}</span>
+                    <span className="text-micro font-bold tabular-nums" style={{ color: dayProfit >= 0 ? 'var(--value-positive)' : 'var(--value-negative)' }}>{formatChange(dayProfit)}</span>
                   </div>
                   <div className="space-y-2">
                     {dateTrades.map(t => <TradeCard key={t.id} trade={t} memberName={t.memberId != null ? memberMap.get(t.memberId) : undefined} onClick={() => setSelectedTrade(t)} />)}
@@ -2390,8 +2390,8 @@ export function InvestmentPage() {
               return (
                 <div key={date}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold text-sub flex items-center gap-1"><Calendar className="w-3 h-3" />{date}</span>
-                    <span className="text-[10px] font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>+{formatKoreanUnit(dayTotal)}원</span>
+                    <span className="text-micro font-bold text-sub flex items-center gap-1"><Calendar className="w-3 h-3" />{date}</span>
+                    <span className="text-micro font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>+{formatKoreanUnit(dayTotal)}원</span>
                   </div>
                   <div className="space-y-2">
                     {dateDivs.map(d => <DividendCard key={d.id} div={d} memberName={d.memberId != null ? memberMap.get(d.memberId) : undefined} onClick={() => setSelectedDiv(d)} />)}
@@ -2407,8 +2407,8 @@ export function InvestmentPage() {
               return (
                 <div key={date}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold text-sub flex items-center gap-1"><Calendar className="w-3 h-3" />{date}</span>
-                    <span className="text-[10px] font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>+{formatKoreanUnit(dayTotal)}원</span>
+                    <span className="text-micro font-bold text-sub flex items-center gap-1"><Calendar className="w-3 h-3" />{date}</span>
+                    <span className="text-micro font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>+{formatKoreanUnit(dayTotal)}원</span>
                   </div>
                   <div className="space-y-2">
                     {dateInterests.map(r => <InterestCard key={r.id} interest={r} memberName={r.memberId != null ? memberMap.get(r.memberId) : undefined} onClick={() => setSelectedInterest(r)} />)}
@@ -2429,7 +2429,7 @@ export function InvestmentPage() {
       {showResetConfirm && (
         <AnimatePresence>
           <motion.div key="reset-ov" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[var(--z-overlay)] bg-black/40 dark:bg-black/60 backdrop-blur-[12px]"
+            className="fixed inset-0 z-[var(--z-overlay)] scrim"
             onClick={() => setShowResetConfirm(false)} />
           <motion.div key="reset-dlg" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 360, damping: 30 }}
@@ -2442,16 +2442,16 @@ export function InvestmentPage() {
             <h3 className="text-body3-semi text-heading mb-1">
               {activeTab === 'trades' ? '판매수익' : activeTab === 'dividends' ? '배당금' : '계좌이자'} 초기화
             </h3>
-            <p className="text-[12px] text-sub mb-5">
+            <p className="text-caption text-sub mb-5">
               등록된 모든 {activeTab === 'trades' ? '판매수익' : activeTab === 'dividends' ? '배당금' : '계좌이자'} 데이터가 삭제됩니다.<br />이 작업은 되돌릴 수 없습니다.
             </p>
             <div className="flex gap-2">
               <button onClick={() => setShowResetConfirm(false)}
-                className="flex-1 h-11 rounded-2xl text-[13px] font-bold text-body ring-1 ring-[color:var(--border-strong)] bg-surface-primary hover:bg-[var(--hover-bg)] transition-all">
+                className="flex-1 h-11 rounded-2xl text-label3 font-bold text-body ring-1 ring-[color:var(--border-strong)] bg-surface-primary hover:bg-[var(--hover-bg)] transition-all">
                 취소
               </button>
               <button onClick={handleReset}
-                className="flex-1 h-11 rounded-2xl text-[13px] font-bold text-white transition-all"
+                className="flex-1 h-11 rounded-2xl text-label3 font-bold text-white transition-all"
                 style={{ backgroundColor: 'var(--status-danger-text)' }}>
                 초기화
               </button>

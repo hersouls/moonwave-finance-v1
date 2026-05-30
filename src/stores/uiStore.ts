@@ -24,6 +24,9 @@ interface UIState {
 
   isSearchModalOpen: boolean
 
+  isCommandPaletteOpen: boolean
+  isShortcutsModalOpen: boolean
+
   isSubscriptionCreateModalOpen: boolean
   isSubscriptionEditModalOpen: boolean
   editingSubscriptionId: number | null
@@ -50,6 +53,12 @@ interface UIState {
 
   openSearchModal: () => void
   closeSearchModal: () => void
+
+  openCommandPalette: () => void
+  closeCommandPalette: () => void
+  toggleCommandPalette: () => void
+  openShortcutsModal: () => void
+  closeShortcutsModal: () => void
 
   openSubscriptionCreateModal: () => void
   closeSubscriptionCreateModal: () => void
@@ -88,6 +97,8 @@ export const useUIStore = create<UIState>()(
       isFAQModalOpen: false,
       isTermsModalOpen: false,
       isSearchModalOpen: false,
+      isCommandPaletteOpen: false,
+      isShortcutsModalOpen: false,
       isSubscriptionCreateModalOpen: false,
       isSubscriptionEditModalOpen: false,
       editingSubscriptionId: null,
@@ -123,6 +134,12 @@ export const useUIStore = create<UIState>()(
 
       openSearchModal: () => set({ isSearchModalOpen: true }),
       closeSearchModal: () => set({ isSearchModalOpen: false }),
+
+      openCommandPalette: () => set({ isCommandPaletteOpen: true }),
+      closeCommandPalette: () => set({ isCommandPaletteOpen: false }),
+      toggleCommandPalette: () => set((s) => ({ isCommandPaletteOpen: !s.isCommandPaletteOpen })),
+      openShortcutsModal: () => set({ isShortcutsModalOpen: true }),
+      closeShortcutsModal: () => set({ isShortcutsModalOpen: false }),
 
       openSubscriptionCreateModal: () => set({ isSubscriptionCreateModalOpen: true }),
       closeSubscriptionCreateModal: () => set({ isSubscriptionCreateModalOpen: false }),

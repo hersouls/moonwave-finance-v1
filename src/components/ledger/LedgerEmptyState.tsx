@@ -26,7 +26,7 @@ export function LedgerEmptyState() {
       className="relative overflow-hidden rounded-3xl bg-surface-primary"
       style={{
         boxShadow:
-          'inset 0 0 0 1px var(--border-default), inset 0 1px 0 0 rgba(255,255,255,0.5), 0 2px 12px rgba(0,0,0,0.04)',
+          'inset 0 0 0 1px var(--border-default), var(--shadow-1)',
       }}
     >
       {/* Aurora background */}

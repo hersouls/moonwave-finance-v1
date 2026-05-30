@@ -41,7 +41,7 @@ export function FinancialGoals() {
 
       {goals.length === 0 ? (
         <Card className="card-pad-lg">
-          <p className="text-sm text-sub text-center">
+          <p className="text-body3 text-sub text-center">
             재정 목표를 설정하고 진행률을 추적해보세요.
           </p>
         </Card>

@@ -56,8 +56,7 @@ export function TopCategoryCard({
     return (
       <Tag
         {...tagProps}
-        className="flex-shrink-0 w-[180px] rounded-2xl bg-surface-primary p-4 text-left hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all"
-        style={{ boxShadow: 'inset 0 0 0 1px var(--border-default), 0 1px 3px rgba(0,0,0,0.04)' }}
+        className="card-base flex-shrink-0 w-[180px] rounded-2xl bg-surface-primary p-4 text-left transition-all"
       >
         <div className="flex items-center gap-2 mb-3">
           <div className="w-7 h-7 rounded-lg bg-surface-tertiary flex items-center justify-center">
@@ -73,8 +72,7 @@ export function TopCategoryCard({
   return (
     <Tag
       {...tagProps}
-      className="flex-shrink-0 w-[180px] rounded-2xl bg-surface-primary p-4 text-left hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all"
-      style={{ boxShadow: 'inset 0 0 0 1px var(--border-default), 0 1px 3px rgba(0,0,0,0.04)' }}
+      className="card-base flex-shrink-0 w-[180px] rounded-2xl bg-surface-primary p-4 text-left transition-all"
       aria-label={`Top 카테고리 ${topCategory?.name ?? '미분류'}, ${topAmount}원`}
     >
       <div className="flex items-center gap-2 mb-3">
@@ -93,7 +91,7 @@ export function TopCategoryCard({
       {trend.percent !== null && (
         <div
           className={clsx(
-            'mt-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold tabular-nums',
+            'mt-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-caption font-bold tabular-nums leading-none',
             trendIsBad && 'bg-status-danger-soft text-status-danger',
             trendIsGood && 'bg-status-success-soft text-status-success',
             !trendIsBad && !trendIsGood && 'bg-surface-tertiary text-sub',

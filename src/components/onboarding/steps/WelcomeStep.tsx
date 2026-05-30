@@ -16,7 +16,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
     <div className="flex flex-col items-center justify-center min-h-full px-6 py-12">
       <img src="/icons/icon-192.png" alt="FIN" className="w-16 h-16 rounded-2xl mb-6" />
       <h1 className="text-heading2 text-heading mb-2">Moonwave Finance</h1>
-      <p className="text-sm text-sub mb-8 text-center">가족 자산을 한눈에 관리하세요</p>
+      <p className="text-body3 text-sub mb-8 text-center">가족 자산을 한눈에 관리하세요</p>
 
       <div className="w-full max-w-sm space-y-4 mb-10">
         {features.map((f, i) => (

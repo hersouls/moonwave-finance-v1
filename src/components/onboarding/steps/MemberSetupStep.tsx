@@ -34,7 +34,7 @@ export function MemberSetupStep({ onNext, onBack }: MemberSetupStepProps) {
         <Users className="w-6 h-6 text-primary-600 dark:text-primary-400" />
       </div>
       <h2 className="text-title1 text-heading mb-2">가족 구성원</h2>
-      <p className="text-sm text-sub mb-8 text-center">자산을 관리할 구성원을 확인하세요</p>
+      <p className="text-body3 text-sub mb-8 text-center">자산을 관리할 구성원을 확인하세요</p>
 
       <div className="w-full max-w-sm space-y-2 mb-6">
         {members.map(m => (

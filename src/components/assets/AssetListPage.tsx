@@ -11,9 +11,16 @@ import { AssetCategoryTabs } from './AssetCategoryTabs'
 import { AssetCreateModal } from './AssetCreateModal'
 import { AssetEmptyState } from './AssetEmptyState'
 import { AssetListSkeleton } from './AssetListSkeleton'
+import { AssetInspectorBody } from './AssetInspectorBody'
 import { FAB } from '@/components/ui/FAB'
 import { Tabs } from '@/components/ui/Tabs'
 import { ErrorEmptyState } from '@/components/ui/EmptyState'
+import { InspectorPanel } from '@/components/ui/InspectorPanel'
+import { SwipeableRow } from '@/components/ui/SwipeableRow'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Pencil, Trash2 } from 'lucide-react'
+import { clsx } from 'clsx'
+import { useBreakpoint } from '@/hooks/useBreakpoint'
 import { useSyncListener } from '@/hooks/useSyncListener'
 import { groupValuesByItem, valueAsOf } from '@/services/assetAnalytics'
 import { getTodayString } from '@/lib/dateUtils'
@@ -23,7 +30,10 @@ export function AssetListPage() {
   const [error, setError] = useState<string | null>(null)
   const [activeMember, setActiveMember] = useState<number | null>(null)
   const [activeCategory, setActiveCategory] = useState<number | null>(null)
+  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [deleteId, setDeleteId] = useState<number | null>(null)
 
+  const { isDesktop } = useBreakpoint()
   const today = getTodayString()
   const shouldReduceMotion = useReducedMotion()
   const containerV = motionVariants(shouldReduceMotion, staggerContainer, reducedStaggerContainer)
@@ -37,6 +47,8 @@ export function AssetListPage() {
   const allValues = useDailyValueStore((s) => s.allValues)
   const members = useMemberStore((s) => s.members)
   const openAssetCreateModal = useUIStore((s) => s.openAssetCreateModal)
+  const openAssetEditModal = useUIStore((s) => s.openAssetEditModal)
+  const deleteItem = useAssetStore((s) => s.deleteItem)
 
   const loadData = async () => {
     setError(null)
@@ -73,6 +85,8 @@ export function AssetListPage() {
     )
   }, [items, activeMember, activeCategory, allValues, today])
 
+  const selectedItem = selectedId != null ? items.find((i) => i.id === selectedId) : undefined
+
   if (isLoading) return <AssetListSkeleton />
 
   if (error) {
@@ -95,43 +109,95 @@ export function AssetListPage() {
         <Tabs
           tabs={memberTabs}
           activeTab={activeMember === null ? 'all' : String(activeMember)}
-          onChange={(id) => setActiveMember(id === 'all' ? null : Number(id))}
+          onChange={(id) => { setActiveMember(id === 'all' ? null : Number(id)); setSelectedId(null) }}
         />
 
         {/* Category Filter */}
         <AssetCategoryTabs
           activeCategory={activeCategory}
-          onChange={setActiveCategory}
+          onChange={(c) => { setActiveCategory(c); setSelectedId(null) }}
           type="asset"
         />
 
-        {/* Item List */}
+        {/* Item List + desktop inspector (master-detail) */}
         {filteredItems.length === 0 ? (
           <AssetEmptyState />
         ) : (
-          <motion.div
-            className="space-y-3"
-            variants={containerV}
-            initial="hidden"
-            animate="visible"
-            key={`${activeMember}-${activeCategory}`}
-          >
-            {filteredItems.map(item => (
-              <motion.div key={item.id} variants={itemV}>
-                <AssetItemCard
-                  itemId={item.id!}
-                  name={item.name}
-                  categoryId={item.categoryId}
-                  type="asset"
-                />
-              </motion.div>
-            ))}
-          </motion.div>
+          <div className={clsx('master-detail', isDesktop && selectedId != null && 'has-inspector')}>
+            <motion.div
+              className={clsx('grid grid-cols-1 gap-3', isDesktop && selectedId == null && 'xl:grid-cols-2')}
+              variants={containerV}
+              initial="hidden"
+              animate="visible"
+              key={`${activeMember}-${activeCategory}`}
+            >
+              {filteredItems.map(item => {
+                const id = item.id!
+                const card = (
+                  <AssetItemCard
+                    itemId={id}
+                    name={item.name}
+                    categoryId={item.categoryId}
+                    type="asset"
+                    onSelect={isDesktop ? setSelectedId : undefined}
+                    selected={isDesktop && selectedId === id}
+                  />
+                )
+                return (
+                  <motion.div key={id} variants={itemV}>
+                    {isDesktop ? card : (
+                      <SwipeableRow
+                        actions={[
+                          { icon: Pencil, label: '수정', variant: 'primary', onClick: () => openAssetEditModal(id) },
+                          { icon: Trash2, label: '삭제', variant: 'danger', onClick: () => setDeleteId(id) },
+                        ]}
+                      >
+                        {card}
+                      </SwipeableRow>
+                    )}
+                  </motion.div>
+                )
+              })}
+            </motion.div>
+
+            {isDesktop && (
+              <InspectorPanel
+                open={selectedId != null}
+                onClose={() => setSelectedId(null)}
+                title={selectedItem?.name}
+              >
+                {selectedId != null && (
+                  <AssetInspectorBody
+                    itemId={selectedId}
+                    type="asset"
+                    onEdit={() => openAssetEditModal(selectedId)}
+                    onDelete={() => setDeleteId(selectedId)}
+                  />
+                )}
+              </InspectorPanel>
+            )}
+          </div>
         )}
       </div>
 
       <FAB onClick={openAssetCreateModal} label="새 자산 추가" />
       <AssetCreateModal />
+      <ConfirmDialog
+        open={deleteId != null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={async () => {
+          const id = deleteId
+          setDeleteId(null)
+          if (id != null) {
+            await deleteItem(id)
+            if (selectedId === id) setSelectedId(null)
+          }
+        }}
+        title="자산을 삭제할까요?"
+        description="이 자산과 관련된 가치 기록이 함께 삭제됩니다. 되돌릴 수 없습니다."
+        variant="danger"
+        confirmText="삭제"
+      />
     </div>
   )
 }

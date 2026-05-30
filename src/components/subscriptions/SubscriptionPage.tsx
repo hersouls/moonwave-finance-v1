@@ -23,6 +23,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { useSyncListener } from '@/hooks/useSyncListener'
 import { useCountUp } from '@/hooks/useCountUp'
 import { useHiddenSubscriptions } from '@/hooks/useHiddenSubscriptions'
+import { useMediaQuery, BREAKPOINTS } from '@/hooks/useBreakpoint'
 import { getCategoryIcon } from '@/utils/categoryIcons'
 import { formatKoreanUnit } from '@/utils/format'
 import { formatDate, formatMonthLabel, getCurrentMonthString } from '@/lib/dateUtils'
@@ -260,11 +261,7 @@ function SubscriptionHero({
 
   return (
     <section
-      className="relative overflow-hidden rounded-3xl bg-surface-primary"
-      style={{
-        boxShadow:
-          'inset 0 0 0 1px var(--border-default), inset 0 1px 0 0 rgba(255,255,255,0.5), 0 4px 20px rgba(0,0,0,0.05)',
-      }}
+      className="relative overflow-hidden rounded-3xl bg-surface-primary ring-1 ring-base elevation-1"
     >
       {/* Aurora */}
       <div
@@ -290,7 +287,7 @@ function SubscriptionHero({
             className="w-1.5 h-1.5 rounded-full"
             style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary-500) 70%, transparent)' }}
           />
-          <p className="text-[10px] sm:text-[11px] font-bold tracking-[0.14em] uppercase text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]">
+          <p className="text-caption font-bold tracking-[0.14em] uppercase text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]">
             이번 달 구독료 (예상)
           </p>
         </div>
@@ -302,7 +299,7 @@ function SubscriptionHero({
           >
             {hideAmounts ? '••••••' : animatedMonthly.toLocaleString('ko-KR')}
           </span>
-          <span className="text-body3-semi font-bold text-sub" style={{ fontSize: 'clamp(18px,4vw,22px)' }}>원</span>
+          <span className="text-body-lg-fluid font-bold text-sub">원</span>
         </div>
 
         {/* Delta + summary chips */}
@@ -332,7 +329,7 @@ function SubscriptionHero({
 
 function ChipMetric({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
-    <span className="inline-flex items-baseline gap-1 px-2 py-0.5 rounded-full text-[11px] bg-surface-tertiary ring-1 ring-base tabular-nums">
+    <span className="inline-flex items-baseline gap-1 px-2 py-0.5 rounded-full text-caption bg-surface-tertiary ring-1 ring-base tabular-nums">
       <span className="text-disabled font-medium">{label}</span>
       <span className="font-bold" style={{ color: color || 'var(--text-heading)' }}>{value}</span>
     </span>
@@ -407,10 +404,10 @@ function MonthSelector({
           aria-expanded={isPickerOpen}
           aria-label="월 선택 캘린더 열기"
           className={clsx(
-            'inline-flex items-center gap-2 h-9 px-3.5 rounded-2xl text-[12px] font-bold transition-all',
+            'touch-target-inset inline-flex items-center gap-2 h-9 px-3.5 rounded-2xl text-label3 font-bold transition-all',
             value === 'all'
-              ? 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
-              : 'text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]',
+              ? 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] elevation-1'
+              : 'text-white el-glow-primary',
           )}
           style={
             value !== 'all'
@@ -439,9 +436,9 @@ function MonthSelector({
                 transition={springSnappy}
                 aria-pressed={isActive}
                 className={clsx(
-                  'flex-shrink-0 inline-flex items-center gap-1 px-3 h-8 rounded-full text-[11px] font-bold transition-all tabular-nums',
+                  'touch-target-inset flex-shrink-0 inline-flex items-center gap-1 px-3 h-8 rounded-full text-caption font-bold transition-all tabular-nums',
                   isActive
-                    ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
+                    ? 'bg-[color:var(--color-primary-500)] text-white el-glow-primary'
                     : 'bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
                 )}
               >
@@ -508,16 +505,10 @@ function MonthCalendarPicker({
     }
   }, [open, onClose])
 
-  // Click outside the popover closes (desktop only — modal handles its own backdrop)
-  const [isDesktop, setIsDesktop] = useState(false)
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const mq = window.matchMedia('(min-width: 640px)')
-    const update = () => setIsDesktop(mq.matches)
-    update()
-    mq.addEventListener('change', update)
-    return () => mq.removeEventListener('change', update)
-  }, [])
+  // Click outside the popover closes (desktop only — modal handles its own backdrop).
+  // Canonical mobile|PC split at lg=768: below this the touch-centered modal is used
+  // (covers the 600–767 zfold-open band), at/above it the anchored desktop popover.
+  const isDesktop = useMediaQuery(`(min-width: ${BREAKPOINTS.lg}px)`)
 
   // Anchor position (desktop only)
   const [anchorPos, setAnchorPos] = useState<{ top: number; left: number } | null>(null)
@@ -527,7 +518,16 @@ function MonthCalendarPicker({
       const el = anchorRef.current
       if (!el) return
       const r = el.getBoundingClientRect()
-      setAnchorPos({ top: r.bottom + 8, left: r.left })
+      // Estimated popover height (year header + 12-month grid + footer). Used to
+      // flip the panel above the trigger when it would overflow the viewport
+      // bottom, so the '전체 기간'/'이번 달로' actions never clip below the fold.
+      const estimatedHeight = 380
+      const vh = window.innerHeight
+      const below = r.bottom + 8
+      const top = below + estimatedHeight > vh - 16
+        ? Math.max(16, r.top - 8 - estimatedHeight) // flip above
+        : below
+      setAnchorPos({ top, left: r.left })
     }
     update()
     window.addEventListener('resize', update)
@@ -564,7 +564,7 @@ function MonthCalendarPicker({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 z-[var(--z-overlay)] bg-black/40 dark:bg-black/60 backdrop-blur-[10px]"
+            className="scrim fixed inset-0 z-[var(--z-overlay)]"
             aria-hidden="true"
           />
         )}
@@ -591,7 +591,7 @@ function MonthCalendarPicker({
             'z-[calc(var(--z-overlay)+1)]',
             'bg-surface-primary el-dialog ring-1 ring-[color:var(--border-default)]',
             isDesktop
-              ? 'fixed rounded-2xl shadow-[0_18px_44px_-12px_rgba(0,0,0,0.22)]'
+              ? 'fixed rounded-2xl max-h-[80vh] overflow-y-auto'
               : 'fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-sm rounded-3xl',
           )}
           style={
@@ -672,8 +672,8 @@ function MonthCalendarPicker({
                   transition={springSnappy}
                   aria-pressed={isSelected}
                   className={clsx(
-                    'relative flex flex-col items-center justify-center h-14 rounded-xl text-[12px] font-bold tabular-nums transition-all',
-                    isSelected && 'text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]',
+                    'relative flex flex-col items-center justify-center h-14 rounded-xl text-label3 font-bold tabular-nums transition-all',
+                    isSelected && 'text-white el-glow-primary',
                     !isSelected && disabled && 'text-disabled bg-transparent cursor-not-allowed',
                     !isSelected && !disabled && hasActivity && 'bg-surface-primary text-heading ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] hover:bg-[var(--hover-bg)]',
                     !isSelected && !disabled && !hasActivity && 'bg-surface-tertiary text-sub ring-1 ring-transparent hover:text-heading hover:bg-[var(--hover-bg)]',
@@ -697,7 +697,7 @@ function MonthCalendarPicker({
                     <span className="w-1 h-1 rounded-full mt-0.5 bg-white/70" aria-hidden="true" />
                   )}
                   {isThisMonth && !isSelected && (
-                    <span className="absolute top-1 right-1.5 text-[8px] font-bold uppercase tracking-wider text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]">
+                    <span className="absolute top-1 right-1.5 text-micro font-bold uppercase tracking-wider text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]">
                       ★
                     </span>
                   )}
@@ -712,7 +712,7 @@ function MonthCalendarPicker({
               type="button"
               onClick={() => onChange('all')}
               className={clsx(
-                'inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[11px] font-bold transition-all ring-1',
+                'touch-target-inset inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-caption font-bold transition-all ring-1',
                 value === 'all'
                   ? 'bg-[color:var(--color-primary-500)] text-white ring-transparent'
                   : 'bg-surface-primary text-body ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)]',
@@ -725,7 +725,7 @@ function MonthCalendarPicker({
               type="button"
               onClick={() => onChange(currentMonth)}
               className={clsx(
-                'inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[11px] font-bold transition-all ring-1',
+                'touch-target-inset inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-caption font-bold transition-all ring-1',
                 value === currentMonth
                   ? 'bg-[color:var(--color-primary-500)] text-white ring-transparent'
                   : 'bg-surface-primary text-body ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)]',
@@ -770,16 +770,16 @@ function CycleFilterChips({
             whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
             transition={springSnappy}
             className={clsx(
-              'flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[11px] font-bold transition-all',
+              'touch-target-inset flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-caption font-bold transition-all',
               isActive
-                ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
+                ? 'bg-[color:var(--color-primary-500)] text-white el-glow-primary'
                 : 'bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
             )}
           >
             {CYCLE_LABELS[c]}
             <span
               className={clsx(
-                'min-w-[18px] px-1 h-[16px] rounded-full text-[9px] font-bold tabular-nums flex items-center justify-center',
+                'min-w-[18px] px-1 h-[16px] rounded-full text-label4 leading-none font-bold tabular-nums flex items-center justify-center',
                 isActive ? 'bg-white/22 text-white' : 'bg-surface-tertiary text-sub',
               )}
             >
@@ -804,7 +804,7 @@ function ChartsGrid({
   categories: ReturnType<typeof useTransactionStore.getState>['categories']
 }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-4 gap-4">
       <ChartCard title="카테고리별 분포" icon={Tag}>
         <CategoryDonut data={stats.byCategory} totalMonthly={stats.totalMonthly} />
       </ChartCard>
@@ -830,14 +830,11 @@ function ChartCard({
 }) {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl bg-surface-primary p-4"
-      style={{
-        boxShadow: 'inset 0 0 0 1px var(--border-default), inset 0 1px 0 0 rgba(255,255,255,0.4), 0 2px 8px rgba(0,0,0,0.04)',
-      }}
+      className="relative overflow-hidden rounded-2xl bg-surface-primary p-4 ring-1 ring-base elevation-1"
     >
       <div className="flex items-center gap-1.5 mb-3">
         <Icon className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" />
-        <h3 className="text-[11px] font-bold uppercase tracking-wider text-sub">{title}</h3>
+        <h3 className="text-caption font-bold uppercase tracking-wider text-sub">{title}</h3>
       </div>
       {children}
     </div>
@@ -929,7 +926,7 @@ function CategoryDonut({
               className="text-center"
             >
               <p
-                className="text-[10px] font-bold uppercase tracking-wider truncate max-w-[110px]"
+                className="text-caption leading-none font-bold uppercase tracking-wider truncate max-w-[110px]"
                 style={{ color: hovered.color }}
               >
                 {hovered.name}
@@ -937,15 +934,15 @@ function CategoryDonut({
               <p className="text-body3 font-extrabold tabular-nums text-heading">
                 {formatKoreanUnit(hovered.totalMonthly)}
               </p>
-              <p className="text-[10px] text-sub tabular-nums font-semibold">
+              <p className="text-caption leading-none text-sub tabular-nums font-semibold">
                 {hovered.percent.toFixed(1)}% · {hovered.count}개
               </p>
             </motion.div>
           ) : (
             <>
-              <p className="text-[9px] text-disabled font-semibold uppercase tracking-wider">월</p>
+              <p className="text-label4 leading-none text-disabled font-semibold uppercase tracking-wider">월</p>
               <p className="text-body3 font-extrabold tabular-nums text-heading">{formatKoreanUnit(totalMonthly)}</p>
-              <p className="text-[9px] text-sub">원</p>
+              <p className="text-label4 leading-none text-sub">원</p>
             </>
           )}
         </div>
@@ -957,7 +954,7 @@ function CategoryDonut({
             <div
               key={String(c.categoryId)}
               className={clsx(
-                'flex items-center gap-2 text-[11px] cursor-pointer rounded-lg px-1 py-0.5 -mx-1 transition-all',
+                'flex items-center gap-2 text-caption cursor-pointer rounded-lg px-1 py-0.5 -mx-1 transition-all',
                 isHovered ? 'bg-surface-tertiary' : 'hover:bg-[var(--hover-bg)]',
               )}
               onMouseEnter={() => setHoveredIndex(i)}
@@ -978,7 +975,7 @@ function CategoryDonut({
           )
         })}
         {data.length > 6 && (
-          <p className="text-[10px] text-disabled pl-4">+{data.length - 6}개</p>
+          <p className="text-caption text-disabled pl-4">+{data.length - 6}개</p>
         )}
       </div>
     </div>
@@ -1083,8 +1080,8 @@ function MonthlyTrendLine({ data }: { data: SubscriptionStats['monthlyTrend'] })
         )}
       </svg>
       <div className="absolute top-0 right-0 text-right">
-        <p className="text-[9px] text-disabled font-semibold uppercase tracking-wider">최고</p>
-        <p className="text-[11px] font-bold tabular-nums text-heading">{formatKoreanUnit(max)}원</p>
+        <p className="text-label4 leading-none text-disabled font-semibold uppercase tracking-wider">최고</p>
+        <p className="text-caption leading-none font-bold tabular-nums text-heading">{formatKoreanUnit(max)}원</p>
       </div>
     </div>
   )
@@ -1115,10 +1112,10 @@ function TopItemsBar({
         return (
           <div key={item.key} className="space-y-0.5">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-[11px] text-body font-semibold truncate flex-1">
+              <span className="text-caption text-body font-semibold truncate flex-1">
                 {item.name}
               </span>
-              <span className="text-[11px] tabular-nums font-bold text-heading flex-shrink-0">
+              <span className="text-caption tabular-nums font-bold text-heading flex-shrink-0">
                 {formatKoreanUnit(item.monthlyEquivalent)}원
               </span>
             </div>
@@ -1134,7 +1131,7 @@ function TopItemsBar({
                 transition={{ duration: 0.7, ease: easeOutExpo, delay: i * 0.05 }}
               />
             </div>
-            <p className="text-[9px] text-disabled tabular-nums">전체의 {share.toFixed(1)}%</p>
+            <p className="text-label4 leading-none text-disabled tabular-nums">전체의 {share.toFixed(1)}%</p>
           </div>
         )
       })}
@@ -1188,7 +1185,7 @@ function UpcomingPayments({
               <p className="text-caption text-body font-semibold truncate">{sub.name}</p>
               <p
                 className={clsx(
-                  'text-[10px] tabular-nums font-bold',
+                  'text-caption leading-none tabular-nums font-bold',
                   isPast ? 'text-status-danger' : isToday ? 'text-status-warning' : isThisWeek ? 'text-heading' : 'text-sub',
                 )}
               >
@@ -1196,7 +1193,7 @@ function UpcomingPayments({
                 <span className="opacity-60 font-medium ml-1">{formatDate(sub.nextEstimatedDate)}</span>
               </p>
             </div>
-            <p className="text-[11px] tabular-nums font-bold text-value-negative flex-shrink-0">
+            <p className="text-caption tabular-nums font-bold text-value-negative flex-shrink-0">
               −{formatKoreanUnit(sub.avgAmount)}
             </p>
           </div>
@@ -1234,7 +1231,7 @@ function SubscriptionItemCard({
       whileHover={shouldReduceMotion ? undefined : { y: -1 }}
       whileTap={shouldReduceMotion ? undefined : { scale: 0.995 }}
       transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-      className="group relative w-full text-left rounded-2xl bg-surface-primary p-3.5 ring-1 ring-base hover:shadow-[0_4px_14px_rgba(0,0,0,0.06)] transition-all overflow-hidden el-hover"
+      className="group relative w-full text-left rounded-2xl bg-surface-primary p-3.5 ring-1 ring-base transition-all overflow-hidden el-hover"
     >
       {/* Left color spine */}
       <span
@@ -1265,7 +1262,7 @@ function SubscriptionItemCard({
             <CycleBadge cycle={sub.cycle} />
             <ConfidenceBadge confidence={sub.confidence} />
           </div>
-          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-sub tabular-nums">
+          <div className="flex items-center gap-2 mt-0.5 text-caption leading-none text-sub tabular-nums">
             <span className="inline-flex items-center gap-0.5">
               <Receipt className="w-2.5 h-2.5" />
               {sub.count}회 · 누적 {formatKoreanUnit(sub.totalSpent)}원
@@ -1303,10 +1300,10 @@ function SubscriptionItemCard({
 
         {/* Amount + next */}
         <div className="text-right flex-shrink-0 ml-1">
-          <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-negative)' }}>
+          <p className="value-negative text-body3 font-bold tabular-nums">
             −{formatKoreanUnit(sub.avgAmount)}원
           </p>
-          <p className="text-[10px] text-disabled tabular-nums mt-0.5">
+          <p className="text-caption leading-none text-disabled tabular-nums mt-0.5">
             월 {formatKoreanUnit(sub.monthlyEquivalent)}원
           </p>
         </div>
@@ -1330,7 +1327,7 @@ function CycleBadge({ cycle }: { cycle: DetectedCycle }) {
   const info = labelMap[cycle]
   return (
     <span
-      className="text-[9px] font-bold uppercase tracking-wider px-1.5 h-[14px] rounded-full inline-flex items-center"
+      className="text-label4 leading-none font-bold uppercase tracking-wider px-1.5 h-[14px] rounded-full inline-flex items-center"
       style={{
         backgroundColor: `color-mix(in srgb, ${info.color} 14%, transparent)`,
         color: info.color,
@@ -1352,7 +1349,7 @@ function ConfidenceBadge({ confidence }: { confidence: DetectionConfidence }) {
   const info = map[confidence]
   return (
     <span
-      className="text-[9px] font-semibold uppercase tracking-wider"
+      className="text-label4 leading-none font-semibold uppercase tracking-wider"
       style={{ color: info.color }}
     >
       {info.label}
@@ -1457,7 +1454,7 @@ function DetailSheetContent({
                   <CycleBadge cycle={sub.cycle} />
                   {cat && (
                     <span
-                      className="text-[10px] px-1.5 h-[14px] rounded-full inline-flex items-center"
+                      className="text-label4 leading-none px-1.5 h-[14px] rounded-full inline-flex items-center"
                       style={{
                         backgroundColor: `color-mix(in srgb, ${cat.color} 14%, transparent)`,
                         color: cat.color,
@@ -1468,7 +1465,7 @@ function DetailSheetContent({
                   )}
                   {member && (
                     <span
-                      className="text-[10px] px-1.5 h-[14px] rounded-full inline-flex items-center text-white font-bold"
+                      className="text-label4 leading-none px-1.5 h-[14px] rounded-full inline-flex items-center text-white font-bold"
                       style={{ backgroundColor: member.color }}
                     >
                       {member.name}
@@ -1545,7 +1542,7 @@ function DetailSheetContent({
                 더 이상 사용하지 않음 (종료)
               </motion.button>
             )}
-            <p className="text-[10px] text-disabled text-center mt-1.5">
+            <p className="text-caption text-disabled text-center mt-1.5">
               종료된 구독은 통계에서 제외됩니다 · 거래 기록은 보존됩니다
             </p>
           </div>
@@ -1581,7 +1578,7 @@ function HiddenSubscriptionCard({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-caption font-bold text-sub truncate line-through">{sub.name}</p>
-          <p className="text-[10px] text-disabled tabular-nums">
+          <p className="text-caption leading-none text-disabled tabular-nums">
             {sub.count}회 · 누적 {formatKoreanUnit(sub.totalSpent)}원
           </p>
         </div>
@@ -1589,7 +1586,7 @@ function HiddenSubscriptionCard({
       <button
         type="button"
         onClick={onRestore}
-        className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full text-[10px] font-bold bg-surface-primary text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)] hover:brightness-95 transition-all flex-shrink-0"
+        className="touch-target-inset inline-flex items-center gap-1 px-2.5 h-7 rounded-full text-label4 leading-none font-bold bg-surface-primary text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)] hover:brightness-95 transition-all flex-shrink-0"
         aria-label="구독 복원"
       >
         <RotateCcw className="w-3 h-3" />
@@ -1604,7 +1601,7 @@ function StatTile({ label, value, icon: Icon, color }: { label: string; value: s
     <div
       className="rounded-2xl p-2.5 bg-surface-primary ring-1 ring-base"
     >
-      <div className="flex items-center gap-1 text-[10px] text-sub mb-0.5">
+      <div className="flex items-center gap-1 text-caption leading-none text-sub mb-0.5">
         <Icon className="w-3 h-3" style={{ color }} />
         <span className="font-semibold">{label}</span>
       </div>
@@ -1663,7 +1660,7 @@ function CumulativeCostChart({
         />
       </svg>
       <div className="absolute top-0 right-0 text-right">
-        <p className="text-[9px] text-disabled uppercase font-semibold tracking-wider">현재까지</p>
+        <p className="text-label4 leading-none text-disabled uppercase font-semibold tracking-wider">현재까지</p>
         <p className="text-body3 font-extrabold tabular-nums" style={{ color: accent }}>
           {formatKoreanUnit(max)}원
         </p>
@@ -1693,7 +1690,7 @@ function MonthlyEvolutionBars({
           borderColor: 'color-mix(in srgb, var(--text-sub) 30%, transparent)',
         }}
       >
-        <span className="absolute right-0 -top-3 text-[9px] text-disabled font-semibold tabular-nums">
+        <span className="absolute right-0 -top-3 text-label4 leading-none text-disabled font-semibold tabular-nums">
           평균 {formatKoreanUnit(avgAmount)}원
         </span>
       </div>
@@ -1715,7 +1712,7 @@ function MonthlyEvolutionBars({
               animate={{ height: `${height}%` }}
               transition={{ duration: 0.5, ease: easeOutExpo, delay: i * 0.02 }}
             />
-            <span className="text-[8px] text-disabled tabular-nums font-semibold">
+            <span className="text-micro text-disabled tabular-nums font-semibold">
               {monthShort(d.month)}
             </span>
           </div>
@@ -1756,7 +1753,7 @@ function PaymentTimeline({
         </motion.div>
       ))}
       {transactions.length > 10 && (
-        <p className="text-[10px] text-disabled text-center pt-1">
+        <p className="text-caption text-disabled text-center pt-1">
           이전 {transactions.length - 10}건 …
         </p>
       )}
@@ -1779,7 +1776,7 @@ function NextPaymentCallout({ sub }: { sub: DetectedSubscription }) {
       <div className="flex items-center gap-2.5">
         <CalendarIcon className="w-4 h-4 flex-shrink-0" style={{ color: sub.color }} />
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] text-sub font-semibold uppercase tracking-wider">다음 결제 (예상)</p>
+          <p className="text-caption leading-none text-sub font-semibold uppercase tracking-wider">다음 결제 (예상)</p>
           <p className="text-body3 font-bold text-heading tabular-nums">
             {formatDate(sub.nextEstimatedDate)}
             <span
@@ -1818,7 +1815,7 @@ function SectionTitle({
         <h3 className="text-caption font-bold text-heading truncate">{title}</h3>
       </div>
       {subtitle && (
-        <p className="text-[10px] text-disabled tabular-nums truncate">{subtitle}</p>
+        <p className="text-caption text-disabled tabular-nums truncate">{subtitle}</p>
       )}
     </div>
   )
@@ -1843,10 +1840,7 @@ function EmptyState() {
   return (
     <div className="fold:p-3 p-4 lg:p-6">
       <div
-        className="relative overflow-hidden rounded-3xl bg-surface-primary py-16 px-6 text-center"
-        style={{
-          boxShadow: 'inset 0 0 0 1px var(--border-default), 0 2px 12px rgba(0,0,0,0.04)',
-        }}
+        className="relative overflow-hidden rounded-3xl bg-surface-primary py-16 px-6 text-center ring-1 ring-base elevation-1"
       >
         <div
           aria-hidden="true"
@@ -1857,10 +1851,9 @@ function EmptyState() {
         />
         <div className="relative">
           <div
-            className="w-20 h-20 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+            className="w-20 h-20 rounded-2xl mx-auto mb-4 flex items-center justify-center el-glow-primary"
             style={{
               background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))',
-              boxShadow: '0 8px 24px color-mix(in srgb, var(--color-primary-500) 40%, transparent)',
             }}
           >
             <Repeat className="w-9 h-9 text-white" />

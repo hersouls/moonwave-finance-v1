@@ -28,8 +28,8 @@ export function ConfirmDialog({
   const Icon = variant === 'info' ? Info : AlertTriangle
 
   const iconColors = {
-    danger: 'text-danger-500 bg-danger-50 dark:bg-danger-900/30',
-    warning: 'text-warning-500 bg-warning-50 dark:bg-warning-900/30',
+    danger: 'text-status-danger bg-status-danger',
+    warning: 'text-status-warning bg-status-warning',
     info: 'text-primary-500 bg-primary-50 dark:bg-primary-900/30',
   }
 

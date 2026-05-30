@@ -64,7 +64,7 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.3 }}
               >
-                <Check className="w-5 h-5 text-emerald-500" />
+                <Check className="w-5 h-5 text-success-500" />
               </motion.span>
             ) : (
               <span className="text-caption-bold text-body tabular-nums">{Math.round(percentage)}%</span>

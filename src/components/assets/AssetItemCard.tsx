@@ -7,6 +7,7 @@ import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useAssetStore } from '@/stores/assetStore'
 import { formatChange } from '@/utils/format'
 import { Amount } from '@/components/ui/Amount'
+import { getPositiveColor, getNegativeColor } from '@/lib/chartConfig'
 import { clsx } from 'clsx'
 
 interface AssetItemCardProps {
@@ -14,9 +15,13 @@ interface AssetItemCardProps {
   name: string
   categoryId: number
   type: 'asset' | 'liability'
+  /** Desktop master-detail: select into the inspector instead of navigating. */
+  onSelect?: (id: number) => void
+  /** Highlight when shown in the inspector. */
+  selected?: boolean
 }
 
-function AssetItemCardInner({ itemId, name, categoryId, type }: AssetItemCardProps) {
+function AssetItemCardInner({ itemId, name, categoryId, type, onSelect, selected }: AssetItemCardProps) {
   const navigate = useNavigate()
   const categories = useAssetStore((s) => s.categories)
   // 전체 이력 사용: 이번 달 기록이 없어도 현재 가치가 사라지지 않도록.
@@ -42,13 +47,14 @@ function AssetItemCardInner({ itemId, name, categoryId, type }: AssetItemCardPro
     return recent.map(v => v.value)
   }, [itemValues])
 
-  const sparklineColor = change >= 0 ? '#10b981' : '#ef4444'
+  const sparklineColor = change >= 0 ? getPositiveColor() : getNegativeColor()
   const basePath = type === 'asset' ? '/assets' : '/liabilities'
 
   return (
     <Card
       variant="interactive"
-      onClick={() => navigate(`${basePath}/${itemId}`)}
+      onClick={() => (onSelect ? onSelect(itemId) : navigate(`${basePath}/${itemId}`))}
+      className={clsx(selected && 'ring-2 ring-primary-500 ring-offset-2 ring-offset-[color:var(--surface-secondary)]')}
     >
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">
@@ -72,7 +78,7 @@ function AssetItemCardInner({ itemId, name, categoryId, type }: AssetItemCardPro
           {change !== 0 && (
             <p className={clsx(
               'text-caption tabular-nums mt-0.5',
-              change > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+              change > 0 ? 'text-value-positive' : 'text-value-negative'
             )}>
               {formatChange(change)}
             </p>

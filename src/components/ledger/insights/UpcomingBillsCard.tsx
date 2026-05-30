@@ -24,8 +24,7 @@ export function UpcomingBillsCard() {
     return (
       <motion.div
         whileHover={shouldReduceMotion ? undefined : { y: -2 }}
-        className="flex-shrink-0 w-[180px] rounded-2xl bg-surface-primary p-4 text-left transition-all"
-        style={{ boxShadow: 'inset 0 0 0 1px var(--border-default), 0 1px 3px rgba(0,0,0,0.04)' }}
+        className="card-base flex-shrink-0 w-[180px] rounded-2xl bg-surface-primary p-4 text-left transition-all"
       >
         <div className="flex items-center gap-2 mb-3">
           <div className="w-7 h-7 rounded-lg bg-status-success-soft flex items-center justify-center">
@@ -34,7 +33,7 @@ export function UpcomingBillsCard() {
           <span className="text-caption text-sub font-semibold">결제 예정</span>
         </div>
         <p className="text-body3 text-heading font-bold">7일 내 없음</p>
-        <p className="text-[11px] text-sub mt-1">편히 쉬세요 😊</p>
+        <p className="text-caption text-sub mt-1">편히 쉬세요 😊</p>
       </motion.div>
     )
   }
@@ -45,8 +44,7 @@ export function UpcomingBillsCard() {
       onClick={() => navigate('/subscriptions')}
       whileHover={shouldReduceMotion ? undefined : { y: -2 }}
       whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
-      className="flex-shrink-0 w-[180px] rounded-2xl bg-surface-primary p-4 text-left hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all"
-      style={{ boxShadow: 'inset 0 0 0 1px var(--border-default), 0 1px 3px rgba(0,0,0,0.04)' }}
+      className="card-base flex-shrink-0 w-[180px] rounded-2xl bg-surface-primary p-4 text-left transition-all"
       aria-label={`7일 내 결제 예정 ${upcoming.length}건`}
     >
       <div className="flex items-center gap-2 mb-3">
@@ -55,7 +53,7 @@ export function UpcomingBillsCard() {
         </div>
         <span className="text-caption text-sub font-semibold">결제 예정</span>
       </div>
-      <p className="text-[11px] text-sub mb-0.5">7일 내 {upcoming.length}건</p>
+      <p className="text-caption text-sub mb-0.5">7일 내 {upcoming.length}건</p>
       <Amount
         value={total}
         size="emphasis"
@@ -64,7 +62,7 @@ export function UpcomingBillsCard() {
       />
       <div className="mt-2 space-y-0.5">
         {firstThree.map((sub) => (
-          <p key={sub.key} className="text-[10px] text-sub truncate">
+          <p key={sub.key} className="text-label4 text-sub truncate">
             <span
               className="inline-block w-1.5 h-1.5 rounded-full mr-1 align-middle"
               style={{ backgroundColor: sub.color }}

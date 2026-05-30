@@ -67,7 +67,7 @@ export function CalendarGrid({
             key={label}
             className={clsx(
               'text-center py-2 text-caption font-medium',
-              i === 0 ? 'text-red-500/90' : i === 6 ? 'text-blue-500/90' : 'text-sub',
+              i === 0 ? 'text-weekend-sun' : i === 6 ? 'text-weekend-sat' : 'text-sub',
             )}
           >
             {label}

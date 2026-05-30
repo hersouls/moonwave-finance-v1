@@ -4,6 +4,7 @@ import { clsx } from 'clsx'
 import { RefreshCw } from 'lucide-react'
 import { formatKoreanUnit } from '@/utils/format'
 import { getCategoryColor, getCategoryName, type DaySummary } from '@/lib/calendarUtils'
+import { getCalendarFallbackColors } from '@/lib/chartConfig'
 import type { Transaction, TransactionCategory } from '@/lib/types'
 
 interface DayPreviewPopoverProps {
@@ -64,6 +65,7 @@ export function DayPreviewPopover({
 
   if (!mounted || typeof document === 'undefined') return null
 
+  const calFallback = getCalendarFallbackColors()
   const dateObj = new Date(dateStr)
   const labelDate = `${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일`
 
@@ -71,7 +73,7 @@ export function DayPreviewPopover({
     <div
       role="tooltip"
       className={clsx(
-        'fixed z-50 w-[300px] rounded-xl bg-surface-primary shadow-2xl ring-1 ring-[color:var(--border-subtle)] p-3',
+        'fixed z-50 w-[300px] rounded-xl bg-surface-primary elevation-3 ring-1 ring-[color:var(--border-subtle)] p-3',
         'pointer-events-none',
         'animate-in fade-in-0 zoom-in-95 duration-150',
       )}
@@ -100,10 +102,10 @@ export function DayPreviewPopover({
       {/* Top categories for the day */}
       {summary.expense > 0 && summary.expenseCategories.length > 0 && (
         <div className="mb-2">
-          <p className="text-[10px] text-sub uppercase tracking-wide mb-1">지출 카테고리</p>
+          <p className="text-label4 text-sub uppercase tracking-wide mb-1">지출 카테고리</p>
           <div className="space-y-1">
             {summary.expenseCategories.slice(0, 3).map((c, i) => {
-              const color = getCategoryColor(c.categoryId, categories, '#ef4444')
+              const color = getCategoryColor(c.categoryId, categories, calFallback.expense)
               const name = getCategoryName(c.categoryId, categories)
               const pct = summary.expense > 0 ? (c.amount / summary.expense) * 100 : 0
               return (
@@ -129,7 +131,7 @@ export function DayPreviewPopover({
       {/* Transactions preview */}
       {dayTxns.length > 0 && (
         <div className="pt-2 border-t border-[var(--border-subtle)]">
-          <p className="text-[10px] text-sub uppercase tracking-wide mb-1">최근 거래</p>
+          <p className="text-label4 text-sub uppercase tracking-wide mb-1">최근 거래</p>
           <div className="space-y-0.5">
             {dayTxns.map((t) => {
               const isIncome = t.type === 'income'
@@ -141,7 +143,7 @@ export function DayPreviewPopover({
                       backgroundColor: getCategoryColor(
                         t.categoryId,
                         categories,
-                        isIncome ? '#10b981' : '#ef4444',
+                        isIncome ? calFallback.income : calFallback.expense,
                       ),
                     }}
                   />
@@ -161,7 +163,7 @@ export function DayPreviewPopover({
               )
             })}
             {hiddenCount > 0 && (
-              <p className="text-[10px] text-sub text-center pt-1">
+              <p className="text-label4 text-sub text-center pt-1">
                 외 {hiddenCount}건 더보기
               </p>
             )}
@@ -184,7 +186,7 @@ function Stat({ label, value, tone, signed }: StatProps) {
   const prefix = signed && value > 0 ? '+' : ''
   return (
     <div className="text-center">
-      <p className="text-[10px] text-sub">{label}</p>
+      <p className="text-label4 text-sub">{label}</p>
       <p className={clsx('text-xs font-semibold tabular-nums', toneClass)}>
         {value === 0 ? '—' : `${prefix}${formatKoreanUnit(value)}`}
       </p>

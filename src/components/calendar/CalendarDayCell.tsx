@@ -2,6 +2,7 @@ import { forwardRef, memo } from 'react'
 import { clsx } from 'clsx'
 import { RefreshCw } from 'lucide-react'
 import { formatKoreanUnit } from '@/utils/format'
+import { getCalendarFallbackColors } from '@/lib/chartConfig'
 import type { CalendarDay } from '@/hooks/useCalendar'
 import type { DaySummary } from '@/lib/calendarUtils'
 import type { TransactionCategory } from '@/lib/types'
@@ -45,13 +46,14 @@ const CalendarDayCellBase = forwardRef<HTMLButtonElement, CalendarDayCellProps>(
     const incomeRatio = maxIncome > 0 && summary ? Math.min(1, summary.income / maxIncome) : 0
 
     // Top 3 category colors for visual accent (expense-first, then income)
+    const calFallback = getCalendarFallbackColors()
     const dotColors = summary
       ? [
           ...summary.expenseCategories.slice(0, 3).map((e) =>
-            resolveColor(e.categoryId, categories, '#ef4444'),
+            resolveColor(e.categoryId, categories, calFallback.expense),
           ),
           ...summary.incomeCategories.slice(0, Math.max(0, 3 - summary.expenseCategories.length)).map((e) =>
-            resolveColor(e.categoryId, categories, '#10b981'),
+            resolveColor(e.categoryId, categories, calFallback.income),
           ),
         ].slice(0, 3)
       : []
@@ -90,8 +92,8 @@ const CalendarDayCellBase = forwardRef<HTMLButtonElement, CalendarDayCellProps>(
           day.isToday && 'ring-2 ring-primary-400 dark:ring-primary-600',
           isSelected && 'bg-primary-100 dark:bg-primary-900/30 ring-1 ring-primary-500',
           !isSelected && day.isCurrentMonth && 'hover:bg-[var(--hover-bg)] hover:shadow-sm',
-          isPeakExpense && !isSelected && 'ring-1 ring-red-400/60 dark:ring-red-500/50',
-          isPeakIncome && !isSelected && !isPeakExpense && 'ring-1 ring-emerald-400/60 dark:ring-emerald-500/50',
+          isPeakExpense && !isSelected && 'ring-1 ring-[var(--value-negative)]',
+          isPeakIncome && !isSelected && !isPeakExpense && 'ring-1 ring-[var(--value-positive)]',
         )}
       >
         {/* Header row: day number, indicators */}
@@ -100,8 +102,8 @@ const CalendarDayCellBase = forwardRef<HTMLButtonElement, CalendarDayCellProps>(
             className={clsx(
               isDetailed ? 'text-xs font-medium' : 'text-caption',
               day.isToday && 'text-primary-600 dark:text-primary-400 font-bold',
-              day.dayOfWeek === 0 && day.isCurrentMonth && !day.isToday && 'text-red-500/80',
-              day.dayOfWeek === 6 && day.isCurrentMonth && !day.isToday && 'text-blue-500/80',
+              day.dayOfWeek === 0 && day.isCurrentMonth && !day.isToday && 'text-weekend-sun',
+              day.dayOfWeek === 6 && day.isCurrentMonth && !day.isToday && 'text-weekend-sat',
             )}
           >
             {day.day}
@@ -118,7 +120,7 @@ const CalendarDayCellBase = forwardRef<HTMLButtonElement, CalendarDayCellProps>(
                 />
               )}
               {isDetailed && summary.count > 1 && (
-                <span className="text-[10px] tabular-nums text-sub bg-[var(--surface-tertiary)] rounded-full px-1.5 leading-[14px]">
+                <span className="text-micro tabular-nums text-sub bg-[var(--surface-tertiary)] rounded-full px-1.5 leading-none">
                   {summary.count}
                 </span>
               )}
@@ -137,9 +139,9 @@ const CalendarDayCellBase = forwardRef<HTMLButtonElement, CalendarDayCellProps>(
             {summary.income > 0 && (
               <p
                 className={clsx(
-                  'tabular-nums truncate leading-tight',
-                  isDetailed ? 'text-[11px] text-right' : 'text-[10px] text-center',
-                  'text-status-success',
+                  'tabular-nums truncate',
+                  isDetailed ? 'text-caption text-right' : 'text-label4 text-center',
+                  'leading-tight text-status-success',
                   isPeakIncome && 'font-semibold',
                 )}
               >
@@ -149,9 +151,9 @@ const CalendarDayCellBase = forwardRef<HTMLButtonElement, CalendarDayCellProps>(
             {summary.expense > 0 && (
               <p
                 className={clsx(
-                  'tabular-nums truncate leading-tight',
-                  isDetailed ? 'text-[11px] text-right' : 'text-[10px] text-center',
-                  'text-status-danger',
+                  'tabular-nums truncate',
+                  isDetailed ? 'text-caption text-right' : 'text-label4 text-center',
+                  'leading-tight text-status-danger',
                   isPeakExpense && 'font-semibold',
                 )}
               >
@@ -168,13 +170,13 @@ const CalendarDayCellBase = forwardRef<HTMLButtonElement, CalendarDayCellProps>(
               <div className="flex items-end gap-[3px] h-1.5" aria-hidden>
                 {summary.income > 0 && (
                   <div
-                    className="flex-1 rounded-sm bg-emerald-400/80 dark:bg-emerald-500/70"
+                    className="flex-1 rounded-sm bg-[var(--value-positive)]"
                     style={{ height: `${Math.max(15, incomeRatio * 100)}%` }}
                   />
                 )}
                 {summary.expense > 0 && (
                   <div
-                    className="flex-1 rounded-sm bg-red-400/80 dark:bg-red-500/70"
+                    className="flex-1 rounded-sm bg-[var(--value-negative)]"
                     style={{ height: `${Math.max(15, expenseRatio * 100)}%` }}
                   />
                 )}
@@ -185,7 +187,7 @@ const CalendarDayCellBase = forwardRef<HTMLButtonElement, CalendarDayCellProps>(
                 {dotColors.map((color, i) => (
                   <span
                     key={i}
-                    className="block w-1.5 h-1.5 rounded-full ring-1 ring-white/60 dark:ring-black/30"
+                    className="block w-1.5 h-1.5 rounded-full ring-1 ring-[var(--surface-primary)]"
                     style={{ backgroundColor: color }}
                   />
                 ))}

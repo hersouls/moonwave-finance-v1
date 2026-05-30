@@ -22,7 +22,7 @@ export function PullToRefreshIndicator({ distance, progress, refreshing }: Props
       <div
         className={clsx(
           'surface-haze-heavy rounded-full p-2.5 mt-2',
-          'shadow-[0_8px_24px_var(--glow-primary)]',
+          'el-glow-soft',
           'el-soft',
         )}
       >

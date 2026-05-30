@@ -182,7 +182,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
             <div className="flex flex-col items-center">
               <motion.div
                 className={clsx(
-                  'relative flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full text-xs font-bold',
+                  'relative flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full text-caption leading-none font-bold',
                   isCompleted && 'bg-primary-500 text-white',
                   isCurrent && 'border-2 border-primary-500 text-primary-500',
                   !isCompleted && !isCurrent && 'bg-surface-tertiary text-disabled',
@@ -228,7 +228,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
               </motion.div>
               <span
                 className={clsx(
-                  'mt-1 text-[10px] sm:text-xs font-medium transition-colors',
+                  'mt-1 text-label4 leading-none sm:text-caption font-medium transition-colors',
                   isCurrent ? 'text-primary-500' : isCompleted ? 'text-body' : 'text-disabled',
                 )}
               >
@@ -432,7 +432,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                       className={clsx(
                         'flex-shrink-0 flex items-center gap-2.5 pl-2.5 pr-3.5 py-2.5 rounded-2xl',
                         'bg-surface-primary ring-1 ring-base hover:ring-[color:var(--color-primary-300)]',
-                        'shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] el-hover transition-all',
+                        'el-hover transition-all',
                       )}
                       whileHover={shouldReduceMotion ? undefined : { y: -2 }}
                       whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
@@ -440,19 +440,19 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                     >
                       <div
                         className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: `${color}1a` }}
+                        style={{ backgroundColor: `color-mix(in srgb, ${color} 10%, transparent)` }}
                       >
                         <Icon className="w-4 h-4" style={{ color }} />
                       </div>
                       <div className="flex flex-col items-start min-w-0 max-w-[120px]">
-                        <span className="text-[11px] text-sub truncate w-full leading-tight">
+                        <span className="text-caption text-sub truncate w-full leading-tight">
                           {cat?.name || UNCATEGORIZED_LABEL}
                         </span>
                         <span className="text-body3 font-bold text-heading tabular-nums truncate w-full leading-tight">
                           {formatKoreanUnit(tmpl.amount)}원
                         </span>
                       </div>
-                      <span className="text-[10px] text-disabled tabular-nums font-semibold px-1.5 py-0.5 rounded-full bg-surface-tertiary flex-shrink-0">×{tmpl.count}</span>
+                      <span className="text-label4 leading-none text-disabled tabular-nums font-semibold px-1.5 py-0.5 rounded-full bg-surface-tertiary flex-shrink-0">×{tmpl.count}</span>
                     </motion.button>
                   )
                 })}
@@ -481,18 +481,17 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                           memo: `${loan.name} 이자 (잔액 ${loan.currentBalance.toLocaleString('ko-KR')}원 × 연 ${loan.annualRate}%)`,
                         },
                       })}
-                      className="flex-shrink-0 flex flex-col items-start gap-0.5 px-3.5 py-2.5 rounded-2xl bg-status-danger-soft ring-1 min-w-0 max-w-[200px] shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all"
-                      style={{ boxShadow: 'inset 0 0 0 1px var(--status-danger-border)' }}
+                      className="flex-shrink-0 flex flex-col items-start gap-0.5 px-3.5 py-2.5 rounded-2xl bg-status-danger-soft ring-1 ring-[color:var(--status-danger-border)] min-w-0 max-w-[200px] el-hover transition-all"
                       whileHover={shouldReduceMotion ? undefined : { y: -2 }}
                       whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
                       transition={springSnappy}
                     >
-                      <span className="text-[11px] text-status-danger truncate w-full leading-tight">
+                      <span className="text-caption text-status-danger truncate w-full leading-tight">
                         {loan.name}
                       </span>
                       <span className="text-body3 font-bold text-status-danger tabular-nums truncate w-full leading-tight">
                         {formatKoreanUnit(interest)}원
-                        <span className="text-[10px] opacity-70 ml-0.5 font-medium">/월</span>
+                        <span className="text-label4 leading-none opacity-70 ml-0.5 font-medium">/월</span>
                       </span>
                     </motion.button>
                   )
@@ -533,8 +532,8 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                     className="absolute inset-0 rounded-full -z-10"
                     style={{
                       background: t === 'expense'
-                        ? 'linear-gradient(135deg, oklch(0.60 0.22 25), oklch(0.50 0.22 25))'
-                        : 'linear-gradient(135deg, oklch(0.58 0.18 145), oklch(0.48 0.17 145))',
+                        ? 'linear-gradient(135deg, var(--value-negative), color-mix(in srgb, var(--value-negative) 80%, black))'
+                        : 'linear-gradient(135deg, var(--value-positive), color-mix(in srgb, var(--value-positive) 80%, black))',
                       boxShadow: t === 'expense'
                         ? '0 6px 20px -4px color-mix(in srgb, var(--value-negative) 40%, transparent)'
                         : '0 6px 20px -4px color-mix(in srgb, var(--value-positive) 40%, transparent)',
@@ -596,8 +595,8 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                   color-mix(in srgb, var(--color-primary-500) 4%, var(--surface-primary)) 100%)`
               : 'var(--surface-tertiary)',
             boxShadow: numAmount > 0
-              ? '0 16px 40px -12px color-mix(in srgb, var(--color-primary-500) 22%, transparent), inset 0 1px 0 0 color-mix(in srgb, #fff 50%, transparent)'
-              : 'inset 0 1px 0 0 color-mix(in srgb, #fff 40%, transparent)',
+              ? '0 16px 40px -12px color-mix(in srgb, var(--color-primary-500) 22%, transparent), inset 0 1px 0 0 color-mix(in srgb, white 50%, transparent)'
+              : 'inset 0 1px 0 0 color-mix(in srgb, white 40%, transparent)',
           }}
           animate={{ scale: numAmount > 0 ? 1 : 1 }}
           transition={{ duration: durations.base, ease: easeOutExpo }}
@@ -629,11 +628,10 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                 placeholder="0"
                 aria-label="금액"
                 className={clsx(
-                  'bg-transparent tabular-nums outline-none font-extrabold min-w-0 max-w-full',
+                  'text-financial-fluid bg-transparent tabular-nums outline-none font-extrabold min-w-0 max-w-full',
                   numAmount > 0 ? 'text-heading' : 'text-disabled',
                 )}
                 style={{
-                  fontSize: 'clamp(28px, 8vw, 42px)',
                   letterSpacing: '-0.025em',
                   lineHeight: 1.1,
                   width: `${Math.max(state.amount.length || 1, 1)}ch`,
@@ -642,10 +640,10 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               />
               <span
                 className={clsx(
-                  'font-bold tabular-nums flex-shrink-0',
+                  'text-body-lg-fluid font-bold tabular-nums flex-shrink-0',
                   numAmount > 0 ? 'text-heading/80' : 'text-disabled',
                 )}
-                style={{ fontSize: 'clamp(16px, 3.5vw, 20px)', lineHeight: 1.2 }}
+                style={{ lineHeight: 1.2 }}
               >
                 원
               </span>
@@ -754,7 +752,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                   className={clsx(
                     'px-5 py-3 rounded-full text-body3 font-semibold ring-1 min-h-[44px]',
                     state.memberId === ''
-                      ? 'bg-surface-primary text-heading ring-[color:var(--border-strong)] shadow-[0_2px_8px_rgba(0,0,0,0.06)]'
+                      ? 'bg-surface-primary text-heading ring-[color:var(--border-strong)] elevation-1'
                       : 'bg-surface-tertiary text-sub ring-transparent hover:bg-[var(--hover-bg)]',
                   )}
                   whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
@@ -836,19 +834,19 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               transition={springSnappy}
               className={clsx(
                 'flex flex-col items-center justify-center gap-2 px-2 py-3.5 sm:py-4 rounded-2xl ring-1 transition-all min-h-[88px]',
-                isSelected ? 'ring-transparent' : 'bg-surface-primary ring-base hover:ring-[color:var(--border-strong)]',
+                isSelected ? 'ring-transparent' : 'bg-surface-primary ring-base hover:ring-[color:var(--border-strong)] elevation-1',
               )}
               style={isSelected ? {
                 backgroundColor: cat.color,
                 boxShadow: `0 8px 24px -4px color-mix(in srgb, ${cat.color} 40%, transparent), inset 0 1px 0 0 rgba(255,255,255,0.15)`,
-              } : { boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
+              } : undefined}
             >
               <div
                 className={clsx(
                   'w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center',
                   isSelected && 'bg-white/20',
                 )}
-                style={!isSelected ? { backgroundColor: `${cat.color}15` } : undefined}
+                style={!isSelected ? { backgroundColor: `color-mix(in srgb, ${cat.color} 9%, transparent)` } : undefined}
               >
                 <Icon
                   className="w-5 h-5 sm:w-5 sm:h-5"
@@ -876,12 +874,11 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
           whileHover={shouldReduceMotion ? undefined : { y: -3 }}
           transition={springSnappy}
           className={clsx(
-            'flex flex-col items-center justify-center gap-2 px-2 py-3.5 sm:py-4 rounded-2xl ring-1 transition-all min-h-[88px]',
+            'flex flex-col items-center justify-center gap-2 px-2 py-3.5 sm:py-4 rounded-2xl ring-1 transition-all min-h-[88px] elevation-1',
             state.categoryId === ''
               ? 'bg-surface-tertiary ring-[color:var(--border-strong)]'
               : 'bg-surface-primary ring-base',
           )}
-          style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
         >
           <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center bg-surface-tertiary">
             <MoreHorizontal className="w-5 h-5 text-disabled" />
@@ -936,7 +933,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
             'w-full flex items-center justify-between gap-2 px-4 py-3.5 rounded-2xl ring-1 transition-all',
             state.showCalendar
               ? 'ring-[color:var(--color-primary-400)] bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20'
-              : 'ring-base bg-surface-primary hover:bg-[var(--hover-bg)] shadow-[0_1px_3px_rgba(0,0,0,0.04)]',
+              : 'ring-base bg-surface-primary hover:bg-[var(--hover-bg)] elevation-1',
           )}
           aria-expanded={state.showCalendar}
         >
@@ -1052,7 +1049,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                     </motion.button>
                   </div>
                   {itemsForType.length > PAYMENT_METHOD_ITEMS_SCROLL_THRESHOLD && (
-                    <p className="text-[10px] text-disabled mt-2 text-center">
+                    <p className="text-label4 text-disabled mt-2 text-center">
                       스크롤하여 더 보기
                     </p>
                   )}
@@ -1088,7 +1085,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
       </div>
 
       {/* Recurring */}
-      <div className="rounded-2xl bg-surface-primary ring-1 ring-base px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="rounded-2xl bg-surface-primary ring-1 ring-base px-4 py-3.5 elevation-1">
         <label className="flex items-center gap-3 cursor-pointer select-none">
           <input
             type="checkbox"
@@ -1210,7 +1207,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
     return (
       <div className="space-y-5">
         {/* Hero — KT-style left-aligned display */}
-        <div className="rounded-3xl bg-surface-primary ring-1 ring-base shadow-[0_4px_16px_rgba(0,0,0,0.04)] px-5 sm:px-6 py-6">
+        <div className="rounded-3xl bg-surface-primary ring-1 ring-base elevation-2 px-5 sm:px-6 py-6">
           <p className="text-label2 text-sub mb-1.5">
             {dateLabel}  {isRefundExpense ? '환급 (음수 지출)' : isExpense ? '지출 금액' : '수입 금액'}
           </p>
@@ -1220,27 +1217,23 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
             animate={{ y: 0, opacity: 1 }}
             transition={springSnappy}
             className={clsx(
-              'tabular-nums break-all font-extrabold',
+              'text-financial-fluid tabular-nums break-all font-extrabold',
               isRefundExpense ? 'text-value-positive' : isExpense ? 'text-value-negative' : 'text-value-positive',
             )}
             style={{
-              fontSize: 'clamp(28px, 8vw, 42px)',
               letterSpacing: '-0.025em',
               lineHeight: 1.15,
             }}
           >
             {isRefundExpense ? '-' : ''}{state.amount || '0'}
-            <span
-              className="ml-1 font-semibold opacity-80"
-              style={{ fontSize: 'clamp(18px, 4.5vw, 24px)' }}
-            >
+            <span className="text-h3-fluid ml-1 font-semibold opacity-80">
               원
             </span>
           </motion.p>
         </div>
 
         {/* Detail Rows — KT-style dashed divider + label/value */}
-        <div className="rounded-3xl bg-surface-primary ring-1 ring-base shadow-[0_4px_16px_rgba(0,0,0,0.04)] px-5 sm:px-6 py-2">
+        <div className="rounded-3xl bg-surface-primary ring-1 ring-base elevation-2 px-5 sm:px-6 py-2">
           {rows.map((row, i) => (
             <div
               key={row.label}

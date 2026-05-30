@@ -97,13 +97,13 @@ export function SystemTab() {
         <div className="p-4 bg-surface-secondary rounded-xl">
           {isStandalone ? (
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
-              <span className="text-sm text-green-700 dark:text-green-400 font-medium">
+              <CheckCircle2 className="w-5 h-5 text-status-success" />
+              <span className="text-sm text-status-success font-medium">
                 앱이 이미 설치되어 있습니다
               </span>
             </div>
           ) : installPrompt ? (
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-body3 text-heading">앱으로 설치하기</p>
                 <p className="text-caption text-sub">
@@ -115,6 +115,7 @@ export function SystemTab() {
                 size="sm"
                 onClick={handleInstall}
                 leftIcon={<Download className="w-4 h-4" />}
+                className="w-full sm:w-auto"
               >
                 설치하기
               </Button>
@@ -187,10 +188,10 @@ export function SystemTab() {
           <Trash2 className="w-4 h-4" />
           위험 구역
         </h3>
-        <div className="p-4 border border-red-200 dark:border-red-800/50 bg-red-50/50 dark:bg-red-950/10 rounded-xl">
-          <div className="flex items-center justify-between">
+        <div className="p-4 border border-status-danger bg-status-danger-soft rounded-xl">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-body3 text-red-700 dark:text-red-400">모든 데이터 삭제</p>
+              <p className="text-body3 text-status-danger">모든 데이터 삭제</p>
               <p className="text-caption text-sub">
                 모든 데이터를 삭제하고 초기 상태로 되돌립니다. 이 작업은 되돌릴 수 없습니다.
               </p>
@@ -200,6 +201,7 @@ export function SystemTab() {
               size="sm"
               onClick={() => setShowResetConfirm(true)}
               leftIcon={<Trash2 className="w-4 h-4" />}
+              className="w-full sm:w-auto"
             >
               초기화
             </Button>

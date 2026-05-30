@@ -43,21 +43,21 @@ export function DateGroupHeader({ group, sticky = true, className }: DateGroupHe
         <h3 className="text-caption font-bold text-heading tabular-nums truncate">
           {label}
         </h3>
-        <span className="text-[10px] text-disabled tabular-nums font-semibold flex-shrink-0">
+        <span className="text-label4 leading-none text-disabled tabular-nums font-semibold flex-shrink-0">
           {count}건
         </span>
       </div>
 
-      <div className="flex items-center gap-2 text-[11px] tabular-nums flex-shrink-0">
+      <div className="flex items-center gap-2 text-caption tabular-nums flex-shrink-0">
         {totalExpense > 0 && (
           <span className="inline-flex items-baseline gap-1 px-2 py-0.5 rounded-full bg-status-danger-soft/60">
-            <span className="text-status-danger/70 text-[10px] font-semibold">−</span>
+            <span className="text-status-danger/70 text-label4 leading-none font-semibold">−</span>
             <Amount value={totalExpense} size="caption" className="text-status-danger font-bold" unit="" />
           </span>
         )}
         {totalIncome > 0 && (
           <span className="inline-flex items-baseline gap-1 px-2 py-0.5 rounded-full bg-status-success-soft/60">
-            <span className="text-status-success/70 text-[10px] font-semibold">+</span>
+            <span className="text-status-success/70 text-label4 leading-none font-semibold">+</span>
             <Amount value={totalIncome} size="caption" className="text-status-success font-bold" unit="" />
           </span>
         )}
