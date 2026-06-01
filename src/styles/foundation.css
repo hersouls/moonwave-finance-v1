@@ -66,6 +66,9 @@
 /* Data Visualization */
 @import './tokens/data-viz.css';
 
+/* Data Table tokens */
+@import './tokens/table.css';
+
 /* Edge Lighting */
 @import './tokens/edge-lighting.css';
 
@@ -119,6 +122,9 @@
 /* 13_Semantic Colors */
 @import './utilities/semantic-colors.css';
 
+/* Data Table — desktop sortable table views (.data-table*) */
+@import './utilities/table.css';
+
 /* Edge Lighting */
 @import './utilities/edge-lighting.css';
 
@@ -130,6 +136,12 @@
 
 /* Container Queries — inline-size based layout */
 @import './utilities/container-queries.css';
+
+/* Layout — content container + master-detail grid + docked inspector.
+ * (Defines .content-container, .master-detail/.has-inspector, .inspector-panel.)
+ * Without this import the desktop inspector grid never applies and the detail
+ * panel stacks below the list instead of docking — making card clicks look dead. */
+@import './utilities/layout.css';
 
 /* FIN-specific class aliases (card-base, input-base, nav-tabs, etc.) */
 @import './utilities/fin-aliases.css';
