@@ -15,6 +15,22 @@ import { db } from '@/services/database'
 import { normalizeMerchantKey } from '@/services/subscriptionDetection'
 import type { MerchantAlias, MerchantAliasSource, SubscriptionCategoryType } from '@/lib/types'
 
+/**
+ * Deterministic syncId for an alias, derived from its normalized merchantKey.
+ * normalizeMerchantKey is pure, so every device computes the same merchantKey —
+ * and therefore the same syncId — for the same merchant. All devices then write
+ * to the SAME Firestore document, so alias sync converges by construction:
+ * one cloud doc per merchant, no cross-device duplicate rows, and no
+ * &merchantKey ConstraintError on download.
+ *
+ * merchantKey is punctuation-stripped (no '/'), so it stays valid as a Firestore
+ * document id. Mirrors the deterministic-syncId pattern used for seeded
+ * defaults in database.ts (defaultTxnCatSyncId, etc.).
+ */
+function aliasSyncId(merchantKey: string): string {
+  return `alias:${merchantKey}`
+}
+
 export interface SetAliasInput {
   merchant: string                  // raw merchant text — will be normalized
   categoryId: number
@@ -67,7 +83,7 @@ export async function setAlias(input: SetAliasInput): Promise<void> {
   }
 
   await db.merchantAliases.add({
-    syncId: crypto.randomUUID(),
+    syncId: aliasSyncId(merchantKey),
     merchantKey,
     categoryId: input.categoryId,
     subscriptionId: input.subscriptionId,

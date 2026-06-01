@@ -99,8 +99,25 @@ function getUserCollectionPath(uid: string, tableName: string): string {
   return `users/${uid}/${tableName}`
 }
 
+/**
+ * Make a syncId safe to use as a Firestore document id. Doc ids may not contain
+ * '/', but default-seed syncIds embed the record name (e.g.
+ * 'default:txnCat:expense:마트/편의점'), so a '/' in the name makes doc() throw
+ * ("must have an even number of segments") — which previously broke a fresh
+ * device's first fullUpload entirely.
+ *
+ * Encoding is injective ('~' is escaped before '/'), so distinct syncIds keep
+ * distinct ids. Only the document ADDRESS is encoded — the stored `syncId` field
+ * is untouched, so all in-app matching (which is by the syncId field) is
+ * unaffected, and ids without '/' or '~' are byte-identical to before, so
+ * existing cloud documents are neither moved nor re-uploaded.
+ */
+export function encodeDocId(syncId: string): string {
+  return syncId.replace(/~/g, '~7e').replace(/\//g, '~2f')
+}
+
 function getUserDocPath(uid: string, tableName: string, syncId: string): string {
-  return `users/${uid}/${tableName}/${syncId}`
+  return `users/${uid}/${tableName}/${encodeDocId(syncId)}`
 }
 
 // Split records into Firestore batch-safe chunks and upload.
@@ -429,7 +446,21 @@ export async function fullDownload(uid: string): Promise<void> {
         }
 
         // ── Merchant aliases (depends on transactionCategories, subscriptions) ──
+        // Cloud may hold >1 doc per merchantKey (same merchant learned on two
+        // devices before they converged). Dexie's &merchantKey unique index would
+        // throw on the 2nd insert and abort this rw-transaction, so collapse to one
+        // row per key first (newest updatedAt wins).
+        const aliasByKey = new Map<string, Record<string, unknown>>()
+        const keylessAliases: Record<string, unknown>[] = []
         for (const rec of merchantAliases) {
+          const key = rec.merchantKey as string | undefined
+          if (!key) { keylessAliases.push(rec); continue }
+          const prev = aliasByKey.get(key)
+          if (!prev || ((rec.updatedAt as string) || '') > ((prev.updatedAt as string) || '')) {
+            aliasByKey.set(key, rec)
+          }
+        }
+        for (const rec of [...aliasByKey.values(), ...keylessAliases]) {
           delete rec.id
           remapFkField(rec, 'categoryId', txnCatIdMap)
           remapFkField(rec, 'subscriptionId', subscriptionIdMap)
@@ -468,7 +499,7 @@ async function uploadTombstone(
   syncId: string,
   deletedAt: string
 ): Promise<void> {
-  const tombstoneId = `${tableName}_${syncId}`
+  const tombstoneId = encodeDocId(`${tableName}_${syncId}`)
   const ref = doc(firestore, `users/${uid}/syncTombstones/${tombstoneId}`)
   const batch = writeBatch(firestore)
   batch.set(ref, toCloudPayload({ tableName, syncId, deletedAt }))
@@ -579,7 +610,8 @@ function remapFkField(
 // ─── Merge On Login (replaces syncOnLogin) ────────────────
 // Bidirectional merge with FK remapping for cross-device sync
 
-async function mergeTableWithRemap(
+/** @internal Exported for unit tests (cross-device merge collision regression). */
+export async function mergeTableWithRemap(
   tableName: SyncableTable,
   cloudRecords: Record<string, unknown>[],
   /**
@@ -660,16 +692,52 @@ async function mergeTableWithRemap(
   syncWritingCount++
   try {
     // Case 1: Cloud-only records → download if not locally deleted
+    const uniqueKeyField = TABLE_UNIQUE_KEYS[tableName]
     for (const [syncId, cloudRec] of cloudMap) {
-      if (!localMap.has(syncId)) {
-        const tombstone = await db.syncTombstones
-          .where('[tableName+syncId]').equals([tableName, syncId]).first()
-        if (!tombstone) {
-          const toInsert = stripInternalCloudFields(cloudRec)
-          delete toInsert.id // Remove cloud id, let Dexie auto-assign
-          await resolveFksOnRecord(tableName, toInsert)
-          await (localTable as typeof db.members).add(toInsert as unknown as Member)
+      if (localMap.has(syncId)) continue
+      const tombstone = await db.syncTombstones
+        .where('[tableName+syncId]').equals([tableName, syncId]).first()
+      if (tombstone) continue
+
+      // Resolve FKs by `*_syncId` companion FIRST (definitive cross-device link),
+      // THEN strip cloud-only fields. stripInternalCloudFields removes those
+      // companions, so stripping first would silently force the fragile legacy
+      // id-mapping fallback (the bug this ordering fixes).
+      const resolved = { ...cloudRec }
+      delete resolved.id // Remove cloud id, let Dexie auto-assign
+      await resolveFksOnRecord(tableName, resolved)
+      const toInsert = stripInternalCloudFields(resolved)
+
+      // Unique-key collision guard: a local row may already hold this record's
+      // natural key under a different syncId (same merchant learned on another
+      // device). Inserting would throw a ConstraintError on the unique index and
+      // abort the whole merge. Instead LWW-merge into the existing row so the two
+      // converge onto one syncId (the cloud value, carried in `toInsert`).
+      if (uniqueKeyField) {
+        const keyVal = toInsert[uniqueKeyField]
+        if (keyVal != null) {
+          const dup = await (localTable as typeof db.members)
+            .where(uniqueKeyField).equals(keyVal as string).first() as
+            { id?: number; updatedAt?: string } | undefined
+          if (dup?.id != null) {
+            if (shouldApplyCloudUpdate(
+              cloudRec.updatedAt as string,
+              cloudRec.__deviceId as string | undefined,
+              dup.updatedAt,
+            )) {
+              await (localTable as typeof db.members).update(dup.id, toInsert)
+            }
+            continue
+          }
         }
+      }
+
+      try {
+        await (localTable as typeof db.members).add(toInsert as unknown as Member)
+      } catch (err) {
+        // Safety net: never let one bad record abort the merge (which would skip
+        // the trailing tombstone reconciliation + incrementalUpload).
+        console.error(`[sync] merge insert ${tableName}/${syncId} failed:`, err)
       }
     }
 
@@ -683,9 +751,11 @@ async function mergeTableWithRemap(
           cloudDeviceId,
           local.record.updatedAt as string,
         )) {
-          const updates = stripInternalCloudFields(cloudRec)
-          delete updates.id // Don't overwrite local primary key
-          await resolveFksOnRecord(tableName, updates)
+          // Resolve FKs (consumes *_syncId companions) before stripping them.
+          const resolved = { ...cloudRec }
+          delete resolved.id // Don't overwrite local primary key
+          await resolveFksOnRecord(tableName, resolved)
+          const updates = stripInternalCloudFields(resolved)
           await (localTable as typeof db.members).update(local.id, updates)
         }
       }
@@ -1048,6 +1118,21 @@ const TABLE_FK_DEFS: Partial<Record<SyncableTable, Array<{ field: string; refTab
   ],
 }
 
+/**
+ * Tables with a natural unique key (a Dexie `&` index). Two devices that create
+ * the "same" logical record independently produce identical values for this key
+ * but DIFFERENT random syncIds. On download, matching only by syncId would treat
+ * them as distinct and call `.add()`, throwing a ConstraintError on the unique
+ * index and aborting the merge. Sync therefore reconciles these tables by the
+ * unique key too: a syncId miss that hits the unique key is the same row, so we
+ * LWW-merge into it (adopting the peer's syncId) instead of inserting a copy.
+ *
+ * Currently only merchantAliases (`&merchantKey`) — the schema's sole unique index.
+ */
+const TABLE_UNIQUE_KEYS: Partial<Record<SyncableTable, string>> = {
+  merchantAliases: 'merchantKey',
+}
+
 interface UnmappedFK {
   field: string
   refTable: SyncableTable
@@ -1345,16 +1430,28 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
 
         try {
           if (change.type === 'added' || change.type === 'modified') {
-            const existing = await (localTable as typeof db.members).where('syncId').equals(syncId).first()
+            let existing = await (localTable as typeof db.members).where('syncId').equals(syncId).first()
+            // syncId miss + unique-key hit ⇒ same logical row from another device.
+            // Resolve to it so the LWW path below adopts the peer's syncId instead
+            // of `.add()`-ing a duplicate (which throws on the unique index).
+            if (!existing) {
+              const uniqueKeyField = TABLE_UNIQUE_KEYS[tableName]
+              const keyVal = uniqueKeyField ? (cloudData as Record<string, unknown>)[uniqueKeyField] : undefined
+              if (uniqueKeyField && keyVal != null) {
+                existing = await (localTable as typeof db.members).where(uniqueKeyField).equals(keyVal as string).first()
+              }
+            }
             const cloudDeviceId = cloudData.__deviceId as string | undefined
             if (existing) {
               if (!shouldApplyCloudUpdate(cloudData.updatedAt as string, cloudDeviceId, existing.updatedAt)) {
                 continue
               }
-              const updates = stripInternalCloudFields(cloudData)
-              const cloudId = updates.id as number | undefined
-              delete updates.id // Don't overwrite local primary key
-              const unmapped = await resolveFksOnRecord(tableName, updates)
+              // Resolve FKs (consumes *_syncId companions) before stripping them.
+              const resolved = { ...cloudData }
+              const cloudId = resolved.id as number | undefined
+              delete resolved.id // Don't overwrite local primary key
+              const unmapped = await resolveFksOnRecord(tableName, resolved)
+              const updates = stripInternalCloudFields(resolved)
               await (localTable as typeof db.members).update(existing.id!, updates)
               updateFkMapping(tableName, cloudId, existing.id!)
               settledParents.push({ syncId, cloudId, localId: existing.id! })
@@ -1363,10 +1460,12 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
                 scheduleFkRetry(tableName, existing.id!, unmapped, localTable)
               }
             } else {
-              const toInsert = stripInternalCloudFields(cloudData)
-              const cloudId = toInsert.id as number | undefined
-              delete toInsert.id // Let Dexie auto-assign local id
-              const unmapped = await resolveFksOnRecord(tableName, toInsert)
+              // Resolve FKs (consumes *_syncId companions) before stripping them.
+              const resolved = { ...cloudData }
+              const cloudId = resolved.id as number | undefined
+              delete resolved.id // Let Dexie auto-assign local id
+              const unmapped = await resolveFksOnRecord(tableName, resolved)
+              const toInsert = stripInternalCloudFields(resolved)
               const newId = await (localTable as typeof db.members).add(toInsert as unknown as Member) as number
               updateFkMapping(tableName, cloudId, newId)
               settledParents.push({ syncId, cloudId, localId: newId })

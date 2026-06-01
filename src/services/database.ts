@@ -194,23 +194,6 @@ class FinanceDatabase extends Dexie {
     })
 
     // v10: add loans table + "대출이자" expense category for existing users
-    this.version(11).stores({
-      members: '++id, syncId, name, sortOrder',
-      assetCategories: '++id, syncId, name, type, sortOrder',
-      assetItems: '++id, syncId, memberId, categoryId, type, isActive, sortOrder',
-      dailyValues: '++id, syncId, assetItemId, date, [assetItemId+date]',
-      transactionCategories: '++id, syncId, name, type, sortOrder',
-      transactions: '++id, syncId, memberId, type, categoryId, date, isRecurring, recurSourceId, paymentMethod, paymentMethodItemId, subscriptionId',
-      budgets: '++id, syncId, categoryId, month',
-      goals: '++id, syncId, targetDate',
-      paymentMethodItems: '++id, syncId, type, name, sortOrder, linkedAssetItemId',
-      subscriptions: '++id, syncId, currency, category, status, billingDay, cycle, sortOrder, paymentMethodItemId',
-      loans: '++id, syncId, isActive, sortOrder',
-      merchantAliases: '++id, syncId, &merchantKey, categoryId, source, learnedAt, lastUsedAt',
-      syncChangeLog: '++id, tableName, syncId, processed, timestamp, [tableName+syncId]',
-      syncTombstones: '++id, tableName, syncId, deletedAt, [tableName+syncId]',
-    })
-
     this.version(10).stores({
       members: '++id, syncId, name, sortOrder',
       assetCategories: '++id, syncId, name, type, sortOrder',
@@ -246,7 +229,25 @@ class FinanceDatabase extends Dexie {
       }
     })
 
-    // v12: add investmentTrades + dividends tables
+    // v11: merchantAliases table (AI / learned merchant→category aliases)
+    this.version(11).stores({
+      members: '++id, syncId, name, sortOrder',
+      assetCategories: '++id, syncId, name, type, sortOrder',
+      assetItems: '++id, syncId, memberId, categoryId, type, isActive, sortOrder',
+      dailyValues: '++id, syncId, assetItemId, date, [assetItemId+date]',
+      transactionCategories: '++id, syncId, name, type, sortOrder',
+      transactions: '++id, syncId, memberId, type, categoryId, date, isRecurring, recurSourceId, paymentMethod, paymentMethodItemId, subscriptionId',
+      budgets: '++id, syncId, categoryId, month',
+      goals: '++id, syncId, targetDate',
+      paymentMethodItems: '++id, syncId, type, name, sortOrder, linkedAssetItemId',
+      subscriptions: '++id, syncId, currency, category, status, billingDay, cycle, sortOrder, paymentMethodItemId',
+      loans: '++id, syncId, isActive, sortOrder',
+      merchantAliases: '++id, syncId, &merchantKey, categoryId, source, learnedAt, lastUsedAt',
+      syncChangeLog: '++id, tableName, syncId, processed, timestamp, [tableName+syncId]',
+      syncTombstones: '++id, tableName, syncId, deletedAt, [tableName+syncId]',
+    })
+
+    // v12: add investmentTrades + dividends + accountInterests tables
     this.version(12).stores({
       members: '++id, syncId, name, sortOrder',
       assetCategories: '++id, syncId, name, type, sortOrder',
