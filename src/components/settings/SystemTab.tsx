@@ -143,7 +143,9 @@ export function SystemTab() {
         </h3>
         <div className="p-4 bg-surface-secondary rounded-xl space-y-3">
           <p className="text-caption text-sub">
-            카드 명세서 가져오기에서 인식 못 한 가맹점을 Claude API로 자동 분류합니다.
+            거래 입력 마법사의 실시간 추천, 가계부 일괄 분류, 카드 명세서 가져오기에서
+            로컬 추천이 실패한 가맹점을 Claude API로 자동 분류합니다.
+            과거 거래·학습된 분류 기반의 추천은 키 없이도 동작하며, 키는 알 수 없는 가맹점에만 사용됩니다.
             API 키는 이 디바이스에만 저장되며 클라우드에 동기화되지 않습니다.
             가맹점 이름과 카테고리 목록만 Anthropic에 전송됩니다(금액/날짜/멤버 정보는 전송 안 됨).
           </p>
@@ -166,7 +168,7 @@ export function SystemTab() {
           </div>
           <div className="flex items-center justify-between gap-2">
             <span className="text-caption text-sub">
-              {apiKeySaved ? '✓ 저장됨 — 카드 명세서 모달에서 "AI 분류" 버튼 사용 가능' : '아직 설정되지 않음'}
+              {apiKeySaved ? '✓ 저장됨 — 입력 마법사·일괄 분류·카드 명세서에서 AI 분류 사용 가능' : '아직 설정되지 않음 (로컬 추천은 키 없이 동작)'}
             </span>
             <div className="flex gap-2">
               {apiKeySaved && (

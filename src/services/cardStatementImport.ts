@@ -24,7 +24,7 @@
 import { db } from '@/services/database'
 import { normalizeMerchantKey } from '@/services/subscriptionDetection'
 import { loadAliasMap, recordAliasUsage } from '@/services/merchantAliasService'
-import type { Transaction, TransactionCategory, PaymentMethod, SubscriptionCategoryType, Subscription, MerchantAlias } from '@/lib/types'
+import type { Transaction, TransactionCategory, TransactionType, PaymentMethod, SubscriptionCategoryType, Subscription, MerchantAlias } from '@/lib/types'
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -503,17 +503,21 @@ export interface MerchantStats {
  * Categories no longer present in the user's category list are filtered out
  * so we don't suggest a deleted category. Caller builds this once per import
  * session and passes it to every `suggestCategory` call.
+ *
+ * `type` defaults to 'expense' (card-statement path). The ledger entry wizard
+ * passes 'income' too so income merchants get history-based suggestions.
  */
 export function buildMerchantStats(
   history: Transaction[],
   categories: TransactionCategory[],
+  type: TransactionType = 'expense',
 ): Map<string, MerchantStats> {
   const validCatIds = new Set(
-    categories.filter(c => c.type === 'expense' && c.id != null).map(c => c.id!),
+    categories.filter(c => c.type === type && c.id != null).map(c => c.id!),
   )
   const byMerchant = new Map<string, Map<number, number>>()
   for (const t of history) {
-    if (t.type !== 'expense' || t.categoryId == null || !t.memo) continue
+    if (t.type !== type || t.categoryId == null || !t.memo) continue
     if (!validCatIds.has(t.categoryId)) continue
     const key = normalizeMerchantKey(t.memo)
     if (!key) continue
@@ -604,12 +608,13 @@ export function suggestCategory(
   subscriptions: Subscription[] = [],
   stats?: Map<string, MerchantStats>,
   aliases?: Map<string, MerchantAlias>,
+  type: TransactionType = 'expense',
 ): CategorySuggestion {
-  const expenseCats = categories.filter(c => c.type === 'expense')
-  if (expenseCats.length === 0) return { confidence: 'none' }
+  const typeCats = categories.filter(c => c.type === type)
+  if (typeCats.length === 0) return { confidence: 'none' }
 
-  const findCatByName = (name: string) => expenseCats.find(c => c.name === name)
-  const findCatById = (id: number) => expenseCats.find(c => c.id === id)
+  const findCatByName = (name: string) => typeCats.find(c => c.name === name)
+  const findCatById = (id: number) => typeCats.find(c => c.id === id)
   const merchantKey = normalizeMerchantKey(merchant)
 
   // ── 0) Learned alias (highest priority) ──
@@ -635,8 +640,8 @@ export function suggestCategory(
     }
   }
 
-  // ── 1) Registered subscription match ──
-  const subMatch = matchSubscription(merchant, subscriptions)
+  // ── 1) Registered subscription match (expense only) ──
+  const subMatch = type === 'expense' ? matchSubscription(merchant, subscriptions) : null
   if (subMatch) {
     const { sub, how } = subMatch
     const linkedCat = sub.linkedTransactionCategoryId != null
@@ -692,7 +697,7 @@ export function suggestCategory(
   // still better than falling through to keyword rules.
   if (merchantKey) {
     const exactHistory = history.find(t =>
-      t.type === 'expense'
+      t.type === type
       && t.categoryId != null
       && t.memo
       && normalizeMerchantKey(t.memo) === merchantKey,
@@ -709,22 +714,24 @@ export function suggestCategory(
     }
   }
 
-  // ── 4) Keyword rule fallback ──
+  // ── 4) Keyword rule fallback (expense only — rules map to expense categories) ──
   //    Try each rule's category fallback chain in order;
   //    skip the rule if none of its candidate categories exist on this user.
-  const upper = merchant.toUpperCase()
-  for (const rule of KEYWORD_RULES) {
-    for (const kw of rule.keywords) {
-      if (!merchant.includes(kw) && !upper.includes(kw.toUpperCase())) continue
-      const names = Array.isArray(rule.categoryName) ? rule.categoryName : [rule.categoryName]
-      for (const name of names) {
-        const cat = findCatByName(name)
-        if (cat?.id) {
-          return {
-            categoryId: cat.id,
-            confidence: 'medium',
-            reason: rule.reason || `${name} 키워드 매칭`,
-            subscriptionCategory: rule.subscriptionCategory,
+  if (type === 'expense') {
+    const upper = merchant.toUpperCase()
+    for (const rule of KEYWORD_RULES) {
+      for (const kw of rule.keywords) {
+        if (!merchant.includes(kw) && !upper.includes(kw.toUpperCase())) continue
+        const names = Array.isArray(rule.categoryName) ? rule.categoryName : [rule.categoryName]
+        for (const name of names) {
+          const cat = findCatByName(name)
+          if (cat?.id) {
+            return {
+              categoryId: cat.id,
+              confidence: 'medium',
+              reason: rule.reason || `${name} 키워드 매칭`,
+              subscriptionCategory: rule.subscriptionCategory,
+            }
           }
         }
       }

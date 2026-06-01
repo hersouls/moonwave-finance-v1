@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useReducer, useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Dialog } from '@/components/ui/Dialog'
 import { Select } from '@/components/ui/Select'
@@ -29,9 +29,12 @@ import { clsx } from 'clsx'
 import {
   Check, ChevronLeft, ChevronRight, Zap, Landmark, Pencil, MoreHorizontal,
   Plus, Eraser, X, Calendar as CalendarIcon, ChevronDown, Calculator, TrendingUp,
+  Sparkles, Loader2,
 } from 'lucide-react'
 import { MiniCalendar } from '@/components/ui/MiniCalendar'
 import { AmountCalculator } from '@/components/ledger/AmountCalculator'
+import { useCategorySuggestion, type EntryCategorySuggestion } from '@/hooks/useCategorySuggestion'
+import { ConfidenceMeter } from '@/components/ledger/ai/aiPrimitives'
 import type { TransactionType, RepeatType, PaymentMethod } from '@/lib/types'
 
 // ─── Types ─────────────────────────────────────────
@@ -277,13 +280,51 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
 
   const [state, dispatch] = useReducer(wizardReducer, getInitialState(initialDate ?? undefined, members[0]?.id ?? ''))
 
+  // ─── AI category suggestion ────────────────────
+  const { ready: aiReady, suggest, classifyWithAI, apiKeyAvailable } = useCategorySuggestion(open)
+  const [aiSuggestion, setAiSuggestion] = useState<EntryCategorySuggestion | null>(null)
+  const [aiClassifying, setAiClassifying] = useState(false)
+  // Tracks the category id last auto-applied by AI. While the current
+  // categoryId still equals it (or is empty), new suggestions may override it;
+  // once the user makes a manual pick (selectCategory clears this), AI stops.
+  const lastAutoCatRef = useRef<number | null>(null)
+  const categoryIdRef = useRef<number | ''>(state.categoryId)
+  useEffect(() => { categoryIdRef.current = state.categoryId }, [state.categoryId])
+
   // Reset on open
   useEffect(() => {
     if (open) {
       dispatch({ type: 'RESET', initialDate: initialDate ?? undefined, defaultMemberId: members[0]?.id ?? '' })
       loadLoans()
+      setAiSuggestion(null)
+      setAiClassifying(false)
+      lastAutoCatRef.current = null
     }
   }, [open, initialDate, members, loadLoans])
+
+  // Debounced suggestion: recompute whenever the merchant/memo or type changes.
+  useEffect(() => {
+    if (!open) return
+    const memo = state.memo
+    if (!memo.trim()) { setAiSuggestion(null); return }
+    const handle = setTimeout(() => {
+      const s = suggest(memo, state.type)
+      setAiSuggestion(s)
+      // Auto-apply confident suggestions on the amount/category steps only,
+      // and only when the user hasn't manually chosen a different category.
+      if (s?.category && (s.confidence === 'high' || s.confidence === 'medium') && state.currentStep <= 1) {
+        const cur = categoryIdRef.current
+        const canAuto = cur === '' || cur === lastAutoCatRef.current
+        if (canAuto) {
+          lastAutoCatRef.current = s.category.id ?? null
+          if (cur !== s.category.id) {
+            dispatch({ type: 'SET_FIELD', field: 'categoryId', value: s.category.id! })
+          }
+        }
+      }
+    }, 250)
+    return () => clearTimeout(handle)
+  }, [open, state.memo, state.type, state.currentStep, suggest])
 
   // Auto-focus amount input when Step 0
   useEffect(() => {
@@ -310,6 +351,14 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
 
   const templates = useTransactionTemplates(transactions)
 
+  // The engine's last-resort "기타" fallback is a non-answer — surface the
+  // Claude prompt instead of recommending 미분류성 "기타".
+  const aiFallbackOnly = !!(
+    aiSuggestion
+    && aiSuggestion.confidence === 'low'
+    && aiSuggestion.reason?.startsWith('매칭 실패')
+  )
+  const showAiCategory = !!(aiSuggestion?.category && !aiFallbackOnly)
 
   const itemsForType = useMemo(() => {
     if (!state.paymentMethod || state.paymentMethod === 'cash') return []
@@ -326,6 +375,39 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
   }
 
   const canProceed = state.currentStep === 0 ? numAmount > 0 : true
+
+  // Manual category pick — clears the AI auto-apply lock so the user's choice sticks.
+  const selectCategory = useCallback((id: number | '') => {
+    lastAutoCatRef.current = null
+    dispatch({ type: 'SET_FIELD', field: 'categoryId', value: id })
+  }, [])
+
+  // Claude API fallback for the typed merchant (expense only).
+  const handleAiClassify = useCallback(async () => {
+    const merchant = state.memo.trim()
+    if (!merchant || aiClassifying) return
+    if (!apiKeyAvailable) {
+      useToastStore.getState().addToast('설정 → 시스템 → AI 카테고리 분류에서 API 키를 등록해주세요', 'error')
+      return
+    }
+    setAiClassifying(true)
+    try {
+      const s = await classifyWithAI(merchant)
+      setAiSuggestion(s)
+      if (s?.category) {
+        lastAutoCatRef.current = s.category.id ?? null
+        dispatch({ type: 'SET_FIELD', field: 'categoryId', value: s.category.id! })
+        useToastStore.getState().addToast(`AI 추천: ${s.category.name}`, 'success')
+      } else {
+        useToastStore.getState().addToast('적합한 카테고리를 찾지 못했어요', 'info')
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'AI 분류에 실패했습니다'
+      useToastStore.getState().addToast(msg.slice(0, 120), 'error')
+    } finally {
+      setAiClassifying(false)
+    }
+  }, [state.memo, aiClassifying, apiKeyAvailable, classifyWithAI])
 
   const handleSubmit = useCallback(async () => {
     if (numAmount <= 0) return
@@ -802,6 +884,182 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
 
   const renderStep1 = () => (
     <div className="space-y-5">
+      {/* ── 가맹점/메모 입력 + AI 추천 ── */}
+      <div className="space-y-3">
+        <div>
+          <label htmlFor="wizard-merchant" className="flex items-center gap-1.5 text-label2 text-sub mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" />
+            가맹점 · 메모
+            <span className="text-disabled font-normal text-caption">입력하면 AI가 추천해요</span>
+          </label>
+          <input
+            id="wizard-merchant"
+            type="text"
+            value={state.memo}
+            onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'memo', value: e.target.value })}
+            placeholder="예: 스타벅스 강남점"
+            className="input-base text-body3"
+            autoComplete="off"
+          />
+        </div>
+
+        <AnimatePresence mode="wait">
+          {state.memo.trim() && aiSuggestion && (showAiCategory || state.type === 'expense') && (
+            <motion.div
+              key={`ai-${aiSuggestion.category?.id ?? 'none'}`}
+              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.98 }}
+              transition={springSnappy}
+              className="relative overflow-hidden rounded-2xl ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)] p-3.5"
+              style={{
+                background:
+                  'linear-gradient(135deg, color-mix(in srgb, var(--color-primary-500) 8%, var(--surface-primary)), color-mix(in srgb, var(--color-primary-500) 2%, var(--surface-primary)))',
+              }}
+            >
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    'radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--color-primary-500) 13%, transparent), transparent 55%)',
+                }}
+              />
+              <div className="relative">
+                <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <span className="inline-flex items-center gap-1.5 text-caption font-bold text-[color:var(--color-primary-700)] dark:text-[color:var(--color-primary-300)]">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    AI 추천 카테고리
+                  </span>
+                  {showAiCategory && <ConfidenceMeter confidence={aiSuggestion.confidence} />}
+                </div>
+
+                {showAiCategory ? (
+                  <>
+                    {(() => {
+                      const cat = aiSuggestion.category!
+                      const Icon = getCategoryIcon(cat.icon)
+                      const selected = state.categoryId === cat.id
+                      return (
+                        <motion.button
+                          type="button"
+                          onClick={() => selectCategory(cat.id!)}
+                          whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
+                          className={clsx(
+                            'w-full flex items-center gap-3 rounded-xl px-3 py-2.5 ring-1 transition-all text-left',
+                            selected
+                              ? 'ring-transparent'
+                              : 'bg-surface-primary ring-base hover:ring-[color:var(--color-primary-300)]',
+                          )}
+                          style={
+                            selected
+                              ? {
+                                  backgroundColor: cat.color,
+                                  boxShadow: `0 8px 24px -6px color-mix(in srgb, ${cat.color} 45%, transparent)`,
+                                }
+                              : undefined
+                          }
+                        >
+                          <div
+                            className={clsx(
+                              'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0',
+                              selected && 'bg-white/20',
+                            )}
+                            style={!selected ? { backgroundColor: `color-mix(in srgb, ${cat.color} 12%, transparent)` } : undefined}
+                          >
+                            <Icon className="w-5 h-5" style={{ color: selected ? '#ffffff' : cat.color }} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className={clsx('text-body3 font-bold leading-tight truncate', selected ? 'text-white' : 'text-heading')}>
+                              {cat.name}
+                            </p>
+                            {aiSuggestion.reason && (
+                              <p className={clsx('text-label4 leading-tight truncate mt-0.5', selected ? 'text-white/80' : 'text-sub')}>
+                                {aiSuggestion.reason}
+                              </p>
+                            )}
+                          </div>
+                          {selected ? (
+                            <span className="inline-flex items-center gap-1 text-label4 font-bold text-white flex-shrink-0">
+                              <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                              {aiSuggestion.fromAI ? 'AI 선택' : '자동 선택'}
+                            </span>
+                          ) : (
+                            <span className="text-label4 font-bold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] flex-shrink-0">
+                              선택
+                            </span>
+                          )}
+                        </motion.button>
+                      )
+                    })()}
+
+                    {aiSuggestion.alternatives.length > 0 && (
+                      <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                        <span className="text-label4 text-sub font-medium">다른 후보</span>
+                        {aiSuggestion.alternatives.map((alt) => {
+                          const Icon = getCategoryIcon(alt.icon)
+                          return (
+                            <motion.button
+                              key={alt.id}
+                              type="button"
+                              onClick={() => selectCategory(alt.id!)}
+                              whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
+                              className="inline-flex items-center gap-1 pl-1.5 pr-2.5 h-7 rounded-full bg-surface-primary ring-1 ring-base text-caption font-semibold text-sub hover:ring-[color:var(--color-primary-300)] hover:text-heading transition-all"
+                            >
+                              <span
+                                className="w-4 h-4 rounded-md flex items-center justify-center"
+                                style={{ backgroundColor: `color-mix(in srgb, ${alt.color} 14%, transparent)` }}
+                              >
+                                <Icon className="w-2.5 h-2.5" style={{ color: alt.color }} />
+                              </span>
+                              {alt.name}
+                            </motion.button>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {state.type === 'expense' && apiKeyAvailable && aiSuggestion.confidence !== 'high' && !aiSuggestion.fromAI && (
+                      <button
+                        type="button"
+                        onClick={handleAiClassify}
+                        disabled={aiClassifying}
+                        className="mt-2.5 inline-flex items-center gap-1 text-label4 font-semibold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] hover:underline disabled:opacity-50"
+                      >
+                        {aiClassifying ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                        Claude로 더 정확히 분류
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-caption text-sub min-w-0">
+                      {aiReady
+                        ? state.type === 'expense'
+                          ? '로컬 추천 실패 — Claude로 분류해 보세요'
+                          : '추천할 이력이 없어요 — 직접 선택해주세요'
+                        : '이력 분석 중…'}
+                    </p>
+                    {state.type === 'expense' && (
+                      <motion.button
+                        type="button"
+                        onClick={handleAiClassify}
+                        disabled={aiClassifying}
+                        whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
+                        className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full bg-[color:var(--color-primary-600)] text-white text-caption font-bold hover:brightness-110 disabled:opacity-50 flex-shrink-0"
+                      >
+                        {aiClassifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                        {aiClassifying ? '분류 중…' : 'AI 분류 받기'}
+                      </motion.button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
       <div>
         <label className="block text-label2 text-sub mb-1">
           {state.type === 'expense' ? '지출' : '수입'} 카테고리
@@ -827,7 +1085,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               role="radio"
               aria-checked={isSelected}
               variants={gridItem}
-              onClick={() => dispatch({ type: 'SET_FIELD', field: 'categoryId', value: isSelected ? '' : cat.id! })}
+              onClick={() => selectCategory(isSelected ? '' : cat.id!)}
               whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
               whileHover={shouldReduceMotion ? undefined : { y: -3 }}
               animate={{ scale: isSelected ? 1.04 : 1 }}
@@ -869,7 +1127,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
           role="radio"
           aria-checked={state.categoryId === ''}
           variants={gridItem}
-          onClick={() => dispatch({ type: 'SET_FIELD', field: 'categoryId', value: '' })}
+          onClick={() => selectCategory('')}
           whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
           whileHover={shouldReduceMotion ? undefined : { y: -3 }}
           transition={springSnappy}
