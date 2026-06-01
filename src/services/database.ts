@@ -761,6 +761,11 @@ export async function getAllTransactions(): Promise<Transaction[]> {
   return db.transactions.toArray()
 }
 
+/** Count of expense transactions with no category — drives the AI bulk-categorize entry point. */
+export async function countUncategorizedExpenses(): Promise<number> {
+  return db.transactions.filter((t) => t.type === 'expense' && t.categoryId == null).count()
+}
+
 export async function getTransactionsByMonth(month: string): Promise<Transaction[]> {
   return db.transactions
     .where('date')
