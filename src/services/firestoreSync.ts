@@ -1419,6 +1419,10 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
     // Records whose parent FK resolved successfully (or didn't need resolving)
     // — collected so we can flush any children pending on them.
     const settledParents: Array<{ syncId: string; cloudId?: number; localId: number }> = []
+    // Records we actually wrote locally. We notify the UI only on real changes —
+    // not on echoes of our own uploads (LWW-skipped), which would otherwise storm
+    // `fin-sync-update` during a bulk upload and flicker every consumer.
+    let appliedCount = 0
 
     syncWritingCount++
     setSyncWritingFlag(true)
@@ -1453,6 +1457,7 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
               const unmapped = await resolveFksOnRecord(tableName, resolved)
               const updates = stripInternalCloudFields(resolved)
               await (localTable as typeof db.members).update(existing.id!, updates)
+              appliedCount++
               updateFkMapping(tableName, cloudId, existing.id!)
               settledParents.push({ syncId, cloudId, localId: existing.id! })
               if (unmapped.length > 0) {
@@ -1467,6 +1472,7 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
               const unmapped = await resolveFksOnRecord(tableName, resolved)
               const toInsert = stripInternalCloudFields(resolved)
               const newId = await (localTable as typeof db.members).add(toInsert as unknown as Member) as number
+              appliedCount++
               updateFkMapping(tableName, cloudId, newId)
               settledParents.push({ syncId, cloudId, localId: newId })
               if (unmapped.length > 0) {
@@ -1478,6 +1484,7 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
             const existing = await (localTable as typeof db.members).where('syncId').equals(syncId).first()
             if (existing) {
               await (localTable as typeof db.members).delete(existing.id!)
+              appliedCount++
             }
           }
         } catch (err) {
@@ -1494,7 +1501,7 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
       await flushPendingChildren(tableName, p.syncId, p.cloudId, p.localId)
     }
 
-    if (snapshot.docChanges().length > 0) {
+    if (appliedCount > 0) {
       window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: tableName } }))
     }
   }, (err) => {

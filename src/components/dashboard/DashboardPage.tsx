@@ -58,15 +58,18 @@ export function DashboardPage() {
   const liabilityBreakdown = useCategoryBreakdown('liability')
   const openAssetCreateModal = useUIStore((s) => s.openAssetCreateModal)
 
-  const loadData = async () => {
+  // `silent` refreshes (sync echoes, pull-to-refresh) update data in place
+  // without flipping back to the full skeleton — otherwise every background sync
+  // event re-blanks the dashboard and flickers.
+  const loadData = async ({ silent = false }: { silent?: boolean } = {}) => {
     setError(null)
-    setIsLoading(true)
+    if (!silent) setIsLoading(true)
     try {
       await Promise.all([loadAll(), loadValues(), loadAllValues(), loadMembers(), loadGoals(), loadTransactions()])
     } catch {
       setError('데이터를 불러오는데 실패했습니다.')
     } finally {
-      setIsLoading(false)
+      if (!silent) setIsLoading(false)
     }
   }
 
@@ -77,9 +80,9 @@ export function DashboardPage() {
   const heroItemV = motionVariants(shouldReduceMotion, heroItem, reducedStaggerItem)
 
   useEffect(() => { loadData() }, [])
-  useSyncListener(loadData)
+  useSyncListener(() => loadData({ silent: true }))
 
-  const ptr = usePullToRefresh({ onRefresh: loadData })
+  const ptr = usePullToRefresh({ onRefresh: () => loadData({ silent: true }) })
 
   if (isLoading) return (
     <AnimatePresence mode="wait">
