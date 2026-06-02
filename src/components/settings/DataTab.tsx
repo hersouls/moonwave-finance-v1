@@ -7,6 +7,7 @@ import { UI_DELAYS } from '@/utils/constants'
 import { useAuthStore, type SyncStatus } from '@/stores/authStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useToastStore } from '@/stores/toastStore'
+import { useIsDeviceReadOnly } from '@/lib/writeGuard'
 import { Button } from '@/components/ui/Button'
 import { exportBackup, importBackup, exportTransactionsCSV, exportAssetValuesCSV } from '@/services/backup'
 import { formatRelativeTime } from '@/utils/format'
@@ -36,6 +37,7 @@ export function DataTab() {
   const settings = useSettingsStore((s) => s.settings)
   const setLastBackupDate = useSettingsStore((s) => s.setLastBackupDate)
   const addToast = useToastStore((s) => s.addToast)
+  const readOnly = useIsDeviceReadOnly()
 
   const [isBackingUp, setIsBackingUp] = useState(false)
   const [isRestoring, setIsRestoring] = useState(false)
@@ -143,7 +145,8 @@ export function DataTab() {
                     addToast('업로드에 실패했습니다.', 'error')
                   }
                 }}
-                disabled={syncStatus === 'syncing'}
+                disabled={syncStatus === 'syncing' || readOnly}
+                title={readOnly ? '읽기 전용 모드 — 업로드 불가' : undefined}
                 className="flex flex-col items-center gap-2 p-4 rounded-xl border border-base hover:bg-[var(--hover-bg)] transition-colors disabled:opacity-50"
               >
                 <Upload className="w-5 h-5 text-primary-600 dark:text-primary-400" />
@@ -205,7 +208,8 @@ export function DataTab() {
               variant="secondary"
               size="sm"
               onClick={handleImportBackup}
-              disabled={isRestoring}
+              disabled={isRestoring || readOnly}
+              title={readOnly ? '읽기 전용 모드' : undefined}
               leftIcon={isRestoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               className="w-full sm:w-auto"
             >
@@ -232,6 +236,8 @@ export function DataTab() {
             variant="secondary"
             size="sm"
             onClick={handleEasyLedgerImport}
+            disabled={readOnly}
+            title={readOnly ? '읽기 전용 모드' : undefined}
             leftIcon={<FileUp className="w-4 h-4" />}
             className="w-full sm:w-auto"
           >

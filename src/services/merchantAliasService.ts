@@ -13,6 +13,7 @@
 
 import { db } from '@/services/database'
 import { normalizeMerchantKey } from '@/services/subscriptionDetection'
+import { canDeviceWrite } from '@/lib/writeGuard'
 import type { MerchantAlias, MerchantAliasSource, SubscriptionCategoryType } from '@/lib/types'
 
 /**
@@ -61,6 +62,7 @@ export async function loadAliasMap(): Promise<Map<string, MerchantAlias>> {
  *     (we never let AI clobber a user-confirmed mapping).
  */
 export async function setAlias(input: SetAliasInput): Promise<void> {
+  if (!canDeviceWrite()) return  // read-only device: don't mutate the synced alias table
   const merchantKey = normalizeMerchantKey(input.merchant)
   if (!merchantKey) return
   const now = new Date().toISOString()
@@ -103,6 +105,7 @@ export async function setAlias(input: SetAliasInput): Promise<void> {
  * Best-effort — failures don't block the import.
  */
 export async function recordAliasUsage(merchantKey: string): Promise<void> {
+  if (!canDeviceWrite()) return  // read-only device: no usage-count writes
   try {
     const existing = await db.merchantAliases.where('merchantKey').equals(merchantKey).first()
     if (!existing) return

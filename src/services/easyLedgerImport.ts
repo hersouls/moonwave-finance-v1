@@ -1,4 +1,5 @@
 import { db } from '@/services/database'
+import { assertWritable } from '@/lib/writeGuard'
 import type { Transaction, TransactionType, PaymentMethod, TransactionCategory, PaymentMethodItem } from '@/lib/types'
 
 // ─── Types ──────────────────────────────────────────
@@ -201,6 +202,7 @@ export async function importEasyLedger(
   file: File,
   onProgress?: ImportProgressCallback
 ): Promise<ImportResult> {
+  assertWritable()  // read-only device: block bulk import before any write
   const warnings: string[] = []
   const createdCategories: string[] = []
   const createdPaymentMethods: string[] = []

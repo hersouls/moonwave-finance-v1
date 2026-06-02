@@ -13,6 +13,7 @@ import { ToastContainer } from './components/ui/ToastContainer'
 import { UpdateBanner } from './components/ui/UpdateBanner'
 import { IOSInstallBanner } from './components/ui/IOSInstallBanner'
 import { OfflineBanner } from './components/ui/OfflineBanner'
+import { ReadOnlyBanner } from './components/ui/ReadOnlyBanner'
 import { AppLoadingScreen } from './components/ui/AppLoadingScreen'
 import { SearchModal } from './components/search/SearchModal'
 import { PullToRefreshIndicator } from './components/ui/PullToRefreshIndicator'
@@ -35,6 +36,7 @@ import { usePullToRefresh } from './hooks/usePullToRefresh'
 import { incrementalUpload, startRealtimeSync } from './services/firestoreSync'
 import { ensureDefaultCategories } from './services/database'
 import { startTimePeriodWatcher } from './lib/timeTheme'
+import { canDeviceWrite } from './lib/writeGuard'
 
 export default function App() {
   const [isInitialized, setIsInitialized] = useState(false)
@@ -98,6 +100,9 @@ export default function App() {
         await useAssetStore.getState().loadAll()
         await useDailyValueStore.getState().loadAllValues()
         if (cancelled) return
+        // Read-only device: skip the auto carry-forward/projection WRITES
+        // (the loads above still run so the UI shows current data).
+        if (!canDeviceWrite()) return
         // 레거시 복구: 로컬-날짜 기록으로 전부 미래에 저장돼 오늘 0 으로 보이던 항목을 오늘 앵커로 치유.
         await useDailyValueStore.getState().healLegacyFutureValues()
         if (!cancelled) await useDailyValueStore.getState().ensureValueProjections()
@@ -130,6 +135,7 @@ export default function App() {
       {!isOnline && <OfflineBanner />}
       <Sidebar />
       <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-16'}`}>
+        <ReadOnlyBanner />
         <Header />
         <main id="main-content" tabIndex={-1} className="flex-1 pb-20 lg:pb-6" role="main" aria-label="본문">
           <AnimatedOutlet />

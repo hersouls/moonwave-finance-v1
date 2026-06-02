@@ -393,6 +393,12 @@ export interface Settings {
   timeBasedTheme?: boolean
   /** 자산 값 자동 이어쓰기 — 별도 입력이 없으면 어제 값을 오늘로 자동 저장 (기본 ON) */
   autoCarryForward?: boolean
+  /**
+   * 이 기기에서 데이터 쓰기 허용 (기본 ON). 기기별 설정 — localStorage에만
+   * 저장되고 클라우드로 동기화되지 않는다. false면 이 기기는 읽기 전용:
+   * 로컬/클라우드 쓰기 모두 차단하고 동기화 수신(다운로드)만 한다.
+   */
+  deviceWriteEnabled?: boolean
 }
 
 // ─── Computed Types ────────────────────────────────

@@ -20,6 +20,7 @@ import type {
   SyncChangeLogEntry,
   SyncTombstone,
 } from '@/lib/types'
+import { assertWritable } from '@/lib/writeGuard'
 
 class FinanceDatabase extends Dexie {
   members!: Table<Member>
@@ -305,6 +306,9 @@ function installChangeTracking() {
 
   for (const { table, name } of tables) {
     table.hook('creating', function (_primKey, obj) {
+      // Read-only device gate: a write with the sync flag clear is user/app-
+      // initiated. Block it (sync downloads set the flag, so they pass through).
+      if (_syncWritingCount === 0) assertWritable()
       if (_syncWritingCount > 0) return
       const syncId = obj?.syncId as string | undefined
       if (syncId) {
@@ -319,6 +323,7 @@ function installChangeTracking() {
     })
 
     table.hook('updating', function (_mods, _primKey, obj) {
+      if (_syncWritingCount === 0) assertWritable()
       if (_syncWritingCount > 0) return
       const syncId = obj?.syncId as string | undefined
       if (syncId) {
@@ -333,6 +338,7 @@ function installChangeTracking() {
     })
 
     table.hook('deleting', function (_primKey, obj) {
+      if (_syncWritingCount === 0) assertWritable()
       if (_syncWritingCount > 0) return
       const syncId = obj?.syncId as string | undefined
       if (syncId) {
@@ -994,27 +1000,41 @@ export async function getTransactionsBySubscriptionId(subscriptionId: number): P
 }
 
 // ─── Bulk Operations ───────────────────────────────
-export async function clearAllData(): Promise<void> {
-  await db.members.clear()
-  await db.assetCategories.clear()
-  await db.assetItems.clear()
-  await db.dailyValues.clear()
-  await db.transactionCategories.clear()
-  await db.transactions.clear()
-  await db.budgets.clear()
-  await db.goals.clear()
-  await db.paymentMethodItems.clear()
-  await db.subscriptions.clear()
-  await db.loans.clear()
-  await db.investmentTrades.clear()
-  await db.dividends.clear()
-  await db.accountInterests.clear()
-  await db.merchantAliases.clear()
-  await db.syncChangeLog.clear()
-  await db.syncTombstones.clear()
+/**
+ * Destructive local reset. `force: true` bypasses the read-only device gate —
+ * used by logout, which must always be able to wipe this device's local copy
+ * (cloud data is preserved and re-merged on next login). The user-facing
+ * "전체 데이터 초기화" calls it without force, so it is blocked on a read-only
+ * device. When forced, writes are wrapped in the sync-writing flag so the
+ * default-member re-seed doesn't trip the read-only abort in the create hook.
+ */
+export async function clearAllData(opts?: { force?: boolean }): Promise<void> {
+  if (!opts?.force) assertWritable()
+  if (opts?.force) setSyncWritingFlag(true)
+  try {
+    await db.members.clear()
+    await db.assetCategories.clear()
+    await db.assetItems.clear()
+    await db.dailyValues.clear()
+    await db.transactionCategories.clear()
+    await db.transactions.clear()
+    await db.budgets.clear()
+    await db.goals.clear()
+    await db.paymentMethodItems.clear()
+    await db.subscriptions.clear()
+    await db.loans.clear()
+    await db.investmentTrades.clear()
+    await db.dividends.clear()
+    await db.accountInterests.clear()
+    await db.merchantAliases.clear()
+    await db.syncChangeLog.clear()
+    await db.syncTombstones.clear()
 
-  const now = new Date().toISOString()
-  await db.members.bulkAdd(
-    DEFAULT_MEMBERS.map((m, i) => ({ ...m, isDefault: true, sortOrder: i, createdAt: now, updatedAt: now }))
-  )
+    const now = new Date().toISOString()
+    await db.members.bulkAdd(
+      DEFAULT_MEMBERS.map((m, i) => ({ ...m, isDefault: true, sortOrder: i, createdAt: now, updatedAt: now }))
+    )
+  } finally {
+    if (opts?.force) setSyncWritingFlag(false)
+  }
 }

@@ -28,6 +28,7 @@ export function ProfilePage() {
   const deleteMember = useMemberStore((s) => s.deleteMember)
   const addToast = useToastStore((s) => s.addToast)
   const setLastBackupDate = useSettingsStore((s) => s.setLastBackupDate)
+  const readOnly = settings.deviceWriteEnabled === false
 
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null)
@@ -231,7 +232,8 @@ export function ProfilePage() {
                         addToast('업로드에 실패했습니다.', 'error')
                       }
                     }}
-                    disabled={syncStatus === 'syncing'}
+                    disabled={syncStatus === 'syncing' || readOnly}
+                    title={readOnly ? '읽기 전용 모드 — 업로드 불가' : undefined}
                   >
                     업로드
                   </Button>
@@ -271,7 +273,7 @@ export function ProfilePage() {
             <Users className="w-5 h-5" />
             가족 구성원
           </h2>
-          <Button variant="ghost" size="sm" onClick={openAddMember} leftIcon={<Plus className="w-4 h-4" />}>
+          <Button variant="ghost" size="sm" onClick={openAddMember} disabled={readOnly} title={readOnly ? '읽기 전용 모드' : undefined} leftIcon={<Plus className="w-4 h-4" />}>
             추가
           </Button>
         </div>
@@ -294,10 +296,10 @@ export function ProfilePage() {
                   )}
                 </div>
                 <div className="flex gap-1">
-                  <IconButton onClick={() => openEditMember({ id: m.id!, name: m.name, color: m.color })} plain size="sm" aria-label={`${m.name} 수정`}>
+                  <IconButton onClick={() => openEditMember({ id: m.id!, name: m.name, color: m.color })} plain size="sm" disabled={readOnly} aria-label={`${m.name} 수정`}>
                     <Edit3 className="w-4 h-4" />
                   </IconButton>
-                  <IconButton onClick={() => setMemberToDelete(m)} color="danger" plain size="sm" aria-label={`${m.name} 삭제`}>
+                  <IconButton onClick={() => setMemberToDelete(m)} color="danger" plain size="sm" disabled={readOnly} aria-label={`${m.name} 삭제`}>
                     <Trash2 className="w-4 h-4" />
                   </IconButton>
                 </div>
@@ -336,7 +338,7 @@ export function ProfilePage() {
                 <p className="text-body3 text-heading">백업 복원</p>
                 <p className="text-caption text-sub">JSON 백업 파일에서 복원</p>
               </div>
-              <Button variant="secondary" size="sm" onClick={handleImportBackup} leftIcon={<Upload className="w-4 h-4" />}>
+              <Button variant="secondary" size="sm" onClick={handleImportBackup} disabled={readOnly} title={readOnly ? '읽기 전용 모드' : undefined} leftIcon={<Upload className="w-4 h-4" />}>
                 복원
               </Button>
             </div>
@@ -367,7 +369,8 @@ export function ProfilePage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  disabled={isSeeding}
+                  disabled={isSeeding || readOnly}
+                  title={readOnly ? '읽기 전용 모드' : undefined}
                   onClick={async () => {
                     if (!user) return
                     setIsSeeding(true)
@@ -395,7 +398,7 @@ export function ProfilePage() {
                 <p className="text-body3 text-status-danger">데이터 초기화</p>
                 <p className="text-caption text-sub">모든 데이터를 삭제하고 초기 상태로 되돌립니다</p>
               </div>
-              <Button variant="danger" size="sm" onClick={() => setShowResetConfirm(true)} leftIcon={<Trash2 className="w-4 h-4" />}>
+              <Button variant="danger" size="sm" onClick={() => setShowResetConfirm(true)} disabled={readOnly} title={readOnly ? '읽기 전용 모드' : undefined} leftIcon={<Trash2 className="w-4 h-4" />}>
                 초기화
               </Button>
             </div>
