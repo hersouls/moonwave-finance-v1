@@ -22,17 +22,19 @@ import { TransactionFilters } from './TransactionFilters'
 import { LedgerEmptyState } from './LedgerEmptyState'
 import { CardStatementImportModal } from './CardStatementImportModal'
 import { AiCategorizeModal } from './AiCategorizeModal'
+import { DuplicateCleanupModal } from './DuplicateCleanupModal'
 import { PageSegmentControl } from '@/components/layout/PageSegmentControl'
 import { FAB } from '@/components/ui/FAB'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { ErrorEmptyState } from '@/components/ui/EmptyState'
 import { useSwipe } from '@/hooks/useSwipe'
 import { useBreakpoint } from '@/hooks/useBreakpoint'
-import { LayoutGrid, Table2, Sparkles, ChevronRight } from 'lucide-react'
+import { LayoutGrid, Table2, Sparkles, Copy, ChevronRight } from 'lucide-react'
 import { clsx } from 'clsx'
 import { LEDGER_SEGMENTS } from '@/lib/ledgerConstants'
 import { getNextMonth, getPreviousMonth } from '@/lib/dateUtils'
 import { countUncategorizedExpenses } from '@/services/database'
+import { countDuplicateExpenses } from '@/services/duplicateCleanup'
 
 export function LedgerPage() {
   const location = useLocation()
@@ -42,7 +44,9 @@ export function LedgerPage() {
 
   const [isCardImportOpen, setIsCardImportOpen] = useState(false)
   const [isAiCategorizeOpen, setIsAiCategorizeOpen] = useState(false)
+  const [isDuplicateOpen, setIsDuplicateOpen] = useState(false)
   const [uncategorizedCount, setUncategorizedCount] = useState(0)
+  const [duplicateCount, setDuplicateCount] = useState(0)
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
   const { isDesktop } = useBreakpoint()
 
@@ -96,11 +100,16 @@ export function LedgerPage() {
     setTypeFilter(defaultType)
   }, [defaultType])
 
-  const refreshUncategorizedCount = async () => {
+  const refreshActionCounts = async () => {
     try {
-      setUncategorizedCount(await countUncategorizedExpenses())
+      const [uncat, dup] = await Promise.all([
+        countUncategorizedExpenses(),
+        countDuplicateExpenses(),
+      ])
+      setUncategorizedCount(uncat)
+      setDuplicateCount(dup)
     } catch {
-      // non-fatal — the entry point just stays hidden
+      // non-fatal — the entry points just stay hidden
     }
   }
 
@@ -109,7 +118,7 @@ export function LedgerPage() {
     setIsLoading(true)
     try {
       await Promise.all([loadAll(), loadMembers()])
-      void refreshUncategorizedCount()
+      void refreshActionCounts()
     } catch {
       setError('데이터를 불러오는데 실패했습니다.')
     } finally {
@@ -200,6 +209,11 @@ export function LedgerPage() {
           {/* AI auto-categorize — expense view, only when there's uncategorized residue */}
           {defaultType === 'expense' && uncategorizedCount > 0 && (
             <AiCategorizeTrigger count={uncategorizedCount} onOpen={() => setIsAiCategorizeOpen(true)} />
+          )}
+
+          {/* Duplicate cleanup — expense view, only when duplicates are detected */}
+          {defaultType === 'expense' && duplicateCount > 0 && (
+            <DuplicateCleanupTrigger count={duplicateCount} onOpen={() => setIsDuplicateOpen(true)} />
           )}
 
           {/* Type Filter + Advanced Filters */}
@@ -307,14 +321,21 @@ export function LedgerPage() {
       {/* Card Statement Import */}
       <CardStatementImportModal
         open={isCardImportOpen}
-        onClose={() => { setIsCardImportOpen(false); void refreshUncategorizedCount() }}
+        onClose={() => { setIsCardImportOpen(false); void refreshActionCounts() }}
       />
 
       {/* AI Auto-Categorize */}
       <AiCategorizeModal
         open={isAiCategorizeOpen}
         onClose={() => setIsAiCategorizeOpen(false)}
-        onApplied={refreshUncategorizedCount}
+        onApplied={refreshActionCounts}
+      />
+
+      {/* Duplicate Cleanup */}
+      <DuplicateCleanupModal
+        open={isDuplicateOpen}
+        onClose={() => setIsDuplicateOpen(false)}
+        onApplied={refreshActionCounts}
       />
     </div>
   )
@@ -361,6 +382,55 @@ function AiCategorizeTrigger({ count, onOpen }: { count: number; onOpen: () => v
           </p>
           <p className="text-caption text-sub mt-0.5">
             미분류 지출 <span className="font-bold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] tabular-nums">{count}건</span>을 가맹점별로 한 번에 분류
+          </p>
+        </div>
+        <ChevronRight className="w-4 h-4 text-disabled flex-shrink-0" />
+      </div>
+    </motion.button>
+  )
+}
+
+// ─── Duplicate cleanup entry-point trigger ────────────
+function DuplicateCleanupTrigger({ count, onOpen }: { count: number; onOpen: () => void }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onOpen}
+      whileHover={{ y: -1 }}
+      whileTap={{ scale: 0.995 }}
+      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+      className="relative w-full overflow-hidden rounded-2xl text-left p-4 ring-1 ring-base transition-all el-hover-lift"
+      style={{
+        background: 'linear-gradient(135deg, color-mix(in srgb, var(--value-negative) 7%, var(--surface-primary)) 0%, var(--surface-primary) 100%)',
+      }}
+      aria-label={`중복 의심 거래 ${count}건 검토`}
+    >
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--value-negative) 14%, transparent), transparent 60%)',
+        }}
+      />
+      <div className="relative flex items-center gap-3">
+        <div
+          className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+          style={{
+            background: 'linear-gradient(135deg, var(--value-negative), color-mix(in srgb, var(--value-negative) 78%, black))',
+            boxShadow: '0 4px 14px color-mix(in srgb, var(--value-negative) 38%, transparent), inset 0 1px 0 0 rgba(255,255,255,0.25)',
+          }}
+        >
+          <Copy className="w-5 h-5 text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-body3 font-bold text-heading flex items-center gap-1.5">
+            중복 거래 정리
+            <span className="text-micro-bold leading-none uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-status-danger-soft text-status-danger">
+              NEW
+            </span>
+          </p>
+          <p className="text-caption text-sub mt-0.5">
+            중복 의심 지출 <span className="font-bold text-value-negative tabular-nums">{count}건</span> 검토 후 정리 (같은 날짜 중복만 기본 선택)
           </p>
         </div>
         <ChevronRight className="w-4 h-4 text-disabled flex-shrink-0" />

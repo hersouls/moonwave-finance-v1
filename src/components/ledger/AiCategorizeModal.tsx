@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import {
-  Sparkles, X, Check, Loader2, Wand2, ChevronDown, Tag,
+  Sparkles, Check, Loader2, Wand2, ChevronDown, Tag,
   CheckCheck, Square, CheckSquare, AlertCircle,
 } from 'lucide-react'
 import { clsx } from 'clsx'
@@ -20,6 +20,7 @@ import {
   type UncategorizedGroup,
 } from '@/services/bulkAutoCategorize'
 import { ConfidenceMeter } from '@/components/ledger/ai/aiPrimitives'
+import { PremiumModalHeader, ModalFooterButton, ResultStat } from '@/components/ledger/ai/modalChrome'
 import type { TransactionCategory } from '@/lib/types'
 
 interface Props {
@@ -173,7 +174,13 @@ export function AiCategorizeModal({ open, onClose, onApplied }: Props) {
 
   return (
     <Dialog open={open} onClose={onClose} size="2xl" noPadding>
-      <Header onClose={onClose} canClose={step !== 'applying'} />
+      <PremiumModalHeader
+        icon={<Sparkles className="w-4 h-4 text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]" />}
+        title="AI 카테고리 자동 분류"
+        subtitle="미분류 거래를 가맹점별로 분류해 한 번에 적용"
+        onClose={onClose}
+        canClose={step !== 'applying'}
+      />
 
       <DialogBody className="!mt-0 px-5 sm:px-7 pb-4 max-h-[70vh] overflow-y-auto">
         <AnimatePresence mode="wait">
@@ -300,18 +307,18 @@ export function AiCategorizeModal({ open, onClose, onApplied }: Props) {
       <DialogFooter className="!mt-0 px-5 sm:px-7 py-4 border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)]/40 backdrop-blur-sm">
         {step === 'review' && (
           <>
-            <FooterButton variant="ghost" onClick={onClose}>취소</FooterButton>
-            <FooterButton variant="primary" onClick={handleApply} disabled={stats.selectedGroups === 0}>
+            <ModalFooterButton variant="ghost" onClick={onClose}>취소</ModalFooterButton>
+            <ModalFooterButton variant="primary" onClick={handleApply} disabled={stats.selectedGroups === 0}>
               <CheckCheck className="w-4 h-4" strokeWidth={2.5} />
               <span>{stats.selectedTxns}건 분류 적용</span>
-            </FooterButton>
+            </ModalFooterButton>
           </>
         )}
         {(step === 'empty' || step === 'result') && (
-          <FooterButton variant="primary" onClick={onClose} fullWidth>완료</FooterButton>
+          <ModalFooterButton variant="primary" onClick={onClose} fullWidth>완료</ModalFooterButton>
         )}
-        {step === 'applying' && <FooterButton variant="ghost" disabled>적용 중…</FooterButton>}
-        {step === 'loading' && <FooterButton variant="ghost" disabled>분석 중…</FooterButton>}
+        {step === 'applying' && <ModalFooterButton variant="ghost" disabled>적용 중…</ModalFooterButton>}
+        {step === 'loading' && <ModalFooterButton variant="ghost" disabled>분석 중…</ModalFooterButton>}
       </DialogFooter>
     </Dialog>
   )
@@ -320,41 +327,6 @@ export function AiCategorizeModal({ open, onClose, onApplied }: Props) {
 // ════════════════════════════════════════════════════════
 // Subcomponents
 // ════════════════════════════════════════════════════════
-
-function Header({ onClose, canClose }: { onClose: () => void; canClose: boolean }) {
-  return (
-    <div className="relative overflow-hidden">
-      <div aria-hidden="true" className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `
-            radial-gradient(circle at 16% 0%, oklch(0.62 0.18 280 / 0.20), transparent 50%),
-            radial-gradient(circle at 90% 10%, oklch(0.70 0.16 250 / 0.16), transparent 46%)
-          `,
-        }} />
-      <div className="relative px-5 sm:px-7 pt-5 pb-4 flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0"
-            style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-primary-500) 24%, transparent), color-mix(in srgb, var(--color-primary-500) 8%, transparent))',
-              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--color-primary-500) 30%, transparent), inset 0 1px 0 0 rgba(255,255,255,0.5)',
-            }}>
-            <Sparkles className="w-4 h-4 text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]" />
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-title2 font-bold text-heading tracking-tight truncate">AI 카테고리 자동 분류</h2>
-            <p className="text-caption text-sub font-medium mt-0.5 truncate">미분류 거래를 가맹점별로 분류해 한 번에 적용</p>
-          </div>
-        </div>
-        {canClose && (
-          <button type="button" onClick={onClose} aria-label="닫기"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors flex-shrink-0">
-            <X className="w-5 h-5" />
-          </button>
-        )}
-      </div>
-    </div>
-  )
-}
 
 function SummaryCard({
   merchants, selectedGroups, selectedTxns, selectedAmount, memolessCount, onSelectAll, onDeselectAll,
@@ -528,49 +500,3 @@ function GroupRow({
   )
 }
 
-function ResultStat({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="rounded-2xl p-3 bg-surface-primary ring-1 ring-base text-center">
-      <p className="text-label4 text-sub font-semibold uppercase tracking-wider mb-0.5">{label}</p>
-      <p className="text-title2 font-extrabold tabular-nums" style={{ color }}>{value}</p>
-    </div>
-  )
-}
-
-function FooterButton({
-  variant, onClick, disabled, fullWidth, children,
-}: {
-  variant: 'primary' | 'ghost'
-  onClick?: () => void
-  disabled?: boolean
-  fullWidth?: boolean
-  children: React.ReactNode
-}) {
-  const shouldReduceMotion = useReducedMotion()
-  return (
-    <motion.button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      whileHover={shouldReduceMotion || disabled ? undefined : { y: -1 }}
-      whileTap={shouldReduceMotion || disabled ? undefined : { scale: 0.97 }}
-      transition={springSnappy}
-      className={clsx(
-        'h-12 px-5 rounded-2xl text-body3 font-bold inline-flex items-center justify-center gap-1.5 transition-all',
-        'disabled:opacity-50 disabled:pointer-events-none',
-        fullWidth && 'w-full',
-        variant === 'primary' ? 'text-white' : 'text-sub bg-surface-tertiary ring-1 ring-base hover:bg-[var(--hover-bg)]',
-      )}
-      style={
-        variant === 'primary' && !disabled
-          ? {
-              background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))',
-              boxShadow: '0 6px 20px color-mix(in oklch, var(--color-primary-500) 38%, transparent), inset 0 1px 0 0 rgba(255,255,255,0.3)',
-            }
-          : undefined
-      }
-    >
-      {children}
-    </motion.button>
-  )
-}
