@@ -1,5 +1,6 @@
 import { db } from '@/services/database'
 import { addDays, addWeeks, addMonths, addYears, format, isAfter, startOfDay } from 'date-fns'
+import { canDeviceWrite } from '@/lib/writeGuard'
 import type { Transaction, RepeatPattern } from '@/lib/types'
 
 function getNextDates(lastDate: string, pattern: RepeatPattern, upToDate: string): string[] {
@@ -26,6 +27,8 @@ function getNextDates(lastDate: string, pattern: RepeatPattern, upToDate: string
 }
 
 export async function processRecurringTransactions(): Promise<number> {
+  // Read-only device: never auto-generate (and sync) phantom recurrence rows.
+  if (!canDeviceWrite()) return 0
   const today = format(new Date(), 'yyyy-MM-dd')
   const recurringTxns = await db.transactions.where('isRecurring').equals(1).toArray()
   let created = 0

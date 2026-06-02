@@ -12,6 +12,7 @@
 // duplicates.
 
 import { db } from './database'
+import { isDeviceReadOnly } from '@/lib/writeGuard'
 
 // Bump the version suffix to force this migration to re-run on every device
 // the next time the user signs in. v2 was bumped to clean up duplicate
@@ -66,6 +67,11 @@ function pickCanonical<T extends SeedLike>(group: T[]): T {
 
 export async function dedupSeedCategories(options?: { force?: boolean }): Promise<DedupResult> {
   const empty: DedupResult = { txnCatsRemoved: 0, assetCatsRemoved: 0, membersRemoved: 0, fkReassignments: 0 }
+
+  // Read-only device: skip (its writes would be blocked, and a peer's dedup
+  // deletes propagate here via sync anyway). Don't set the done-flag, so this
+  // runs once the device is made writable again.
+  if (isDeviceReadOnly()) return empty
 
   if (!options?.force && typeof localStorage !== 'undefined' && localStorage.getItem(DEDUP_FLAG_KEY)) {
     return empty

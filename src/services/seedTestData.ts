@@ -1,5 +1,6 @@
 import { db } from '@/services/database'
 import { fullUpload } from '@/services/firestoreSync'
+import { assertWritable } from '@/lib/writeGuard'
 import type { DailyValue, Transaction, Budget } from '@/lib/types'
 
 /**
@@ -7,6 +8,7 @@ import type { DailyValue, Transaction, Budget } from '@/lib/types'
  * 한국 가정의 현실적인 재정 데이터를 시뮬레이션합니다.
  */
 export async function seedTestDataAndUpload(uid: string): Promise<void> {
+  assertWritable()  // read-only device: block the destructive seed before any wipe
   // ─── 1. 기존 데이터 전부 초기화 ─────────────────────
   await db.transaction('rw', [
     db.members, db.assetCategories, db.assetItems, db.dailyValues,

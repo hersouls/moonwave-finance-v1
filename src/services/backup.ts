@@ -1,5 +1,6 @@
 import { db } from '@/services/database'
 import { BACKUP_CONFIG } from '@/utils/constants'
+import { assertWritable } from '@/lib/writeGuard'
 import type { BackupFile } from '@/lib/types'
 
 export async function exportBackup(): Promise<void> {
@@ -56,6 +57,7 @@ export async function exportBackup(): Promise<void> {
 }
 
 export async function importBackup(file: File): Promise<void> {
+  assertWritable()  // read-only device: block the destructive restore before any wipe
   const text = await file.text()
   const backup: BackupFile = JSON.parse(text)
 

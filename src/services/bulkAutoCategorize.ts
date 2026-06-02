@@ -12,6 +12,7 @@
 // instantly without re-running the AI.
 
 import { db, getAllTransactions, updateTransaction } from '@/services/database'
+import { assertWritable } from '@/lib/writeGuard'
 import { normalizeMerchantKey } from '@/services/subscriptionDetection'
 import { loadAliasMap, setAlias } from '@/services/merchantAliasService'
 import {
@@ -118,6 +119,7 @@ export interface ApplyResult {
 }
 
 export async function applyGroups(input: ApplyInput): Promise<ApplyResult> {
+  assertWritable()  // read-only device: block bulk re-categorization
   let applied = 0
   let merchants = 0
   const aliasWrites: { merchant: string; categoryId: number }[] = []

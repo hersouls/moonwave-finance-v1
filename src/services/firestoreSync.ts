@@ -11,6 +11,7 @@ import { firestore } from '@/lib/firebase'
 import { db, setSyncWritingFlag } from '@/services/database'
 import { useAuthStore } from '@/stores/authStore'
 import { getDeviceId } from '@/lib/deviceId'
+import { canDeviceWrite } from '@/lib/writeGuard'
 import type {
   Member,
   AssetCategory,
@@ -230,6 +231,7 @@ async function ensureAndPersistSyncIds() {
 
 // ─── Full Upload (preserved for manual sync) ─────────────
 export async function fullUpload(uid: string, options?: { reconcile?: boolean }): Promise<void> {
+  if (!canDeviceWrite()) return  // read-only device: never write to the cloud
   useAuthStore.getState().setSyncStatus('syncing')
   try {
     await ensureAndPersistSyncIds()
@@ -507,6 +509,7 @@ async function uploadTombstone(
 }
 
 export async function incrementalUpload(uid: string): Promise<void> {
+  if (!canDeviceWrite()) return  // read-only device: never write to the cloud
   useAuthStore.getState().setSyncStatus('syncing')
   try {
     await ensureAndPersistSyncIds()
@@ -830,6 +833,7 @@ async function applyCloudTombstones(uid: string): Promise<void> {
 }
 
 async function uploadLocalTombstones(uid: string): Promise<void> {
+  if (!canDeviceWrite()) return  // read-only device: never write to the cloud
   const localTombstones = await db.syncTombstones.toArray()
   for (const tombstone of localTombstones) {
     try {
@@ -844,6 +848,7 @@ async function uploadLocalTombstones(uid: string): Promise<void> {
 }
 
 async function garbageCollectTombstones(uid: string): Promise<void> {
+  if (!canDeviceWrite()) return  // read-only device: skip cloud + local tombstone GC
   const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
   // Clean local tombstones
@@ -999,6 +1004,7 @@ export async function getPendingChangesCount(): Promise<number> {
 
 // Delete a single document from Firestore
 export async function deleteFromCloud(uid: string, tableName: SyncableTable, syncId: string): Promise<void> {
+  if (!canDeviceWrite()) return  // read-only device: never write to the cloud
   try {
     await deleteDoc(doc(firestore, getUserDocPath(uid, tableName, syncId)))
   } catch (err) {
@@ -1008,6 +1014,7 @@ export async function deleteFromCloud(uid: string, tableName: SyncableTable, syn
 
 // Delete multiple documents from Firestore (batch)
 export async function deleteMultipleFromCloud(uid: string, tableName: SyncableTable, syncIds: string[]): Promise<void> {
+  if (!canDeviceWrite()) return  // read-only device: never write to the cloud
   if (syncIds.length === 0) return
   try {
     for (let i = 0; i < syncIds.length; i += BATCH_LIMIT) {
@@ -1029,6 +1036,7 @@ export async function uploadSingleRecord<T extends { syncId?: string }>(
   tableName: SyncableTable,
   record: T
 ): Promise<void> {
+  if (!canDeviceWrite()) return  // read-only device: never write to the cloud
   if (!record.syncId) return
   try {
     const batch = writeBatch(firestore)

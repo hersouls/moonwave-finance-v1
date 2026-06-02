@@ -1,5 +1,6 @@
 import { db } from '@/services/database'
 import { format, isAfter, isBefore, addDays, addMonths } from 'date-fns'
+import { canDeviceWrite } from '@/lib/writeGuard'
 import type { Transaction, Subscription, PauseHistoryEntry } from '@/lib/types'
 
 /**
@@ -101,6 +102,7 @@ function generateBillingDates(sub: Subscription, upTo: Date): string[] {
  * skipping pause periods and dates where a transaction already exists.
  */
 export async function processSubscriptionTransactions(): Promise<number> {
+  if (!canDeviceWrite()) return 0  // read-only device: no auto-generated rows
   const today = new Date()
 
   const activeSubs = await db.subscriptions.where('status').equals('active').toArray()

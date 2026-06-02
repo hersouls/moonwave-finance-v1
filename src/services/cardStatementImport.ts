@@ -22,6 +22,7 @@
 //   - type      → 'expense' (statements are always expenses)
 
 import { db } from '@/services/database'
+import { assertWritable } from '@/lib/writeGuard'
 import { normalizeMerchantKey } from '@/services/subscriptionDetection'
 import { loadAliasMap, recordAliasUsage } from '@/services/merchantAliasService'
 import type { Transaction, TransactionCategory, TransactionType, PaymentMethod, SubscriptionCategoryType, Subscription, MerchantAlias } from '@/lib/types'
@@ -859,6 +860,7 @@ export async function importStatement(
   rows: AnalyzedRow[],
   options: ImportOptions,
 ): Promise<ImportResult> {
+  assertWritable()  // read-only device: block bulk import before any write
   const now = new Date().toISOString()
   const skip = options.skipIndexes ?? new Set<number>()
   const toInsert: Omit<Transaction, 'id'>[] = []

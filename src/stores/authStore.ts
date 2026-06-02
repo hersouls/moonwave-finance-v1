@@ -174,7 +174,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       // Firestore is preserved and re-merged on next login.
       try {
         const { clearAllData } = await import('@/services/database')
-        await clearAllData()
+        // force: logout must wipe this device's local copy even when the
+        // device is in read-only mode (cloud data is preserved + re-merged).
+        await clearAllData({ force: true })
       } catch (clearErr) {
         console.error('Failed to clear local data on logout:', clearErr)
       }
