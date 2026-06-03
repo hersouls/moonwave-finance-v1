@@ -886,8 +886,15 @@ export async function mergeOnLogin(uid: string): Promise<void> {
     const snapshot = await getDocs(colRef)
 
     if (snapshot.empty) {
-      // First time: upload everything
-      await fullUpload(uid, { reconcile: true })
+      // First time: upload everything (write-capable devices only).
+      if (canDeviceWrite()) {
+        await fullUpload(uid, { reconcile: true })
+      } else {
+        // 읽기전용 + 빈 클라우드: 업로드할 게 없음 → 동기화 완료로 정리(스피너 멈춤).
+        // (fullUpload는 읽기전용에서 'syncing' set 전에 no-op 반환하므로 직접 종결해야 함)
+        useAuthStore.getState().setSyncStatus('synced')
+        useAuthStore.getState().setLastSyncTime(new Date().toISOString())
+      }
       return
     }
 
@@ -989,6 +996,12 @@ export async function mergeOnLogin(uid: string): Promise<void> {
   } catch (err) {
     console.error('[sync] merge on login failed:', err)
     useAuthStore.getState().setSyncStatus('error')
+  } finally {
+    // 안전망: 어떤 early-return 경로에서도 'syncing'이 영구 고착되지 않도록 정리.
+    // (정상 종료는 이미 'synced', 실패는 'error'로 빠져 있어 영향 없음)
+    if (useAuthStore.getState().syncStatus === 'syncing') {
+      useAuthStore.getState().setSyncStatus('synced')
+    }
   }
 }
 
