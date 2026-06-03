@@ -1063,18 +1063,12 @@ body {
   height: 4px;
 }
 
-/* 금액 의미색 — BORA/Health 정확값 (success #059669, danger #dc2626). 다크는 가독용 명도 상향. */
+/* 금액 의미색 — semantic-colors.css의 --value-* 토큰 단일 소스 참조(light/dark/oled 자동 상속). */
 .value-positive {
-  color: #059669;
+  color: var(--value-positive);
 }
 .value-negative {
-  color: #dc2626;
-}
-.dark .value-positive {
-  color: #34d399;
-}
-.dark .value-negative {
-  color: #f87171;
+  color: var(--value-negative);
 }
 
 .gauge-safe {
