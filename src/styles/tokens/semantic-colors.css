@@ -1,36 +1,42 @@
 /* ===============================================
- * Semantic Color Tokens — v2 WCAG AA+ Refined
- * Light / Dark / OLED 3-tier 대비 완성
+ * Semantic Color Tokens — v3 Violet Brand (WCAG AA+)
+ * 중성색 violet-tint · Light(hue 292) / Dark·OLED(hue 287) 3-tier
+ * 모든 회색을 primary 보라와 한 패밀리로 통일(저채도 oklch)
+ * 대비-임계 전경 보라는 var(--color-primary-*) 대신 명시적 oklch 리터럴 사용
+ * (기본 :root primary는 파랑 hue 250, 다크 보라 스케일은 반전 — 팔레트 무관 정합 보장)
  * =============================================== */
 
 :root {
   /* ── Surface (배경) ─────────────────────────── */
+  /* #fff 카드 → 살짝 violet off-white bg → 한 단계 더 (hue 292, C 0.004~0.006) */
   --surface-primary: #ffffff;
-  --surface-secondary: #fafafa;
-  --surface-tertiary: #f4f4f5;
-  --surface-elevated: rgba(255, 255, 255, 0.85);
-  --surface-sunken: #f4f4f5;
+  --surface-secondary: oklch(0.985 0.004 292);
+  --surface-tertiary: oklch(0.965 0.005 292);
+  --surface-elevated: oklch(1 0 0 / 0.85);
+  --surface-sunken: oklch(0.965 0.006 292);
 
   /* ── Text ───────────────────────────────────── */
-  /* primary on #fff → 17.5:1 AAA */
-  --text-primary: #18181b;
-  /* secondary on #fff → 7.5:1 AAA */
-  --text-secondary: #3f3f46;
-  /* tertiary on #fff → 5.2:1 AA large / AAA normal */
-  --text-tertiary: #52525b;
-  /* muted on #fff → 4.6:1 AA */
-  --text-muted: #71717a;
+  /* 가장 진한 텍스트도 살짝 violet 틴트(C 0.010~0.016) — 보라 가족 유지 */
+  /* primary on #fff → L 0.24 ≈ 15.5:1 AAA */
+  --text-primary: oklch(0.24 0.016 292);
+  /* secondary on #fff → L 0.39 ≈ 9.6:1 AAA */
+  --text-secondary: oklch(0.39 0.014 292);
+  /* tertiary on #fff → L 0.46 ≈ 7.2:1 AAA */
+  --text-tertiary: oklch(0.46 0.012 292);
+  /* muted on #fff → L 0.53 ≈ 5.2:1 / on tertiary·sunken ≈ 4.7:1 AA */
+  --text-muted: oklch(0.53 0.010 292);
   --text-inverse: #ffffff;
   --text-on-accent: #ffffff;
 
   /* ── Border ─────────────────────────────────── */
-  --border-default: #e4e4e7;
-  --border-strong: #d4d4d8;
-  --border-subtle: #f4f4f5;
+  /* C 0.010~0.014 — 회색보다 보라 결을 한 톤 얹음 */
+  --border-default: oklch(0.91 0.010 292);
+  --border-strong: oklch(0.86 0.014 292);
+  --border-subtle: oklch(0.965 0.006 292);
 
   /* ── Interactive ────────────────────────────── */
-  --hover-bg: #f4f4f5;
-  --active-bg: #e4e4e7;
+  --hover-bg: oklch(0.965 0.006 292);
+  --active-bg: oklch(0.91 0.010 292);
   --hover-border: var(--color-primary-300);
 
   /* ── Primary Accent ─────────────────────────── */
@@ -39,36 +45,38 @@
   --accent-primary-text-alt: var(--color-primary-600);
 
   /* ── Status — Light mode ────────────────────── */
+  /* 한 패밀리: L/C 관계 일관, 절제된 톤(네온 X). soft bg/text/border 3종, 단일 hue. */
   /* success — hue 145 */
-  --status-success-bg: oklch(0.95 0.06 145 / 1);
-  --status-success-text: oklch(0.42 0.15 145);
-  --status-success-border: oklch(0.78 0.14 145);
+  --status-success-bg: oklch(0.95 0.05 145 / 1);
+  --status-success-text: oklch(0.44 0.13 145);
+  --status-success-border: oklch(0.80 0.12 145);
 
-  /* warning — hue 70 */
-  --status-warning-bg: oklch(0.96 0.06 85 / 1);
-  --status-warning-text: oklch(0.48 0.15 70);
-  --status-warning-border: oklch(0.82 0.14 75);
+  /* warning — hue 78 (bg/text/border 단일 hue 통일) */
+  --status-warning-bg: oklch(0.95 0.05 78 / 1);
+  --status-warning-text: oklch(0.50 0.13 78);
+  --status-warning-border: oklch(0.82 0.12 78);
 
   /* danger — hue 25 */
-  --status-danger-bg: oklch(0.96 0.04 25 / 1);
-  --status-danger-text: oklch(0.48 0.20 25);
-  --status-danger-border: oklch(0.80 0.14 25);
+  --status-danger-bg: oklch(0.95 0.04 25 / 1);
+  --status-danger-text: oklch(0.50 0.18 25);
+  --status-danger-border: oklch(0.80 0.13 25);
 
-  /* info — primary hue */
+  /* info — primary 보라 hue 287 */
   --status-info-bg: var(--color-primary-50);
   --status-info-text: var(--color-primary-700);
   --status-info-border: var(--color-primary-300);
 
   /* ── Muted / Glass ──────────────────────────── */
-  --surface-muted: #e4e4e7;
-  --surface-glass: rgba(255, 255, 255, 0.6);
+  --surface-muted: oklch(0.91 0.010 292);
+  --surface-glass: oklch(1 0 0 / 0.6);
 
   /* ── Ring (keyboard focus) ──────────────────── */
   --ring-focus: var(--color-primary-600);
   --ring-offset: #ffffff;
 
   /* ── Positive/Negative (금융) ───────────────── */
-  --value-positive: #059669;
+  /* value-positive → emerald-700 #047857: AA normal on #fff (5.48:1). */
+  --value-positive: #047857;
   --value-negative: #dc2626;
   --value-neutral: var(--text-tertiary);
 
@@ -82,118 +90,143 @@
   --blur-overlay: 12px;
 
   /* ── Weekend / day-of-week (캘린더 공용) ─────── */
-  /* Sunday → danger hue 25, Saturday → info hue 255. AA on light surface. */
-  --text-weekend-sun: oklch(0.58 0.20 25);
+  /* Sunday → danger hue 25. Saturday → 한국 달력 관습 파랑 hue 255
+   * (브랜드 보라 가족 예외, 의도적 유지 — hue-250 잔재 점검 시 오탐 아님). AA on light surface. */
+  --text-weekend-sun: oklch(0.55 0.20 25);
   --text-weekend-sat: oklch(0.52 0.16 255);
 }
 
 /* ===============================================
- * Dark Mode — WCAG AA+ corrected contrast
- * Base bg #09090b / secondary #18181b / tertiary #27272a
+ * Dark Mode — violet near-black (hue 287) WCAG AA+
+ * Base bg oklch(0.16 0.008 287) — 순수 zinc 대신 보라 기운 프리미엄
+ * elevated/sunken 단계 명확 (elevated = 더 밝은 solid step)
  * =============================================== */
 .dark {
-  --surface-primary: #09090b;
-  --surface-secondary: #18181b;
-  --surface-tertiary: #27272a;
-  --surface-elevated: rgba(9, 9, 11, 0.85);
-  --surface-sunken: #0f0f11;
+  --surface-primary: oklch(0.16 0.008 287);
+  --surface-secondary: oklch(0.21 0.010 287);
+  --surface-tertiary: oklch(0.26 0.012 287);
+  /* elevated = primary보다 한 단계 밝은 solid (위계 인지 가능) */
+  --surface-elevated: oklch(0.235 0.011 287);
+  --surface-sunken: oklch(0.13 0.008 287);
 
-  /* text-primary on #09090b → ~16:1 AAA */
-  --text-primary: #f4f4f5;
-  /* secondary on #09090b → ~10:1 AAA (bumped from #a1a1aa ~7:1) */
-  --text-secondary: #d4d4d8;
-  /* tertiary on #09090b → ~6.8:1 AAA (bumped from #71717a ~4:1) */
-  --text-tertiary: #a1a1aa;
-  /* muted on #09090b → ~4.8:1 AA (bumped from #52525b ~2.8:1) */
-  --text-muted: #8a8a94;
-  --text-inverse: #18181b;
+  /* 가장 진한 텍스트도 violet 틴트 유지(C 0.006~0.014) */
+  /* primary on bg L0.16 → ~15:1 AAA */
+  --text-primary: oklch(0.96 0.006 287);
+  /* secondary → ~13:1 AAA */
+  --text-secondary: oklch(0.87 0.010 287);
+  /* tertiary → ~6.8:1 AAA */
+  --text-tertiary: oklch(0.70 0.014 287);
+  /* muted → on primary ~5.6:1 / on tertiary ~4.6:1 AA */
+  --text-muted: oklch(0.64 0.014 287);
+  --text-inverse: oklch(0.21 0.010 287);
   --text-on-accent: #ffffff;
 
-  --border-default: #3f3f46;
-  --border-strong: #52525b;
-  --border-subtle: #27272a;
+  --border-default: oklch(0.32 0.014 287);
+  --border-strong: oklch(0.40 0.016 287);
+  /* border-subtle = surface-tertiary(0.26)보다 한 단계 위 — 경계 식별 보장 */
+  --border-subtle: oklch(0.30 0.012 287);
 
-  --hover-bg: #27272a;
-  --active-bg: #3f3f46;
-  --hover-border: var(--color-primary-400);
+  --hover-bg: oklch(0.26 0.012 287);
+  --active-bg: oklch(0.32 0.014 287);
+  /* hover-border: 명시적 밝은 보라 리터럴 (~4:1, 반전 스케일 의존 제거) */
+  --hover-border: oklch(0.58 0.18 287);
 
-  --accent-primary-bg: oklch(0.27 0.09 250 / 0.3);
-  --accent-primary-text: var(--color-primary-200);
-  --accent-primary-text-alt: var(--color-primary-300);
+  /* FIX: hue 250 파랑 잔재 → 보라 hue 287. TEXT는 반전 스케일(primary-200/300=다크) 대신
+   * 명시적 밝은 보라 리터럴 사용 (var 참조 시 dark-on-dark 1.2:1로 실명) */
+  --accent-primary-bg: oklch(0.30 0.09 287 / 0.30);
+  --accent-primary-text: oklch(0.82 0.12 287);
+  --accent-primary-text-alt: oklch(0.74 0.13 287);
 
-  /* Status — Dark mode (brightened ~0.1 L) */
-  --status-success-bg: oklch(0.28 0.10 145 / 0.4);
-  --status-success-text: oklch(0.78 0.15 145);
-  --status-success-border: oklch(0.45 0.12 145);
+  /* Status — Dark mode (brightened ~0.1 L), L/C 일관 패밀리, 색역 내 chroma */
+  --status-success-bg: oklch(0.30 0.09 145 / 0.4);
+  --status-success-text: oklch(0.80 0.14 145);
+  --status-success-border: oklch(0.47 0.11 145);
 
-  --status-warning-bg: oklch(0.28 0.10 75 / 0.4);
-  --status-warning-text: oklch(0.85 0.15 80);
-  --status-warning-border: oklch(0.50 0.14 80);
+  --status-warning-bg: oklch(0.30 0.09 78 / 0.4);
+  --status-warning-text: oklch(0.86 0.11 78);
+  --status-warning-border: oklch(0.50 0.12 78);
 
-  --status-danger-bg: oklch(0.28 0.10 25 / 0.4);
-  --status-danger-text: oklch(0.78 0.18 25);
-  --status-danger-border: oklch(0.50 0.18 25);
+  --status-danger-bg: oklch(0.30 0.09 25 / 0.4);
+  --status-danger-text: oklch(0.80 0.13 25);
+  --status-danger-border: oklch(0.50 0.16 25);
 
-  --status-info-bg: oklch(0.28 0.10 250 / 0.4);
-  --status-info-text: var(--color-primary-200);
+  /* FIX: hue 250 파랑 잔재 → 보라 hue 287. info TEXT도 명시적 밝은 보라 리터럴
+   * (var(--color-primary-200) = 반전 스케일 0.28 → 1.2:1 실명 방지). ~9:1 AAA. */
+  --status-info-bg: oklch(0.30 0.09 287 / 0.4);
+  --status-info-text: oklch(0.80 0.13 287);
   --status-info-border: var(--color-primary-500);
 
-  --surface-muted: #3f3f46;
-  --surface-glass: rgba(9, 9, 11, 0.6);
+  --surface-muted: oklch(0.32 0.014 287);
+  --surface-glass: oklch(0.16 0.008 287 / 0.6);
 
-  --ring-focus: var(--color-primary-300);
-  --ring-offset: #09090b;
+  /* focus ring: 명시적 밝은 보라 (~4.7:1, 비텍스트 3:1 최소 충족) */
+  --ring-focus: oklch(0.62 0.20 287);
+  --ring-offset: oklch(0.16 0.008 287);
 
   --value-positive: #34d399;
   --value-negative: #f87171;
-  --value-neutral: var(--text-tertiary);
+  /* value-neutral: 전용 밝은 저채도 토큰 — +/- 옆에서 disabled/error로 안 보이게 */
+  --value-neutral: oklch(0.78 0.006 287);
 
   --overlay-scrim: rgba(0, 0, 0, 0.6);
-  /* Dark weekend — brightened for dark surface */
+  /* Dark weekend — brightened for dark surface (sat hue 255 = 의도적 예외) */
   --text-weekend-sun: oklch(0.72 0.18 25);
   --text-weekend-sat: oklch(0.74 0.14 255);
 }
 
 /* ===============================================
- * OLED Pure Black Mode — extra brightness for #000 bg
+ * OLED Pure Black Mode — #000 primary, violet 기운 보조 표면
+ * 텍스트 OLED 가독성 부스트 유지 · surface 사다리 확장(위계 인지)
  * =============================================== */
 html.dark[data-oled="true"] {
   --surface-primary: #000000;
-  --surface-secondary: #0a0a0a;
-  --surface-tertiary: #141414;
-  --surface-elevated: rgba(0, 0, 0, 0.92);
-  --surface-sunken: #050505;
+  /* 위계 인지 가능하도록 단계 확장 (secondary 0.14 / tertiary 0.205) */
+  --surface-secondary: oklch(0.14 0.008 287);
+  --surface-tertiary: oklch(0.205 0.011 287);
+  /* elevated = #000보다 실질적으로 밝은 solid lift */
+  --surface-elevated: oklch(0.12 0.008 287);
+  /* sunken: 순수 블랙 아래는 불가 → primary와 동일, inset shadow/border로 구분 */
+  --surface-sunken: #000000;
 
-  /* text on #000 — extra bump for OLED visibility */
-  --text-primary: #fafafa;
-  --text-secondary: #e4e4e7;
-  --text-tertiary: #b4b4be;
-  --text-muted: #9a9aa4;
+  /* text on #000 — extra bump for OLED visibility, 살짝 violet 틴트 */
+  --text-primary: oklch(0.985 0.004 287);
+  --text-secondary: oklch(0.91 0.008 287);
+  --text-tertiary: oklch(0.75 0.012 287);
+  --text-muted: oklch(0.65 0.012 287);
   --text-inverse: #000000;
 
-  --border-default: #262626;
-  --border-strong: #3a3a3a;
-  --border-subtle: #141414;
+  /* 구조 경계: #000 위 가독 위해 상향 */
+  --border-default: oklch(0.30 0.012 287);
+  --border-strong: oklch(0.40 0.014 287);
+  /* border-subtle = surface-tertiary(0.205)보다 위 */
+  --border-subtle: oklch(0.26 0.011 287);
 
-  --hover-bg: #1a1a1a;
-  --active-bg: #2a2a2a;
+  --hover-bg: oklch(0.13 0.008 287);
+  --active-bg: oklch(0.20 0.010 287);
+  --hover-border: oklch(0.58 0.18 287);
 
   /* Status — OLED (further brightened for pure-black bg) */
-  --status-success-text: oklch(0.82 0.15 145);
-  --status-warning-text: oklch(0.88 0.15 80);
-  --status-danger-text: oklch(0.82 0.18 25);
-  --status-info-text: var(--color-primary-100);
+  --status-success-text: oklch(0.84 0.14 145);
+  --status-warning-text: oklch(0.89 0.11 78);
+  --status-danger-text: oklch(0.84 0.14 25);
+  /* info TEXT: 명시적 밝은 보라 리터럴 (var(--color-primary-100)=0.20 → 실명 방지). >12:1 on #000. */
+  --status-info-text: oklch(0.85 0.13 287);
 
-  --surface-muted: #2a2a2a;
-  --surface-glass: rgba(0, 0, 0, 0.75);
+  --surface-muted: oklch(0.20 0.010 287);
+  --surface-glass: oklch(0 0 0 / 0.75);
 
-  --ring-focus: var(--color-primary-200);
+  --ring-focus: oklch(0.64 0.20 287);
   --ring-offset: #000000;
+
+  /* accent TEXT on OLED — 명시적 밝은 보라 리터럴 */
+  --accent-primary-text: oklch(0.85 0.12 287);
+  --accent-primary-text-alt: oklch(0.78 0.13 287);
 
   --value-positive: #34d399;
   --value-negative: #f87171;
+  --value-neutral: oklch(0.82 0.006 287);
 
-  /* OLED pure-black — deeper scrim, brightest weekend */
+  /* OLED pure-black — deeper scrim, brightest weekend (sat hue 255 = 의도적 예외) */
   --overlay-scrim: rgba(0, 0, 0, 0.72);
   --text-weekend-sun: oklch(0.76 0.18 25);
   --text-weekend-sat: oklch(0.78 0.14 255);
