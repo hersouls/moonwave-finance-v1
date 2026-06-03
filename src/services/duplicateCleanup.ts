@@ -16,7 +16,7 @@
 //     days (e.g. a daily coffee, or a real monthly bill) are shown for review
 //     but never pre-checked, so trusting the default can't delete real spending.
 
-import { getAllTransactions, bulkDeleteTransactions } from '@/services/database'
+import { db, getAllTransactions, bulkDeleteTransactions } from '@/services/database'
 import type { Transaction } from '@/lib/types'
 
 export type DuplicateConfidence = 'exact' | 'high' | 'medium'
@@ -176,25 +176,36 @@ export async function countDuplicateExpenses(): Promise<number> {
 }
 
 /**
- * Deletes the given transaction ids locally (tracked → tombstones + change log)
- * then flushes the deletes to Firestore via incrementalUpload so the cloud docs
- * AND their tombstones are written synchronously — closing the cross-device
- * resurrection window. Returns the number deleted.
+ * Deletes the given transaction ids. Only the LOCAL delete is awaited (fast,
+ * no network) so the UI never blocks. The deleting hooks write syncTombstones +
+ * change-log entries, which the debounced auto-sync uploads (docs + tombstones)
+ * in the background. We also fire an immediate cloud-doc delete for faster
+ * cross-device convergence — but fire-and-forget, so a slow/offline network can
+ * never stall the modal. (Mirrors store.deleteTransaction's non-awaited cloud
+ * delete.) Returns the number deleted.
  */
 export async function deleteDuplicates(ids: number[]): Promise<number> {
   if (ids.length === 0) return 0
-  await bulkDeleteTransactions(ids) // deleting hooks write syncTombstones + change log
 
-  try {
-    const { useAuthStore } = await import('@/stores/authStore')
-    const user = useAuthStore.getState().user
-    if (user) {
-      const { incrementalUpload } = await import('@/services/firestoreSync')
-      await incrementalUpload(user.uid) // pushes delete docs + tombstones now
+  // Capture syncIds before the local delete for the background cloud cleanup.
+  const rows = (await db.transactions.bulkGet(ids)).filter((r): r is Transaction => !!r)
+  const syncIds = rows.map((r) => r.syncId).filter((s): s is string => !!s)
+
+  await bulkDeleteTransactions(ids) // local delete → syncTombstones + change log
+
+  // Cloud removal is fire-and-forget — never await the network here.
+  void (async () => {
+    try {
+      const { useAuthStore } = await import('@/stores/authStore')
+      const user = useAuthStore.getState().user
+      if (user && syncIds.length > 0) {
+        const { deleteMultipleFromCloud } = await import('@/services/firestoreSync')
+        await deleteMultipleFromCloud(user.uid, 'transactions', syncIds)
+      }
+    } catch (err) {
+      console.warn('[duplicateCleanup] background cloud delete failed', err)
     }
-  } catch (err) {
-    console.warn('[duplicateCleanup] cloud sync after delete failed', err)
-  }
+  })()
 
   return ids.length
 }
