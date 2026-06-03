@@ -5,7 +5,8 @@
 :root {
   /* --- Card Container (v2 Obsidian — 16px default) --- */
   --card-radius: 16px;
-  --card-radius-lg: 20px;
+  /* BORA 톤: card-foundation--lg 24px 일치 (20 → 24) */
+  --card-radius-lg: 24px;
   --card-radius-xl: 24px;
   /* Density-aware padding — scales with <html data-density> (default 1 = no change). */
   --card-padding: calc(16px * var(--density-spacing-scale, 1));

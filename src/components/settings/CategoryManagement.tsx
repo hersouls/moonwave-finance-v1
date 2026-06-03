@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, AlertTriangle, Receipt, Wallet, Repeat, CreditCard } from 'lucide-react'
+import { Plus, Pencil, Trash2, AlertTriangle, Receipt, Wallet, Repeat, CreditCard, Tag, Palette } from 'lucide-react'
 import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
+import { FormSectionLabel, SegmentedControl } from '@/components/ui/CreateFormPrimitives'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { clsx } from 'clsx'
 import type { TransactionType, TransactionCategory } from '@/lib/types'
@@ -107,23 +108,18 @@ export function CategoryManagement() {
       <h3 className="text-body3-semi text-heading mb-3">카테고리 관리</h3>
 
       {/* Type tabs */}
-      <div className="flex gap-2 mb-4">
-        {(['expense', 'income'] as const).map(t => (
-          <button
-            key={t}
-            onClick={() => setActiveType(t)}
-            className={clsx(
-              'px-4 py-1.5 rounded-lg text-body3 transition-colors',
-              activeType === t
-                ? t === 'expense'
-                  ? 'bg-status-danger-soft text-status-danger'
-                  : 'bg-status-success-soft text-status-success'
-                : 'bg-surface-tertiary text-sub'
-            )}
-          >
-            {t === 'expense' ? '지출' : '수입'}
-          </button>
-        ))}
+      <div className="mb-4">
+        <SegmentedControl<TransactionType>
+          value={activeType}
+          onChange={setActiveType}
+          layoutId="cat-type"
+          ariaLabel="카테고리 타입"
+          size="sm"
+          options={[
+            { value: 'expense', label: '지출' },
+            { value: 'income', label: '수입' },
+          ]}
+        />
       </div>
 
       {/* Category list */}
@@ -174,8 +170,9 @@ export function CategoryManagement() {
         <DialogBody>
           <div className="space-y-4">
             <div>
-              <label className="block text-body3 text-body mb-1.5">이름</label>
+              <FormSectionLabel icon={Tag} htmlFor="category-name">이름</FormSectionLabel>
               <input
+                id="category-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -185,7 +182,7 @@ export function CategoryManagement() {
               />
             </div>
             <div>
-              <label className="block text-body3 text-body mb-1.5">색상</label>
+              <FormSectionLabel icon={Palette}>색상</FormSectionLabel>
               <div className="grid grid-cols-6 sm:grid-cols-9 gap-2 justify-items-center">
                 {PRESET_COLORS.map(c => (
                   <button

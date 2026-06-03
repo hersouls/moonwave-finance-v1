@@ -15,7 +15,6 @@ import {
   TrendingUp, TrendingDown, Minus, Calendar as CalendarIcon, Tag,
   Sparkles, ChevronRight, ChevronLeft, X, ArrowUpRight, Layers,
   Repeat, Wallet, Receipt, ChevronDown, ChevronUp, EyeOff, RotateCcw,
-  LayoutGrid, Table2,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useTransactionStore } from '@/stores/transactionStore'
@@ -40,6 +39,7 @@ import {
   type SubscriptionStats,
 } from '@/services/subscriptionDetection'
 import { Dialog, DialogBody } from '@/components/ui/Dialog'
+import { SegmentedControl } from '@/components/ui/CreateFormPrimitives'
 import { SubscriptionTypeBreakdown } from './SubscriptionTypeBreakdown'
 import { SubscriptionTableView } from './SubscriptionTableView'
 
@@ -180,24 +180,17 @@ export function SubscriptionPage() {
         />
         {isDesktop && (
           <div className="mb-2 mt-3 flex justify-end">
-            <div className="inline-flex rounded-lg bg-surface-tertiary p-0.5" role="group" aria-label="보기 방식">
-              <button
-                type="button"
-                onClick={() => setViewMode('cards')}
-                aria-pressed={viewMode === 'cards'}
-                className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3 font-medium transition-colors', viewMode === 'cards' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
-              >
-                <LayoutGrid className="h-4 w-4" /> 카드
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('table')}
-                aria-pressed={viewMode === 'table'}
-                className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3 font-medium transition-colors', viewMode === 'table' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
-              >
-                <Table2 className="h-4 w-4" /> 표
-              </button>
-            </div>
+            <SegmentedControl
+              size="sm"
+              layoutId="sub-view"
+              ariaLabel="보기 방식"
+              value={viewMode}
+              onChange={setViewMode}
+              options={[
+                { value: 'cards', label: '카드' },
+                { value: 'table', label: '표' },
+              ]}
+            />
           </div>
         )}
         {isDesktop && viewMode === 'table' ? (

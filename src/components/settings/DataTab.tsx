@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useIsDeviceReadOnly } from '@/lib/writeGuard'
 import { Button } from '@/components/ui/Button'
+import { FormSectionLabel } from '@/components/ui/CreateFormPrimitives'
 import { exportBackup, importBackup, exportTransactionsCSV, exportAssetValuesCSV } from '@/services/backup'
 import { formatRelativeTime } from '@/utils/format'
 import { EasyLedgerImportDialog } from './EasyLedgerImportDialog'
@@ -110,10 +111,7 @@ export function DataTab() {
       {/* Cloud Sync */}
       {user && (
         <section>
-          <h3 className="text-body3-semi text-heading mb-3 flex items-center gap-2">
-            <Cloud className="w-4 h-4" />
-            클라우드 동기화
-          </h3>
+          <FormSectionLabel icon={Cloud}>클라우드 동기화</FormSectionLabel>
           <div className="space-y-3">
             <div className="p-4 bg-surface-secondary rounded-xl">
               <div className="flex items-center gap-3">
@@ -136,7 +134,9 @@ export function DataTab() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={async () => {
                   try {
                     await manualUpload()
@@ -147,12 +147,13 @@ export function DataTab() {
                 }}
                 disabled={syncStatus === 'syncing' || readOnly}
                 title={readOnly ? '읽기 전용 모드 — 업로드 불가' : undefined}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-base hover:bg-[var(--hover-bg)] transition-colors disabled:opacity-50"
+                leftIcon={<Upload className="w-4 h-4" />}
               >
-                <Upload className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                <span className="text-caption text-sub">로컬 → 클라우드</span>
-              </button>
-              <button
+                로컬 → 클라우드
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={async () => {
                   try {
                     await manualDownload()
@@ -162,11 +163,10 @@ export function DataTab() {
                   }
                 }}
                 disabled={syncStatus === 'syncing'}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-base hover:bg-[var(--hover-bg)] transition-colors disabled:opacity-50"
+                leftIcon={<Download className="w-4 h-4" />}
               >
-                <Download className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                <span className="text-caption text-sub">클라우드 → 로컬</span>
-              </button>
+                클라우드 → 로컬
+              </Button>
             </div>
           </div>
         </section>
@@ -174,10 +174,7 @@ export function DataTab() {
 
       {/* Backup & Restore */}
       <section>
-        <h3 className="text-body3-semi text-heading mb-3 flex items-center gap-2">
-          <Database className="w-4 h-4" />
-          백업 및 복원
-        </h3>
+        <FormSectionLabel icon={Database}>백업 및 복원</FormSectionLabel>
         <div className="space-y-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-surface-secondary rounded-xl">
             <div>
@@ -221,10 +218,7 @@ export function DataTab() {
 
       {/* Easy Ledger Import */}
       <section>
-        <h3 className="text-body3-semi text-heading mb-3 flex items-center gap-2">
-          <FileUp className="w-4 h-4" />
-          편한가계부 가져오기
-        </h3>
+        <FormSectionLabel icon={FileUp}>편한가계부 가져오기</FormSectionLabel>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-surface-secondary rounded-xl">
           <div>
             <p className="text-body3 text-heading">외부 데이터 가져오기</p>
@@ -248,10 +242,7 @@ export function DataTab() {
 
       {/* CSV Export */}
       <section>
-        <h3 className="text-body3-semi text-heading mb-3 flex items-center gap-2">
-          <FileSpreadsheet className="w-4 h-4" />
-          CSV 내보내기
-        </h3>
+        <FormSectionLabel icon={FileSpreadsheet}>CSV 내보내기</FormSectionLabel>
         <div className="p-4 bg-surface-secondary rounded-xl">
           <p className="text-caption text-sub mb-3">
             Excel 호환 CSV 파일로 데이터를 내보냅니다

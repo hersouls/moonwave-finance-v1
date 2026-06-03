@@ -35,13 +35,18 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
   <script>
-    // Prevent theme FOUC: apply dark class before React renders
+    // Prevent theme FOUC: apply dark class + color palette before React renders
     try {
       var s = JSON.parse(localStorage.getItem('finance-settings') || '{}');
-      var t = s && s.state && s.state.settings && s.state.settings.theme;
+      var st = s && s.state && s.state.settings;
+      var t = st && st.theme;
       if (t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme:dark)').matches)) {
         document.documentElement.classList.add('dark');
       }
+      // BORA 디자인: 미설정/default 팔레트는 purple(BORA 보라)을 기본 적용
+      var p = st && st.colorPalette;
+      document.documentElement.setAttribute('data-palette', (p && p !== 'default') ? p : 'purple');
+      if (st && st.oledMode) document.documentElement.setAttribute('data-oled', 'true');
     } catch(e) {}
   </script>
 </head>

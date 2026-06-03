@@ -146,7 +146,7 @@ export function AssetCalendarPage() {
         )}
 
         {/* Calendar Grid */}
-        <div className="bg-surface-primary rounded-xl p-3">
+        <div className="card-base card-pad-sm">
           {/* Weekday headers */}
           <div className="grid grid-cols-7 mb-2">
             {WEEKDAYS.map((d, i) => (

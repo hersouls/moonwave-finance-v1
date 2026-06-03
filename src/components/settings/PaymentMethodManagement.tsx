@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Link2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Link2, CreditCard, FileText } from 'lucide-react'
 import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
+import { FormSectionLabel } from '@/components/ui/CreateFormPrimitives'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useAssetStore } from '@/stores/assetStore'
 import { Select } from '@/components/ui/Select'
@@ -189,8 +190,9 @@ export function PaymentMethodManagement() {
         <DialogBody>
           <div className="space-y-4">
             <div>
-              <label className="block text-body3 text-body mb-1.5">이름</label>
+              <FormSectionLabel icon={CreditCard} htmlFor="payment-method-name">이름</FormSectionLabel>
               <input
+                id="payment-method-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -200,8 +202,9 @@ export function PaymentMethodManagement() {
               />
             </div>
             <div>
-              <label className="block text-body3 text-body mb-1.5">메모 (선택)</label>
+              <FormSectionLabel icon={FileText} htmlFor="payment-method-memo" hint="(선택)">메모</FormSectionLabel>
               <input
+                id="payment-method-memo"
                 type="text"
                 value={memo}
                 onChange={(e) => setMemo(e.target.value)}
@@ -211,7 +214,7 @@ export function PaymentMethodManagement() {
             </div>
             {showAssetLink && linkableItems.length > 0 && (
               <div>
-                <label className="block text-body3 text-body mb-1.5">{linkLabel} (선택)</label>
+                <FormSectionLabel icon={Link2} hint="(선택)">{linkLabel}</FormSectionLabel>
                 <Select
                   value={String(linkedAssetItemId ?? '')}
                   onChange={(v) => setLinkedAssetItemId(v ? Number(v) : undefined)}

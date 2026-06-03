@@ -8,7 +8,7 @@ import { useToastStore } from '@/stores/toastStore'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useLoanStore } from '@/stores/loanStore'
 import { Select } from '@/components/ui/Select'
-import { Landmark, Plus } from 'lucide-react'
+import { Landmark, Plus, Wallet, Tag, Users, FileText, Coins } from 'lucide-react'
 import type { AssetLiabilityType, AssetValueProjection } from '@/lib/types'
 import { SeverancePayInputArea } from './SeverancePayInputArea'
 import { RealEstateInputArea } from './RealEstateInputArea'
@@ -16,6 +16,7 @@ import { AssetProjectionFields } from './AssetProjectionFields'
 import { generateSeverancePayValues } from '@/services/assetAnalytics'
 import { isFlatProjection } from '@/services/valueProjection'
 import { getTodayString } from '@/lib/dateUtils'
+import { SegmentedControl, HeroAmountField, FormSectionLabel, MemberChips } from '@/components/ui/CreateFormPrimitives'
 
 export function AssetCreateModal() {
   const isOpen = useUIStore((s) => s.isAssetCreateModalOpen)
@@ -135,42 +136,30 @@ export function AssetCreateModal() {
     <Dialog open={isOpen} onClose={close} size="md">
       <DialogHeader title="새 자산 항목 추가" onClose={close} />
       <DialogBody>
-        <div className="space-y-4">
-          {/* Type Toggle */}
+        <div className="space-y-6">
+          {/* Type Toggle — pill segment */}
           <div>
-            <label className="block text-body3 text-body mb-2">유형</label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => { setType('asset'); setCategoryId('') }}
-                className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
-                  type === 'asset'
-                    ? 'bg-value-positive-soft text-value-positive'
-                    : 'bg-surface-tertiary text-sub'
-                }`}
-              >
-                자산
-              </button>
-              <button
-                type="button"
-                onClick={() => { setType('liability'); setCategoryId('') }}
-                className={`flex-1 py-2 px-4 rounded-lg text-body3 transition-colors ${
-                  type === 'liability'
-                    ? 'bg-value-negative-soft text-value-negative'
-                    : 'bg-surface-tertiary text-sub'
-                }`}
-              >
-                부채
-              </button>
-            </div>
+            <FormSectionLabel icon={Wallet}>유형</FormSectionLabel>
+            <SegmentedControl
+              layoutId="asset-create-type-pill"
+              ariaLabel="유형"
+              value={type}
+              onChange={(v) => { setType(v); setCategoryId('') }}
+              options={[
+                { value: 'asset', label: '자산' },
+                { value: 'liability', label: '부채' },
+              ]}
+            />
           </div>
 
           {/* Loan Import (liability only) */}
           {type === 'liability' && activeLoans.length > 0 && (
-            <div className="rounded-lg bg-primary-50 dark:bg-primary-900/20 p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Landmark className="w-4 h-4 text-accent-primary" />
-                <span className="text-body3-semi text-accent-primary">대출정보 불러오기</span>
+            <div className="rounded-2xl bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20 ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)] p-3.5">
+              <div className="flex items-center gap-2 mb-2.5">
+                <span className="w-7 h-7 rounded-lg bg-[color:var(--color-primary-100)] dark:bg-[color:var(--color-primary-900)]/40 flex items-center justify-center flex-shrink-0">
+                  <Landmark className="w-3.5 h-3.5 text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]" />
+                </span>
+                <span className="text-body3-semi text-[color:var(--color-primary-700)] dark:text-[color:var(--color-primary-300)]">대출정보 불러오기</span>
               </div>
               <Select
                 value={String(selectedLoanId ?? '')}
@@ -186,8 +175,9 @@ export function AssetCreateModal() {
 
           {/* Name */}
           <div>
-            <label className="block text-body3 text-body mb-1.5">항목명</label>
+            <FormSectionLabel icon={Tag} htmlFor="asset-name">항목명</FormSectionLabel>
             <input
+              id="asset-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -199,12 +189,12 @@ export function AssetCreateModal() {
 
           {/* Category */}
           <div>
-            <label className="block text-body3 text-body mb-1.5">카테고리</label>
+            <FormSectionLabel icon={Tag}>카테고리</FormSectionLabel>
             {currentCategories.length === 0 ? (
               <button
                 type="button"
                 onClick={openAssetCategoryManager}
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-base bg-surface-secondary px-3 py-3 text-body3 font-medium text-accent-primary transition-colors hover:bg-[var(--hover-bg)]"
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-base bg-surface-secondary px-3 py-3.5 text-body3 font-medium text-accent-primary transition-colors hover:bg-[var(--hover-bg)]"
               >
                 <Plus className="h-4 w-4" /> {type === 'asset' ? '자산' : '부채'} 카테고리 추가하기
               </button>
@@ -225,17 +215,11 @@ export function AssetCreateModal() {
             <RealEstateInputArea onValuesChange={(v) => setRealEstateAmount(v.initialAmount)} />
           ) : (
             <div>
-              <label className="block text-body3 text-body mb-1.5">초기 금액 (선택)</label>
-              <input
-                type="text"
-                inputMode="numeric"
+              <FormSectionLabel icon={Coins} hint="선택">초기 금액</FormSectionLabel>
+              <HeroAmountField
                 value={initialAmount}
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/[^0-9]/g, '')
-                  setInitialAmount(raw ? Number(raw).toLocaleString('ko-KR') : '')
-                }}
-                placeholder="0"
-                className="input-base text-right tabular-nums"
+                onChange={setInitialAmount}
+                caption={type === 'asset' ? '자산 평가액' : '부채 잔액'}
               />
             </div>
           )}
@@ -247,18 +231,22 @@ export function AssetCreateModal() {
 
           {/* Member */}
           <div>
-            <label className="block text-body3 text-body mb-1.5">구성원</label>
-            <Select
-              value={String(memberId)}
-              onChange={(v) => setMemberId(v ? Number(v) : '')}
-              options={members.map(m => ({ value: String(m.id), label: m.name }))}
-              placeholder="구성원 선택"
-            />
+            <FormSectionLabel icon={Users}>구성원</FormSectionLabel>
+            {members.length > 0 && members.length <= 4 ? (
+              <MemberChips members={members} value={memberId} onChange={setMemberId} allowUnassigned={false} />
+            ) : (
+              <Select
+                value={String(memberId)}
+                onChange={(v) => setMemberId(v ? Number(v) : '')}
+                options={members.map(m => ({ value: String(m.id), label: m.name }))}
+                placeholder="구성원 선택"
+              />
+            )}
           </div>
 
           {/* Memo */}
           <div>
-            <label className="block text-body3 text-body mb-1.5">메모 (선택)</label>
+            <FormSectionLabel icon={FileText} hint="선택">메모</FormSectionLabel>
             <input
               type="text"
               value={memo}

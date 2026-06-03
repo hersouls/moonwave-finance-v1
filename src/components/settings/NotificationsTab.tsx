@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Bell, BellOff, Clock, PiggyBank, CreditCard } from 'lucide-react'
 import { clsx } from 'clsx'
 import { ToggleSwitch } from './ToggleSwitch'
+import { Button } from '@/components/ui/Button'
+import { FormSectionLabel, SegmentedControl } from '@/components/ui/CreateFormPrimitives'
 import type { Settings } from '@/lib/types'
 
 interface NotificationsTabProps {
@@ -45,10 +47,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
     <div className="space-y-8">
       {/* Browser Notification Permission */}
       <section>
-        <h3 className="text-body3-semi text-heading mb-3 flex items-center gap-2">
-          <Bell className="w-4 h-4" />
-          브라우저 알림
-        </h3>
+        <FormSectionLabel icon={Bell}>브라우저 알림</FormSectionLabel>
         <div className="p-4 bg-surface-secondary rounded-xl">
           {permission === 'granted' && (
             <div className="flex items-center gap-2">
@@ -73,12 +72,14 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
                 <p className="text-body3 text-heading">푸시 알림 활성화</p>
                 <p className="text-caption text-sub">알림을 받으려면 브라우저 권한이 필요합니다</p>
               </div>
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={handleRequestPermission}
-                className="w-full sm:w-auto px-3 py-2.5 min-h-[44px] text-body3 text-primary-700 dark:text-primary-300 bg-primary-100 dark:bg-primary-900/30 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-colors"
+                className="w-full sm:w-auto"
               >
                 허용
-              </button>
+              </Button>
             </div>
           )}
           {permission === 'unsupported' && (
@@ -92,10 +93,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
 
       {/* Budget Alert */}
       <section>
-        <h3 className="text-body3-semi text-heading mb-3 flex items-center gap-2">
-          <PiggyBank className="w-4 h-4" />
-          예산 알림
-        </h3>
+        <FormSectionLabel icon={PiggyBank}>예산 알림</FormSectionLabel>
         <div className="space-y-3">
           <div className="p-4 bg-surface-secondary rounded-xl">
             <ToggleSwitch
@@ -108,22 +106,14 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
           {draft.notifications.budgetAlert && (
             <div className="p-4 bg-surface-secondary rounded-xl">
               <p className="text-caption text-sub mb-2">알림 기준</p>
-              <div className="flex flex-wrap gap-2">
-                {THRESHOLD_OPTIONS.map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => updateNotification({ budgetThreshold: v })}
-                    className={clsx(
-                      'px-3 py-1.5 rounded-lg text-body3 transition-all',
-                      draft.notifications.budgetThreshold === v
-                        ? 'bg-primary-500 text-white'
-                        : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]'
-                    )}
-                  >
-                    {v}%
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                size="sm"
+                layoutId="budget-threshold-pill"
+                ariaLabel="예산 알림 기준"
+                value={String(draft.notifications.budgetThreshold)}
+                onChange={(v) => updateNotification({ budgetThreshold: Number(v) })}
+                options={THRESHOLD_OPTIONS.map((v) => ({ value: String(v), label: `${v}%` }))}
+              />
             </div>
           )}
         </div>
@@ -131,10 +121,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
 
       {/* Transaction Reminder */}
       <section>
-        <h3 className="text-body3-semi text-heading mb-3 flex items-center gap-2">
-          <Clock className="w-4 h-4" />
-          거래 기록 알림
-        </h3>
+        <FormSectionLabel icon={Clock}>거래 기록 알림</FormSectionLabel>
         <div className="space-y-3">
           <div className="p-4 bg-surface-secondary rounded-xl">
             <ToggleSwitch
@@ -147,22 +134,14 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
           {draft.notifications.transactionReminder && (
             <div className="p-4 bg-surface-secondary rounded-xl">
               <p className="text-caption text-sub mb-2">알림 시간</p>
-              <div className="flex flex-wrap gap-2">
-                {REMINDER_TIMES.map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => updateNotification({ reminderTime: t })}
-                    className={clsx(
-                      'px-3 py-1.5 rounded-lg text-body3 transition-all',
-                      draft.notifications.reminderTime === t
-                        ? 'bg-primary-500 text-white'
-                        : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]'
-                    )}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl
+                size="sm"
+                layoutId="reminder-time-pill"
+                ariaLabel="알림 시간"
+                value={draft.notifications.reminderTime}
+                onChange={(t) => updateNotification({ reminderTime: t })}
+                options={REMINDER_TIMES.map((t) => ({ value: t, label: t }))}
+              />
             </div>
           )}
         </div>
@@ -170,10 +149,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
 
       {/* Subscription Billing Alert */}
       <section>
-        <h3 className="text-body3-semi text-heading mb-3 flex items-center gap-2">
-          <CreditCard className="w-4 h-4" />
-          구독 결제일 알림
-        </h3>
+        <FormSectionLabel icon={CreditCard}>구독 결제일 알림</FormSectionLabel>
         <div className="space-y-3">
           <div className="p-4 bg-surface-secondary rounded-xl">
             <ToggleSwitch
@@ -186,7 +162,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
           {draft.notifications.subscriptionBillingAlert && (
             <div className="p-4 bg-surface-secondary rounded-xl">
               <p className="text-caption text-sub mb-2">알림 시점</p>
-              <div className="flex flex-wrap gap-2">
+              <div className="chip-group-wrap">
                 {ALERT_DAYS_OPTIONS.map((opt) => {
                   const currentDays = draft.notifications.subscriptionAlertDaysBefore ?? [0, 1, 3]
                   const isSelected = currentDays.includes(opt.value)
@@ -201,12 +177,8 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
                           updateNotification({ subscriptionAlertDaysBefore: updated })
                         }
                       }}
-                      className={clsx(
-                        'px-3 py-1.5 rounded-lg text-body3 transition-all',
-                        isSelected
-                          ? 'bg-primary-500 text-white'
-                          : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]'
-                      )}
+                      aria-pressed={isSelected}
+                      className={clsx('chip chip-sm', isSelected && 'chip-active')}
                     >
                       {opt.label}
                     </button>

@@ -12,6 +12,8 @@ import { valueAsOf } from '@/services/assetAnalytics'
 import { isFlatProjection } from '@/services/valueProjection'
 import { getTodayString } from '@/lib/dateUtils'
 import type { AssetValueProjection } from '@/lib/types'
+import { FormSectionLabel, MemberChips } from '@/components/ui/CreateFormPrimitives'
+import { Tag, Users, FileText } from 'lucide-react'
 
 export function AssetEditModal() {
   const isOpen = useUIStore((s) => s.isAssetEditModalOpen)
@@ -79,10 +81,11 @@ export function AssetEditModal() {
     <Dialog open={isOpen} onClose={close} size="md">
       <DialogHeader title={title} onClose={close} />
       <DialogBody>
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <label className="block text-body3 text-body mb-1.5">항목명</label>
+            <FormSectionLabel icon={Tag} htmlFor="asset-edit-name">항목명</FormSectionLabel>
             <input
+              id="asset-edit-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -93,7 +96,7 @@ export function AssetEditModal() {
           </div>
 
           <div>
-            <label className="block text-body3 text-body mb-1.5">카테고리</label>
+            <FormSectionLabel icon={Tag}>카테고리</FormSectionLabel>
             <Select
               value={String(categoryId)}
               onChange={(v) => setCategoryId(v ? Number(v) : '')}
@@ -103,17 +106,21 @@ export function AssetEditModal() {
           </div>
 
           <div>
-            <label className="block text-body3 text-body mb-1.5">구성원</label>
-            <Select
-              value={String(memberId)}
-              onChange={(v) => setMemberId(v ? Number(v) : '')}
-              options={members.map(m => ({ value: String(m.id), label: m.name }))}
-              placeholder="구성원 선택"
-            />
+            <FormSectionLabel icon={Users}>구성원</FormSectionLabel>
+            {members.length > 0 && members.length <= 4 ? (
+              <MemberChips members={members} value={memberId} onChange={setMemberId} allowUnassigned={false} />
+            ) : (
+              <Select
+                value={String(memberId)}
+                onChange={(v) => setMemberId(v ? Number(v) : '')}
+                options={members.map(m => ({ value: String(m.id), label: m.name }))}
+                placeholder="구성원 선택"
+              />
+            )}
           </div>
 
           <div>
-            <label className="block text-body3 text-body mb-1.5">메모 (선택)</label>
+            <FormSectionLabel icon={FileText} hint="선택">메모</FormSectionLabel>
             <input
               type="text"
               value={memo}

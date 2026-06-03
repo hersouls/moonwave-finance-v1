@@ -6,7 +6,8 @@
   /* --- Text Field Dimensions --- */
   --input-height: 56px;
   --input-margin-x: 20px;
-  --input-radius: 8px;
+  /* BORA 톤: 부드러운 입력 radius (8 → 12) */
+  --input-radius: 12px;
   --input-border-width: 1px;
   --input-border-width-active: 2px;
 
@@ -42,12 +43,12 @@
 
   /* --- Select/Dropdown --- */
   --select-height: 56px;
-  --select-radius: 8px;
+  --select-radius: 12px;
   --select-chevron-size: 24px;
 
   /* --- Textarea --- */
   --textarea-min-height: 120px;
-  --textarea-radius: 8px;
+  --textarea-radius: 12px;
   --textarea-counter-size: 12px;
 
   /* --- Chat/AI Input --- */

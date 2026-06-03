@@ -1,0 +1,51 @@
+/* ===============================================
+ * Section Pattern Utilities (BORA 이식)
+ * BORA의 마케팅형 섹션 프리미티브를 FIN primary 팔레트로 치환.
+ * 색 리터럴(--color-bora-*) 대신 var(--color-primary-*) 사용 →
+ * purple/ocean/rose/forest + 다크/OLED 자동 추종.
+ * =============================================== */
+
+/* Section Label Bar — 2px×32px 액센트 바 */
+.section-label-bar {
+  height: 2px;
+  width: 32px;
+  background-color: var(--color-primary-500);
+  border-radius: var(--radius-full, 9999px);
+}
+
+/* Section Label Text — uppercase tracking */
+.section-label-text {
+  color: var(--color-primary-600);
+  font-size: var(--font-size-label3, 13px);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.dark .section-label-text {
+  color: var(--color-primary-400);
+}
+
+/* Section Heading — KT heading1 스케일 */
+.section-heading {
+  font-size: var(--font-size-heading1, 32px);
+  font-weight: 700;
+  line-height: var(--line-height-snug, 1.35);
+  letter-spacing: var(--letter-snug, -0.01em);
+  color: var(--text-primary);
+}
+
+/* Section Label 묶음 (bar + text 가로 정렬) */
+.section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* BORA 톤: 액센트 텍스트 글로우 (primary 팔레트 추종) */
+.text-glow {
+  color: var(--color-primary-600);
+  filter: drop-shadow(0 0 8px var(--glow-primary, oklch(0.55 0.20 287 / 0.15)));
+}
+.dark .text-glow {
+  color: var(--color-primary-400);
+}

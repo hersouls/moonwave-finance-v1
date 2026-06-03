@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, useEffect } from 'react'
 import { clsx } from 'clsx'
 import { Filter, X, Check, RefreshCw, Users, Tag } from 'lucide-react'
 import type { TransactionCategory, Member } from '@/lib/types'
+import { SegmentedControl } from '@/components/ui/CreateFormPrimitives'
 
 export type CalendarTypeFilter = 'all' | 'income' | 'expense'
 
@@ -101,39 +102,18 @@ export function CalendarFilterBar({
       </span>
 
       {/* Type segmented */}
-      <div
-        className="flex items-center rounded-lg bg-[var(--surface-tertiary)] p-0.5"
-        role="radiogroup"
-        aria-label="거래 유형"
-      >
-        {(
-          [
-            { id: 'all', label: '전체' },
-            { id: 'income', label: '수입' },
-            { id: 'expense', label: '지출' },
-          ] as { id: CalendarTypeFilter; label: string }[]
-        ).map((opt) => (
-          <button
-            key={opt.id}
-            type="button"
-            role="radio"
-            aria-checked={filters.type === opt.id}
-            onClick={() => onChange({ ...filters, type: opt.id, categoryIds: [] })}
-            className={clsx(
-              'px-2.5 py-1 text-xs rounded-md transition-all font-medium',
-              filters.type === opt.id
-                ? opt.id === 'income'
-                  ? 'bg-surface-primary text-status-success shadow-sm ring-1 ring-[color:var(--border-subtle)]'
-                  : opt.id === 'expense'
-                    ? 'bg-surface-primary text-status-danger shadow-sm ring-1 ring-[color:var(--border-subtle)]'
-                    : 'bg-surface-primary text-heading shadow-sm ring-1 ring-[color:var(--border-subtle)]'
-                : 'text-sub hover:text-heading',
-            )}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl<CalendarTypeFilter>
+        size="sm"
+        layoutId="cal-filter-type"
+        ariaLabel="거래 유형"
+        value={filters.type}
+        onChange={(type) => onChange({ ...filters, type, categoryIds: [] })}
+        options={[
+          { value: 'all', label: '전체' },
+          { value: 'income', label: '수입' },
+          { value: 'expense', label: '지출' },
+        ]}
+      />
 
       {/* Members */}
       {members.length > 0 && (

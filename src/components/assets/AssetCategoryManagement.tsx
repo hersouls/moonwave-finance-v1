@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Plus, Pencil, Trash2, ArrowLeft, AlertTriangle, GripVertical } from 'lucide-react'
+import { Plus, Pencil, Trash2, ArrowLeft, AlertTriangle, GripVertical, Tag, Palette, Shapes } from 'lucide-react'
 import { clsx } from 'clsx'
 import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
+import { FormSectionLabel, SegmentedControl } from '@/components/ui/CreateFormPrimitives'
 import { useUIStore } from '@/stores/uiStore'
 import { useAssetStore } from '@/stores/assetStore'
 import { useToastStore } from '@/stores/toastStore'
@@ -107,22 +108,17 @@ export function AssetCategoryManagement() {
         {mode === 'list' && (
           <>
             {/* Type tabs */}
-            <div className="mb-4 flex gap-2">
-              {(['asset', 'liability'] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setActiveType(t)}
-                  className={clsx(
-                    'flex-1 rounded-lg py-2 text-body3 font-medium transition-colors',
-                    activeType === t
-                      ? t === 'asset' ? 'bg-value-positive-soft text-value-positive' : 'bg-value-negative-soft text-value-negative'
-                      : 'bg-surface-tertiary text-sub',
-                  )}
-                >
-                  {t === 'asset' ? '자산' : '부채'}
-                </button>
-              ))}
+            <div className="mb-4">
+              <SegmentedControl<AssetLiabilityType>
+                layoutId="asset-cat-type"
+                ariaLabel="자산/부채 유형"
+                value={activeType}
+                onChange={setActiveType}
+                options={[
+                  { value: 'asset', label: '자산' },
+                  { value: 'liability', label: '부채' },
+                ]}
+              />
             </div>
 
             {/* Category list */}
@@ -134,7 +130,7 @@ export function AssetCategoryManagement() {
                   const Icon = getCategoryIcon(cat.icon)
                   const n = itemCount(cat.id)
                   return (
-                    <li key={cat.id} className="group flex items-center gap-3 rounded-lg bg-surface-secondary px-3 py-2.5">
+                    <li key={cat.id} className="group flex items-center gap-3 rounded-lg bg-surface-secondary px-3 py-2.5 ring-1 ring-base">
                       <GripVertical className="h-4 w-4 flex-shrink-0 text-disabled" aria-hidden="true" />
                       <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: `color-mix(in srgb, ${cat.color} 16%, transparent)` }}>
                         <Icon className="h-4 w-4" style={{ color: cat.color }} aria-hidden="true" />
@@ -163,11 +159,11 @@ export function AssetCategoryManagement() {
         {mode === 'form' && (
           <div className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-body3 text-body">이름</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 연금저축" className="input-base" autoFocus />
+              <FormSectionLabel icon={Tag} htmlFor="asset-cat-name">이름</FormSectionLabel>
+              <input id="asset-cat-name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 연금저축" className="input-base" autoFocus />
             </div>
             <div>
-              <label className="mb-1.5 block text-body3 text-body">색상</label>
+              <FormSectionLabel icon={Palette}>색상</FormSectionLabel>
               <div className="grid grid-cols-8 justify-items-center gap-2 sm:grid-cols-10">
                 {PRESET_COLORS.map((c) => (
                   <button key={c} type="button" onClick={() => setColor(c)} aria-label={c}
@@ -177,7 +173,7 @@ export function AssetCategoryManagement() {
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-body3 text-body">아이콘</label>
+              <FormSectionLabel icon={Shapes}>아이콘</FormSectionLabel>
               <div className="grid grid-cols-8 justify-items-center gap-2 sm:grid-cols-11">
                 {ICON_OPTIONS.map((nm) => {
                   const Icon = getCategoryIcon(nm)
@@ -193,7 +189,7 @@ export function AssetCategoryManagement() {
               </div>
             </div>
             {/* Live preview */}
-            <div className="flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-2.5">
+            <div className="flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-2.5 ring-1 ring-base">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: `color-mix(in srgb, ${color} 16%, transparent)` }}>
                 {(() => { const I = getCategoryIcon(icon); return <I className="h-4 w-4" style={{ color }} /> })()}
               </span>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { User, Users, Database, Download, Upload, Trash2, Plus, Edit3, FileSpreadsheet, Cloud, CloudOff, Loader2, CheckCircle2, AlertCircle, AlertTriangle, FlaskConical, Receipt, Wallet, LineChart, Landmark } from 'lucide-react'
+import { User, Users, Database, Download, Upload, Trash2, Plus, Edit3, FileSpreadsheet, Cloud, CloudOff, Loader2, CheckCircle2, AlertCircle, AlertTriangle, FlaskConical, Receipt, Wallet, LineChart, Landmark, Palette } from 'lucide-react'
 import type { Member } from '@/lib/types'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useAuthStore, type SyncStatus } from '@/stores/authStore'
@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card'
 import { Button, IconButton } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/Dialog'
+import { FormSectionLabel } from '@/components/ui/CreateFormPrimitives'
 import { exportBackup, importBackup, exportTransactionsCSV, exportAssetValuesCSV } from '@/services/backup'
 import { clearAllData } from '@/services/database'
 import { seedTestDataAndUpload } from '@/services/seedTestData'
@@ -360,10 +361,10 @@ export function ProfilePage() {
             </div>
           </Card>
           {user && (
-            <Card className="border border-warning-500/30 bg-warning-50/50 dark:bg-warning-500/10">
+            <Card className="border border-status-warning bg-status-warning-soft">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-body3 text-warning-600 dark:text-warning-500">테스트 데이터 생성</p>
+                  <p className="text-body3 text-status-warning">테스트 데이터 생성</p>
                   <p className="text-caption text-sub">가상의 자산/거래/예산/목표 데이터를 생성하고 Firebase에 업로드합니다</p>
                 </div>
                 <Button
@@ -412,8 +413,9 @@ export function ProfilePage() {
         <DialogBody>
           <div className="space-y-4">
             <div>
-              <label className="block text-body3 text-body mb-1.5">이름</label>
+              <FormSectionLabel icon={User} htmlFor="member-name">이름</FormSectionLabel>
               <input
+                id="member-name"
                 type="text"
                 value={memberName}
                 onChange={(e) => setMemberName(e.target.value)}
@@ -423,7 +425,7 @@ export function ProfilePage() {
               />
             </div>
             <div>
-              <label className="block text-body3 text-body mb-1.5">색상</label>
+              <FormSectionLabel icon={Palette}>색상</FormSectionLabel>
               <div className="flex gap-2 flex-wrap">
                 {MEMBER_COLORS.map(c => (
                   <button

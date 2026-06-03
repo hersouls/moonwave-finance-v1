@@ -40,11 +40,11 @@ export function ToastContainer() {
                 toast.type === 'info' && 'toast-info',
               )}
             >
-              <Icon className="w-4 h-4 flex-shrink-0" />
+              <Icon className="toast-icon w-4 h-4" />
               <span className="text-body3 flex-1">{toast.message}</span>
               <button
                 onClick={() => removeToast(toast.id)}
-                className="touch-target-icon text-white/60 hover:text-white/90 -mr-2 flex-shrink-0"
+                className="touch-target-icon toast-close -mr-2 flex-shrink-0"
                 aria-label="닫기"
               >
                 <X className="w-4 h-4" />

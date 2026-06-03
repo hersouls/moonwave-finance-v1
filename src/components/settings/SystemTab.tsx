@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Download, Trash2, Smartphone, CheckCircle2, Sparkles, Lock, PencilLine } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
+import { Download, Trash2, Smartphone, CheckCircle2, Sparkles, Lock, PencilLine, Eye, EyeOff } from 'lucide-react'
+import { Button, IconButton } from '@/components/ui/Button'
+import { ToggleSwitch } from '@/components/settings/ToggleSwitch'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { clearAllData } from '@/services/database'
 import { getApiKey, setApiKey, clearApiKey } from '@/services/aiCategorizeMerchants'
@@ -109,29 +110,16 @@ export function SystemTab() {
           기기 쓰기 권한
         </h3>
         <div className="p-4 bg-surface-secondary rounded-xl space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-body3 text-heading font-medium">이 기기에서 쓰기 허용</p>
-              <p className="text-caption text-sub mt-0.5">
-                {deviceWriteEnabled
-                  ? '이 기기에서 거래·자산·예산 등 데이터를 추가, 수정, 삭제할 수 있습니다.'
-                  : '이 기기는 읽기 전용입니다. 데이터 변경·가져오기·클라우드 업로드가 차단됩니다.'}
-              </p>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={deviceWriteEnabled}
-              aria-label="이 기기에서 쓰기 허용"
-              onClick={handleToggleDeviceWrite}
-              className="relative inline-flex flex-shrink-0 mt-0.5 h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-secondary)]"
-              style={{ backgroundColor: deviceWriteEnabled ? 'var(--color-primary-500)' : 'var(--surface-muted)' }}
-            >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${deviceWriteEnabled ? 'translate-x-5' : 'translate-x-0.5'}`}
-              />
-            </button>
-          </div>
+          <ToggleSwitch
+            checked={deviceWriteEnabled}
+            onChange={handleToggleDeviceWrite}
+            label="이 기기에서 쓰기 허용"
+            description={
+              deviceWriteEnabled
+                ? '이 기기에서 거래·자산·예산 등 데이터를 추가, 수정, 삭제할 수 있습니다.'
+                : '이 기기는 읽기 전용입니다. 데이터 변경·가져오기·클라우드 업로드가 차단됩니다.'
+            }
+          />
 
           {!deviceWriteEnabled && (
             <div className="rounded-lg p-3 bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20 ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)]">
@@ -214,16 +202,20 @@ export function SystemTab() {
               value={apiKey}
               onChange={(e) => setApiKeyInput(e.target.value)}
               placeholder="sk-ant-..."
-              className="input flex-1 text-sm"
+              className="input-base flex-1"
               autoComplete="off"
             />
-            <button
+            <IconButton
               type="button"
+              color="secondary"
+              plain
+              size="sm"
               onClick={() => setShowApiKey(v => !v)}
-              className="text-caption text-sub px-2 py-1 hover:underline"
+              aria-label={showApiKey ? 'API 키 숨김' : 'API 키 보기'}
+              title={showApiKey ? '숨김' : '보기'}
             >
-              {showApiKey ? '숨김' : '보기'}
-            </button>
+              {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </IconButton>
           </div>
           <div className="flex items-center justify-between gap-2">
             <span className="text-caption text-sub">

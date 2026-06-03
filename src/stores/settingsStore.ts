@@ -63,7 +63,7 @@ export const useSettingsStore = create<SettingsState>()(
       _hasHydrated: false,
       settings: {
         theme: 'light' as ThemeMode,
-        colorPalette: 'default' as ColorPalette,
+        colorPalette: 'purple' as ColorPalette,
         currencyUnit: 'won' as const,
         userProfile: { name: '사용자' },
         hasCompletedOnboarding: false,
@@ -85,9 +85,16 @@ export const useSettingsStore = create<SettingsState>()(
 
       initialize: () => {
         const state = get()
-        const { theme, colorPalette } = state.settings
+        const { theme } = state.settings
         const newSettings = { ...state.settings }
         let hasChanges = false
+
+        // BORA 디자인 이식: 미설정(default) 팔레트는 BORA 보라(purple)를 기본으로.
+        // 사용자가 명시적으로 고른 ocean/rose/forest 는 존중.
+        if (newSettings.colorPalette === undefined || newSettings.colorPalette === 'default') {
+          newSettings.colorPalette = 'purple'
+          hasChanges = true
+        }
 
         if (!newSettings.googleDrive) {
           newSettings.googleDrive = { isConnected: false, autoBackup: false }
@@ -155,7 +162,7 @@ export const useSettingsStore = create<SettingsState>()(
         if (hasChanges) set({ settings: newSettings })
 
         applyTheme(theme)
-        applyColorPalette(colorPalette)
+        applyColorPalette(newSettings.colorPalette)
         applyDensity(newSettings.density)
         applyOledMode(!!newSettings.oledMode)
 
