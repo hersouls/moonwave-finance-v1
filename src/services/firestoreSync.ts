@@ -203,6 +203,21 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries: number = 3): Promi
   throw lastError
 }
 
+/**
+ * 네트워크 작업에 타임아웃을 건다. Firestore 쓰기는 오프라인·반쯤 끊긴 연결에서
+ * resolve도 reject도 하지 않고 영원히 pending 될 수 있어(온라인 복귀 전까지), 타임아웃이
+ * 없으면 동기화 함수가 'syncing'에 영구 고착된다(스피너 무한 회전 + useAutoSync 락 고착).
+ * 타임아웃 시 reject → 호출자 catch가 'error'로 정리 → 다음 변경/온라인 복귀에 재시도.
+ */
+const SYNC_UPLOAD_TIMEOUT_MS = 60_000
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`[sync] ${label} timed out after ${ms}ms (offline?)`)), ms)
+  })
+  return Promise.race([promise, timeout]).finally(() => { if (timer) clearTimeout(timer) })
+}
+
 // Ensure syncIds exist locally and persist them back to IndexedDB
 async function ensureAndPersistSyncIds() {
   const tables = [
@@ -254,7 +269,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       db.merchantAliases.toArray(),
     ])
 
-    await withRetry(() => Promise.all([
+    await withTimeout(withRetry(() => Promise.all([
       uploadTable(uid, 'members', members.map(ensureSyncId)),
       uploadTable(uid, 'assetCategories', assetCategories.map(ensureSyncId)),
       uploadTable(uid, 'assetItems', assetItems.map(ensureSyncId)),
@@ -270,7 +285,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       uploadTable(uid, 'dividends', dividends.map(ensureSyncId)),
       uploadTable(uid, 'accountInterests', accountInterests.map(ensureSyncId)),
       uploadTable(uid, 'merchantAliases', merchantAliases.map(ensureSyncId)),
-    ]))
+    ])), SYNC_UPLOAD_TIMEOUT_MS, 'full upload')
 
     // Reconcile: delete Firestore documents that no longer exist locally
     const localSyncIds: Record<SyncableTable, Set<string>> = {
@@ -528,24 +543,28 @@ export async function incrementalUpload(uid: string): Promise<void> {
 
     const successKeys = new Set<string>()
 
-    for (const change of deduped) {
-      try {
-        if (change.operation === 'delete') {
-          await deleteFromCloud(uid, change.tableName as SyncableTable, change.syncId)
-          await uploadTombstone(uid, change.tableName, change.syncId, change.timestamp)
-        } else {
-          const localTable = getLocalTable(change.tableName as SyncableTable)
-          const record = await (localTable as typeof db.members)
-            .where('syncId').equals(change.syncId).first()
-          if (record) {
-            await uploadSingleRecord(uid, change.tableName as SyncableTable, record)
+    // 업로드 루프 전체에 타임아웃 — 오프라인/반쯤 끊긴 연결에서 개별 Firestore 쓰기가
+    // 영원히 pending 되어 루프가 멈추고 'syncing'이 고착되는 것을 방지(타임아웃 시 catch→'error').
+    await withTimeout((async () => {
+      for (const change of deduped) {
+        try {
+          if (change.operation === 'delete') {
+            await deleteFromCloud(uid, change.tableName as SyncableTable, change.syncId)
+            await uploadTombstone(uid, change.tableName, change.syncId, change.timestamp)
+          } else {
+            const localTable = getLocalTable(change.tableName as SyncableTable)
+            const record = await (localTable as typeof db.members)
+              .where('syncId').equals(change.syncId).first()
+            if (record) {
+              await uploadSingleRecord(uid, change.tableName as SyncableTable, record)
+            }
           }
+          successKeys.add(`${change.tableName}:${change.syncId}`)
+        } catch (err) {
+          console.error(`[sync] incremental upload ${change.tableName}/${change.syncId} failed:`, err)
         }
-        successKeys.add(`${change.tableName}:${change.syncId}`)
-      } catch (err) {
-        console.error(`[sync] incremental upload ${change.tableName}/${change.syncId} failed:`, err)
       }
-    }
+    })(), SYNC_UPLOAD_TIMEOUT_MS, 'incremental upload')
 
     // Mark only successfully synced entries as processed
     const successIds = pendingChanges
