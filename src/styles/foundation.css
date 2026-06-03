@@ -146,4 +146,7 @@
 /* FIN-specific class aliases (card-base, input-base, nav-tabs, etc.) */
 @import './utilities/fin-aliases.css';
 
+/* Section primitives (BORA 이식: section-label-bar/text/heading, text-glow) */
+@import './utilities/section.css';
+
 /* 14_Theme Overlays — moved to index.css (after palette definitions for cascade priority) */

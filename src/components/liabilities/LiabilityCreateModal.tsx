@@ -13,7 +13,8 @@ import { AssetProjectionFields } from '@/components/assets/AssetProjectionFields
 import { isFlatProjection } from '@/services/valueProjection'
 import { getTodayString } from '@/lib/dateUtils'
 import type { AssetValueProjection } from '@/lib/types'
-import { Landmark } from 'lucide-react'
+import { Landmark, Tag, Users, FileText, Coins } from 'lucide-react'
+import { HeroAmountField, FormSectionLabel, MemberChips } from '@/components/ui/CreateFormPrimitives'
 
 export function LiabilityCreateModal() {
   const isOpen = useUIStore((s) => s.isLiabilityCreateModalOpen)
@@ -110,13 +111,15 @@ export function LiabilityCreateModal() {
     <Dialog open={isOpen} onClose={close} size="md">
       <DialogHeader title="새 부채 항목 추가" onClose={close} />
       <DialogBody>
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Loan Import */}
           {activeLoans.length > 0 && (
-            <div className="rounded-lg bg-primary-50 dark:bg-primary-900/20 p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Landmark className="w-4 h-4 text-accent-primary" />
-                <span className="text-body3-semi text-accent-primary">대출정보 불러오기</span>
+            <div className="rounded-2xl bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20 ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)] p-3.5">
+              <div className="flex items-center gap-2 mb-2.5">
+                <span className="w-7 h-7 rounded-lg bg-[color:var(--color-primary-100)] dark:bg-[color:var(--color-primary-900)]/40 flex items-center justify-center flex-shrink-0">
+                  <Landmark className="w-3.5 h-3.5 text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]" />
+                </span>
+                <span className="text-body3-semi text-[color:var(--color-primary-700)] dark:text-[color:var(--color-primary-300)]">대출정보 불러오기</span>
               </div>
               <Select
                 value={String(selectedLoanId ?? '')}
@@ -130,9 +133,11 @@ export function LiabilityCreateModal() {
             </div>
           )}
 
+          {/* Name */}
           <div>
-            <label className="block text-body3 text-body mb-1.5">항목명</label>
+            <FormSectionLabel icon={Tag} htmlFor="liability-name">항목명</FormSectionLabel>
             <input
+              id="liability-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -142,8 +147,9 @@ export function LiabilityCreateModal() {
             />
           </div>
 
+          {/* Category */}
           <div>
-            <label className="block text-body3 text-body mb-1.5">카테고리</label>
+            <FormSectionLabel icon={Tag}>카테고리</FormSectionLabel>
             <Select
               value={String(categoryId)}
               onChange={(v) => setCategoryId(v ? Number(v) : '')}
@@ -152,37 +158,33 @@ export function LiabilityCreateModal() {
             />
           </div>
 
-          {/* Initial Amount */}
+          {/* Initial Amount — hero */}
           <div>
-            <label className="block text-body3 text-body mb-1.5">초기 금액 (선택)</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={initialAmount}
-              onChange={(e) => {
-                const raw = e.target.value.replace(/[^0-9]/g, '')
-                setInitialAmount(raw ? Number(raw).toLocaleString('ko-KR') : '')
-              }}
-              placeholder="0"
-              className="input-base text-right tabular-nums"
-            />
+            <FormSectionLabel icon={Coins} hint="선택">초기 금액</FormSectionLabel>
+            <HeroAmountField value={initialAmount} onChange={setInitialAmount} caption="부채 잔액" />
           </div>
 
           {/* 가치 변동 규칙 (매월 상환 / 연 이자 등) */}
           <AssetProjectionFields value={projection} onChange={setProjection} />
 
+          {/* Member */}
           <div>
-            <label className="block text-body3 text-body mb-1.5">구성원</label>
-            <Select
-              value={String(memberId)}
-              onChange={(v) => setMemberId(v ? Number(v) : '')}
-              options={members.map(m => ({ value: String(m.id), label: m.name }))}
-              placeholder="구성원 선택"
-            />
+            <FormSectionLabel icon={Users}>구성원</FormSectionLabel>
+            {members.length > 0 && members.length <= 4 ? (
+              <MemberChips members={members} value={memberId} onChange={setMemberId} allowUnassigned={false} />
+            ) : (
+              <Select
+                value={String(memberId)}
+                onChange={(v) => setMemberId(v ? Number(v) : '')}
+                options={members.map(m => ({ value: String(m.id), label: m.name }))}
+                placeholder="구성원 선택"
+              />
+            )}
           </div>
 
+          {/* Memo */}
           <div>
-            <label className="block text-body3 text-body mb-1.5">메모 (선택)</label>
+            <FormSectionLabel icon={FileText} hint="선택">메모</FormSectionLabel>
             <input
               type="text"
               value={memo}

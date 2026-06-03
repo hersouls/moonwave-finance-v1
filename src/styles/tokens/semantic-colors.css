@@ -68,8 +68,8 @@
   --ring-offset: #ffffff;
 
   /* ── Positive/Negative (금융) ───────────────── */
-  --value-positive: oklch(0.48 0.16 145);
-  --value-negative: oklch(0.52 0.22 25);
+  --value-positive: #059669;
+  --value-negative: #dc2626;
   --value-neutral: var(--text-tertiary);
 
   /* On ALWAYS-DARK surfaces (hero gradients) — bright regardless of app theme,
@@ -144,8 +144,8 @@
   --ring-focus: var(--color-primary-300);
   --ring-offset: #09090b;
 
-  --value-positive: oklch(0.78 0.16 145);
-  --value-negative: oklch(0.75 0.22 25);
+  --value-positive: #34d399;
+  --value-negative: #f87171;
   --value-neutral: var(--text-tertiary);
 
   --overlay-scrim: rgba(0, 0, 0, 0.6);
@@ -190,8 +190,8 @@ html.dark[data-oled="true"] {
   --ring-focus: var(--color-primary-200);
   --ring-offset: #000000;
 
-  --value-positive: oklch(0.82 0.16 145);
-  --value-negative: oklch(0.80 0.22 25);
+  --value-positive: #34d399;
+  --value-negative: #f87171;
 
   /* OLED pure-black — deeper scrim, brightest weekend */
   --overlay-scrim: rgba(0, 0, 0, 0.72);

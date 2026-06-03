@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { TrendingUp, TrendingDown, Activity } from 'lucide-react'
 import { clsx } from 'clsx'
 import { Amount } from '@/components/ui/Amount'
@@ -23,6 +23,7 @@ const PERIODS = [
  */
 export function NetWorthTracker() {
   const [days, setDays] = useState<number>(90)
+  const reduce = useReducedMotion()
   const stats = useAssetStats()
   const { change, growthRatePct, dailySlope, chart, todayIdx } = useNetWorthSeries(days, days)
   const hideAmounts = useSettingsStore((s) => !!s.settings.hideAmounts)
@@ -40,18 +41,29 @@ export function NetWorthTracker() {
           <span className="inline-flex items-center gap-1.5 text-body3 font-semibold text-white/80">
             <Activity className="h-4 w-4" /> 자산증식 추세
           </span>
-          <div className="inline-flex rounded-lg bg-white/15 p-0.5 backdrop-blur-sm">
-            {PERIODS.map((p) => (
-              <button
-                key={p.days}
-                type="button"
-                onClick={() => setDays(p.days)}
-                aria-pressed={days === p.days}
-                className={clsx('rounded-md px-2.5 py-1 text-label4 font-semibold transition-colors', days === p.days ? 'bg-white/90 text-[color:var(--color-primary-700)]' : 'text-white/70 hover:text-white')}
-              >
-                {p.label}
-              </button>
-            ))}
+          <div className="relative inline-flex rounded-lg bg-white/15 p-0.5 backdrop-blur-sm">
+            {PERIODS.map((p) => {
+              const active = days === p.days
+              return (
+                <motion.button
+                  key={p.days}
+                  type="button"
+                  onClick={() => setDays(p.days)}
+                  aria-pressed={active}
+                  className={clsx('relative z-10 rounded-md px-2.5 py-1 text-label4 font-semibold transition-colors', active ? 'text-[color:var(--color-primary-700)]' : 'text-white/70 hover:text-white')}
+                  whileTap={reduce ? undefined : { scale: 0.97 }}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="networth-period-pill"
+                      className="absolute inset-0 -z-10 rounded-md bg-white/90"
+                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  {p.label}
+                </motion.button>
+              )
+            })}
           </div>
         </div>
 

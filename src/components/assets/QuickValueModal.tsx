@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { TrendingUp, TrendingDown } from 'lucide-react'
+import { TrendingUp, TrendingDown, Coins, Banknote, CalendarDays } from 'lucide-react'
 import { clsx } from 'clsx'
 import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
@@ -12,6 +12,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { valueAsOf } from '@/services/assetAnalytics'
 import { getTodayString } from '@/lib/dateUtils'
 import { formatChange } from '@/utils/format'
+import { FormSectionLabel, HeroAmountField } from '@/components/ui/CreateFormPrimitives'
 
 /**
  * Quick value-recording modal — the core recurring asset action. Record/update
@@ -71,30 +72,24 @@ export function QuickValueModal() {
     <Dialog open={itemId != null} onClose={busy ? () => {} : close} size="sm">
       <DialogHeader title="가치 기록" description={item?.name} onClose={busy ? undefined : close} />
       <DialogBody>
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Current value reference */}
-          <div className="flex items-center justify-between rounded-xl bg-surface-secondary px-3 py-2.5">
+          <div className="flex items-center justify-between rounded-2xl bg-surface-secondary ring-1 ring-base px-4 py-3">
             <span className="text-caption text-sub">현재 기록값</span>
             <Amount value={latest} size="emphasis" className="text-heading" />
           </div>
 
-          {/* Amount */}
+          {/* Amount — hero */}
           <div>
-            <label className="mb-1.5 block text-body3 text-body">{isLiability ? '잔액' : '평가 금액'}</label>
-            <input
-              type="text"
-              inputMode="numeric"
+            <FormSectionLabel icon={isLiability ? Banknote : Coins}>기록할 금액</FormSectionLabel>
+            <HeroAmountField
               value={amount}
-              onChange={(e) => {
-                const raw = e.target.value.replace(/[^0-9]/g, '')
-                setAmount(raw ? Number(raw).toLocaleString('ko-KR') : '')
-              }}
-              placeholder="0"
-              className="input-base wizard-amount-glow text-right text-title2 tabular-nums"
+              onChange={setAmount}
+              caption={isLiability ? '부채 잔액' : '자산 평가액'}
               autoFocus
             />
             {numeric > 0 && delta !== 0 && (
-              <p className={clsx('mt-1.5 flex items-center justify-end gap-1 text-caption tabular-nums', good ? 'text-value-positive' : 'text-value-negative')}>
+              <p className={clsx('mt-2 flex items-center justify-end gap-1 text-caption tabular-nums', good ? 'text-value-positive' : 'text-value-negative')}>
                 {good ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                 {formatChange(delta)} {isLiability ? (delta < 0 ? '감소' : '증가') : '전 기록 대비'}
               </p>
@@ -103,8 +98,8 @@ export function QuickValueModal() {
 
           {/* Date */}
           <div>
-            <label className="mb-1.5 block text-body3 text-body">기록일</label>
-            <input type="date" value={date} max={getTodayString()} onChange={(e) => setDate(e.target.value)} className="input-base tabular-nums" />
+            <FormSectionLabel icon={CalendarDays} htmlFor="quick-value-date">기록일</FormSectionLabel>
+            <input id="quick-value-date" type="date" value={date} max={getTodayString()} onChange={(e) => setDate(e.target.value)} className="input-base tabular-nums" />
           </div>
 
           {autoCarry && (

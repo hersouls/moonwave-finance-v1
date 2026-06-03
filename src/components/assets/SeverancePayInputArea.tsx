@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
+import { Briefcase } from 'lucide-react'
 import { calculateSeverancePay, calculateSeveranceTax, getServiceYears } from '@/services/assetAnalytics'
 
 interface SeverancePayInputAreaProps {
@@ -28,13 +29,11 @@ export function SeverancePayInputArea({ onValuesChange }: SeverancePayInputAreaP
   }, [joinDate, wageStr, onValuesChange])
 
   return (
-    <div className="bg-surface-secondary p-4 rounded-xl space-y-4 border border-base">
+    <div className="rounded-2xl bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20 ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)] p-4 space-y-4">
       <h4 className="text-body3-semi text-heading flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-sub">
-          <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
-          <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
-          <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
-        </svg>
+        <span className="w-7 h-7 rounded-lg bg-[color:var(--color-primary-100)] dark:bg-[color:var(--color-primary-900)]/40 flex items-center justify-center flex-shrink-0">
+          <Briefcase className="w-3.5 h-3.5 text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]" />
+        </span>
         예상 퇴직금 자동 계산
       </h4>
       <div className="space-y-3">

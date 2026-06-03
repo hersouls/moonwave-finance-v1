@@ -18,3 +18,23 @@
   height: var(--divider-full-height);
   background-color: var(--divider-color);
 }
+
+/* BORA 톤: 액센트 그라데이션 구분선 (primary 팔레트 추종) */
+.divider-gradient {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--color-primary-300),
+    transparent
+  );
+}
+.dark .divider-gradient {
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--color-primary-500),
+    transparent
+  );
+}

@@ -613,12 +613,8 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                     layoutId="wizard-type-pill"
                     className="absolute inset-0 rounded-full -z-10"
                     style={{
-                      background: t === 'expense'
-                        ? 'linear-gradient(135deg, var(--value-negative), color-mix(in srgb, var(--value-negative) 80%, black))'
-                        : 'linear-gradient(135deg, var(--value-positive), color-mix(in srgb, var(--value-positive) 80%, black))',
-                      boxShadow: t === 'expense'
-                        ? '0 6px 20px -4px color-mix(in srgb, var(--value-negative) 40%, transparent)'
-                        : '0 6px 20px -4px color-mix(in srgb, var(--value-positive) 40%, transparent)',
+                      background: 'linear-gradient(135deg, var(--color-primary-500), color-mix(in srgb, var(--color-primary-500) 80%, black))',
+                      boxShadow: '0 6px 20px -4px color-mix(in srgb, var(--color-primary-500) 40%, transparent)',
                     }}
                     transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                   />

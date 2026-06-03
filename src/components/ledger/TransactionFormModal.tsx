@@ -406,7 +406,8 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
               {(['expense', 'income'] as const).map((t) => {
                 const isActive = type === t
                 const Icon = t === 'expense' ? TrendingDown : TrendingUp
-                const tintColor = t === 'expense' ? 'var(--value-negative)' : 'var(--value-positive)'
+                // BORA/Health 팔레트: 유형 토글 활성색은 보라로 통일(빨강/초록은 금액에만)
+                const tintColor = 'var(--color-primary-500)'
                 return (
                   <button
                     key={t}

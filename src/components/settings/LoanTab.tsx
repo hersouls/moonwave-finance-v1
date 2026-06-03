@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, Building, Calendar, Percent, Banknote } from 'luc
 import { Dialog, DialogHeader, DialogBody, DialogFooter } from '@/components/ui/Dialog'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
+import { FormSectionLabel, HeroAmountField } from '@/components/ui/CreateFormPrimitives'
 import { useLoanStore } from '@/stores/loanStore'
 import type { Loan, LoanRepaymentType } from '@/lib/types'
 
@@ -15,11 +16,6 @@ const REPAYMENT_OPTIONS: { value: LoanRepaymentType; label: string }[] = [
 
 function formatAmount(value: number): string {
   return value.toLocaleString('ko-KR')
-}
-
-function parseAmount(str: string): string {
-  const raw = str.replace(/[^0-9]/g, '')
-  return raw ? Number(raw).toLocaleString('ko-KR') : ''
 }
 
 export function LoanTab() {
@@ -257,8 +253,9 @@ export function LoanTab() {
         <DialogBody>
           <div className="space-y-4">
             <div>
-              <label className="block text-body3 text-body mb-1.5">대출상품명 *</label>
+              <FormSectionLabel icon={Building} htmlFor="loan-name">대출상품명 *</FormSectionLabel>
               <input
+                id="loan-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -269,8 +266,9 @@ export function LoanTab() {
             </div>
 
             <div>
-              <label className="block text-body3 text-body mb-1.5">대출기관</label>
+              <FormSectionLabel icon={Building} htmlFor="loan-lender">대출기관</FormSectionLabel>
               <input
+                id="loan-lender"
                 type="text"
                 value={lender}
                 onChange={(e) => setLender(e.target.value)}
@@ -281,8 +279,9 @@ export function LoanTab() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-body3 text-body mb-1.5">대출일 *</label>
+                <FormSectionLabel icon={Calendar} htmlFor="loan-date">대출일 *</FormSectionLabel>
                 <input
+                  id="loan-date"
                   type="date"
                   value={loanDate}
                   onChange={(e) => setLoanDate(e.target.value)}
@@ -290,8 +289,9 @@ export function LoanTab() {
                 />
               </div>
               <div>
-                <label className="block text-body3 text-body mb-1.5">만기일 *</label>
+                <FormSectionLabel icon={Calendar} htmlFor="loan-maturity-date">만기일 *</FormSectionLabel>
                 <input
+                  id="loan-maturity-date"
                   type="date"
                   value={maturityDate}
                   onChange={(e) => setMaturityDate(e.target.value)}
@@ -302,33 +302,30 @@ export function LoanTab() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-body3 text-body mb-1.5">대출원금 *</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
+                <FormSectionLabel icon={Banknote} htmlFor="loan-principal">대출원금 *</FormSectionLabel>
+                <HeroAmountField
+                  inputId="loan-principal"
                   value={principalAmount}
-                  onChange={(e) => setPrincipalAmount(parseAmount(e.target.value))}
-                  placeholder="0"
-                  className="input-base text-right tabular-nums"
+                  onChange={setPrincipalAmount}
+                  caption="대출원금"
                 />
               </div>
               <div>
-                <label className="block text-body3 text-body mb-1.5">현재 잔액 *</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
+                <FormSectionLabel icon={Banknote} htmlFor="loan-balance">현재 잔액 *</FormSectionLabel>
+                <HeroAmountField
+                  inputId="loan-balance"
                   value={currentBalance}
-                  onChange={(e) => setCurrentBalance(parseAmount(e.target.value))}
-                  placeholder="0"
-                  className="input-base text-right tabular-nums"
+                  onChange={setCurrentBalance}
+                  caption="현재 잔액"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-body3 text-body mb-1.5">연이율(%) *</label>
+                <FormSectionLabel icon={Percent} htmlFor="loan-rate">연이율(%) *</FormSectionLabel>
                 <input
+                  id="loan-rate"
                   type="text"
                   inputMode="decimal"
                   value={annualRate}
@@ -341,8 +338,9 @@ export function LoanTab() {
                 />
               </div>
               <div>
-                <label className="block text-body3 text-body mb-1.5">이자납입일 *</label>
+                <FormSectionLabel icon={Calendar} htmlFor="loan-payment-day">이자납입일 *</FormSectionLabel>
                 <input
+                  id="loan-payment-day"
                   type="text"
                   inputMode="numeric"
                   value={paymentDay}
@@ -358,7 +356,7 @@ export function LoanTab() {
             </div>
 
             <div>
-              <label className="block text-body3 text-body mb-1.5">상환방식 *</label>
+              <FormSectionLabel icon={Banknote}>상환방식 *</FormSectionLabel>
               <Select
                 value={repaymentType}
                 onChange={(v) => setRepaymentType(v as LoanRepaymentType)}
@@ -368,8 +366,9 @@ export function LoanTab() {
             </div>
 
             <div>
-              <label className="block text-body3 text-body mb-1.5">이자납입계좌</label>
+              <FormSectionLabel icon={Banknote} htmlFor="loan-payment-account">이자납입계좌</FormSectionLabel>
               <input
+                id="loan-payment-account"
                 type="text"
                 value={paymentAccount}
                 onChange={(e) => setPaymentAccount(e.target.value)}
@@ -379,8 +378,9 @@ export function LoanTab() {
             </div>
 
             <div>
-              <label className="block text-body3 text-body mb-1.5">메모</label>
+              <FormSectionLabel icon={Pencil} htmlFor="loan-memo">메모</FormSectionLabel>
               <input
+                id="loan-memo"
                 type="text"
                 value={memo}
                 onChange={(e) => setMemo(e.target.value)}

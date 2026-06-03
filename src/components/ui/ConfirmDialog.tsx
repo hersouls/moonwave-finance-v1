@@ -45,7 +45,7 @@ export function ConfirmDialog({
       <DialogHeader title={title} onClose={onClose} />
       <DialogBody>
         <div className="flex gap-4">
-          <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${iconColors[variant]}`}>
+          <div className={`flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center ${iconColors[variant]}`}>
             <Icon className="w-5 h-5" />
           </div>
           <div className="flex-1">

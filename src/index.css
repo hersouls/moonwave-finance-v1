@@ -137,8 +137,8 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  /* Pretendard safe features — kern + calt only. tabular-nums is applied per-element. */
-  font-feature-settings: 'calt' 1, 'kern' 1;
+  /* Pretendard features — kern + calt + ss01(BORA 한글 자형). tabular-nums는 요소별 적용. */
+  font-feature-settings: 'calt' 1, 'kern' 1, 'ss01' 1;
   line-height: var(--line-height-normal, 1.5);
   color: var(--text-primary);
 }
@@ -148,6 +148,18 @@ body {
   -webkit-tap-highlight-color: transparent;
   background-color: var(--surface-secondary);
   color: var(--text-primary);
+  /* BORA 톤: 한국어 단어 단위 줄바꿈 */
+  word-break: keep-all;
+}
+
+/* BORA 톤: 텍스트 선택 색을 primary 팔레트로 (purple/ocean/rose/forest 추종) */
+::selection {
+  background-color: var(--color-primary-200);
+  color: var(--color-primary-900);
+}
+.dark ::selection {
+  background-color: var(--color-primary-800);
+  color: var(--color-primary-50);
 }
 
 /* Headings inherit KT snug line-height */
@@ -281,6 +293,7 @@ html:not(.dark)[data-palette="rose"] {
   --color-primary-950: #500724;
 }
 
+/* BORA Purple — bora-50~950 정확값 일치 (BORA globals.css @theme) */
 html:not(.dark)[data-palette="purple"] {
   --color-primary-50: #faf5ff;
   --color-primary-100: #f3e8ff;
@@ -288,11 +301,11 @@ html:not(.dark)[data-palette="purple"] {
   --color-primary-300: #d8b4fe;
   --color-primary-400: #c084fc;
   --color-primary-500: #a855f7;
-  --color-primary-600: #9333ea;
-  --color-primary-700: #7c3aed;
-  --color-primary-800: #6b21a8;
-  --color-primary-900: #581c87;
-  --color-primary-950: #3b0764;
+  --color-primary-600: #7c3aed;
+  --color-primary-700: #6d28d9;
+  --color-primary-800: #5b21b6;
+  --color-primary-900: #3b0764;
+  --color-primary-950: #1e0038;
 }
 
 html:not(.dark)[data-palette="forest"] {
@@ -339,17 +352,18 @@ html.dark[data-palette="rose"] {
   --color-primary-900: oklch(0.90 0.06 350);
 }
 
+/* BORA Purple (Dark) — bora-600 #7c3aed ≈ oklch(...287) 기준 violet hue */
 html.dark[data-palette="purple"] {
-  --color-primary-50: oklch(0.15 0.03 300);
-  --color-primary-100: oklch(0.20 0.05 300);
-  --color-primary-200: oklch(0.28 0.08 300);
-  --color-primary-300: oklch(0.38 0.14 300);
-  --color-primary-400: oklch(0.50 0.18 300);
-  --color-primary-500: oklch(0.60 0.20 300);
-  --color-primary-600: oklch(0.68 0.18 300);
-  --color-primary-700: oklch(0.75 0.14 300);
-  --color-primary-800: oklch(0.82 0.10 300);
-  --color-primary-900: oklch(0.90 0.06 300);
+  --color-primary-50: oklch(0.15 0.03 287);
+  --color-primary-100: oklch(0.20 0.05 287);
+  --color-primary-200: oklch(0.28 0.08 287);
+  --color-primary-300: oklch(0.38 0.14 287);
+  --color-primary-400: oklch(0.50 0.18 287);
+  --color-primary-500: oklch(0.60 0.21 287);
+  --color-primary-600: oklch(0.68 0.18 287);
+  --color-primary-700: oklch(0.75 0.14 287);
+  --color-primary-800: oklch(0.82 0.10 287);
+  --color-primary-900: oklch(0.90 0.06 287);
 }
 
 html.dark[data-palette="forest"] {
@@ -389,9 +403,9 @@ html:not(.dark)[data-palette="rose"] {
   --glow-primary: rgba(219, 39, 119, 0.2);
 }
 html:not(.dark)[data-palette="purple"] {
-  --gradient-hero-start: #9333ea;
-  --gradient-hero-end: #6b21a8;
-  --glow-primary: rgba(147, 51, 234, 0.2);
+  --gradient-hero-start: #7c3aed;
+  --gradient-hero-end: #5b21b6;
+  --glow-primary: rgba(124, 58, 237, 0.2);
 }
 html:not(.dark)[data-palette="forest"] {
   --gradient-hero-start: #059669;
@@ -410,9 +424,9 @@ html.dark[data-palette="rose"] {
   --glow-primary: oklch(0.50 0.18 350 / 0.2);
 }
 html.dark[data-palette="purple"] {
-  --gradient-hero-start: oklch(0.35 0.14 300);
-  --gradient-hero-end: oklch(0.22 0.08 300);
-  --glow-primary: oklch(0.50 0.18 300 / 0.2);
+  --gradient-hero-start: oklch(0.35 0.14 287);
+  --gradient-hero-end: oklch(0.22 0.08 287);
+  --glow-primary: oklch(0.50 0.18 287 / 0.2);
 }
 html.dark[data-palette="forest"] {
   --gradient-hero-start: oklch(0.35 0.14 160);
@@ -1049,17 +1063,18 @@ body {
   height: 4px;
 }
 
+/* 금액 의미색 — BORA/Health 정확값 (success #059669, danger #dc2626). 다크는 가독용 명도 상향. */
 .value-positive {
-  color: oklch(0.55 0.18 145);
+  color: #059669;
 }
 .value-negative {
-  color: oklch(0.58 0.22 25);
+  color: #dc2626;
 }
 .dark .value-positive {
-  color: oklch(0.70 0.18 145);
+  color: #34d399;
 }
 .dark .value-negative {
-  color: oklch(0.70 0.22 25);
+  color: #f87171;
 }
 
 .gauge-safe {

@@ -1,18 +1,19 @@
 import { useState } from 'react'
-import { Sun, Moon, Monitor, Info, HelpCircle, FileText, Minimize2, Maximize2, Square } from 'lucide-react'
+import { Sun, Info, HelpCircle, FileText, Rows3, Palette, SlidersHorizontal, Coins, ArrowLeftRight, History, Eye } from 'lucide-react'
 import { clsx } from 'clsx'
 import { COLOR_PALETTES, BACKUP_CONFIG, UI_DELAYS } from '@/utils/constants'
 import { useUIStore } from '@/stores/uiStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { Button } from '@/components/ui/Button'
 import { ToggleSwitch } from './ToggleSwitch'
+import { FormSectionLabel, SegmentedControl } from '@/components/ui/CreateFormPrimitives'
 import { formatRelativeTime } from '@/utils/format'
 import type { Settings, ThemeMode, ColorPalette, Density } from '@/lib/types'
 
-const DENSITY_OPTIONS: { value: Density; label: string; description: string; icon: typeof Minimize2 }[] = [
-  { value: 'compact', label: '컴팩트', description: '더 많은 정보', icon: Minimize2 },
-  { value: 'comfortable', label: '표준', description: '기본 밀도', icon: Square },
-  { value: 'spacious', label: '넓게', description: '여유로운 여백', icon: Maximize2 },
+const DENSITY_OPTIONS: { value: Density; label: string }[] = [
+  { value: 'compact', label: '컴팩트' },
+  { value: 'comfortable', label: '표준' },
+  { value: 'spacious', label: '넓게' },
 ]
 
 interface GeneralTabProps {
@@ -20,10 +21,10 @@ interface GeneralTabProps {
   onChange: (updates: Partial<Settings>) => void
 }
 
-const THEME_OPTIONS: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
-  { value: 'light', label: '라이트', icon: Sun },
-  { value: 'dark', label: '다크', icon: Moon },
-  { value: 'system', label: '시스템', icon: Monitor },
+const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
+  { value: 'light', label: '라이트' },
+  { value: 'dark', label: '다크' },
+  { value: 'system', label: '시스템' },
 ]
 
 export function GeneralTab({ draft, onChange }: GeneralTabProps) {
@@ -58,36 +59,14 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
     <div className="space-y-8">
       {/* Theme Selection */}
       <section>
-        <h3 className="text-body3-semi text-heading mb-3">화면 테마</h3>
-        <div className="grid grid-cols-3 gap-3">
-          {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
-            <button
-              key={value}
-              onClick={() => onChange({ theme: value })}
-              className={clsx(
-                'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all',
-                draft.theme === value
-                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                  : 'border-base hover:bg-[var(--hover-bg)]'
-              )}
-            >
-              <Icon className={clsx(
-                'w-6 h-6',
-                draft.theme === value
-                  ? 'text-primary-600 dark:text-primary-400'
-                  : 'text-sub'
-              )} />
-              <span className={clsx(
-                'text-body3',
-                draft.theme === value
-                  ? 'text-primary-700 dark:text-primary-300'
-                  : 'text-sub'
-              )}>
-                {label}
-              </span>
-            </button>
-          ))}
-        </div>
+        <FormSectionLabel icon={Sun}>화면 테마</FormSectionLabel>
+        <SegmentedControl<ThemeMode>
+          options={THEME_OPTIONS}
+          value={draft.theme}
+          onChange={(value) => onChange({ theme: value })}
+          layoutId="settings-theme"
+          ariaLabel="화면 테마"
+        />
         {draft.theme === 'system' && (
           <p className="text-caption text-sub mt-2">
             시스템 설정에 따라 자동으로 변경됩니다
@@ -97,39 +76,19 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
 
       {/* Display Density — v2 */}
       <section>
-        <h3 className="text-body3-semi text-heading mb-3">표시 밀도</h3>
-        <div className="grid grid-cols-3 gap-3">
-          {DENSITY_OPTIONS.map(({ value, label, description, icon: Icon }) => (
-            <button
-              key={value}
-              onClick={() => setDensity(value)}
-              className={clsx(
-                'flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 transition-all',
-                density === value
-                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                  : 'border-base hover:bg-[var(--hover-bg)]'
-              )}
-              aria-pressed={density === value}
-            >
-              <Icon className={clsx(
-                'w-5 h-5',
-                density === value ? 'text-primary-600 dark:text-primary-400' : 'text-sub'
-              )} />
-              <span className={clsx(
-                'text-body3',
-                density === value ? 'text-primary-700 dark:text-primary-300' : 'text-sub'
-              )}>
-                {label}
-              </span>
-              <span className="text-caption text-disabled">{description}</span>
-            </button>
-          ))}
-        </div>
+        <FormSectionLabel icon={Rows3} hint="목록 간격">표시 밀도</FormSectionLabel>
+        <SegmentedControl<Density>
+          options={DENSITY_OPTIONS}
+          value={density}
+          onChange={(value) => setDensity(value)}
+          layoutId="settings-density"
+          ariaLabel="표시 밀도"
+        />
       </section>
 
       {/* Premium Display Options — v2 */}
       <section>
-        <h3 className="text-body3-semi text-heading mb-3">화면 옵션</h3>
+        <FormSectionLabel icon={SlidersHorizontal}>화면 옵션</FormSectionLabel>
         <div className="p-4 bg-surface-secondary rounded-xl space-y-4">
           <ToggleSwitch
             checked={oledMode}
@@ -155,7 +114,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
 
       {/* Color Palette */}
       <section>
-        <h3 className="text-body3-semi text-heading mb-3">강조 색상</h3>
+        <FormSectionLabel icon={Palette}>강조 색상</FormSectionLabel>
         <div className="grid grid-cols-5 gap-2">
           {(Object.values(COLOR_PALETTES) as { id: ColorPalette; nameKo: string; colors: { primary: string } }[]).map((palette) => (
             <button
@@ -185,31 +144,22 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
 
       {/* Currency Unit */}
       <section>
-        <h3 className="text-body3-semi text-heading mb-3">통화 단위</h3>
-        <div className="flex gap-2">
-          {([
-            { value: 'won' as const, label: '₩ 원 (KRW)' },
-            { value: 'dollar' as const, label: '$ 달러 (USD)' },
-          ]).map(({ value, label }) => (
-            <button
-              key={value}
-              onClick={() => onChange({ currencyUnit: value })}
-              className={clsx(
-                'flex-1 py-2.5 px-4 rounded-lg border-2 text-body3 transition-all',
-                draft.currencyUnit === value
-                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                  : 'border-base text-sub hover:bg-[var(--hover-bg)]'
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <FormSectionLabel icon={Coins}>통화 단위</FormSectionLabel>
+        <SegmentedControl<'won' | 'dollar'>
+          options={[
+            { value: 'won', label: '₩ 원 (KRW)' },
+            { value: 'dollar', label: '$ 달러 (USD)' },
+          ]}
+          value={draft.currencyUnit}
+          onChange={(value) => onChange({ currencyUnit: value })}
+          layoutId="settings-currency"
+          ariaLabel="통화 단위"
+        />
       </section>
 
       {/* Exchange Rate */}
       <section>
-        <h3 className="text-body3-semi text-heading mb-3">USD/KRW 환율</h3>
+        <FormSectionLabel icon={ArrowLeftRight}>USD/KRW 환율</FormSectionLabel>
         <div className="p-4 bg-surface-secondary rounded-xl space-y-3">
           <div className="flex items-center gap-3">
             <span className="text-sm text-sub whitespace-nowrap">1 USD =</span>
@@ -239,7 +189,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
 
       {/* 자산 가치 기록 — 자동 이어쓰기 */}
       <section>
-        <h3 className="text-body3-semi text-heading mb-3">자산 가치 기록</h3>
+        <FormSectionLabel icon={History}>자산 가치 기록</FormSectionLabel>
         <div className="p-4 bg-surface-secondary rounded-xl">
           <ToggleSwitch
             checked={autoCarryForward}
@@ -252,7 +202,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
 
       {/* High Contrast */}
       <section>
-        <h3 className="text-body3-semi text-heading mb-3">접근성</h3>
+        <FormSectionLabel icon={Eye}>접근성</FormSectionLabel>
         <div className="p-4 bg-surface-secondary rounded-xl">
           <ToggleSwitch
             checked={draft.highContrastMode}
@@ -265,7 +215,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
 
       {/* App Info */}
       <section>
-        <h3 className="text-body3-semi text-heading mb-3">앱 정보</h3>
+        <FormSectionLabel icon={Info}>앱 정보</FormSectionLabel>
         <div className="space-y-2">
           <div className="flex items-center gap-2 px-4 py-3 bg-surface-secondary rounded-xl">
             <Info className="w-4 h-4 text-disabled" />

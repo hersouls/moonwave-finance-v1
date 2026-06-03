@@ -352,3 +352,46 @@
   background-color: rgba(127, 29, 29, 0.3);
   color: #f87171;
 }
+
+/* -------------------------------------------------
+ * O. Badge: Overlay / Glass (BORA 이식)
+ * hero/이미지 위에 얹는 반투명 배지
+ * ------------------------------------------------- */
+
+.badge-glass {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: var(--font-size-caption, 12px);
+  font-weight: 500;
+  color: var(--text-secondary);
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.badge-overlay {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: var(--font-size-caption, 12px);
+  font-weight: 500;
+  color: var(--text-secondary);
+  background-color: rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(17, 24, 39, 0.05);
+}
+
+.dark .badge-glass {
+  color: var(--text-primary);
+  background-color: rgba(20, 20, 20, 0.55);
+}
+
+.dark .badge-overlay {
+  color: var(--text-primary);
+  background-color: rgba(20, 20, 20, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}

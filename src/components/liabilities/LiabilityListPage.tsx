@@ -21,7 +21,9 @@ import { SkeletonCard } from '@/components/ui/Skeleton'
 import { SwipeableRow } from '@/components/ui/SwipeableRow'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { InspectorPanel } from '@/components/ui/InspectorPanel'
-import { Pencil, Trash2, LayoutGrid, Table2, Tags, Wallet } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { SegmentedControl } from '@/components/ui/CreateFormPrimitives'
+import { Pencil, Trash2, Tags, Wallet } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useBreakpoint } from '@/hooks/useBreakpoint'
 import { useSyncListener } from '@/hooks/useSyncListener'
@@ -124,14 +126,17 @@ export function LiabilityListPage() {
               type="liability"
             />
           </div>
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={openAssetCategoryManager}
-            className="touch-target inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg bg-surface-tertiary px-3 text-label3 font-medium text-sub transition-colors hover:text-heading"
+            className="flex-shrink-0"
+            leftIcon={<Tags className="h-4 w-4" />}
             aria-label="카테고리 관리"
           >
-            <Tags className="h-4 w-4" /> <span className="hidden sm:inline">카테고리</span>
-          </button>
+            <span className="hidden sm:inline">카테고리</span>
+          </Button>
         </div>
 
         {filteredItems.length === 0 ? (
@@ -140,24 +145,17 @@ export function LiabilityListPage() {
           <>
             {isDesktop && (
               <div className="mb-1 flex justify-end">
-                <div className="inline-flex rounded-lg bg-surface-tertiary p-0.5" role="group" aria-label="보기 방식">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('cards')}
-                    aria-pressed={viewMode === 'cards'}
-                    className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3 font-medium transition-colors', viewMode === 'cards' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
-                  >
-                    <LayoutGrid className="h-4 w-4" /> 카드
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('table')}
-                    aria-pressed={viewMode === 'table'}
-                    className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3 font-medium transition-colors', viewMode === 'table' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
-                  >
-                    <Table2 className="h-4 w-4" /> 표
-                  </button>
-                </div>
+                <SegmentedControl
+                  options={[
+                    { value: 'cards', label: '카드' },
+                    { value: 'table', label: '표' },
+                  ]}
+                  value={viewMode}
+                  onChange={setViewMode}
+                  layoutId="liability-view"
+                  ariaLabel="보기 방식"
+                  size="sm"
+                />
               </div>
             )}
             <div className={clsx('master-detail', isDesktop && selectedId != null && 'has-inspector')}>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Home } from 'lucide-react'
 
 interface RealEstateInputAreaProps {
   onValuesChange: (values: { initialAmount: number }) => void
@@ -13,12 +14,11 @@ export function RealEstateInputArea({ onValuesChange }: RealEstateInputAreaProps
   }, [initialAmountStr, onValuesChange])
 
   return (
-    <div className="bg-surface-secondary p-4 rounded-xl space-y-4 border border-base">
+    <div className="rounded-2xl bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20 ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)] p-4 space-y-4">
       <h4 className="text-body3-semi text-heading flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-sub">
-          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>
+        <span className="w-7 h-7 rounded-lg bg-[color:var(--color-primary-100)] dark:bg-[color:var(--color-primary-900)]/40 flex items-center justify-center flex-shrink-0">
+          <Home className="w-3.5 h-3.5 text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]" />
+        </span>
         부동산 자산 등록
       </h4>
       <p className="text-caption text-sub mb-2 leading-relaxed">
