@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import {
-  Copy, Check, Loader2, ChevronDown, Trash2, Square, CheckSquare, ShieldCheck, Calendar as CalendarIcon,
+  Copy, Check, Loader2, ChevronDown, Trash2, Square, CheckSquare, ShieldCheck,
+  Calendar as CalendarIcon, RotateCcw, ThumbsUp,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { Dialog, DialogBody, DialogFooter } from '@/components/ui/Dialog'
@@ -14,6 +15,8 @@ import { formatDate } from '@/lib/dateUtils'
 import {
   analyzeDuplicates,
   deleteDuplicates,
+  allowDuplicateGroup,
+  clearAllDuplicateAllowances,
   type DuplicateAnalysis,
   type DuplicateGroup,
   type DuplicateConfidence,
@@ -64,37 +67,41 @@ export function DuplicateCleanupModal({ open, onClose, onApplied }: Props) {
   const [keepIds, setKeepIds] = useState<Record<string, number>>({})
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set())
+  const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(new Set())
   const [result, setResult] = useState<{ deleted: number; groups: number } | null>(null)
 
-  useEffect(() => {
-    if (!open) return
+  const scan = useCallback(async () => {
     setStep('loading')
-    setAnalysis(null)
-    setKeepIds({})
-    setSelectedIds(new Set())
-    setExpandedKeys(new Set())
+    const a = await analyzeDuplicates()
+    const keep: Record<string, number> = {}
+    const sel = new Set<number>()
+    const exp = new Set<string>()
+    for (const g of a.groups) {
+      keep[g.key] = g.recommendedKeepId
+      exp.add(g.key)
+      // Default-select ONLY true same-day duplicates; distinct-day same-price
+      // rows (possible real repeat spending) are shown but never pre-checked.
+      for (const id of g.autoDeleteIds) sel.add(id)
+    }
+    setAnalysis(a)
+    setKeepIds(keep)
+    setSelectedIds(sel)
+    setExpandedKeys(exp)
+    setDismissedKeys(new Set())
     setResult(null)
-    void (async () => {
-      const a = await analyzeDuplicates()
-      const keep: Record<string, number> = {}
-      const sel = new Set<number>()
-      const exp = new Set<string>()
-      for (const g of a.groups) {
-        keep[g.key] = g.recommendedKeepId
-        exp.add(g.key)
-        // Default-select ONLY true same-day duplicates; distinct-day same-price
-        // rows (possible real repeat spending) are shown but never pre-checked.
-        for (const id of g.autoDeleteIds) sel.add(id)
-      }
-      setAnalysis(a)
-      setKeepIds(keep)
-      setSelectedIds(sel)
-      setExpandedKeys(exp)
-      setStep(a.groups.length === 0 ? 'empty' : 'review')
-    })()
-  }, [open])
+    setStep(a.groups.length === 0 ? 'empty' : 'review')
+  }, [])
 
-  const groups = analysis?.groups ?? []
+  useEffect(() => {
+    if (open) void scan()
+  }, [open, scan])
+
+  const groups = useMemo(
+    () => (analysis?.groups ?? []).filter((g) => !dismissedKeys.has(g.key)),
+    [analysis, dismissedKeys],
+  )
+  // Patterns allowed before this session (from the scan) + ones allowed now.
+  const displayAllowed = (analysis?.allowedPatterns ?? 0) + dismissedKeys.size
 
   const stats = useMemo(() => {
     let amount = 0
@@ -158,6 +165,49 @@ export function DuplicateCleanupModal({ open, onClose, onApplied }: Props) {
     }
   }, [selectedIds, groups, reloadTransactions, onApplied, shouldReduceMotion, subtleSuccess, addToast])
 
+  // Mark a group's (memo+amount) pattern as "not a duplicate" — hide it now and
+  // permanently exclude it (and future same-pattern rows) from detection.
+  const handleAllow = useCallback(async (group: DuplicateGroup) => {
+    const ids = group.transactions.map((t) => t.id).filter((id): id is number => id != null)
+    const wasLastVisible =
+      (analysis?.groups ?? []).filter((g) => g.key !== group.key && !dismissedKeys.has(g.key)).length === 0
+
+    // Optimistically hide the group + drop its rows from the delete selection.
+    setDismissedKeys((prev) => new Set(prev).add(group.key))
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      for (const id of ids) next.delete(id)
+      return next
+    })
+    if (wasLastVisible) setStep('empty')
+
+    try {
+      await allowDuplicateGroup(ids)
+      onApplied?.()
+      addToast(`"${group.sampleMemo}"은(는) 중복이 아닌 것으로 표시했어요.`, 'info')
+    } catch {
+      // Revert the optimistic hide on failure.
+      setDismissedKeys((prev) => {
+        const next = new Set(prev)
+        next.delete(group.key)
+        return next
+      })
+      if (wasLastVisible) setStep('review')
+      addToast('중복 허용 처리에 실패했습니다', 'error')
+    }
+  }, [analysis, dismissedKeys, onApplied, addToast])
+
+  const handleClearAllowances = useCallback(async () => {
+    try {
+      const n = await clearAllDuplicateAllowances()
+      addToast(`${n}건의 중복 허용을 초기화했어요.`, 'info')
+      onApplied?.()
+      await scan()
+    } catch {
+      addToast('초기화에 실패했습니다', 'error')
+    }
+  }, [scan, onApplied, addToast])
+
   return (
     <Dialog open={open} onClose={onClose} size="2xl" noPadding>
       <PremiumModalHeader
@@ -188,6 +238,13 @@ export function DuplicateCleanupModal({ open, onClose, onApplied }: Props) {
               </div>
               <h3 className="text-title2 font-bold text-heading mb-1">중복 거래가 없어요</h3>
               <p className="text-body3 text-sub">1개월 이내 같은 메모·금액의 중복 지출이 발견되지 않았습니다.</p>
+              {displayAllowed > 0 && (
+                <button type="button" onClick={handleClearAllowances}
+                  className="mt-4 inline-flex items-center gap-1.5 text-caption font-semibold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] hover:underline">
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  허용한 항목 {displayAllowed}건 다시 검사
+                </button>
+              )}
             </motion.div>
           )}
 
@@ -236,9 +293,18 @@ export function DuplicateCleanupModal({ open, onClose, onApplied }: Props) {
                     }
                     onToggleDelete={(id) => toggleDelete(id, g.key)}
                     onSetKeeper={(id) => setKeeper(g, id)}
+                    onAllow={() => handleAllow(g)}
                   />
                 ))}
               </div>
+
+              {displayAllowed > 0 && (
+                <button type="button" onClick={handleClearAllowances}
+                  className="inline-flex items-center gap-1.5 text-caption font-semibold text-sub hover:text-heading hover:underline">
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  중복 아님으로 표시한 {displayAllowed}건 다시 검사
+                </button>
+              )}
             </motion.div>
           )}
 
@@ -355,7 +421,7 @@ function SummaryCard({
 }
 
 function GroupBlock({
-  group, keepId, selectedIds, expanded, categories, members, onToggleExpand, onToggleDelete, onSetKeeper,
+  group, keepId, selectedIds, expanded, categories, members, onToggleExpand, onToggleDelete, onSetKeeper, onAllow,
 }: {
   group: DuplicateGroup
   keepId: number | undefined
@@ -366,6 +432,7 @@ function GroupBlock({
   onToggleExpand: () => void
   onToggleDelete: (id: number) => void
   onSetKeeper: (id: number) => void
+  onAllow: () => void
 }) {
   const selectedInGroup = group.transactions.filter((t) => t.id != null && selectedIds.has(t.id)).length
 
@@ -470,6 +537,16 @@ function GroupBlock({
                   </div>
                 )
               })}
+
+              {/* Allow / "not a duplicate" — permanently stop flagging this pattern */}
+              <button
+                type="button"
+                onClick={onAllow}
+                className="mt-1 w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl bg-surface-secondary ring-1 ring-base text-caption font-semibold text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
+              >
+                <ThumbsUp className="w-3.5 h-3.5" />
+                중복 아님 — 다시 표시 안 함
+              </button>
             </div>
           </motion.div>
         )}
