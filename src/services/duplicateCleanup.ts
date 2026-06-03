@@ -16,7 +16,7 @@
 //     days (e.g. a daily coffee, or a real monthly bill) are shown for review
 //     but never pre-checked, so trusting the default can't delete real spending.
 
-import { db, getAllTransactions, bulkDeleteTransactions } from '@/services/database'
+import { db, getAllTransactions, bulkDeleteTransactions, updateTransaction } from '@/services/database'
 import type { Transaction } from '@/lib/types'
 
 export type DuplicateConfidence = 'exact' | 'high' | 'medium'
@@ -50,6 +50,8 @@ export interface DuplicateAnalysis {
   confidentDuplicates: number
   /** All extras across all groups (count - 1 each) — total surfaced for review. */
   totalDuplicates: number
+  /** Distinct (memo+amount) patterns the user marked as "not a duplicate". */
+  allowedPatterns: number
 }
 
 /** Same memo+amount transactions within this many days form one review cluster. */
@@ -115,12 +117,21 @@ export async function analyzeDuplicates(): Promise<DuplicateAnalysis> {
       t.memo.trim().length > 0,
   )
 
-  // Bucket by strict memo + exact amount.
+  // Patterns the user marked "not a duplicate": any transaction carrying the
+  // dedupeIgnore flag makes its whole (memo+amount) pattern allowed — so it,
+  // and every future same-pattern row, is excluded from detection.
+  const allowedKeys = new Set<string>()
+  for (const t of expenses) {
+    if (t.dedupeIgnore) allowedKeys.add(`${dupMemoKey(t.memo!)}|${t.amount}`)
+  }
+
+  // Bucket by strict memo + exact amount (skipping allowed patterns).
   const byKey = new Map<string, Transaction[]>()
   for (const t of expenses) {
     const mk = dupMemoKey(t.memo!)
     if (!mk) continue
     const key = `${mk}|${t.amount}`
+    if (allowedKeys.has(key)) continue // user-allowed pattern → never flag
     const arr = byKey.get(key)
     if (arr) arr.push(t)
     else byKey.set(key, [t])
@@ -167,7 +178,7 @@ export async function analyzeDuplicates(): Promise<DuplicateAnalysis> {
 
   const confidentDuplicates = groups.reduce((s, g) => s + g.autoDeleteIds.length, 0)
   const totalDuplicates = groups.reduce((s, g) => s + (g.count - 1), 0)
-  return { groups, confidentDuplicates, totalDuplicates }
+  return { groups, confidentDuplicates, totalDuplicates, allowedPatterns: allowedKeys.size }
 }
 
 /** Count of deletable duplicate transactions — drives the ledger entry point. */
@@ -208,4 +219,28 @@ export async function deleteDuplicates(ids: number[]): Promise<number> {
   })()
 
   return ids.length
+}
+
+/**
+ * Marks a group's transactions as "not a duplicate" (dedupeIgnore=true). Because
+ * detection treats any flagged transaction's (memo+amount) as an allowed
+ * pattern, this permanently excludes that pattern — including future same-pattern
+ * rows — from the duplicate list. Only local writes are awaited; the flag syncs
+ * to other devices via the normal transaction sync. Returns ids updated.
+ */
+export async function allowDuplicateGroup(ids: number[]): Promise<number> {
+  if (ids.length === 0) return 0
+  for (const id of ids) {
+    await updateTransaction(id, { dedupeIgnore: true })
+  }
+  return ids.length
+}
+
+/** Clears every "not a duplicate" allowance so all patterns are detected again. */
+export async function clearAllDuplicateAllowances(): Promise<number> {
+  const flagged = await db.transactions.filter((t) => t.dedupeIgnore === true).toArray()
+  for (const t of flagged) {
+    if (t.id != null) await updateTransaction(t.id, { dedupeIgnore: false })
+  }
+  return flagged.length
 }

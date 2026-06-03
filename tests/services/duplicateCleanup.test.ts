@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { db } from '@/services/database'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { analyzeDuplicates, deleteDuplicates } from '@/services/duplicateCleanup'
+import {
+  analyzeDuplicates,
+  deleteDuplicates,
+  allowDuplicateGroup,
+  clearAllDuplicateAllowances,
+} from '@/services/duplicateCleanup'
 import type { Transaction } from '@/lib/types'
 
 const NOW = '2026-01-01T00:00:00.000Z'
@@ -128,6 +133,47 @@ describe('analyzeDuplicates — safety fixes', () => {
     for (const g of cGroups) {
       expect(g.autoDeleteIds).not.toContain(g.recommendedKeepId) // keeper safe in each
     }
+  })
+})
+
+describe('allow / clear duplicate allowances', () => {
+  beforeEach(async () => {
+    useSettingsStore.getState().setDeviceWriteEnabled(true)
+    await db.transactions.clear()
+  })
+  afterEach(() => useSettingsStore.getState().setDeviceWriteEnabled(true))
+
+  it('excludes an allowed pattern and re-includes it after clearing', async () => {
+    await add('Z마트', 5000, '2026-01-01')
+    await add('Z마트', 5000, '2026-01-01')
+
+    let res = await analyzeDuplicates()
+    const z = res.groups.find((g) => g.sampleMemo === 'Z마트')
+    expect(z).toBeTruthy()
+
+    await allowDuplicateGroup(z!.transactions.map((t) => t.id!))
+    res = await analyzeDuplicates()
+    expect(res.groups.find((g) => g.sampleMemo === 'Z마트')).toBeUndefined()
+    expect(res.allowedPatterns).toBe(1)
+
+    const cleared = await clearAllDuplicateAllowances()
+    expect(cleared).toBe(2)
+    res = await analyzeDuplicates()
+    expect(res.groups.find((g) => g.sampleMemo === 'Z마트')).toBeTruthy()
+    expect(res.allowedPatterns).toBe(0)
+  })
+
+  it('allowance also excludes future same-pattern rows', async () => {
+    await add('Y샵', 3000, '2026-01-01')
+    await add('Y샵', 3000, '2026-01-01')
+    const z = (await analyzeDuplicates()).groups.find((g) => g.sampleMemo === 'Y샵')!
+    await allowDuplicateGroup(z.transactions.map((t) => t.id!))
+
+    // A NEW same-pattern pair arrives later — still excluded (pattern allowed).
+    await add('Y샵', 3000, '2026-02-01')
+    await add('Y샵', 3000, '2026-02-01')
+    const res = await analyzeDuplicates()
+    expect(res.groups.find((g) => g.sampleMemo === 'Y샵')).toBeUndefined()
   })
 })
 

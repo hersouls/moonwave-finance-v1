@@ -135,6 +135,13 @@ export interface Transaction {
    * recorded under.
    */
   subscriptionCategory?: SubscriptionCategoryType
+  /**
+   * User marked this (memo+amount) as "not a duplicate" in 중복 거래 정리.
+   * When set on any transaction, that whole memo+amount pattern is excluded
+   * from duplicate detection (incl. future same-pattern rows). Synced like any
+   * other field, so the allowance applies across devices.
+   */
+  dedupeIgnore?: boolean
   createdAt: string
   updatedAt: string
 }
