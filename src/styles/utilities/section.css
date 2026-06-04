@@ -41,10 +41,9 @@
   gap: 8px;
 }
 
-/* BORA 톤: 액센트 텍스트 글로우 (primary 팔레트 추종) */
+/* v3 플랫: 텍스트 글로우 퇴역 — 액센트는 색상만으로 */
 .text-glow {
   color: var(--color-primary-600);
-  filter: drop-shadow(0 0 8px var(--glow-primary, oklch(0.55 0.20 287 / 0.15)));
 }
 .dark .text-glow {
   color: var(--color-primary-400);

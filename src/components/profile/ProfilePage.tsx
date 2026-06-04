@@ -19,6 +19,7 @@ export function ProfilePage() {
   const settings = useSettingsStore((s) => s.settings)
   const user = useAuthStore((s) => s.user)
   const syncStatus = useAuthStore((s) => s.syncStatus)
+  const syncErrorMessage = useAuthStore((s) => s.syncErrorMessage)
   const lastSyncTime = useAuthStore((s) => s.lastSyncTime)
   const manualUpload = useAuthStore((s) => s.manualUpload)
   const manualDownload = useAuthStore((s) => s.manualDownload)
@@ -208,6 +209,9 @@ export function ProfilePage() {
                       {syncStatus === 'error' && '동기화 오류'}
                       {syncStatus === 'idle' && '동기화 대기'}
                     </p>
+                    {syncStatus === 'error' && syncErrorMessage && (
+                      <p className="text-caption text-status-danger">{syncErrorMessage}</p>
+                    )}
                     {lastSyncTime && (
                       <p className="text-caption text-sub">
                         마지막 동기화: {formatRelativeTime(lastSyncTime)}

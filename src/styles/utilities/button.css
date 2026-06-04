@@ -55,28 +55,16 @@
   padding-block: 6px;
 }
 
-/* --- Type: Filled (Primary) — with Edge Lighting glow --- */
+/* --- Type: Filled (Primary) — v3 플랫: 중립 elevation (글로우 제거) --- */
 .btn-filled-primary {
   background-color: var(--color-primary-500);
   color: #ffffff;
-  box-shadow: 0 0 8px -4px oklch(0.55 0.20 250 / 0.08);
+  box-shadow: var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.08));
 }
 
 .btn-filled-primary:hover {
   background-color: var(--color-primary-600);
-  box-shadow:
-    0 0 20px -4px oklch(0.55 0.20 250 / 0.18),
-    0 0 8px 0 oklch(0.55 0.20 250 / 0.06);
-}
-
-.dark .btn-filled-primary {
-  box-shadow: 0 0 12px -4px oklch(0.55 0.20 250 / 0.15);
-}
-
-.dark .btn-filled-primary:hover {
-  box-shadow:
-    0 0 28px -4px oklch(0.55 0.20 250 / 0.30),
-    0 0 12px 0 oklch(0.55 0.20 250 / 0.12);
+  box-shadow: var(--shadow-2, 0 4px 8px rgba(0, 0, 0, 0.10));
 }
 
 /* --- Type: Filled (Secondary) --- */
@@ -89,23 +77,16 @@
   background-color: var(--btn-secondary-bg-hover);
 }
 
-/* --- Type: Filled (Danger) — with Edge Lighting glow --- */
+/* --- Type: Filled (Danger) — v3 플랫: 중립 elevation (글로우 제거) --- */
 .btn-filled-danger {
   background-color: var(--color-danger-500);
   color: #ffffff;
+  box-shadow: var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.08));
 }
 
 .btn-filled-danger:hover {
   background-color: var(--color-danger-600);
-  box-shadow:
-    0 0 20px -4px oklch(0.58 0.22 25 / 0.18),
-    0 0 8px 0 oklch(0.58 0.22 25 / 0.06);
-}
-
-.dark .btn-filled-danger:hover {
-  box-shadow:
-    0 0 28px -4px oklch(0.58 0.22 25 / 0.28),
-    0 0 12px 0 oklch(0.58 0.22 25 / 0.10);
+  box-shadow: var(--shadow-2, 0 4px 8px rgba(0, 0, 0, 0.10));
 }
 
 /* --- Type: Ghost --- */

@@ -27,6 +27,8 @@ interface AuthState {
   syncStatus: SyncStatus
   lastSyncTime: string | null
   pendingChangesCount: number
+  /** syncStatus==='error'일 때 사용자에게 보여줄 분류된 원인 (쿼터/권한/네트워크). */
+  syncErrorMessage: string | null
   error: string | null
   initialize: () => void
   login: () => Promise<void>
@@ -34,6 +36,7 @@ interface AuthState {
   manualUpload: () => Promise<void>
   manualDownload: () => Promise<void>
   setSyncStatus: (status: SyncStatus) => void
+  setSyncError: (message: string | null) => void
   setLastSyncTime: (time: string) => void
   updatePendingCount: () => Promise<void>
 }
@@ -77,6 +80,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   syncStatus: 'idle',
   lastSyncTime: null,
   pendingChangesCount: 0,
+  syncErrorMessage: null,
   error: null,
 
   initialize: () => {
@@ -186,6 +190,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         lastSyncTime: null,
         error: null,
         pendingChangesCount: 0,
+        syncErrorMessage: null,
       })
       // Hard reload to reset every in-memory Zustand store and React tree
       // so no UI keeps rendering stale data from before logout.
@@ -211,7 +216,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     await reloadStoresAfterSync()
   },
 
-  setSyncStatus: (status) => set({ syncStatus: status }),
+  // error가 아닌 상태로 전이하면 이전 오류 메시지는 더 이상 사실이 아니므로 함께 지운다.
+  setSyncStatus: (status) =>
+    set(status === 'error' ? { syncStatus: status } : { syncStatus: status, syncErrorMessage: null }),
+  setSyncError: (message) => set({ syncErrorMessage: message }),
   setLastSyncTime: (time) => set({ lastSyncTime: time }),
   updatePendingCount: async () => {
     try {

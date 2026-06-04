@@ -13,7 +13,6 @@ export function NetWorthCard({ stats }: NetWorthCardProps) {
       label="순자산"
       value={netWorth}
       variant="primary"
-      spotlight
       layoutId="hero-networth"
       deltas={[
         { value: dailyChange, label: '오늘' },

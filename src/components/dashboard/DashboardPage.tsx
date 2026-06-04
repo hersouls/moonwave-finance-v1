@@ -177,7 +177,6 @@ export function DashboardPage() {
             label="순자산"
             value={stats.netWorth}
             variant="primary"
-            spotlight
             layoutId="hero-networth"
             deltas={[
               { value: stats.dailyChange, label: '오늘' },

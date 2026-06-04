@@ -17,19 +17,14 @@
   align-items: center;
   justify-content: space-evenly;
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-top: 1px solid var(--border-default, rgba(0, 0, 0, 0.08));
   z-index: 40;
-  /* Edge Lighting: top edge ambient glow */
-  box-shadow:
-    0 -1px 0 0 oklch(0.64 0.16 250 / 0.04),
-    0 -4px 12px -4px oklch(0.64 0.16 250 / 0.03);
+  box-shadow: none;
 }
 
 .dark .bottom-nav-foundation {
-  border-top-color: oklch(0.64 0.16 250 / 0.10);
-  box-shadow:
-    0 -1px 0 0 oklch(0.64 0.16 250 / 0.08),
-    0 -6px 20px -4px oklch(0.64 0.16 250 / 0.06);
+  border-top-color: var(--border-default, rgba(255, 255, 255, 0.10));
+  box-shadow: none;
 }
 
 @media (min-width: 1024px) {
@@ -74,15 +69,6 @@
   height: 2px;
   background: var(--color-primary-500);
   border-radius: 0 0 2px 2px;
-  box-shadow:
-    0 2px 8px 0 oklch(0.55 0.20 250 / 0.20),
-    0 0 16px 0 oklch(0.55 0.20 250 / 0.08);
-}
-
-.dark .bottom-nav-item--selected::after {
-  box-shadow:
-    0 2px 12px 0 oklch(0.55 0.20 250 / 0.35),
-    0 0 24px 0 oklch(0.55 0.20 250 / 0.14);
 }
 
 .bottom-nav-item--selected .bottom-nav-icon {
@@ -283,9 +269,9 @@
 
 .drawer-item--selected {
   background-color: var(--drawer-bg-selected);
-  /* Edge Lighting: left accent bar with glow */
+  /* 좌측 액센트 바 유지 (글로우 제거) */
   position: relative;
-  box-shadow: var(--el-glow-soft, 0 0 16px -4px oklch(0.64 0.16 250 / 0.08));
+  box-shadow: none;
 }
 
 .drawer-item--selected::before {
@@ -297,15 +283,6 @@
   width: 3px;
   border-radius: 0 3px 3px 0;
   background: var(--color-primary-500);
-  box-shadow:
-    0 0 8px oklch(0.55 0.20 250 / 0.30),
-    0 0 16px oklch(0.55 0.20 250 / 0.12);
-}
-
-.dark .drawer-item--selected::before {
-  box-shadow:
-    0 0 10px oklch(0.55 0.20 250 / 0.45),
-    0 0 24px oklch(0.55 0.20 250 / 0.20);
 }
 
 .drawer-item-icon {

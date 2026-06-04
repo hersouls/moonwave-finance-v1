@@ -95,7 +95,7 @@
 }
 
 /* -------------------------------------------------
- * I. Interactive Row (Edge Lighting hover)
+ * I. Interactive Row (v3 플랫: hover bg + 중립 elevation)
  * ------------------------------------------------- */
 
 .data-table-row--interactive {
@@ -106,11 +106,11 @@
 
 .data-table-row--interactive:hover {
   background-color: var(--hover-bg);
-  box-shadow: var(--shadow-1, 0 1px 3px rgba(0,0,0,0.06)), 0 0 16px -4px oklch(0.64 0.16 250 / 0.08);
+  box-shadow: var(--shadow-1, 0 1px 3px rgba(0,0,0,0.06));
 }
 
 .dark .data-table-row--interactive:hover {
-  box-shadow: var(--shadow-1, 0 1px 3px rgba(0,0,0,0.20)), 0 0 28px -4px oklch(0.64 0.16 250 / 0.20);
+  box-shadow: var(--shadow-1, 0 1px 3px rgba(0,0,0,0.20));
 }
 
 /* Left accent line on hover — use box-shadow on first td

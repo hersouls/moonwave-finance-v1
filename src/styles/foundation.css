@@ -128,11 +128,8 @@
 /* Edge Lighting */
 @import './utilities/edge-lighting.css';
 
-/* Hero Effects — variants, aurora, spotlight, skeleton wave */
+/* Hero Effects — aurora(로그인/온보딩), skeleton wave, 금융 시맨틱 */
 @import './utilities/hero-effects.css';
-
-/* Hero Card — soft tint variant (pastel + dark text) */
-@import './utilities/hero-card-soft.css';
 
 /* Container Queries — inline-size based layout */
 @import './utilities/container-queries.css';

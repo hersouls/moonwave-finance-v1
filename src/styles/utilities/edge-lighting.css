@@ -1,78 +1,50 @@
 /* ===============================================
- * Edge Lighting Utility Classes
- * 2026 High-End Ambient Glow System
+ * Edge Lighting Utilities — v3 "플랫 하이엔드"
+ * ===============================================
+ *
+ * 클래스 API는 유지(59개 사용처 무수정 캐스케이드), 의미는 플랫으로:
+ *   글로우 → 중립 elevation(--shadow-*) / 헤어라인 보더
+ * Health_v1.0 문법: 정지 = border + shadow-sm, hover = 보더 톤업 + shadow-md.
  * =============================================== */
 
 /* =================================================
- * A. Static Glow Classes (always-on)
+ * A. Static (구 글로우 강도 → elevation 단계)
  * ================================================= */
 
-.el-subtle {
-  box-shadow: var(--el-glow-subtle);
-}
-
-.el-soft {
-  box-shadow: var(--el-glow-soft);
-}
-
-.el-medium {
-  box-shadow: var(--el-glow-medium);
-}
-
-.el-strong {
-  box-shadow: var(--el-glow-strong);
-}
-
-.el-vivid {
-  box-shadow: var(--el-glow-vivid);
-}
+.el-subtle { box-shadow: none; }
+.el-soft { box-shadow: var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.08)); }
+.el-medium { box-shadow: var(--shadow-2, 0 4px 8px rgba(0, 0, 0, 0.10)); }
+.el-strong { box-shadow: var(--shadow-3, 0 12px 24px rgba(0, 0, 0, 0.12)); }
+.el-vivid { box-shadow: var(--shadow-3, 0 12px 24px rgba(0, 0, 0, 0.12)); }
 
 /* =================================================
- * B. Interactive Glow (hover/focus transitions)
+ * B. Interactive Hover (글로우 → 미세 elevation 상승)
  * ================================================= */
 
-/* Hover: idle → soft glow */
-.el-hover {
-  transition: var(--el-transition);
-  box-shadow: var(--el-glow-idle);
-}
-
-.el-hover:hover {
-  box-shadow: var(--el-glow-soft);
-}
-
-/* Hover: idle → medium glow */
-.el-hover-md {
-  transition: var(--el-transition);
-  box-shadow: var(--el-glow-idle);
-}
-
-.el-hover-md:hover {
-  box-shadow: var(--el-glow-medium);
-}
-
-/* Hover: idle → strong glow */
+.el-hover,
+.el-hover-md,
 .el-hover-strong {
   transition: var(--el-transition);
-  box-shadow: var(--el-glow-idle);
+  box-shadow: none;
 }
 
+.el-hover:hover,
+.el-hover-md:hover,
 .el-hover-strong:hover {
-  box-shadow: var(--el-glow-strong);
+  box-shadow: var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.08));
 }
 
-/* Hover: subtle → medium (for elements with resting glow) */
 .el-hover-lift {
   transition: var(--el-transition);
-  box-shadow: var(--el-glow-subtle);
+  box-shadow: var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.08));
 }
 
 .el-hover-lift:hover {
-  box-shadow: var(--el-glow-medium);
+  box-shadow: var(--shadow-2, 0 4px 8px rgba(0, 0, 0, 0.10));
 }
 
 /* =================================================
- * C. Focus Glow (keyboard navigation)
+ * C. Focus (키보드 내비게이션 — 단일 포커스 링)
  * ================================================= */
 
 .el-focus {
@@ -80,28 +52,27 @@
 }
 
 .el-focus:focus-visible {
-  box-shadow: var(--el-glow-strong);
+  box-shadow: 0 0 0 3px var(--glow-primary, oklch(0.55 0.20 250 / 0.25));
   outline: none;
 }
 
 /* =================================================
- * D. Active / Selected State Glow
+ * D. Active / Selected (글로우 없이 보더로 상태 전달)
  * ================================================= */
 
 .el-active {
-  box-shadow: var(--el-glow-medium);
-  border-color: oklch(0.64 0.16 250 / 0.15);
+  box-shadow: none;
+  border-color: var(--color-primary-300);
 }
 
 .dark .el-active {
-  border-color: oklch(0.64 0.16 250 / 0.25);
+  border-color: var(--color-primary-700);
 }
 
 /* =================================================
- * E. Navigation Edge Lighting
+ * E. Navigation (액센트 바 유지, 글로우 제거)
  * ================================================= */
 
-/* Bottom Nav: active tab indicator glow */
 .el-nav-active {
   position: relative;
 }
@@ -115,14 +86,12 @@
   height: 2px;
   background: var(--color-primary-500);
   border-radius: 1px;
-  box-shadow: var(--el-nav-indicator);
   transition: opacity 200ms ease;
 }
 
-/* Sidebar: active nav item edge lighting */
 .el-sidebar-active {
   position: relative;
-  box-shadow: var(--el-glow-soft);
+  box-shadow: none;
 }
 
 .el-sidebar-active::before {
@@ -134,125 +103,82 @@
   width: 3px;
   border-radius: 0 3px 3px 0;
   background: var(--color-primary-500);
-  box-shadow:
-    0 0 var(--el-blur-sm) oklch(0.55 0.20 250 / 0.30),
-    0 0 var(--el-blur-md) oklch(0.55 0.20 250 / 0.15);
-}
-
-.dark .el-sidebar-active::before {
-  box-shadow:
-    0 0 var(--el-blur-sm) oklch(0.55 0.20 250 / 0.50),
-    0 0 var(--el-blur-md) oklch(0.55 0.20 250 / 0.25);
 }
 
 /* =================================================
- * F. Header / AppBar Edge Lighting
+ * F. Header / Sidebar / BottomNav 크롬 — 중립 헤어라인
  * ================================================= */
 
-/* Header bottom border glow */
 .el-header {
-  border-bottom-color: oklch(0.64 0.16 250 / 0.06);
-  box-shadow:
-    0 1px 0 0 oklch(0.64 0.16 250 / 0.04),
-    0 4px 12px -4px oklch(0.64 0.16 250 / 0.03);
+  border-bottom-color: var(--border-default, rgba(0, 0, 0, 0.06));
+  box-shadow: none;
 }
 
-.dark .el-header {
-  border-bottom-color: oklch(0.64 0.16 250 / 0.12);
-  box-shadow:
-    0 1px 0 0 oklch(0.64 0.16 250 / 0.08),
-    0 4px 16px -4px oklch(0.64 0.16 250 / 0.06);
+.el-sidebar-edge {
+  border-right-color: var(--border-default, rgba(0, 0, 0, 0.06));
+  box-shadow: none;
+}
+
+.el-bottomnav {
+  border-top-color: var(--border-default, rgba(0, 0, 0, 0.06));
+  box-shadow: none;
 }
 
 /* =================================================
- * G. Card Edge Lighting
+ * G. Card — Health 문법: 정지 shadow-1, hover shadow-2
+ * (border-color는 .card-base가 단일 소스로 관리)
  * ================================================= */
 
-/* Card with hover glow activation */
-/* Note: border-color는 .card-base 가 단일 소스로 관리. el-card 는 shadow 전담. */
 .el-card {
   transition: var(--el-transition);
   box-shadow: var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.08));
 }
 
 .el-card:hover {
-  box-shadow:
-    var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.08)),
-    var(--el-glow-soft);
+  box-shadow: var(--shadow-2, 0 4px 8px rgba(0, 0, 0, 0.10));
 }
 
-.dark .el-card:hover {
-  box-shadow:
-    var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.24)),
-    var(--el-glow-medium);
-}
-
-/* Card with always-on subtle glow (elevated) */
 .el-card-elevated {
-  box-shadow:
-    var(--shadow-2, 0 4px 8px rgba(0, 0, 0, 0.10)),
-    var(--el-glow-subtle);
+  box-shadow: var(--shadow-2, 0 4px 8px rgba(0, 0, 0, 0.10));
   transition: var(--el-transition);
 }
 
 .el-card-elevated:hover {
-  box-shadow:
-    var(--shadow-2, 0 4px 8px rgba(0, 0, 0, 0.10)),
-    var(--el-glow-medium);
+  box-shadow: var(--shadow-3, 0 12px 24px rgba(0, 0, 0, 0.12));
 }
 
 /* =================================================
- * H. Button Edge Lighting
+ * H. Button / FAB — 중립 그림자 (primary 틴트 제거)
  * ================================================= */
 
-/* Primary CTA button glow */
 .el-btn-primary {
   transition: var(--el-transition);
-  box-shadow: var(--el-glow-subtle);
+  box-shadow: var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.08));
 }
 
 .el-btn-primary:hover {
-  box-shadow: var(--el-glow-medium);
+  box-shadow: var(--shadow-2, 0 4px 8px rgba(0, 0, 0, 0.10));
 }
 
 .el-btn-primary:active {
-  box-shadow: var(--el-glow-soft);
+  box-shadow: var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.08));
 }
 
-/* FAB (Floating Action Button) — always glowing */
 .el-fab {
-  box-shadow:
-    0 4px 14px -2px oklch(0.55 0.20 250 / 0.30),
-    var(--el-glow-medium);
+  box-shadow: var(--shadow-3, 0 12px 24px rgba(0, 0, 0, 0.12));
   transition: var(--el-transition);
 }
 
 .el-fab:hover {
-  box-shadow:
-    0 6px 20px -2px oklch(0.55 0.20 250 / 0.40),
-    var(--el-glow-strong);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.16), var(--shadow-2, 0 4px 8px rgba(0, 0, 0, 0.10));
 }
 
 .el-fab:active {
-  box-shadow:
-    0 2px 8px -2px oklch(0.55 0.20 250 / 0.25),
-    var(--el-glow-soft);
-}
-
-.dark .el-fab {
-  box-shadow:
-    0 4px 14px -2px oklch(0.55 0.20 250 / 0.40),
-    var(--el-glow-strong);
-}
-
-.dark .el-fab:hover {
-  box-shadow:
-    0 6px 24px -2px oklch(0.55 0.20 250 / 0.50),
-    var(--el-glow-vivid);
+  box-shadow: var(--shadow-2, 0 4px 8px rgba(0, 0, 0, 0.10));
 }
 
 /* =================================================
- * I. Input Edge Lighting (focus state)
+ * I. Input Focus — 단일 포커스 링
  * ================================================= */
 
 .el-input {
@@ -260,202 +186,43 @@
 }
 
 .el-input:focus-within {
-  box-shadow: var(--el-glow-medium);
-  border-color: oklch(0.55 0.20 250 / 0.40);
-}
-
-.dark .el-input:focus-within {
-  box-shadow: var(--el-glow-strong);
-  border-color: oklch(0.55 0.20 250 / 0.50);
+  box-shadow: 0 0 0 3px var(--glow-primary, oklch(0.55 0.20 250 / 0.25));
+  border-color: var(--color-primary-500);
 }
 
 /* =================================================
- * J. Dialog / Modal Edge Lighting
+ * J. Dialog / Toast — 본연의 elevation만
  * ================================================= */
 
 .el-dialog {
-  box-shadow:
-    var(--dialog-shadow, 0 25px 50px -12px rgba(0, 0, 0, 0.35)),
-    var(--el-glow-soft);
+  box-shadow: var(--dialog-shadow, 0 25px 50px -12px rgba(0, 0, 0, 0.35));
 }
 
 .dark .el-dialog {
-  border: var(--el-border-subtle);
-  box-shadow:
-    var(--dialog-shadow, 0 25px 50px -12px rgba(0, 0, 0, 0.6)),
-    var(--el-glow-medium);
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
 }
-
-/* =================================================
- * K. Toast / Snackbar Edge Lighting
- * ================================================= */
 
 .el-toast {
-  box-shadow:
-    var(--shadow-3, 0 12px 24px rgba(0, 0, 0, 0.12)),
-    var(--el-glow-soft);
-}
-
-.dark .el-toast {
-  box-shadow:
-    var(--shadow-3, 0 12px 24px rgba(0, 0, 0, 0.40)),
-    var(--el-glow-medium);
+  box-shadow: var(--shadow-3, 0 12px 24px rgba(0, 0, 0, 0.12));
 }
 
 /* =================================================
- * L. Status Glow Variants
+ * L. Status — 보더로 상태 전달 (글로우 제거)
  * ================================================= */
 
-.el-success {
-  box-shadow: var(--el-glow-success);
-}
-
-.el-danger {
-  box-shadow: var(--el-glow-danger);
-}
-
-.el-warning {
-  box-shadow: var(--el-glow-warning);
-}
+.el-success { box-shadow: none; }
+.el-danger { box-shadow: none; }
+.el-warning { box-shadow: none; }
 
 /* =================================================
- * M. Sidebar & BottomNav Container Glow
+ * N/O/P. 레거시 장식 클래스 — no-op 중화
  * ================================================= */
-
-/* Sidebar right edge glow */
-.el-sidebar-edge {
-  border-right-color: oklch(0.64 0.16 250 / 0.06);
-  box-shadow:
-    1px 0 0 0 oklch(0.64 0.16 250 / 0.04),
-    4px 0 16px -4px oklch(0.64 0.16 250 / 0.03);
-}
-
-.dark .el-sidebar-edge {
-  border-right-color: oklch(0.64 0.16 250 / 0.12);
-  box-shadow:
-    1px 0 0 0 oklch(0.64 0.16 250 / 0.08),
-    4px 0 20px -4px oklch(0.64 0.16 250 / 0.06);
-}
-
-/* BottomNav top edge glow */
-.el-bottomnav {
-  border-top-color: oklch(0.64 0.16 250 / 0.06);
-  box-shadow:
-    0 -1px 0 0 oklch(0.64 0.16 250 / 0.04),
-    0 -4px 12px -4px oklch(0.64 0.16 250 / 0.03);
-}
-
-.dark .el-bottomnav {
-  border-top-color: oklch(0.64 0.16 250 / 0.12);
-  box-shadow:
-    0 -1px 0 0 oklch(0.64 0.16 250 / 0.08),
-    0 -4px 16px -4px oklch(0.64 0.16 250 / 0.06);
-}
-
-/* =================================================
- * N. Animated Gradient Border (premium accent)
- * ================================================= */
-
-@property --el-border-angle {
-  inherits: false;
-  initial-value: 0deg;
-  syntax: "<angle>";
-}
 
 .el-gradient-border {
-  background:
-    linear-gradient(var(--surface-primary, #fff), var(--surface-primary, #fff)) padding-box,
-    conic-gradient(
-      from var(--el-border-angle),
-      oklch(0.64 0.16 250 / 0.25),
-      oklch(0.55 0.20 250 / 0.10),
-      oklch(0.64 0.16 250 / 0.25)
-    ) border-box;
-  border: 1px solid transparent;
-  animation: el-rotate-border 6s linear infinite paused;
+  border: 1px solid var(--border-default, rgba(0, 0, 0, 0.06));
 }
 
-.el-gradient-border:hover {
-  animation-play-state: running;
-}
+.el-pulse { animation: none; }
 
-.dark .el-gradient-border {
-  background:
-    linear-gradient(var(--surface-primary, #09090b), var(--surface-primary, #09090b)) padding-box,
-    conic-gradient(
-      from var(--el-border-angle),
-      oklch(0.64 0.16 250 / 0.40),
-      oklch(0.55 0.20 250 / 0.15),
-      oklch(0.64 0.16 250 / 0.40)
-    ) border-box;
-}
-
-@keyframes el-rotate-border {
-  to { --el-border-angle: 360deg; }
-}
-
-/* =================================================
- * O. Glow Pulse Animation (notifications, FAB attention)
- * ================================================= */
-
-@keyframes el-pulse {
-  0%, 100% {
-    box-shadow:
-      0 0 var(--el-blur-md) var(--el-spread-tight) oklch(0.55 0.20 250 / 0.15),
-      0 0 var(--el-blur-sm) var(--el-spread-none) oklch(0.55 0.20 250 / 0.06);
-  }
-  50% {
-    box-shadow:
-      0 0 var(--el-blur-xl) var(--el-spread-soft) oklch(0.55 0.20 250 / 0.28),
-      0 0 var(--el-blur-md) var(--el-spread-none) oklch(0.55 0.20 250 / 0.12);
-  }
-}
-
-.el-pulse {
-  animation: el-pulse 2.5s ease-in-out infinite;
-}
-
-/* =================================================
- * P. Inset Top Highlight (glass-like depth)
- * ================================================= */
-
-.el-inset {
-  box-shadow: var(--el-inset-top);
-}
-
-.el-inset-glow {
-  box-shadow: var(--el-inset-top), var(--el-inset-glow);
-}
-
-/* =================================================
- * Q. Accessibility: Reduced Motion
- * ================================================= */
-
-@media (prefers-reduced-motion: reduce) {
-  .el-pulse {
-    animation: none;
-    box-shadow: var(--el-glow-medium);
-  }
-
-  .el-gradient-border {
-    animation: none;
-  }
-}
-
-/* =================================================
- * R. High Contrast Mode: Disable subtle glows
- * ================================================= */
-
-@media (prefers-contrast: more) {
-  .el-subtle,
-  .el-soft,
-  .el-hover,
-  .el-hover-md,
-  .el-hover-strong,
-  .el-card,
-  .el-header,
-  .el-sidebar-edge,
-  .el-bottomnav {
-    box-shadow: none;
-  }
-}
+.el-inset { box-shadow: none; }
+.el-inset-glow { box-shadow: none; }

@@ -44,19 +44,15 @@
   background-color: var(--dialog-bg);
   border-radius: var(--dialog-radius);
   padding: var(--dialog-padding);
-  box-shadow:
-    var(--dialog-shadow),
-    0 0 16px -4px oklch(0.64 0.16 250 / 0.06),
-    0 0 4px 0 oklch(0.64 0.16 250 / 0.02);
+  /* v3 플랫: 본연의 elevation만 (primary 틴트 앰비언트 글로우 제거) */
+  box-shadow: var(--dialog-shadow);
   position: relative;
 }
 
 .dark .dialog-panel {
-  border: 1px solid oklch(0.64 0.16 250 / 0.10);
-  box-shadow:
-    var(--dialog-shadow),
-    0 0 32px -8px oklch(0.55 0.20 250 / 0.18),
-    0 0 12px 0 oklch(0.55 0.20 250 / 0.06);
+  /* v3 플랫: 중립 헤어라인 보더 + elevation (글로우 제거) */
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+  box-shadow: var(--dialog-shadow);
 }
 
 .dialog-panel--sm {

@@ -18,9 +18,8 @@ interface Props {
  *   • two delta chips (vs previous month, vs 3-month baseline)
  *   • a 6-month sparkline trail so the user instantly sees direction
  *
- * Visuals are entirely composed from Foundation utility classes
- * (.hero-card-soft + variants, typography tokens, radius/shadow tokens) so
- * the look matches anywhere else that adopts the same primitives.
+ * v3 플랫: 중립 card-base 표면 + 변형별 액센트(아이콘 틴트 + 라벨 색)만으로
+ * 정체성을 표현한다. 그라디언트 틴트 배경 / noise overlay 제거.
  */
 export function LedgerAnalysisHero({ analysis }: Props) {
   const { current, prev, baseline, sparklines } = analysis
@@ -69,10 +68,11 @@ export function LedgerAnalysisHero({ analysis }: Props) {
 type Variant = 'negative' | 'positive' | 'primary'
 type Emphasis = 'good' | 'bad'
 
-const VARIANT_CLASS: Record<Variant, string> = {
-  negative: 'hero-card-soft hero-card-soft--negative',
-  positive: 'hero-card-soft hero-card-soft--positive',
-  primary: 'hero-card-soft hero-card-soft--primary',
+/* v3 플랫: 변형별 액센트 색(아이콘 틴트 · 라벨 · 스파크라인) — CSS var 한 슬롯으로 통일 */
+const VARIANT_ACCENT: Record<Variant, string> = {
+  negative: 'var(--value-negative)',
+  positive: 'var(--value-positive)',
+  primary: 'var(--color-primary-500)',
 }
 
 function HeroCard({
@@ -92,30 +92,40 @@ function HeroCard({
   const shouldReduceMotion = useReducedMotion()
   const animated = useCountUp(value, 700)
   const isNegative = value < 0
+  const accent = VARIANT_ACCENT[variant]
 
   return (
     <motion.div
       initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ ...springGentle }}
-      className={VARIANT_CLASS[variant]}
+      className="card-base relative overflow-hidden rounded-2xl"
     >
-      {/* Subtle noise overlay for premium texture */}
-      <div className="noise-overlay absolute inset-0 opacity-40 pointer-events-none" aria-hidden="true" />
-
       <div className="relative">
         {/* Header row */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="hero-card-soft__icon-frame">
+            <span
+              className="w-8 h-8 rounded-xl inline-flex items-center justify-center"
+              style={{
+                backgroundColor: `color-mix(in srgb, ${accent} 14%, transparent)`,
+                color: accent,
+              }}
+            >
               <Icon className="w-4 h-4" aria-hidden="true" />
             </span>
-            <span className="typo-label4 tracking-wide uppercase" style={{ color: 'var(--hero-soft-accent)' }}>
+            <span className="typo-label4 tracking-wide uppercase" style={{ color: accent }}>
               {label}
             </span>
           </div>
           {savingsRate != null && (
-            <span className="hero-card-soft__chip typo-label4">
+            <span
+              className="inline-flex items-center gap-1 h-5 px-2 rounded-full typo-label4 tabular-nums"
+              style={{
+                backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)`,
+                color: accent,
+              }}
+            >
               저축률 {Math.round(savingsRate * 100)}%
             </span>
           )}
@@ -146,7 +156,7 @@ function HeroCard({
           <div className="mt-3 -mx-1">
             <Sparkline
               data={sparkData}
-              color="var(--hero-soft-accent)"
+              color={accent}
               height={28}
               className="w-full"
             />
