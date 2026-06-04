@@ -142,7 +142,9 @@ async function uploadTable<T extends { syncId?: string }>(
       await addFkSyncIds(tableName, enriched)
       batch.set(ref, toCloudPayload(enriched))
     }
-    await batch.commit()
+    // 배치 단위 타임아웃: 대용량 테이블(dailyValues 등)의 전체 업로드가 단일
+    // 예산에 걸려 통째로 실패하지 않도록, 멈춤 감지는 commit 하나 단위로 한다.
+    await withTimeout(batch.commit(), SYNC_BATCH_TIMEOUT_MS, `${tableName} batch upload`)
   }
 }
 
@@ -208,8 +210,14 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries: number = 3): Promi
  * resolve도 reject도 하지 않고 영원히 pending 될 수 있어(온라인 복귀 전까지), 타임아웃이
  * 없으면 동기화 함수가 'syncing'에 영구 고착된다(스피너 무한 회전 + useAutoSync 락 고착).
  * 타임아웃 시 reject → 호출자 catch가 'error'로 정리 → 다음 변경/온라인 복귀에 재시도.
+ *
+ * 타임아웃은 개별 쓰기/배치 단위로 건다 — 업로드 루프 전체에 단일 예산을 걸면
+ * 대량 백로그(CSV 임포트, 가치 전망 수천 행)가 예산을 초과할 때마다 통째로
+ * 실패해 같은 선두 레코드만 영원히 재업로드하는 wedge가 된다.
  */
-const SYNC_UPLOAD_TIMEOUT_MS = 60_000
+const SYNC_WRITE_TIMEOUT_MS = 15_000   // 단일 문서 쓰기/삭제/톰스톤
+const SYNC_BATCH_TIMEOUT_MS = 30_000   // 최대 499건 batch.commit
+const MAX_CONSECUTIVE_UPLOAD_FAILURES = 3 // 연속 실패 시 회로 차단(오프라인 추정)
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined
   const timeout = new Promise<never>((_, reject) => {
@@ -269,7 +277,9 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       db.merchantAliases.toArray(),
     ])
 
-    await withTimeout(withRetry(() => Promise.all([
+    // 전체 업로드에 단일 타임아웃을 걸지 않는다 — 수년치 데이터는 60초를 정상적으로
+    // 초과할 수 있다. 멈춤 감지는 uploadTable 내부의 배치 단위 타임아웃이 담당.
+    await withRetry(() => Promise.all([
       uploadTable(uid, 'members', members.map(ensureSyncId)),
       uploadTable(uid, 'assetCategories', assetCategories.map(ensureSyncId)),
       uploadTable(uid, 'assetItems', assetItems.map(ensureSyncId)),
@@ -285,7 +295,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       uploadTable(uid, 'dividends', dividends.map(ensureSyncId)),
       uploadTable(uid, 'accountInterests', accountInterests.map(ensureSyncId)),
       uploadTable(uid, 'merchantAliases', merchantAliases.map(ensureSyncId)),
-    ])), SYNC_UPLOAD_TIMEOUT_MS, 'full upload')
+    ]))
 
     // Reconcile: delete Firestore documents that no longer exist locally
     const localSyncIds: Record<SyncableTable, Set<string>> = {
@@ -543,36 +553,50 @@ export async function incrementalUpload(uid: string): Promise<void> {
 
     const successKeys = new Set<string>()
 
-    // 업로드 루프 전체에 타임아웃 — 오프라인/반쯤 끊긴 연결에서 개별 Firestore 쓰기가
-    // 영원히 pending 되어 루프가 멈추고 'syncing'이 고착되는 것을 방지(타임아웃 시 catch→'error').
-    await withTimeout((async () => {
+    // 쓰기 단위 타임아웃 + 연속 실패 서킷브레이커. 일시적 실패는 항목만 pending으로
+    // 남기고 계속 전진하되, 연속 N회 실패(오프라인 추정)면 루프를 중단해 헛수고를 멈춘다.
+    let consecutiveFailures = 0
+    try {
       for (const change of deduped) {
         try {
           if (change.operation === 'delete') {
-            await deleteFromCloud(uid, change.tableName as SyncableTable, change.syncId)
-            await uploadTombstone(uid, change.tableName, change.syncId, change.timestamp)
+            await withTimeout(
+              deleteFromCloud(uid, change.tableName as SyncableTable, change.syncId),
+              SYNC_WRITE_TIMEOUT_MS, `delete ${change.tableName}/${change.syncId}`)
+            await withTimeout(
+              uploadTombstone(uid, change.tableName, change.syncId, change.timestamp),
+              SYNC_WRITE_TIMEOUT_MS, `tombstone ${change.tableName}/${change.syncId}`)
           } else {
             const localTable = getLocalTable(change.tableName as SyncableTable)
             const record = await (localTable as typeof db.members)
               .where('syncId').equals(change.syncId).first()
             if (record) {
-              await uploadSingleRecord(uid, change.tableName as SyncableTable, record)
+              await withTimeout(
+                uploadSingleRecord(uid, change.tableName as SyncableTable, record),
+                SYNC_WRITE_TIMEOUT_MS, `upload ${change.tableName}/${change.syncId}`)
             }
           }
           successKeys.add(`${change.tableName}:${change.syncId}`)
+          consecutiveFailures = 0
         } catch (err) {
           console.error(`[sync] incremental upload ${change.tableName}/${change.syncId} failed:`, err)
+          consecutiveFailures++
+          if (consecutiveFailures >= MAX_CONSECUTIVE_UPLOAD_FAILURES) {
+            throw new Error(`[sync] aborting incremental upload after ${consecutiveFailures} consecutive failures (offline?)`)
+          }
         }
       }
-    })(), SYNC_UPLOAD_TIMEOUT_MS, 'incremental upload')
-
-    // Mark only successfully synced entries as processed
-    const successIds = pendingChanges
-      .filter(c => successKeys.has(`${c.tableName}:${c.syncId}`))
-      .map(c => c.id!)
-      .filter(Boolean)
-    if (successIds.length > 0) {
-      await db.syncChangeLog.where('id').anyOf(successIds).modify({ processed: 1 })
+    } finally {
+      // 어떤 중단 경로에서도 성공분은 processed 처리해 진행을 보존한다 — 다음
+      // 시도는 남은 항목부터 이어간다. (기존: 루프 전체 타임아웃 시 이 블록까지
+      // 통째로 스킵되어 대량 백로그가 영원히 처음부터 재시도되는 wedge였음)
+      const successIds = pendingChanges
+        .filter(c => successKeys.has(`${c.tableName}:${c.syncId}`))
+        .map(c => c.id!)
+        .filter(Boolean)
+      if (successIds.length > 0) {
+        await db.syncChangeLog.where('id').anyOf(successIds).modify({ processed: 1 })
+      }
     }
 
     // GC: remove processed entries older than 7 days
@@ -856,9 +880,13 @@ async function uploadLocalTombstones(uid: string): Promise<void> {
   const localTombstones = await db.syncTombstones.toArray()
   for (const tombstone of localTombstones) {
     try {
-      await uploadTombstone(uid, tombstone.tableName, tombstone.syncId, tombstone.deletedAt)
+      await withTimeout(
+        uploadTombstone(uid, tombstone.tableName, tombstone.syncId, tombstone.deletedAt),
+        SYNC_WRITE_TIMEOUT_MS, `tombstone ${tombstone.tableName}/${tombstone.syncId}`)
       if (ALL_TABLES.includes(tombstone.tableName as SyncableTable)) {
-        await deleteFromCloud(uid, tombstone.tableName as SyncableTable, tombstone.syncId)
+        await withTimeout(
+          deleteFromCloud(uid, tombstone.tableName as SyncableTable, tombstone.syncId),
+          SYNC_WRITE_TIMEOUT_MS, `delete ${tombstone.tableName}/${tombstone.syncId}`)
       }
     } catch (err) {
       console.error(`[sync] upload tombstone ${tombstone.tableName}/${tombstone.syncId} failed:`, err)
