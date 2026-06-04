@@ -21,6 +21,7 @@ import type {
   SyncTombstone,
 } from '@/lib/types'
 import { assertWritable } from '@/lib/writeGuard'
+import { clearSyncCheckpoint } from '@/services/syncCheckpoint'
 
 class FinanceDatabase extends Dexie {
   members!: Table<Member>
@@ -1145,6 +1146,10 @@ export async function clearAllData(opts?: { force?: boolean }): Promise<void> {
     await drainChangeTracking()
     await db.syncChangeLog.clear()
     await db.syncTombstones.clear()
+
+    // 델타 동기화 체크포인트도 함께 리셋 — 빈 로컬 DB에 체크포인트가 살아
+    // 있으면 다음 로그인 머지가 델타만 내려받아 과거 데이터가 누락된다.
+    clearSyncCheckpoint()
 
     const now = new Date().toISOString()
     await db.members.bulkAdd(

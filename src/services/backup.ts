@@ -1,4 +1,5 @@
 import { db, setSyncWritingFlag, drainChangeTracking } from '@/services/database'
+import { clearSyncCheckpoint } from '@/services/syncCheckpoint'
 import { BACKUP_CONFIG } from '@/utils/constants'
 import { assertWritable } from '@/lib/writeGuard'
 import type { BackupFile } from '@/lib/types'
@@ -113,6 +114,10 @@ export async function importBackup(file: File): Promise<void> {
     await drainChangeTracking()
     await db.syncChangeLog.clear()
     await db.syncTombstones.clear()
+
+    // 로컬이 백업 시점으로 교체되었으므로 델타 체크포인트도 무효 — 리셋해야
+    // 다음 mergeOnLogin이 전량 머지로 클라우드와 다시 수렴한다.
+    clearSyncCheckpoint()
   } finally {
     setSyncWritingFlag(false)
   }
