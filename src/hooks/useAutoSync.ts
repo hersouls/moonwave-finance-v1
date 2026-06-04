@@ -105,11 +105,14 @@ export function useAutoSync() {
       }
     }, HEALTH_POLL_MS)
 
-    // Dexie hooks: listen to creates, updates, deletes on all tables
+    // Dexie hooks: listen to creates, updates, deletes on ALL 15 synced tables.
+    // (빠진 테이블의 쓰기는 변경로그에는 남지만 업로드 디바운스를 깨우지
+    // 못해 다음 다른 쓰기/online 이벤트까지 업로드가 지연된다)
     const tables = [
       db.members, db.assetCategories, db.assetItems, db.dailyValues,
       db.transactionCategories, db.transactions, db.budgets, db.goals,
       db.paymentMethodItems, db.subscriptions, db.loans,
+      db.investmentTrades, db.dividends, db.accountInterests, db.merchantAliases,
     ]
 
     const hookRemovers: (() => void)[] = []
