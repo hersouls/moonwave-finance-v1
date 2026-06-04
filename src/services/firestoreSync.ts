@@ -5,6 +5,8 @@ import {
   writeBatch,
   deleteDoc,
   onSnapshot,
+  query,
+  limit,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { firestore } from '@/lib/firebase'
@@ -263,7 +265,10 @@ async function ensureAndPersistSyncIds() {
 
 // ─── Full Upload (preserved for manual sync) ─────────────
 export async function fullUpload(uid: string, options?: { reconcile?: boolean }): Promise<void> {
-  if (!canDeviceWrite()) return  // read-only device: never write to the cloud
+  if (!canDeviceWrite()) {
+    console.info('[sync] full upload skipped: 이 기기는 읽기 전용입니다 (설정 → 시스템 → 기기 쓰기)')
+    return
+  }
   useAuthStore.getState().setSyncStatus('syncing')
   try {
     await ensureAndPersistSyncIds()
@@ -577,7 +582,12 @@ async function uploadTombstonesBatch(
 }
 
 export async function incrementalUpload(uid: string): Promise<void> {
-  if (!canDeviceWrite()) return  // read-only device: never write to the cloud
+  if (!canDeviceWrite()) {
+    // 읽기전용 기기: 클라우드 쓰기 금지. 조용한 no-op은 "동기화가 안 된다"
+    // 디버깅을 어렵게 하므로 이유를 남긴다.
+    console.info('[sync] incremental upload skipped: 이 기기는 읽기 전용입니다 (설정 → 시스템 → 기기 쓰기)')
+    return
+  }
   useAuthStore.getState().setSyncStatus('syncing')
   try {
     await ensureAndPersistSyncIds()
@@ -980,14 +990,25 @@ async function garbageCollectTombstones(uid: string): Promise<void> {
   }
 }
 
+/**
+ * 클라우드에 데이터가 하나라도 있는가 — 15개 컬렉션 전체를 limit(1)로 프로브.
+ * members 컬렉션 하나만 보고 판정하면, members만 비어 있는 계정에서 첫 로그인
+ * 기기가 "클라우드 비어 있음 → fullUpload(reconcile)"를 타며 reconcileOrphans가
+ * 다른 기기가 올린 클라우드 데이터 전체를 고아로 오인해 삭제한다.
+ */
+async function cloudHasAnyData(uid: string): Promise<boolean> {
+  const probes = await Promise.all(ALL_TABLES.map(async (tableName) => {
+    const colRef = collection(firestore, getUserCollectionPath(uid, tableName))
+    const snap = await getDocs(query(colRef, limit(1)))
+    return !snap.empty
+  }))
+  return probes.some(Boolean)
+}
+
 export async function mergeOnLogin(uid: string): Promise<void> {
   useAuthStore.getState().setSyncStatus('syncing')
   try {
-    // Check if cloud has any data
-    const colRef = collection(firestore, getUserCollectionPath(uid, 'members'))
-    const snapshot = await getDocs(colRef)
-
-    if (snapshot.empty) {
+    if (!(await cloudHasAnyData(uid))) {
       // First time: upload everything (write-capable devices only).
       if (canDeviceWrite()) {
         await fullUpload(uid, { reconcile: true })
@@ -1531,7 +1552,15 @@ function scheduleFkRetry(
  * updatedAt LWW with deviceId as a deterministic tiebreaker. Without the
  * tiebreaker, two devices writing at the same millisecond would both skip
  * each other's updates and stay diverged forever.
+ *
+ * 시계 오차 허용(TDL 검증 패턴): updatedAt은 기기 로컬 시계로 찍히므로 기기 간
+ * 수 초의 오차가 있다. ±2초 이내의 차이는 '동시 기록'으로 보고 deviceId로
+ * 결정적으로 판정한다 — 그렇지 않으면 시계가 느린 기기의 진짜 최신 변경이
+ * 모든 기기에서 조용히 패배한다. 트레이드오프: 2초 이내에 두 기기가 같은
+ * 레코드를 고치면 나중 변경이 아니라 deviceId 큰 쪽이 이긴다(결정적 수렴 우선).
  */
+const CLOCK_SKEW_TOLERANCE_MS = 2000
+
 function shouldApplyCloudUpdate(
   cloudUpdatedAt: string | undefined,
   cloudDeviceId: string | undefined,
@@ -1540,13 +1569,23 @@ function shouldApplyCloudUpdate(
   if (!cloudUpdatedAt) return false
   const cAt = cloudUpdatedAt
   const lAt = localUpdatedAt || ''
+
+  const tiebreak = () => {
+    // Echo of our own write (same deviceId) returns false. Higher deviceId wins.
+    const peer = cloudDeviceId || ''
+    const self = getDeviceId()
+    return peer !== '' && peer !== self && peer > self
+  }
+
+  const cMs = Date.parse(cAt)
+  const lMs = lAt ? Date.parse(lAt) : NaN
+  if (!Number.isNaN(cMs) && !Number.isNaN(lMs) && Math.abs(cMs - lMs) <= CLOCK_SKEW_TOLERANCE_MS) {
+    return tiebreak()
+  }
+
   if (cAt > lAt) return true
   if (cAt < lAt) return false
-  // Equal timestamps — deterministic tiebreak by deviceId. Echo of our own
-  // write (same deviceId) returns false. Higher deviceId wins.
-  const peer = cloudDeviceId || ''
-  const self = getDeviceId()
-  return peer !== '' && peer !== self && peer > self
+  return tiebreak()
 }
 
 function subscribeTable(uid: string, tableName: SyncableTable, generation: number, retryCount = 0): void {
