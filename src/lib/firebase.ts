@@ -36,8 +36,9 @@ function clearStaleFirestoreCacheIfConfigChanged(): void {
     if (stored === current) return
     if (stored !== null) {
       console.info(`[firebase] Firestore 설정 변경 (v${stored}→v${current}), 캐시 정리`)
-      // fire-and-forget — 모듈 동기 초기화 경로라 await 불가. 삭제가 늦어도
-      // initializeFirestore의 try/catch 폴백이 안전망.
+      // fire-and-forget — 모듈 동기 초기화 경로라 await 불가. SDK는 캐시를
+      // 동기 open하지 않고(첫 작업 시 비동기), 캐시 open 실패 시 자체적으로
+      // memoryCache로 폴백하므로 삭제가 한 사이클 늦어도 다음 실행에서 정리된다.
       void indexedDB.databases?.().then((dbs) => {
         for (const d of dbs) {
           // Firestore 캐시만 삭제 — Auth DB(firebaseLocalStorage)는 보존
@@ -68,7 +69,9 @@ try {
     experimentalForceLongPolling: true,
   })
 } catch {
-  // 이미 초기화됐거나(HMR 등) 환경이 지원하지 않으면 기본 인스턴스로 폴백
+  // 다른 옵션으로 이미 초기화된 경우(HMR, 테스트 등)의 이중 초기화 폴백.
+  // 주의: 캐시 open 실패는 여기서 잡히지 않는다 — SDK가 첫 작업 시 비동기로
+  // 열고, 실패하면 자체 경로로 memoryCache 폴백한다.
   _firestore = getFirestore(app)
 }
 export const firestore = _firestore

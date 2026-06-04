@@ -205,6 +205,29 @@ describe('change-tracking 훅 → syncChangeLog 기록', () => {
     expect((await db.syncChangeLog.toArray())[0].syncId).toBe(userTxn.syncId)
   })
 
+  it('마커 트랜잭션 안에서 캐치된 ConstraintError는 트랜잭션을 abort시키지 않는다 (병합 안전망 불변식)', async () => {
+    // mergeTableWithRemap의 per-record try/catch 안전망이 성립하려면, 캐치된
+    // 개별 연산 실패가 Dexie 트랜잭션 전체를 죽이지 않아야 한다.
+    const now = new Date().toISOString()
+    const alias = (key: string, syncId: string) => ({
+      syncId, merchantKey: key, categoryId: null, source: 'user-override',
+      usageCount: 1, learnedAt: now, createdAt: now, updatedAt: now,
+    })
+    await runSyncWrite([db.merchantAliases], async () => {
+      await db.merchantAliases.add(alias('스타벅스', 'a-1') as never)
+      try {
+        // &merchantKey 유니크 인덱스 충돌 — 캐치하면 트랜잭션은 계속되어야 한다
+        await db.merchantAliases.add(alias('스타벅스', 'a-2') as never)
+      } catch {
+        // expected ConstraintError
+      }
+      await db.merchantAliases.add(alias('이마트', 'a-3') as never)
+    })
+    const keys = (await db.merchantAliases.toArray()).map((a) => a.merchantKey).sort()
+    expect(keys).toEqual(['스타벅스', '이마트'])
+    await db.merchantAliases.clear()
+  })
+
   it('clearAllData: 로컬 전용 초기화 — 직전 쓰기가 있어도 changelog/톰스톤이 남지 않는다', async () => {
     // 직전 사용자 쓰기 직후 즉시 초기화 → in-flight post-commit 기록과의
     // 경합을 drainChangeTracking이 막는지 검증

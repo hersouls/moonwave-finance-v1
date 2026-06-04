@@ -612,6 +612,7 @@ export async function incrementalUpload(uid: string): Promise<void> {
     // 일시적 실패는 그 그룹만 pending으로 남기고 전진하되, 연속 N회 실패
     // (오프라인 추정)면 중단해 헛수고를 멈춘다.
     let consecutiveFailures = 0
+    let failedGroups = 0
     try {
       // ── 업서트: 테이블별 그룹 → 로컬 일괄 조회 → 배치 업로드 ──
       const upsertsByTable = new Map<SyncableTable, string[]>()
@@ -633,6 +634,7 @@ export async function incrementalUpload(uid: string): Promise<void> {
         } catch (err) {
           console.error(`[sync] incremental upload ${tableName} (${syncIds.length}) failed:`, err)
           consecutiveFailures++
+          failedGroups++
           if (consecutiveFailures >= MAX_CONSECUTIVE_UPLOAD_FAILURES) {
             throw new Error(`[sync] aborting incremental upload after ${consecutiveFailures} consecutive failures (offline?)`)
           }
@@ -658,6 +660,7 @@ export async function incrementalUpload(uid: string): Promise<void> {
         } catch (err) {
           console.error(`[sync] incremental delete ${tableName} (${entries.length}) failed:`, err)
           consecutiveFailures++
+          failedGroups++
           if (consecutiveFailures >= MAX_CONSECUTIVE_UPLOAD_FAILURES) {
             throw new Error(`[sync] aborting incremental upload after ${consecutiveFailures} consecutive failures (offline?)`)
           }
@@ -683,6 +686,12 @@ export async function incrementalUpload(uid: string): Promise<void> {
       .filter(c => c.timestamp < gcCutoff)
       .delete()
 
+    if (failedGroups > 0) {
+      // 일부 그룹이 실패해 pending으로 남음 — '동기화됨'으로 거짓 표시하지
+      // 않는다. 다음 변경/online 이벤트의 재시도가 남은 항목을 처리한다.
+      useAuthStore.getState().setSyncStatus('error')
+      return
+    }
     useAuthStore.getState().setSyncStatus('synced')
     useAuthStore.getState().setLastSyncTime(new Date().toISOString())
   } catch (err) {
@@ -1553,15 +1562,18 @@ function scheduleFkRetry(
  * tiebreaker, two devices writing at the same millisecond would both skip
  * each other's updates and stay diverged forever.
  *
- * 시계 오차 허용(TDL 검증 패턴): updatedAt은 기기 로컬 시계로 찍히므로 기기 간
- * 수 초의 오차가 있다. ±2초 이내의 차이는 '동시 기록'으로 보고 deviceId로
- * 결정적으로 판정한다 — 그렇지 않으면 시계가 느린 기기의 진짜 최신 변경이
- * 모든 기기에서 조용히 패배한다. 트레이드오프: 2초 이내에 두 기기가 같은
- * 레코드를 고치면 나중 변경이 아니라 deviceId 큰 쪽이 이긴다(결정적 수렴 우선).
+ * 시계 오차 허용(TDL 패턴, 창은 더 보수적으로): updatedAt은 기기 로컬 시계로
+ * 찍히므로 기기 간 오차가 있다. ±500ms 이내의 차이는 '동시 기록'으로 보고
+ * deviceId로 결정적으로 판정한다 — 그렇지 않으면 시계 오차만큼 어긋난 동시
+ * 기록이 기기마다 다르게 판정되어 발산한다. 창을 좁게 잡은 이유: 가계부는
+ * 사용자가 2초 안에 같은 레코드를 연속 수정하는 일이 흔한데, 넓은 창은 그
+ * '진짜 나중' 수정을 deviceId 순서로 패배시킬 수 있다. 톰스톤 비교
+ * (deletedAt > updatedAt)에는 이 허용 창이 없다는 비대칭에 유의.
  */
-const CLOCK_SKEW_TOLERANCE_MS = 2000
+const CLOCK_SKEW_TOLERANCE_MS = 500
 
-function shouldApplyCloudUpdate(
+/** @internal Exported for unit tests (LWW + 시계오차 + echo 억제 회귀). */
+export function shouldApplyCloudUpdate(
   cloudUpdatedAt: string | undefined,
   cloudDeviceId: string | undefined,
   localUpdatedAt: string | undefined,
@@ -1588,13 +1600,29 @@ function shouldApplyCloudUpdate(
   return tiebreak()
 }
 
+// 인제스트 트랜잭션 청크 크기 — 초기 스냅샷(수천 docChanges)을 단일 rw
+// 트랜잭션으로 처리하면 그 테이블에 대한 사용자 쓰기가 전체 기간 동안 직렬
+// 대기한다. 청크 단위로 쪼개 쓰기 락 점유를 짧게 유지한다(청크 사이에 사용자
+// 쓰기가 끼어들 수 있고, 그 쓰기는 마커가 없으므로 정상적으로 changelog에
+// 기록된다). 원자성은 청크 단위로 낮아지지만 실시간 경로는 다음 스냅샷이
+// 수습하므로 수용 가능한 트레이드오프.
+const INGEST_CHUNK_SIZE = 300
+
 function subscribeTable(uid: string, tableName: SyncableTable, generation: number, retryCount = 0): void {
   const colRef = collection(firestore, getUserCollectionPath(uid, tableName))
   let hadSnapshot = false
-  const unsub = onSnapshot(colRef, async (snapshot) => {
+  const unsub = onSnapshot(colRef, { includeMetadataChanges: true }, async (snapshot) => {
     hadSnapshot = true
-    lastSnapshotByTable.set(tableName, Date.now())
+    // 서버가 확인한 스냅샷만 staleness 타이머를 리셋한다 — persistentLocalCache는
+    // 재구독 직후 캐시 전용 스냅샷(fromCache=true)을 즉시 발화하는데, 이것까지
+    // 신선함으로 치면 '캐시만 살아있는 죽은 서버 채널'을 헬스체크가 못 잡는다.
+    if (!snapshot.metadata.fromCache) {
+      lastSnapshotByTable.set(tableName, Date.now())
+    }
     if (realtimeSyncPaused) return
+
+    const docChanges = snapshot.docChanges()
+    if (docChanges.length === 0) return // metadata-only 발화 등
 
     const localTable = getLocalTable(tableName)
     // Records whose parent FK resolved successfully (or didn't need resolving)
@@ -1608,8 +1636,10 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
     // 마커 트랜잭션으로 인제스트 — 전역 플래그와 달리, 스냅샷 적용이 도는
     // 동안 끼어드는 사용자 쓰기(별도 트랜잭션)가 changelog에 정상 기록된다.
     try {
+      for (let chunkStart = 0; chunkStart < docChanges.length; chunkStart += INGEST_CHUNK_SIZE) {
+      const chunk = docChanges.slice(chunkStart, chunkStart + INGEST_CHUNK_SIZE)
       await runSyncWrite([localTable, ...getRefTables(tableName)], async () => {
-      for (const change of snapshot.docChanges()) {
+      for (const change of chunk) {
         const cloudData = change.doc.data()
         const syncId = cloudData.syncId as string | undefined
         if (!syncId) continue
@@ -1674,6 +1704,7 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
         }
       }
       })
+      }
     } catch (err) {
       // 트랜잭션 자체가 abort된 드문 경우 — 다음 스냅샷/재구독이 수습한다.
       console.error(`[sync] real-time ${tableName} ingest transaction failed:`, err)
@@ -1711,9 +1742,12 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
 function subscribeTombstones(uid: string, generation: number, retryCount = 0): void {
   const colRef = collection(firestore, `users/${uid}/syncTombstones`)
   let hadSnapshot = false
-  const unsub = onSnapshot(colRef, async (snapshot) => {
+  const unsub = onSnapshot(colRef, { includeMetadataChanges: true }, async (snapshot) => {
     hadSnapshot = true
-    lastSnapshotByTable.set('__tombstones', Date.now())
+    // 서버 확인 스냅샷만 staleness 리셋 — subscribeTable과 동일한 이유.
+    if (!snapshot.metadata.fromCache) {
+      lastSnapshotByTable.set('__tombstones', Date.now())
+    }
     if (realtimeSyncPaused) return
 
     for (const change of snapshot.docChanges()) {
