@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
-import { db } from '@/services/database'
+import { db, isSyncWriteContext } from '@/services/database'
 import { wakeFirestoreNetwork } from '@/lib/firebase'
 import {
   incrementalUpload,
-  getIsSyncWriting,
   startRealtimeSync,
   getLastSnapshotAt,
 } from '@/services/firestoreSync'
@@ -118,9 +117,11 @@ export function useAutoSync() {
     const hookRemovers: (() => void)[] = []
 
     for (const table of tables) {
-      const createHook = () => { if (!getIsSyncWriting()) scheduleSync() }
-      const updateHook = () => { if (!getIsSyncWriting()) scheduleSync() }
-      const deleteHook = () => { if (!getIsSyncWriting()) scheduleSync() }
+      // 동기화 인제스트의 echo는 업로드를 깨우지 않는다 — 훅은 자신이 속한
+      // 트랜잭션의 마커(또는 레거시 전역 플래그)로 출처를 판별한다.
+      const createHook = () => { if (!isSyncWriteContext()) scheduleSync() }
+      const updateHook = () => { if (!isSyncWriteContext()) scheduleSync() }
+      const deleteHook = () => { if (!isSyncWriteContext()) scheduleSync() }
 
       table.hook('creating', createHook)
       table.hook('updating', updateHook)

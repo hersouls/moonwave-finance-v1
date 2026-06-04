@@ -8,7 +8,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { firestore } from '@/lib/firebase'
-import { db, setSyncWritingFlag } from '@/services/database'
+import { db, markSyncTransaction, runSyncWrite } from '@/services/database'
 import { useAuthStore } from '@/stores/authStore'
 import { getDeviceId } from '@/lib/deviceId'
 import { canDeviceWrite } from '@/lib/writeGuard'
@@ -375,10 +375,8 @@ export async function fullDownload(uid: string): Promise<void> {
       }
     }
 
-    syncWritingCount++
-    setSyncWritingFlag(true)
-    try {
-      await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions, db.loans, db.merchantAliases, db.investmentTrades, db.dividends, db.accountInterests], async () => {
+    await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions, db.loans, db.merchantAliases, db.investmentTrades, db.dividends, db.accountInterests], async () => {
+        markSyncTransaction()
         // Clear all tables
         await db.members.clear()
         await db.assetCategories.clear()
@@ -526,10 +524,6 @@ export async function fullDownload(uid: string): Promise<void> {
           await db.merchantAliases.add(rec as unknown as MerchantAlias)
         }
       })
-    } finally {
-      syncWritingCount = Math.max(0, syncWritingCount - 1)
-      setSyncWritingFlag(false)
-    }
 
     useAuthStore.getState().setSyncStatus('synced')
     useAuthStore.getState().setLastSyncTime(new Date().toISOString())
@@ -745,19 +739,14 @@ export async function mergeTableWithRemap(
       }
     }
     if (adoptions.length > 0) {
-      setSyncWritingFlag(true)
-      syncWritingCount++
-      try {
+      await runSyncWrite([localTable], async () => {
         for (const { id, syncId } of adoptions) {
           await (localTable as typeof db.members).update(id, { syncId } as Partial<Member>)
           // Reflect the change in the in-memory copy used below
           const ref = localRecords.find(r => (r as { id?: number }).id === id)
           if (ref) (ref as { syncId?: string }).syncId = syncId
         }
-      } finally {
-        syncWritingCount = Math.max(0, syncWritingCount - 1)
-        setSyncWritingFlag(false)
-      }
+      })
     }
   }
 
@@ -766,9 +755,10 @@ export async function mergeTableWithRemap(
     if (rec.syncId) localMap.set(rec.syncId, { record: rec as unknown as Record<string, unknown>, id: rec.id! })
   }
 
-  setSyncWritingFlag(true)
-  syncWritingCount++
-  try {
+  // 마커 트랜잭션으로 인제스트 — 이 긴 루프가 도는 동안 끼어드는 사용자
+  // 쓰기(별도 트랜잭션)는 정상적으로 changelog에 기록된다. 스코프에는 쓰기
+  // 대상 외에 콜백이 읽는 syncTombstones와 FK 부모 테이블도 포함해야 한다.
+  await runSyncWrite([localTable, db.syncTombstones, ...getRefTables(tableName)], async () => {
     // Case 1: Cloud-only records → download if not locally deleted
     const uniqueKeyField = TABLE_UNIQUE_KEYS[tableName]
     for (const [syncId, cloudRec] of cloudMap) {
@@ -838,10 +828,7 @@ export async function mergeTableWithRemap(
         }
       }
     }
-  } finally {
-    syncWritingCount = Math.max(0, syncWritingCount - 1)
-    setSyncWritingFlag(false)
-  }
+  })
 
   // Case 3: Ensure local-only / newer-local records have syncChangeLog entries (BULK)
   const toUploadEntries = new Map<string, 'create' | 'update'>()
@@ -883,14 +870,12 @@ async function applyCloudTombstones(uid: string): Promise<void> {
   }
   if (snapshot.empty) return
 
-  setSyncWritingFlag(true)
-  syncWritingCount++
-  try {
-    for (const docSnap of snapshot.docs) {
-      const data = docSnap.data() as { tableName: string; syncId: string; deletedAt: string }
-      if (!ALL_TABLES.includes(data.tableName as SyncableTable)) continue
+  for (const docSnap of snapshot.docs) {
+    const data = docSnap.data() as { tableName: string; syncId: string; deletedAt: string }
+    if (!ALL_TABLES.includes(data.tableName as SyncableTable)) continue
 
-      const localTable = getLocalTable(data.tableName as SyncableTable)
+    const localTable = getLocalTable(data.tableName as SyncableTable)
+    await runSyncWrite([localTable], async () => {
       const existing = await (localTable as typeof db.members)
         .where('syncId').equals(data.syncId).first()
 
@@ -900,10 +885,7 @@ async function applyCloudTombstones(uid: string): Promise<void> {
           await (localTable as typeof db.members).delete(existing.id!)
         }
       }
-    }
-  } finally {
-    syncWritingCount = Math.max(0, syncWritingCount - 1)
-    setSyncWritingFlag(false)
+    })
   }
 }
 
@@ -1155,7 +1137,6 @@ export async function uploadSingleRecord<T extends { syncId?: string }>(
 
 let unsubscribers: Unsubscribe[] = []
 let realtimeSyncPaused = false
-let syncWritingCount = 0
 
 // 테이블별 마지막 스냅샷 시각. 전역 단일 타임스탬프를 쓰면 살아 있는 리스너
 // 하나(예: tombstones)가 죽은 리스너의 staleness를 가려 헬스체크가 영원히
@@ -1165,9 +1146,6 @@ const lastSnapshotByTable = new Map<string, number>()
 
 export function pauseRealtimeSync() { realtimeSyncPaused = true }
 export function resumeRealtimeSync() { realtimeSyncPaused = false }
-export function getIsSyncWriting() { return syncWritingCount > 0 }
-export function beginSyncWriting() { syncWritingCount++ }
-export function endSyncWriting() { syncWritingCount = Math.max(0, syncWritingCount - 1) }
 /**
  * 가장 오래된(가장 stale한) 리스너의 마지막 스냅샷 시각(ms epoch).
  * 구독이 없으면 0 — 호출부는 Infinity age로 취급한다.
@@ -1376,20 +1354,15 @@ async function flushPendingChildren(
     const queue = pendingChildren.get(key)
     if (!queue || queue.length === 0) continue
     pendingChildren.delete(key)
-    syncWritingCount++
-    setSyncWritingFlag(true)
-    try {
-      for (const { table, localId, field } of queue) {
-        try {
+    for (const { table, localId, field } of queue) {
+      try {
+        await runSyncWrite([getLocalTable(table)], async () => {
           await (getLocalTable(table) as typeof db.members).update(localId, { [field]: refLocalId } as never)
-          tablesTouched.add(table)
-        } catch (err) {
-          console.error(`[sync] flush deferred FK ${table}#${localId}.${field} failed:`, err)
-        }
+        })
+        tablesTouched.add(table)
+      } catch (err) {
+        console.error(`[sync] flush deferred FK ${table}#${localId}.${field} failed:`, err)
       }
-    } finally {
-      syncWritingCount = Math.max(0, syncWritingCount - 1)
-      setSyncWritingFlag(false)
     }
   }
   for (const t of tablesTouched) {
@@ -1415,6 +1388,13 @@ type DexieTable = typeof db.members | typeof db.assetCategories | typeof db.asse
   typeof db.dailyValues | typeof db.transactionCategories | typeof db.transactions |
   typeof db.budgets | typeof db.goals | typeof db.paymentMethodItems | typeof db.subscriptions |
   typeof db.loans | typeof db.investmentTrades | typeof db.dividends | typeof db.accountInterests | typeof db.merchantAliases
+
+/** tableName의 FK 부모 테이블들 — 인제스트 트랜잭션 스코프(읽기)용. */
+function getRefTables(tableName: SyncableTable): DexieTable[] {
+  const defs = TABLE_FK_DEFS[tableName]
+  if (!defs) return []
+  return [...new Set(defs.map((d) => getLocalTable(d.refTable)))]
+}
 
 function getLocalTable(tableName: SyncableTable): DexieTable {
   const map: Record<SyncableTable, DexieTable> = {
@@ -1487,15 +1467,12 @@ function scheduleFkRetry(
     }
 
     if (Object.keys(updates).length > 0) {
-      syncWritingCount++
-      setSyncWritingFlag(true)
       try {
-        await (localTable as typeof db.members).update(localId, updates)
+        await runSyncWrite([localTable], async () => {
+          await (localTable as typeof db.members).update(localId, updates)
+        })
       } catch (err) {
         console.error(`[sync] FK retry ${tableName}#${localId} failed:`, err)
-      } finally {
-        syncWritingCount = Math.max(0, syncWritingCount - 1)
-        setSyncWritingFlag(false)
       }
       if (stillUnmapped.length === 0) {
         window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: tableName } }))
@@ -1548,9 +1525,10 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
     // `fin-sync-update` during a bulk upload and flicker every consumer.
     let appliedCount = 0
 
-    syncWritingCount++
-    setSyncWritingFlag(true)
+    // 마커 트랜잭션으로 인제스트 — 전역 플래그와 달리, 스냅샷 적용이 도는
+    // 동안 끼어드는 사용자 쓰기(별도 트랜잭션)가 changelog에 정상 기록된다.
     try {
+      await runSyncWrite([localTable, ...getRefTables(tableName)], async () => {
       for (const change of snapshot.docChanges()) {
         const cloudData = change.doc.data()
         const syncId = cloudData.syncId as string | undefined
@@ -1615,9 +1593,10 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
           console.error(`[sync] real-time ${tableName} ${change.type} error:`, err)
         }
       }
-    } finally {
-      syncWritingCount = Math.max(0, syncWritingCount - 1)
-      setSyncWritingFlag(false)
+      })
+    } catch (err) {
+      // 트랜잭션 자체가 abort된 드문 경우 — 다음 스냅샷/재구독이 수습한다.
+      console.error(`[sync] real-time ${tableName} ingest transaction failed:`, err)
     }
 
     // Flush any children that were waiting on parents we just settled.
@@ -1657,17 +1636,15 @@ function subscribeTombstones(uid: string, generation: number, retryCount = 0): v
     lastSnapshotByTable.set('__tombstones', Date.now())
     if (realtimeSyncPaused) return
 
-    syncWritingCount++
-    setSyncWritingFlag(true)
-    try {
-      for (const change of snapshot.docChanges()) {
-        if (change.type !== 'added') continue
+    for (const change of snapshot.docChanges()) {
+      if (change.type !== 'added') continue
 
-        const data = change.doc.data() as { tableName: string; syncId: string; deletedAt: string }
-        if (!ALL_TABLES.includes(data.tableName as SyncableTable)) continue
+      const data = change.doc.data() as { tableName: string; syncId: string; deletedAt: string }
+      if (!ALL_TABLES.includes(data.tableName as SyncableTable)) continue
 
-        try {
-          const localTable = getLocalTable(data.tableName as SyncableTable)
+      try {
+        const localTable = getLocalTable(data.tableName as SyncableTable)
+        await runSyncWrite([localTable], async () => {
           const existing = await (localTable as typeof db.members)
             .where('syncId').equals(data.syncId).first()
           if (existing) {
@@ -1680,13 +1657,10 @@ function subscribeTombstones(uid: string, generation: number, retryCount = 0): v
               await (localTable as typeof db.members).delete(existing.id!)
             }
           }
-        } catch (err) {
-          console.error(`[sync] tombstone apply ${data.tableName}/${data.syncId} error:`, err)
-        }
+        })
+      } catch (err) {
+        console.error(`[sync] tombstone apply ${data.tableName}/${data.syncId} error:`, err)
       }
-    } finally {
-      syncWritingCount = Math.max(0, syncWritingCount - 1)
-      setSyncWritingFlag(false)
     }
 
     if (snapshot.docChanges().length > 0) {

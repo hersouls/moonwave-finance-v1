@@ -9,7 +9,7 @@
 // 단언은 vi.waitFor로 수렴을 기다린다.
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import Dexie from 'dexie'
-import { db, addTransaction, bulkSetDailyValues, setSyncWritingFlag, clearAllData, drainChangeTracking } from '@/services/database'
+import { db, addTransaction, bulkSetDailyValues, setSyncWritingFlag, clearAllData, drainChangeTracking, runSyncWrite } from '@/services/database'
 import type { Transaction, DailyValue } from '@/lib/types'
 
 function makeTxn(): Omit<Transaction, 'id'> {
@@ -185,6 +185,24 @@ describe('change-tracking 훅 → syncChangeLog 기록', () => {
     await db.transactions.put(makeTxn() as Transaction)
     await waitForChangeLogCount(1)
     expect((await db.syncChangeLog.toArray())[0].operation).toBe('create')
+  })
+
+  it('runSyncWrite(마커 트랜잭션): 동기화 쓰기는 changelog 미기록, 동시 사용자 쓰기는 기록된다', async () => {
+    const userTxn = makeTxn()
+    // 동기화 인제스트(마커 트랜잭션)와 사용자 쓰기를 동시에 시작 —
+    // 전역 플래그 방식이라면 인제스트가 진행 중인 동안 끼어든 사용자
+    // 쓰기가 동기화 쓰기로 오인되어 changelog가 누락된다.
+    const syncIngest = runSyncWrite([db.transactions], async () => {
+      for (let i = 0; i < 20; i++) {
+        await db.transactions.add(makeTxn() as Transaction)
+      }
+    })
+    const userWrite = db.transactions.add(userTxn as Transaction)
+    await Promise.all([syncIngest, userWrite])
+
+    expect(await db.transactions.count()).toBe(21)
+    await waitForChangeLogCount(1) // 사용자 쓰기 1건만
+    expect((await db.syncChangeLog.toArray())[0].syncId).toBe(userTxn.syncId)
   })
 
   it('clearAllData: 로컬 전용 초기화 — 직전 쓰기가 있어도 changelog/톰스톤이 남지 않는다', async () => {
