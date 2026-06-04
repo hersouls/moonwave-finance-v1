@@ -36,7 +36,12 @@ export function useAutoSync() {
     const scheduleSync = () => {
       if (timerRef.current) clearTimeout(timerRef.current)
       timerRef.current = setTimeout(async () => {
-        if (syncInProgressRef.current) return
+        // 업로드 진행 중이면 버리지 말고 재예약 — 기존에는 그냥 return해서
+        // 진행 중 발생한 변경이 다음 사용자 쓰기 전까지 업로드되지 않았다.
+        if (syncInProgressRef.current) {
+          scheduleSync()
+          return
+        }
         syncInProgressRef.current = true
         try {
           await incrementalUpload(user.uid)
