@@ -245,7 +245,7 @@ export function AssetTypeDonutChart({ trades }: { trades: InvestmentTrade[] }) {
           {breakdown.slice(0, 6).map(b => (
             <div key={b.type} className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: b.color, boxShadow: `0 0 6px ${b.color}40` }} />
-              <span className="text-micro text-sub truncate flex-1">{b.type}</span>
+              <span className="text-label3-medium text-sub truncate flex-1">{b.type}</span>
               <span className="text-micro-bold text-heading tabular-nums">{formatPercent(b.share, 0)}</span>
             </div>
           ))}

@@ -71,10 +71,10 @@ export function CategoryBreakdown({ transactions, type, budgets }: CategoryBreak
             </div>
             {b.budget !== null && (
               <div className="flex items-center justify-between mt-1">
-                <span className="text-label4 text-disabled">
+                <span className="text-label3-medium text-disabled">
                   예산 {formatKoreanUnit(b.budget)}
                 </span>
-                <span className={`text-label4 font-medium tabular-nums ${
+                <span className={`text-label3-medium tabular-nums ${
                   b.total > b.budget
                     ? 'text-status-danger'
                     : 'text-status-success'

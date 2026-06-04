@@ -439,9 +439,9 @@ function GroupRow({
           <div className="flex items-center gap-2 mt-0.5">
             {category ? (
               <>
-                <span className="text-label4 text-sub truncate">{category.name}</span>
+                <span className="text-label3-medium text-sub truncate">{category.name}</span>
                 {!overridden && <ConfidenceMeter confidence={group.suggestion.confidence} showLabel={false} />}
-                {reason && <span className="text-label4 text-disabled truncate hidden sm:inline">· {reason}</span>}
+                {reason && <span className="text-body3 text-disabled truncate hidden sm:inline">· {reason}</span>}
               </>
             ) : (
               <span className="text-label3-medium text-status-warning font-semibold">미해결 — 카테고리 선택 필요</span>

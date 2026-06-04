@@ -970,7 +970,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                               {cat.name}
                             </p>
                             {aiSuggestion.reason && (
-                              <p className={clsx('text-label4 leading-tight truncate mt-0.5', selected ? 'text-white/80' : 'text-sub')}>
+                              <p className={clsx('text-body3 leading-tight truncate mt-0.5', selected ? 'text-white/80' : 'text-sub')}>
                                 {aiSuggestion.reason}
                               </p>
                             )}

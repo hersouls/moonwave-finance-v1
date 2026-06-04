@@ -915,7 +915,7 @@ body {
   /* 초소형 화면 밀도: 클래스별 !important 대신 토큰 자체를 한 단계 낮춰
    * 모든 소비처가 일관되게 줄어들게 한다. */
   :root {
-    --typo-body2-size: 14px;
+    --typo-body2-size: 13px;
     --typo-title1-size: 19px;
     --typo-title2-size: 17px;
   }

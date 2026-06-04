@@ -1088,15 +1088,15 @@ function MonthlyTrendLine({ data }: { data: SubscriptionStats['monthlyTrend'] })
         {/* X-axis labels (first/middle/last) */}
         {data.length > 0 && (
           <g>
-            <text x={padding.left} y={h - 4} fontSize="9" fill="var(--text-muted)" className="font-medium">
+            <text x={padding.left} y={h - 4} fontSize="10" fill="var(--text-muted)" className="font-medium">
               {monthShort(data[0].month)}
             </text>
             {data.length >= 3 && (
-              <text x={w / 2} y={h - 4} fontSize="9" fill="var(--text-muted)" textAnchor="middle" className="font-medium">
+              <text x={w / 2} y={h - 4} fontSize="10" fill="var(--text-muted)" textAnchor="middle" className="font-medium">
                 {monthShort(data[Math.floor(data.length / 2)].month)}
               </text>
             )}
-            <text x={w - padding.right} y={h - 4} fontSize="9" fill="var(--text-muted)" textAnchor="end" className="font-medium">
+            <text x={w - padding.right} y={h - 4} fontSize="10" fill="var(--text-muted)" textAnchor="end" className="font-medium">
               {monthShort(data[data.length - 1].month)}
             </text>
           </g>

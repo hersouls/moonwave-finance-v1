@@ -102,7 +102,7 @@ export function DayPreviewPopover({
       {/* Top categories for the day */}
       {summary.expense > 0 && summary.expenseCategories.length > 0 && (
         <div className="mb-2">
-          <p className="text-label4 text-sub uppercase tracking-wide mb-1">지출 카테고리</p>
+          <p className="text-label3 text-sub uppercase tracking-wide mb-1">지출 카테고리</p>
           <div className="space-y-1">
             {summary.expenseCategories.slice(0, 3).map((c, i) => {
               const color = getCategoryColor(c.categoryId, categories, calFallback.expense)
@@ -131,7 +131,7 @@ export function DayPreviewPopover({
       {/* Transactions preview */}
       {dayTxns.length > 0 && (
         <div className="pt-2 border-t border-[var(--border-subtle)]">
-          <p className="text-label4 text-sub uppercase tracking-wide mb-1">최근 거래</p>
+          <p className="text-label3 text-sub uppercase tracking-wide mb-1">최근 거래</p>
           <div className="space-y-0.5">
             {dayTxns.map((t) => {
               const isIncome = t.type === 'income'

@@ -1023,17 +1023,17 @@ function PasteImportModal({ isOpen, onClose, onImportTrades, onImportDividends, 
                 <div className="space-y-1 max-h-60 overflow-y-auto mb-4">
                   {importType === 'trades' ? parsedTrades.map((t, i) => (
                     <div key={i} className="list-item card-fill rounded-lg">
-                      <div><p className="text-body3-bold text-heading">{t.stockName}</p><p className="text-micro text-sub">{t.sellDate} · {formatShares(t.sellQuantity)}주</p></div>
+                      <div><p className="text-body3-bold text-heading">{t.stockName}</p><p className="text-label3-medium text-sub">{t.sellDate} · {formatShares(t.sellQuantity)}주</p></div>
                       <span className={clsx('text-body3-bold financial-value', t.totalProfit >= 0 ? 'value-positive' : 'value-negative')}>{formatChange(t.totalProfit)}</span>
                     </div>
                   )) : importType === 'dividends' ? parsedDivs.map((d, i) => (
                     <div key={i} className="list-item card-fill rounded-lg">
-                      <div><p className="text-body3-bold text-heading">{d.stockName}</p><p className="text-micro text-sub">{d.paymentDate} · {formatShares(d.quantity)}주</p></div>
+                      <div><p className="text-body3-bold text-heading">{d.stockName}</p><p className="text-label3-medium text-sub">{d.paymentDate} · {formatShares(d.quantity)}주</p></div>
                       <span className="text-body3-bold financial-value value-positive">+{formatKoreanUnit(d.dividendAmount)}원</span>
                     </div>
                   )) : parsedInterests.map((r, i) => (
                     <div key={i} className="list-item card-fill rounded-lg">
-                      <div><p className="text-body3-bold text-heading">{r.interestType}</p><p className="text-micro text-sub">{r.depositDate} · 연 {r.interestRate}%</p></div>
+                      <div><p className="text-body3-bold text-heading">{r.interestType}</p><p className="text-label3-medium text-sub">{r.depositDate} · 연 {r.interestRate}%</p></div>
                       <span className="text-body3-bold financial-value value-positive">+{formatKoreanUnit(r.interestAmount)}원</span>
                     </div>
                   ))}
@@ -1375,37 +1375,37 @@ function InvestmentDashboard({
                 </h3>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                   <div>
-                    <p className="text-micro text-disabled">평균 수익 (승)</p>
+                    <p className="text-label3-medium text-disabled">평균 수익 (승)</p>
                     <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>
                       +{formatKoreanUnit(Math.round(insights.tradeEfficiency.avgWinProfit))}원
                     </p>
                   </div>
                   <div>
-                    <p className="text-micro text-disabled">평균 손실 (패)</p>
+                    <p className="text-label3-medium text-disabled">평균 손실 (패)</p>
                     <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-negative)' }}>
                       −{formatKoreanUnit(Math.round(insights.tradeEfficiency.avgLossAmount))}원
                     </p>
                   </div>
                   <div>
-                    <p className="text-micro text-disabled">손익비</p>
+                    <p className="text-label3-medium text-disabled">손익비</p>
                     <p className="text-body3 font-bold tabular-nums text-heading">
                       {insights.tradeEfficiency.profitFactor === Infinity ? '∞' : insights.tradeEfficiency.profitFactor.toFixed(2)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-micro text-disabled">평균 수익률</p>
+                    <p className="text-label3-medium text-disabled">평균 수익률</p>
                     <p className="text-body3 font-bold tabular-nums text-heading">
                       {insights.tradeEfficiency.avgHoldReturn >= 0 ? '+' : ''}{insights.tradeEfficiency.avgHoldReturn.toFixed(1)}%
                     </p>
                   </div>
                   <div>
-                    <p className="text-micro text-disabled">최대 연승</p>
+                    <p className="text-label3-medium text-disabled">최대 연승</p>
                     <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>
                       {insights.tradeEfficiency.maxConsecutiveWins}연승
                     </p>
                   </div>
                   <div>
-                    <p className="text-micro text-disabled">최대 연패</p>
+                    <p className="text-label3-medium text-disabled">최대 연패</p>
                     <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-negative)' }}>
                       {insights.tradeEfficiency.maxConsecutiveLosses}연패
                     </p>
@@ -1421,11 +1421,11 @@ function InvestmentDashboard({
                   <BarChart3 className="w-4 h-4" style={{ color: 'var(--color-primary-500)' }} />수익 전망
                 </h3>
                 <div>
-                  <p className="text-micro text-disabled">월 평균 수익</p>
+                  <p className="text-label3-medium text-disabled">월 평균 수익</p>
                   <p className="text-body3 font-bold tabular-nums text-heading">{formatKRW(Math.round(insights.projectedIncome.monthlyAvg))}</p>
                 </div>
                 <div className="mt-2">
-                  <p className="text-micro text-disabled">연간 예상</p>
+                  <p className="text-label3-medium text-disabled">연간 예상</p>
                   <p className="text-title2 font-extrabold tabular-nums text-heading">
                     {formatKoreanUnit(Math.round(insights.projectedIncome.annualProjection))}원
                   </p>
@@ -1489,7 +1489,7 @@ function InvestmentDashboard({
                     {insights.concentration.riskLevel === 'high' ? '높음' : insights.concentration.riskLevel === 'medium' ? '보통' : '낮음'}
                   </span>
                 </div>
-                <p className="text-micro text-disabled mb-2">상위 5종목이 수익의 <span className="font-bold text-heading">{insights.concentration.top5Share.toFixed(0)}%</span>를 차지</p>
+                <p className="text-body3 text-disabled mb-2">상위 5종목이 수익의 <span className="font-bold text-heading">{insights.concentration.top5Share.toFixed(0)}%</span>를 차지</p>
                 <div className="flex h-2 rounded-full overflow-hidden bg-surface-tertiary mb-2">
                   {insights.concentration.top5Stocks.map((s, i) => {
                     const totalP = insights.concentration.top5Stocks.reduce((sum, x) => sum + x.profit, 0)
@@ -1499,9 +1499,9 @@ function InvestmentDashboard({
                 </div>
                 <div className="space-y-1">
                   {insights.concentration.top5Stocks.map(s => (
-                    <div key={s.name} className="flex items-center justify-between text-micro">
-                      <span className="text-sub truncate flex-1">{s.name}</span>
-                      <span className="font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>{formatKRW(s.profit)}</span>
+                    <div key={s.name} className="flex items-center justify-between">
+                      <span className="text-label3-medium text-sub truncate flex-1">{s.name}</span>
+                      <span className="text-label3 tabular-nums" style={{ color: 'var(--value-positive)' }}>{formatKRW(s.profit)}</span>
                     </div>
                   ))}
                 </div>
@@ -1518,18 +1518,18 @@ function InvestmentDashboard({
                   <Landmark className="w-4 h-4" style={{ color: 'var(--value-negative)' }} />수수료·세금
                 </h3>
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-micro">
-                    <span className="text-disabled">수수료</span>
-                    <span className="font-bold tabular-nums text-heading">{formatKRW(insights.feeAndTax.totalFees)}</span>
+                  <div className="flex justify-between">
+                    <span className="text-label3-medium text-disabled">수수료</span>
+                    <span className="text-body3 font-bold tabular-nums text-heading">{formatKRW(insights.feeAndTax.totalFees)}</span>
                   </div>
-                  <div className="flex justify-between text-micro">
-                    <span className="text-disabled">세금 합계</span>
-                    <span className="font-bold tabular-nums text-heading">{formatKRW(insights.feeAndTax.totalTaxAll)}</span>
+                  <div className="flex justify-between">
+                    <span className="text-label3-medium text-disabled">세금 합계</span>
+                    <span className="text-body3 font-bold tabular-nums text-heading">{formatKRW(insights.feeAndTax.totalTaxAll)}</span>
                   </div>
                   <div className="pt-1.5 border-t border-[color:var(--border-subtle)]">
-                    <div className="flex justify-between text-micro">
-                      <span className="text-disabled">실효 세율</span>
-                      <span className="font-bold tabular-nums" style={{ color: 'var(--value-negative)' }}>{insights.feeAndTax.effectiveTaxRate.toFixed(1)}%</span>
+                    <div className="flex justify-between">
+                      <span className="text-label3-medium text-disabled">실효 세율</span>
+                      <span className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-negative)' }}>{insights.feeAndTax.effectiveTaxRate.toFixed(1)}%</span>
                     </div>
                   </div>
                 </div>
@@ -1543,17 +1543,17 @@ function InvestmentDashboard({
                   <Banknote className="w-4 h-4" style={{ color: 'var(--chart-series-3)' }} />배당 분석
                 </h3>
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-micro">
-                    <span className="text-disabled">연간 예상</span>
-                    <span className="font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>{formatKRW(Math.round(insights.dividendInsight.annualizedRate))}</span>
+                  <div className="flex justify-between">
+                    <span className="text-label3-medium text-disabled">연간 예상</span>
+                    <span className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>{formatKRW(Math.round(insights.dividendInsight.annualizedRate))}</span>
                   </div>
-                  <div className="flex justify-between text-micro">
-                    <span className="text-disabled">종목 수</span>
-                    <span className="font-bold tabular-nums text-heading">{insights.dividendInsight.uniqueStocks}종</span>
+                  <div className="flex justify-between">
+                    <span className="text-label3-medium text-disabled">종목 수</span>
+                    <span className="text-body3 font-bold tabular-nums text-heading">{insights.dividendInsight.uniqueStocks}종</span>
                   </div>
-                  <div className="flex justify-between text-micro">
-                    <span className="text-disabled">TOP1 비중</span>
-                    <span className={clsx('font-bold tabular-nums', insights.dividendInsight.topStockShare > 50 ? 'text-status-warning' : 'text-heading')}>
+                  <div className="flex justify-between">
+                    <span className="text-label3-medium text-disabled">TOP1 비중</span>
+                    <span className={clsx('text-body3 font-bold tabular-nums', insights.dividendInsight.topStockShare > 50 ? 'text-status-warning' : 'text-heading')}>
                       {insights.dividendInsight.topStockShare.toFixed(0)}%
                     </span>
                   </div>
