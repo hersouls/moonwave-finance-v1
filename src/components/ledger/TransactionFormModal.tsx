@@ -295,7 +295,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                 <h2 className="text-title2 font-bold text-heading tracking-tight truncate">
                   {mode === 'edit' ? '거래 수정' : '새 거래 기록'}
                 </h2>
-                <p className="text-caption text-sub font-medium mt-0.5">
+                <p className="text-body3 text-sub font-medium mt-0.5">
                   {selectedCategory?.name ?? (isExpense ? '지출' : '수입')}
                   {selectedMember && (
                     <>
@@ -328,7 +328,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
               {isExpense && numericAmount > 0 && '−'}
               {animatedAmount.toLocaleString('ko-KR')}
             </span>
-            <span className="text-body3-semi font-bold text-sub">원</span>
+            <span className="text-body3-bold text-sub">원</span>
             {numericAmount > 0 && (
               <span className="text-caption text-disabled font-medium ml-auto">
                 {formatKoreanUnit(numericAmount)}원
@@ -355,7 +355,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                       onClick={() => applyTemplate(tmpl)}
                       whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
                       transition={springSnappy}
-                      className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-semibold transition-all ring-1 ring-[color:color-mix(in_srgb,currentColor_18%,transparent)]"
+                      className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-label3-medium font-semibold transition-all ring-1 ring-[color:color-mix(in_srgb,currentColor_18%,transparent)]"
                       style={{
                         background: `color-mix(in srgb, ${c} 10%, var(--surface-primary))`,
                         color: `color-mix(in srgb, ${c} 80%, var(--text-heading))`,
@@ -383,7 +383,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                     onClick={() => applyLoanInterest(loan.id!)}
                     whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
                     transition={springSnappy}
-                    className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-semibold bg-status-danger-soft text-status-danger ring-1 ring-[color:var(--status-danger-border)] hover:brightness-95 transition-all"
+                    className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-label3-medium font-semibold bg-status-danger-soft text-status-danger ring-1 ring-[color:var(--status-danger-border)] hover:brightness-95 transition-all"
                   >
                     <Landmark className="w-3.5 h-3.5" />
                     {loan.name}
@@ -467,7 +467,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                 }}
               />
               <span
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-body3 font-bold pointer-events-none"
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-body3-bold pointer-events-none"
                 style={{ color: numericAmount > 0 ? accentColor : 'var(--text-disabled)' }}
               >
                 원
@@ -485,7 +485,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                   }}
                   whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
                   transition={springSnappy}
-                  className="flex-shrink-0 px-3 py-1 rounded-full text-caption font-semibold tabular-nums bg-surface-tertiary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)] transition-all"
+                  className="flex-shrink-0 px-3 py-1 rounded-full text-label3-medium font-semibold tabular-nums bg-surface-tertiary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)] transition-all"
                 >
                   +{formatKoreanUnit(q)}
                 </motion.button>
@@ -496,7 +496,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                 whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
                 transition={springSnappy}
                 disabled={numericAmount === 0}
-                className="flex-shrink-0 px-3 py-1 rounded-full text-caption font-semibold tabular-nums bg-surface-tertiary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)] transition-all disabled:opacity-40 disabled:pointer-events-none"
+                className="flex-shrink-0 px-3 py-1 rounded-full text-label3-medium font-semibold tabular-nums bg-surface-tertiary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)] transition-all disabled:opacity-40 disabled:pointer-events-none"
               >
                 초기화
               </motion.button>
@@ -518,7 +518,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                   <TrendingUp className="w-4 h-4 text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]" />
                   <span>
                     <span className="text-body3 font-semibold text-heading block leading-tight">환급 거래</span>
-                    <span className="text-caption text-sub">같은 카테고리에서 받은 환불을 음수로 기록</span>
+                    <span className="text-body3 text-sub">같은 카테고리에서 받은 환불을 음수로 기록</span>
                   </span>
                 </span>
                 <div className="relative">
@@ -548,7 +548,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                     onChange={(e) => setCategorySearch(e.target.value)}
                     placeholder="검색"
                     aria-label="카테고리 검색"
-                    className="w-full pl-7 pr-2 h-7 rounded-full text-caption bg-surface-tertiary ring-1 ring-base focus:ring-[color:var(--color-primary-400)] outline-none transition-all"
+                    className="w-full pl-7 pr-2 h-7 rounded-full text-body3 bg-surface-tertiary ring-1 ring-base focus:ring-[color:var(--color-primary-400)] outline-none transition-all"
                   />
                 </div>
               )}
@@ -593,7 +593,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                     </div>
                     <span
                       className={clsx(
-                        'text-caption font-semibold leading-tight text-center line-clamp-1',
+                        'text-label3-medium font-semibold leading-tight text-center line-clamp-1',
                         isActive ? 'text-heading' : 'text-sub',
                       )}
                     >
@@ -611,7 +611,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                 )
               })}
               {renderedCategories.length === 0 && (
-                <div className="col-span-3 xs:col-span-4 sm:col-span-5 py-6 text-center text-caption text-disabled">
+                <div className="col-span-3 xs:col-span-4 sm:col-span-5 py-6 text-center text-body3 text-disabled">
                   <Sparkles className="w-4 h-4 mx-auto mb-1.5 opacity-60" />
                   검색 결과 없음
                 </div>
@@ -621,7 +621,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
               <button
                 type="button"
                 onClick={() => setShowAllCategories(true)}
-                className="mt-2 text-caption text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] font-semibold hover:underline"
+                className="mt-2 text-label3-medium text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] font-semibold hover:underline"
               >
                 +{visibleCategories.length - CATEGORY_COLLAPSED_LIMIT}개 더보기
               </button>
@@ -641,7 +641,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                     transition={springSnappy}
                     aria-pressed={memberId === ''}
                     className={clsx(
-                      'inline-flex items-center gap-1.5 px-3 h-9 rounded-full text-caption font-semibold ring-1 transition-all',
+                      'inline-flex items-center gap-1.5 px-3 h-9 rounded-full text-label3-medium font-semibold ring-1 transition-all',
                       memberId === ''
                         ? 'bg-surface-primary text-heading ring-[color:var(--border-strong)] shadow-[0_2px_8px_rgba(0,0,0,0.06)]'
                         : 'bg-surface-tertiary text-sub ring-transparent hover:bg-[var(--hover-bg)]',
@@ -664,7 +664,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                         transition={springSnappy}
                         aria-pressed={isActive}
                         className={clsx(
-                          'inline-flex items-center gap-1.5 pl-1 pr-3.5 h-9 rounded-full text-caption font-bold transition-all',
+                          'inline-flex items-center gap-1.5 pl-1 pr-3.5 h-9 rounded-full text-label3 transition-all',
                           isActive ? 'text-white' : 'text-sub hover:brightness-95',
                         )}
                         style={
@@ -717,7 +717,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                   whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
                   transition={springSnappy}
                   className={clsx(
-                    'px-4 py-1.5 rounded-full text-caption font-semibold ring-1',
+                    'px-4 py-1.5 rounded-full text-label3-medium font-semibold ring-1',
                     date === chip.value
                       ? 'bg-[color:var(--color-primary-600)] text-white ring-transparent shadow-[0_4px_14px_color-mix(in_srgb,var(--color-primary-500)_28%,transparent)]'
                       : 'bg-surface-tertiary text-sub ring-transparent hover:bg-[var(--hover-bg)]',
@@ -789,7 +789,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                     transition={springSnappy}
                     aria-pressed={isActive}
                     className={clsx(
-                      'inline-flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-2xl text-caption font-semibold transition-all',
+                      'inline-flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-2xl text-label3-medium font-semibold transition-all',
                       isActive
                         ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
                         : 'bg-surface-tertiary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -823,7 +823,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                             whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
                             transition={springSnappy}
                             className={clsx(
-                              'inline-flex items-center gap-1 px-3 h-7 rounded-full text-caption font-semibold transition-all',
+                              'inline-flex items-center gap-1 px-3 h-7 rounded-full text-label3-medium font-semibold transition-all',
                               paymentMethodItemId === item.id
                                 ? 'bg-[color:var(--color-primary-100)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/40 dark:text-[color:var(--color-primary-300)] ring-1 ring-[color:var(--color-primary-300)] dark:ring-[color:var(--color-primary-700)]'
                                 : 'bg-surface-secondary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -855,7 +855,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                         value={paymentMethodDetail}
                         onChange={(e) => setPaymentMethodDetail(e.target.value)}
                         placeholder="카드/계좌명 (예: 신한카드)"
-                        className="w-full px-3.5 h-10 rounded-xl bg-surface-primary text-caption text-heading placeholder:text-disabled outline-none ring-1 ring-base focus:ring-[color:var(--color-primary-400)] focus:shadow-[0_0_0_4px_color-mix(in_oklch,var(--color-primary-500)_14%,transparent)] transition-all"
+                        className="w-full px-3.5 h-10 rounded-xl bg-surface-primary text-body3 text-heading placeholder:text-disabled outline-none ring-1 ring-base focus:ring-[color:var(--color-primary-400)] focus:shadow-[0_0_0_4px_color-mix(in_oklch,var(--color-primary-500)_14%,transparent)] transition-all"
                       />
                     )}
                   </div>
@@ -985,7 +985,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                             <button
                               type="button"
                               onClick={() => { setRecurEndDate(''); setShowRecurEndCalendar(false) }}
-                              className="mb-2 px-3 py-1.5 rounded-full text-caption font-semibold bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)] transition-colors"
+                              className="mb-2 px-3 py-1.5 rounded-full text-label3-medium font-semibold bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)] transition-colors"
                             >
                               종료일 해제
                             </button>

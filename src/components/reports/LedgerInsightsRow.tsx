@@ -98,11 +98,11 @@ export function LedgerInsightsRow({ insights, onAnchor }: Props) {
                   <Icon className={clsx('w-4 h-4', tone.iconColor)} aria-hidden="true" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={clsx('text-caption font-bold leading-snug', tone.titleColor)}>
+                  <p className={clsx('text-body3-bold leading-snug', tone.titleColor)}>
                     {it.title}
                   </p>
                   {it.detail && (
-                    <p className="text-label4 text-sub mt-0.5 leading-snug truncate">
+                    <p className="text-body3 text-sub mt-0.5 leading-snug truncate">
                       {it.detail}
                     </p>
                   )}

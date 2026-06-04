@@ -130,7 +130,7 @@ export function CashFlowTimeline({ analysis }: Props) {
             <CalendarDays className="w-4 h-4" style={{ color: accent }} />
           </div>
           <div className="min-w-0">
-            <h3 className="text-body3 font-extrabold text-heading tracking-tight">일별 누적 지출</h3>
+            <h3 className="text-title3 text-heading tracking-tight">일별 누적 지출</h3>
             <p className="text-caption text-sub mt-0.5">
               {isCurrent
                 ? `오늘 ${cashFlow.todayIndex}일차 · 일평균 ${formatKoreanUnit(cashFlow.dailyAvgSoFar)}원`
@@ -142,7 +142,7 @@ export function CashFlowTimeline({ analysis }: Props) {
         {isCurrent && cashFlow.projectedTotal > 0 && (
           <div className="text-right flex-shrink-0">
             <p className="text-label4 font-bold leading-none uppercase tracking-wider text-sub">예상 월말</p>
-            <p className="text-body3 font-extrabold tabular-nums" style={{ color: accent }}>
+            <p className="text-body3-bold tabular-nums" style={{ color: accent }}>
               {formatKoreanUnit(cashFlow.projectedTotal)}원
             </p>
           </div>

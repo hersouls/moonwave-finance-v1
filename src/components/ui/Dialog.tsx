@@ -112,11 +112,11 @@ interface DialogHeaderProps {
 export function DialogHeader({ title, description, onClose }: DialogHeaderProps) {
   return (
     <div className="relative">
-      <DialogTitle className="text-balance text-title2 text-heading sm:text-base/6">
+      <DialogTitle className="text-balance text-title2 text-heading">
         {title}
       </DialogTitle>
       {description && (
-        <Description className="mt-2 text-pretty text-sm/6 text-sub">
+        <Description className="mt-2 text-pretty text-body3 text-sub">
           {description}
         </Description>
       )}

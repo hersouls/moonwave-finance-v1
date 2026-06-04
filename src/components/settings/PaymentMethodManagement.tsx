@@ -114,7 +114,7 @@ export function PaymentMethodManagement() {
   return (
     <div>
       <h3 className="text-body3-semi text-heading mb-3">거래수단 관리</h3>
-      <p className="text-caption text-sub mb-4">
+      <p className="text-body3 text-sub mb-4">
         자주 사용하는 카드나 계좌를 등록하면 거래 기록 시 빠르게 선택할 수 있습니다.
       </p>
 
@@ -129,7 +129,7 @@ export function PaymentMethodManagement() {
                 </h4>
                 <button
                   onClick={() => openCreate(group.type)}
-                  className="flex items-center gap-1 text-caption text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+                  className="flex items-center gap-1 text-label3-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   추가
@@ -142,7 +142,7 @@ export function PaymentMethodManagement() {
                       key={item.id}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-secondary group"
                     >
-                      <span className="flex-1 text-sm text-heading">
+                      <span className="flex-1 text-body2 text-heading">
                         {item.name}
                         {item.memo && (
                           <span className="ml-2 text-caption text-disabled">({item.memo})</span>
@@ -172,7 +172,7 @@ export function PaymentMethodManagement() {
                   ))}
                 </div>
               ) : (
-                <p className="text-caption text-disabled px-3 py-2">
+                <p className="text-body3 text-disabled px-3 py-2">
                   등록된 {group.label}이(가) 없습니다.
                 </p>
               )}
@@ -237,10 +237,10 @@ export function PaymentMethodManagement() {
       <Dialog open={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)} size="sm">
         <DialogHeader title="거래수단 삭제" onClose={() => setIsDeleteConfirmOpen(false)} />
         <DialogBody>
-          <p className="text-sm text-sub">
-            <span className="font-medium text-heading">{deletingItem?.name}</span>을(를) 삭제하시겠습니까?
+          <p className="text-body3 text-sub">
+            <span className="text-body3-semi text-heading">{deletingItem?.name}</span>을(를) 삭제하시겠습니까?
           </p>
-          <p className="mt-2 text-caption text-sub">
+          <p className="mt-2 text-body3 text-sub">
             관련 거래에서 이 거래수단 정보가 제거됩니다.
           </p>
         </DialogBody>

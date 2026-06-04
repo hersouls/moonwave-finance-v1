@@ -24,7 +24,7 @@ export function CompletionStep({ onComplete }: CompletionStepProps) {
       </div>
       <h2 className="text-heading2 text-heading mb-2">설정 완료!</h2>
       <p className="text-body3 text-sub mb-2 text-center">FIN을 시작할 준비가 되었습니다.</p>
-      <p className="text-caption text-disabled mb-10 text-center">대시보드에서 자산을 추가하고 매일 기록해보세요.</p>
+      <p className="text-body3 text-disabled mb-10 text-center">대시보드에서 자산을 추가하고 매일 기록해보세요.</p>
 
       <Button variant="primary" size="lg" onClick={onComplete} className="w-full max-w-sm" rightIcon={<ArrowRight className="w-5 h-5" />}>
         시작하기

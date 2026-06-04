@@ -39,7 +39,7 @@ export function MemberSetupStep({ onNext, onBack }: MemberSetupStepProps) {
       <div className="w-full max-w-sm space-y-2 mb-6">
         {members.map(m => (
           <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl bg-surface-secondary">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: m.color }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-body3 font-bold" style={{ backgroundColor: m.color }}>
               {m.name.charAt(0)}
             </div>
             <span className="flex-1 text-body3 text-heading">{m.name}</span>

@@ -224,7 +224,7 @@ function ActionButton({ icon: Icon, label, color, variant = 'primary', onClick }
         <Icon className="w-4 h-4" style={{ color }} />
       </div>
       <span
-        className="text-caption font-semibold"
+        className="text-label3-medium font-semibold"
         style={{ color: variant === 'danger' ? 'var(--value-negative)' : 'var(--text-heading)' }}
       >
         {label}

@@ -38,7 +38,7 @@ export function NetWorthTracker() {
       <div className="relative z-10">
         {/* Header */}
         <div className="mb-3 flex items-center justify-between gap-3">
-          <span className="inline-flex items-center gap-1.5 text-body3 font-semibold text-white/80">
+          <span className="inline-flex items-center gap-1.5 text-body3-semi text-white/80">
             <Activity className="h-4 w-4" /> 자산증식 추세
           </span>
           <div className="relative inline-flex rounded-lg bg-white/15 p-0.5 backdrop-blur-sm">
@@ -50,7 +50,7 @@ export function NetWorthTracker() {
                   type="button"
                   onClick={() => setDays(p.days)}
                   aria-pressed={active}
-                  className={clsx('relative z-10 rounded-md px-2.5 py-1 text-label4 font-semibold transition-colors', active ? 'text-[color:var(--color-primary-700)]' : 'text-white/70 hover:text-white')}
+                  className={clsx('relative z-10 rounded-md px-2.5 py-1 text-label3-medium transition-colors', active ? 'text-[color:var(--color-primary-700)]' : 'text-white/70 hover:text-white')}
                   whileTap={reduce ? undefined : { scale: 0.97 }}
                 >
                   {active && (
@@ -83,7 +83,7 @@ export function NetWorthTracker() {
         {trend.length >= 3 && (
           <div className="mt-3">
             <Sparkline data={trend} width={600} height={64} color="rgba(255,255,255,0.92)" strokeWidth={2} className="h-16 w-full" dashFrom={todayIdx} />
-            <div className="mt-1 flex justify-end gap-3 text-micro text-white/50">
+            <div className="mt-1 flex justify-end gap-3 text-caption text-white/50">
               <span className="flex items-center gap-1"><span className="inline-block h-px w-3 bg-white/80" /> 과거 {days}일</span>
               <span className="flex items-center gap-1"><span className="inline-block h-px w-3 border-t border-dashed border-white/70" /> 예측 {days}일</span>
             </div>
@@ -94,13 +94,13 @@ export function NetWorthTracker() {
         <div className="mt-3 grid grid-cols-2 gap-3 border-t border-white/15 pt-3">
           <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={springSnappy}>
             <span className="block text-caption text-white/60">{days}일 증가율</span>
-            <span className={clsx('text-title2 font-bold tabular-nums', periodGood ? 'text-value-positive-on-dark' : 'text-value-negative-on-dark')}>
+            <span className={clsx('text-title2 tabular-nums', periodGood ? 'text-value-positive-on-dark' : 'text-value-negative-on-dark')}>
               {periodGood ? '+' : ''}{growthRatePct.toFixed(1)}%
             </span>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ ...springSnappy, delay: 0.05 }}>
             <span className="block text-caption text-white/60">일평균 (기울기)</span>
-            <span className={clsx('text-title2 font-bold tabular-nums', dailySlope >= 0 ? 'text-value-positive-on-dark' : 'text-value-negative-on-dark', hideAmounts && 'amount-masked')}>
+            <span className={clsx('text-title2 tabular-nums', dailySlope >= 0 ? 'text-value-positive-on-dark' : 'text-value-negative-on-dark', hideAmounts && 'amount-masked')}>
               {formatChangeUnit(Math.round(dailySlope))}<span className="text-body3 text-white/50">/일</span>
             </span>
           </motion.div>

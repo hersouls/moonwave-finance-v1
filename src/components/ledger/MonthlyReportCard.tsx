@@ -219,7 +219,7 @@ export function MonthlyReportCard({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-caption text-sub leading-tight">가장 많이 쓴 분야</p>
-                <p className="text-body3 font-bold text-heading truncate leading-tight">
+                <p className="text-body3-bold text-heading truncate leading-tight">
                   {topCategory.category?.name ?? '미분류'}
                 </p>
               </div>

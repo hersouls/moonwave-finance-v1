@@ -53,7 +53,7 @@ export function LiabilityItemCard({ itemId, name, categoryId, onSelect, selected
                 style={{ backgroundColor: category.color }}
               />
             )}
-            <span className="text-body3 text-heading truncate">
+            <span className="text-body2 text-heading truncate">
               {name}
             </span>
           </div>

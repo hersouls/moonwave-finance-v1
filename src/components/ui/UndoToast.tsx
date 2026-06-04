@@ -44,7 +44,7 @@ export function UndoToast() {
         <button
           type="button"
           onClick={handleDismiss}
-          className="text-disabled hover:text-heading text-caption ml-1"
+          className="text-disabled hover:text-heading text-label3-medium ml-1"
         >
           닫기
         </button>

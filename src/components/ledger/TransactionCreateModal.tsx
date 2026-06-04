@@ -145,7 +145,7 @@ export function TransactionCreateModal() {
                 className="input-base !pr-8 tabular-nums"
                 autoFocus
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-disabled">원</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-body3 text-disabled">원</span>
             </div>
             {amountError && (
               <p className="text-caption text-status-danger mt-1">{amountError}</p>

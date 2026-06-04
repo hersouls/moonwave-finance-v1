@@ -60,7 +60,7 @@ export function UpdateBanner() {
           <button
             type="button"
             onClick={dismissUpdate}
-            className="text-white/60 hover:text-white/90 text-caption"
+            className="text-white/60 hover:text-white/90 text-label3-medium"
           >
             나중에
           </button>

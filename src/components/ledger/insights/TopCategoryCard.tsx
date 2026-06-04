@@ -62,7 +62,7 @@ export function TopCategoryCard({
           <div className="w-7 h-7 rounded-lg bg-surface-tertiary flex items-center justify-center">
             <TagIcon className="w-3.5 h-3.5 text-sub" />
           </div>
-          <span className="text-caption text-sub font-semibold">Top 카테고리</span>
+          <span className="text-label3-medium text-sub font-semibold">Top 카테고리</span>
         </div>
         <p className="text-body3 text-disabled">거래 없음</p>
       </Tag>
@@ -79,9 +79,9 @@ export function TopCategoryCard({
         <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}1a` }}>
           <Icon className="w-3.5 h-3.5" style={{ color }} />
         </div>
-        <span className="text-caption text-sub font-semibold">Top 카테고리</span>
+        <span className="text-label3-medium text-sub font-semibold">Top 카테고리</span>
       </div>
-      <p className="text-body3 text-heading font-bold truncate mb-1">{topCategory?.name ?? '미분류'}</p>
+      <p className="text-body3-bold text-heading truncate mb-1">{topCategory?.name ?? '미분류'}</p>
       <Amount
         value={topAmount}
         size="emphasis"

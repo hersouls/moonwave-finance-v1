@@ -215,7 +215,7 @@ export function SubscriptionPage() {
             <button
               type="button"
               onClick={() => setShowHidden(v => !v)}
-              className="flex items-center gap-1.5 text-caption text-sub hover:text-heading transition-colors py-1.5 font-semibold"
+              className="flex items-center gap-1.5 text-label3 text-sub hover:text-heading transition-colors py-1.5"
             >
               {showHidden ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               <EyeOff className="w-3.5 h-3.5" />
@@ -459,7 +459,7 @@ function MonthSelector({
                 transition={springSnappy}
                 aria-pressed={isActive}
                 className={clsx(
-                  'touch-target-inset flex-shrink-0 inline-flex items-center gap-1 px-3 h-8 rounded-full text-caption font-bold transition-all tabular-nums',
+                  'touch-target-inset flex-shrink-0 inline-flex items-center gap-1 px-3 h-8 rounded-full text-label3 transition-all tabular-nums',
                   isActive
                     ? 'bg-[color:var(--color-primary-500)] text-white el-glow-primary'
                     : 'bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -655,7 +655,7 @@ function MonthCalendarPicker({
               </button>
               <div className="flex items-center gap-2">
                 <CalendarIcon className="w-3.5 h-3.5 text-[color:var(--color-primary-600)]" />
-                <h3 className="text-body3 font-bold text-heading tabular-nums">
+                <h3 className="text-body2-bold text-heading tabular-nums">
                   {displayYear}년
                 </h3>
               </div>
@@ -735,7 +735,7 @@ function MonthCalendarPicker({
               type="button"
               onClick={() => onChange('all')}
               className={clsx(
-                'touch-target-inset inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-caption font-bold transition-all ring-1',
+                'touch-target-inset inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-label3 transition-all ring-1',
                 value === 'all'
                   ? 'bg-[color:var(--color-primary-500)] text-white ring-transparent'
                   : 'bg-surface-primary text-body ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)]',
@@ -748,7 +748,7 @@ function MonthCalendarPicker({
               type="button"
               onClick={() => onChange(currentMonth)}
               className={clsx(
-                'touch-target-inset inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-caption font-bold transition-all ring-1',
+                'touch-target-inset inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-label3 transition-all ring-1',
                 value === currentMonth
                   ? 'bg-[color:var(--color-primary-500)] text-white ring-transparent'
                   : 'bg-surface-primary text-body ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)]',
@@ -793,7 +793,7 @@ function CycleFilterChips({
             whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
             transition={springSnappy}
             className={clsx(
-              'touch-target-inset flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-caption font-bold transition-all',
+              'touch-target-inset flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-label3 transition-all',
               isActive
                 ? 'bg-[color:var(--color-primary-500)] text-white el-glow-primary'
                 : 'bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -879,7 +879,7 @@ function CategoryDonut({
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   if (data.length === 0 || totalMonthly === 0) {
-    return <div className="h-[160px] flex items-center justify-center text-caption text-disabled">데이터 없음</div>
+    return <div className="h-[160px] flex items-center justify-center text-body3 text-disabled">데이터 없음</div>
   }
 
   let offset = 0
@@ -1009,7 +1009,7 @@ function CategoryDonut({
 
 function MonthlyTrendLine({ data }: { data: SubscriptionStats['monthlyTrend'] }) {
   const shouldReduceMotion = useReducedMotion()
-  if (data.length === 0) return <div className="h-[140px] flex items-center justify-center text-caption text-disabled">데이터 없음</div>
+  if (data.length === 0) return <div className="h-[140px] flex items-center justify-center text-body3 text-disabled">데이터 없음</div>
 
   const w = 320
   const h = 140
@@ -1088,15 +1088,15 @@ function MonthlyTrendLine({ data }: { data: SubscriptionStats['monthlyTrend'] })
         {/* X-axis labels (first/middle/last) */}
         {data.length > 0 && (
           <g>
-            <text x={padding.left} y={h - 4} fontSize="9" fill="var(--text-muted)" className="font-medium">
+            <text x={padding.left} y={h - 4} fontSize="10" fill="var(--text-muted)" className="font-medium">
               {monthShort(data[0].month)}
             </text>
             {data.length >= 3 && (
-              <text x={w / 2} y={h - 4} fontSize="9" fill="var(--text-muted)" textAnchor="middle" className="font-medium">
+              <text x={w / 2} y={h - 4} fontSize="10" fill="var(--text-muted)" textAnchor="middle" className="font-medium">
                 {monthShort(data[Math.floor(data.length / 2)].month)}
               </text>
             )}
-            <text x={w - padding.right} y={h - 4} fontSize="9" fill="var(--text-muted)" textAnchor="end" className="font-medium">
+            <text x={w - padding.right} y={h - 4} fontSize="10" fill="var(--text-muted)" textAnchor="end" className="font-medium">
               {monthShort(data[data.length - 1].month)}
             </text>
           </g>
@@ -1124,7 +1124,7 @@ function TopItemsBar({
   totalMonthly: number
 }) {
   const shouldReduceMotion = useReducedMotion()
-  if (items.length === 0) return <div className="h-[140px] flex items-center justify-center text-caption text-disabled">데이터 없음</div>
+  if (items.length === 0) return <div className="h-[140px] flex items-center justify-center text-body3 text-disabled">데이터 없음</div>
   const max = Math.max(...items.map(i => i.monthlyEquivalent), 1)
 
   return (
@@ -1179,7 +1179,7 @@ function UpcomingPayments({
     [detected],
   )
   if (upcoming.length === 0) {
-    return <div className="h-[140px] flex flex-col items-center justify-center text-center text-caption text-disabled gap-1">
+    return <div className="h-[140px] flex flex-col items-center justify-center text-center text-body3 text-disabled gap-1">
       <Sparkles className="w-4 h-4 opacity-50" />
       향후 2주 내 예정 없음
     </div>
@@ -1548,7 +1548,7 @@ function DetailSheetContent({
                 onClick={() => { onUnhide(); onClose() }}
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-2xl bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20 ring-1 ring-[color:var(--color-primary-300)] dark:ring-[color:var(--color-primary-700)] text-[color:var(--color-primary-700)] dark:text-[color:var(--color-primary-300)] text-caption font-bold transition-all"
+                className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-2xl bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20 ring-1 ring-[color:var(--color-primary-300)] dark:ring-[color:var(--color-primary-700)] text-[color:var(--color-primary-700)] dark:text-[color:var(--color-primary-300)] text-label3 transition-all"
               >
                 <RotateCcw className="w-4 h-4" />
                 구독 다시 활성화
@@ -1559,7 +1559,7 @@ function DetailSheetContent({
                 onClick={() => { onHide(); onClose() }}
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-2xl bg-surface-tertiary ring-1 ring-base text-sub hover:text-heading hover:bg-[var(--hover-bg)] text-caption font-bold transition-all"
+                className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-2xl bg-surface-tertiary ring-1 ring-base text-sub hover:text-heading hover:bg-[var(--hover-bg)] text-label3 transition-all"
               >
                 <EyeOff className="w-4 h-4" />
                 더 이상 사용하지 않음 (종료)
@@ -1600,7 +1600,7 @@ function HiddenSubscriptionCard({
           <Icon className="w-4 h-4" style={{ color: sub.color, opacity: 0.7 }} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-caption font-bold text-sub truncate line-through">{sub.name}</p>
+          <p className="text-body3-bold text-sub truncate line-through">{sub.name}</p>
           <p className="text-caption leading-none text-disabled tabular-nums">
             {sub.count}회 · 누적 {formatKoreanUnit(sub.totalSpent)}원
           </p>
@@ -1609,7 +1609,7 @@ function HiddenSubscriptionCard({
       <button
         type="button"
         onClick={onRestore}
-        className="touch-target-inset inline-flex items-center gap-1 px-2.5 h-7 rounded-full text-label4 leading-none font-bold bg-surface-primary text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)] hover:brightness-95 transition-all flex-shrink-0"
+        className="touch-target-inset inline-flex items-center gap-1 px-2.5 h-7 rounded-full text-label3 leading-none bg-surface-primary text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)] hover:brightness-95 transition-all flex-shrink-0"
         aria-label="구독 복원"
       >
         <RotateCcw className="w-3 h-3" />
@@ -1628,7 +1628,7 @@ function StatTile({ label, value, icon: Icon, color }: { label: string; value: s
         <Icon className="w-3 h-3" style={{ color }} />
         <span className="font-semibold">{label}</span>
       </div>
-      <p className="text-caption font-extrabold tabular-nums text-heading truncate">
+      <p className="text-body3-bold tabular-nums text-heading truncate">
         {value}
       </p>
     </div>
@@ -1642,7 +1642,7 @@ function CumulativeCostChart({
   accent: string
 }) {
   const shouldReduceMotion = useReducedMotion()
-  if (cumulative.length < 2) return <div className="h-[120px] flex items-center justify-center text-caption text-disabled">데이터 부족</div>
+  if (cumulative.length < 2) return <div className="h-[120px] flex items-center justify-center text-body3 text-disabled">데이터 부족</div>
   const w = 320
   const h = 120
   const max = cumulative[cumulative.length - 1].cumulative
@@ -1835,10 +1835,10 @@ function SectionTitle({
     <div className="flex items-baseline justify-between gap-2 mb-2">
       <div className="flex items-center gap-1.5 min-w-0">
         <Icon className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" />
-        <h3 className="text-caption font-bold text-heading truncate">{title}</h3>
+        <h3 className="text-title3 font-bold text-heading truncate">{title}</h3>
       </div>
       {subtitle && (
-        <p className="text-caption text-disabled tabular-nums truncate">{subtitle}</p>
+        <p className="text-label3-medium text-disabled tabular-nums truncate">{subtitle}</p>
       )}
     </div>
   )
@@ -1881,7 +1881,7 @@ function EmptyState() {
           >
             <Repeat className="w-9 h-9 text-white" />
           </div>
-          <h3 className="text-title2 font-bold text-heading mb-2 tracking-tight">
+          <h3 className="text-title2 text-heading mb-2 tracking-tight">
             등록된 구독이 없습니다
           </h3>
           <p className="text-body3 text-sub max-w-[340px] mx-auto leading-relaxed">

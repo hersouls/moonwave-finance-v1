@@ -100,7 +100,7 @@ export function AssetSummaryHeader({ items, type }: AssetSummaryHeaderProps) {
               data-reveal={hideAmounts ? 'false' : undefined}
             >
               {formatKoreanUnit(total)}
-              <span className="text-lg text-white/50 ml-1">원</span>
+              <span className="text-title3 text-white/50 ml-1">원</span>
             </p>
           </div>
 
@@ -114,7 +114,7 @@ export function AssetSummaryHeader({ items, type }: AssetSummaryHeaderProps) {
                 color={sparkColor}
                 strokeWidth={2}
               />
-              <p className="text-label4 text-white/40 text-right mt-0.5">최근 30일</p>
+              <p className="text-caption text-white/40 text-right mt-0.5">최근 30일</p>
             </div>
           )}
         </div>

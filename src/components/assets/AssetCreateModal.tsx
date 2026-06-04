@@ -194,7 +194,7 @@ export function AssetCreateModal() {
               <button
                 type="button"
                 onClick={openAssetCategoryManager}
-                className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-base bg-surface-secondary px-3 py-3.5 text-body3 font-medium text-accent-primary transition-colors hover:bg-[var(--hover-bg)]"
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-base bg-surface-secondary px-3 py-3.5 text-body3 text-accent-primary transition-colors hover:bg-[var(--hover-bg)]"
               >
                 <Plus className="h-4 w-4" /> {type === 'asset' ? '자산' : '부채'} 카테고리 추가하기
               </button>

@@ -29,7 +29,7 @@ export function SubscriptionWidget() {
         <h3 className="text-body3-semi text-heading">구독 현황</h3>
         <button
           onClick={() => navigate('/subscriptions')}
-          className="text-caption text-accent-primary hover:underline flex items-center gap-0.5 min-h-11 px-1 -mr-1"
+          className="text-label3-medium text-accent-primary hover:underline flex items-center gap-0.5 min-h-11 px-1 -mr-1"
         >
           전체보기 <ArrowRight className="w-3 h-3" />
         </button>

@@ -101,7 +101,7 @@ export function AssetCalendarPage() {
           </IconButton>
           <button
             onClick={goToToday}
-            className="text-base font-semibold text-heading hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+            className="text-title3 text-heading hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
           >
             {monthLabel}
           </button>
@@ -115,26 +115,26 @@ export function AssetCalendarPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Card className="card-pad-sm">
               <p className="text-caption text-sub">순자산</p>
-              <p className="text-sm font-bold text-heading tabular-nums">
+              <p className="text-title3 text-heading tabular-nums">
                 {formatKoreanUnit(monthSummary.netWorth)}
               </p>
             </Card>
             <Card className="card-pad-sm">
               <p className="text-caption text-sub">총 자산</p>
-              <p className="text-sm font-bold text-status-success tabular-nums">
+              <p className="text-title3 text-status-success tabular-nums">
                 {formatKoreanUnit(monthSummary.totalAssets)}
               </p>
             </Card>
             <Card className="card-pad-sm">
               <p className="text-caption text-sub">총 부채</p>
-              <p className="text-sm font-bold text-status-danger tabular-nums">
+              <p className="text-title3 text-status-danger tabular-nums">
                 {formatKoreanUnit(monthSummary.totalLiabilities)}
               </p>
             </Card>
             <Card className="card-pad-sm">
               <p className="text-caption text-sub">월간 변동</p>
               <p className={clsx(
-                'text-sm font-bold tabular-nums',
+                'text-title3 tabular-nums',
                 monthSummary.monthChange >= 0
                   ? 'text-status-success'
                   : 'text-status-danger'
@@ -184,21 +184,21 @@ export function AssetCalendarPage() {
             {parseInt(selectedDate.split('-')[2])}일 자산 현황
           </h3>
           <div className="space-y-2">
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-body2">
               <span className="text-sub">총 자산</span>
-              <span className="font-medium text-status-success tabular-nums">
+              <span className="text-status-success tabular-nums">
                 {formatKRW(selectedData.totalAssets)}
               </span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-body2">
               <span className="text-sub">총 부채</span>
-              <span className="font-medium text-status-danger tabular-nums">
+              <span className="text-status-danger tabular-nums">
                 {formatKRW(selectedData.totalLiabilities)}
               </span>
             </div>
-            <div className="border-t border-base pt-2 flex justify-between text-sm">
-              <span className="text-heading font-medium">순자산</span>
-              <span className="font-bold text-heading tabular-nums">
+            <div className="border-t border-base pt-2 flex justify-between text-body2">
+              <span className="text-heading">순자산</span>
+              <span className="text-body2-bold text-heading tabular-nums">
                 {formatKRW(selectedData.netWorth)}
               </span>
             </div>

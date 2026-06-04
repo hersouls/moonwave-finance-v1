@@ -16,7 +16,7 @@ interface GoalCardProps {
 function GoalAmount({ current, target }: { current: number; target: number }) {
   const hideAmounts = useSettingsStore((s) => !!s.settings.hideAmounts)
   return (
-    <p className={clsx('text-caption text-sub mt-1 tabular-nums', hideAmounts && 'amount-masked')}>
+    <p className={clsx('text-body3 text-sub mt-1 tabular-nums', hideAmounts && 'amount-masked')}>
       {formatKoreanUnit(current)} / {formatKoreanUnit(target)}
     </p>
   )
@@ -67,7 +67,7 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
                 <Check className="w-5 h-5 text-success-500" />
               </motion.span>
             ) : (
-              <span className="text-caption-bold text-body tabular-nums">{Math.round(percentage)}%</span>
+              <span className="text-body3-bold text-body tabular-nums">{Math.round(percentage)}%</span>
             )}
           </div>
         </div>
@@ -80,7 +80,7 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
           </div>
           <GoalAmount current={goal.currentAmount} target={goal.targetAmount} />
           {!goal.isCompleted && (
-            <p className="text-caption text-disabled mt-0.5">
+            <p className="text-label3-medium text-disabled mt-0.5 tabular-nums">
               D-{daysLeft}
             </p>
           )}

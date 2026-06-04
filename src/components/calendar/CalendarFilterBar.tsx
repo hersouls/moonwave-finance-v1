@@ -128,7 +128,7 @@ export function CalendarFilterBar({
                 onClick={() => toggleMember(m.id!)}
                 aria-pressed={active}
                 className={clsx(
-                  'inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all',
+                  'inline-flex items-center gap-1 px-2 py-1 rounded-full text-label3-medium transition-all',
                   'ring-1',
                   active
                     ? 'bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 ring-primary-400 dark:ring-primary-600'
@@ -151,7 +151,7 @@ export function CalendarFilterBar({
           aria-haspopup="listbox"
           aria-expanded={categoryOpen}
           className={clsx(
-            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ring-1',
+            'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label3-medium transition-all ring-1',
             filters.categoryIds.length > 0
               ? 'bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 ring-primary-400 dark:ring-primary-600'
               : 'ring-[color:var(--border-subtle)] text-sub hover:text-heading hover:bg-[var(--hover-bg)]',
@@ -160,7 +160,7 @@ export function CalendarFilterBar({
           <Tag className="w-3.5 h-3.5" />
           카테고리
           {filters.categoryIds.length > 0 && (
-            <span className="tabular-nums text-micro bg-primary-500 text-[color:var(--text-on-accent)] rounded-full px-1.5 leading-none">
+            <span className="tabular-nums text-label4 bg-primary-500 text-[color:var(--text-on-accent)] rounded-full px-1.5 leading-none">
               {filters.categoryIds.length}
             </span>
           )}
@@ -172,7 +172,7 @@ export function CalendarFilterBar({
             aria-multiselectable="true"
           >
             {filteredCategories.length === 0 && (
-              <p className="text-caption text-sub p-3 text-center">카테고리가 없습니다</p>
+              <p className="text-body3 text-sub p-3 text-center">카테고리가 없습니다</p>
             )}
             {filteredCategories.map((c) => {
               const active = filters.categoryIds.includes(c.id!)
@@ -184,7 +184,7 @@ export function CalendarFilterBar({
                   aria-selected={active}
                   onClick={() => toggleCategory(c.id!)}
                   className={clsx(
-                    'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm transition-colors',
+                    'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-body2 transition-colors',
                     active
                       ? 'bg-primary-50 dark:bg-primary-900/40 text-heading'
                       : 'hover:bg-[var(--hover-bg)] text-heading',
@@ -216,7 +216,7 @@ export function CalendarFilterBar({
         onClick={() => onChange({ ...filters, recurringOnly: !filters.recurringOnly })}
         aria-pressed={filters.recurringOnly}
         className={clsx(
-          'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ring-1',
+          'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-label3-medium transition-all ring-1',
           filters.recurringOnly
             ? 'bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 ring-primary-400 dark:ring-primary-600'
             : 'ring-[color:var(--border-subtle)] text-sub hover:text-heading hover:bg-[var(--hover-bg)]',
@@ -231,7 +231,7 @@ export function CalendarFilterBar({
         <button
           type="button"
           onClick={reset}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors ml-auto"
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-label3-medium text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors ml-auto"
           aria-label="필터 초기화"
         >
           <X className="w-3 h-3" />

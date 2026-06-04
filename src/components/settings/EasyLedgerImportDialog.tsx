@@ -104,7 +104,7 @@ function LoadingView() {
   return (
     <div className="flex flex-col items-center gap-3 py-8">
       <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
-      <p className="text-sm text-sub">파일 분석 중...</p>
+      <p className="text-body3 text-sub">파일 분석 중...</p>
     </div>
   )
 }
@@ -116,13 +116,13 @@ function PreviewView({ preview }: { preview: ImportPreview }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="p-3 bg-surface-secondary rounded-lg">
           <p className="text-caption text-sub">총 거래</p>
-          <p className="text-title2 text-heading">
+          <p className="text-title2 text-heading tabular-nums">
             {preview.totalRecords.toLocaleString()}건
           </p>
         </div>
         <div className="p-3 bg-surface-secondary rounded-lg">
           <p className="text-caption text-sub">기간</p>
-          <p className="text-caption text-heading break-words">
+          <p className="text-body3 text-heading break-words tabular-nums">
             {preview.dateRange.from} ~ {preview.dateRange.to}
           </p>
         </div>
@@ -137,18 +137,18 @@ function PreviewView({ preview }: { preview: ImportPreview }) {
           {preview.categories.map((cat) => (
             <div
               key={`${cat.name}-${cat.type}`}
-              className="flex items-center justify-between px-3 py-1.5 text-sm rounded-md bg-surface-secondary"
+              className="flex items-center justify-between px-3 py-1.5 rounded-md bg-surface-secondary"
             >
               <div className="flex items-center gap-2">
-                <span className="text-body">{cat.name}</span>
+                <span className="text-body2 text-body">{cat.name}</span>
                 <span className="text-caption text-disabled">({cat.type})</span>
                 {cat.isNew && (
-                  <span className="px-1.5 py-0.5 text-label4 font-medium leading-none bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 rounded">
+                  <span className="px-1.5 py-0.5 text-label4 leading-none bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 rounded">
                     새로 생성
                   </span>
                 )}
               </div>
-              <span className="text-caption text-sub">{cat.count.toLocaleString()}건</span>
+              <span className="text-caption text-sub tabular-nums">{cat.count.toLocaleString()}건</span>
             </div>
           ))}
         </div>
@@ -160,9 +160,9 @@ function PreviewView({ preview }: { preview: ImportPreview }) {
           <h4 className="text-body3 text-heading mb-2">감지된 구성원</h4>
           <div className="space-y-1">
             {preview.members.map((m) => (
-              <div key={m.name} className="flex items-center justify-between px-3 py-1.5 text-sm bg-surface-secondary rounded-md">
-                <span className="text-body">{m.name}</span>
-                <span className="text-caption text-sub">{m.count.toLocaleString()}건</span>
+              <div key={m.name} className="flex items-center justify-between px-3 py-1.5 bg-surface-secondary rounded-md">
+                <span className="text-body2 text-body">{m.name}</span>
+                <span className="text-caption text-sub tabular-nums">{m.count.toLocaleString()}건</span>
               </div>
             ))}
           </div>
@@ -171,9 +171,9 @@ function PreviewView({ preview }: { preview: ImportPreview }) {
           <h4 className="text-body3 text-heading mb-2">거래수단</h4>
           <div className="space-y-1">
             {preview.assets.map((a) => (
-              <div key={a.name} className="flex items-center justify-between px-3 py-1.5 text-sm bg-surface-secondary rounded-md">
-                <span className="text-body">{a.name}</span>
-                <span className="text-caption text-sub">{a.count.toLocaleString()}건</span>
+              <div key={a.name} className="flex items-center justify-between px-3 py-1.5 bg-surface-secondary rounded-md">
+                <span className="text-body2 text-body">{a.name}</span>
+                <span className="text-caption text-sub tabular-nums">{a.count.toLocaleString()}건</span>
               </div>
             ))}
           </div>
@@ -182,17 +182,17 @@ function PreviewView({ preview }: { preview: ImportPreview }) {
 
       {/* Warnings */}
       {preview.negativeAmountCount > 0 && (
-        <div className="flex items-start gap-2 p-3 bg-status-warning-soft rounded-lg text-sm">
+        <div className="flex items-start gap-2 p-3 bg-status-warning-soft rounded-lg">
           <AlertTriangle className="w-4 h-4 text-status-warning shrink-0 mt-0.5" />
-          <p className="text-status-warning">
+          <p className="text-body3 text-status-warning">
             음수 금액(환급) {preview.negativeAmountCount}건이 수입으로 자동 변환됩니다.
           </p>
         </div>
       )}
 
-      <div className="flex items-start gap-2 p-3 bg-status-info-soft rounded-lg text-sm">
+      <div className="flex items-start gap-2 p-3 bg-status-info-soft rounded-lg">
         <FileSpreadsheet className="w-4 h-4 text-accent-primary shrink-0 mt-0.5" />
-        <p className="text-status-info">
+        <p className="text-body3 text-status-info">
           기존 데이터는 유지되며, 새 데이터가 추가됩니다.
         </p>
       </div>
@@ -212,7 +212,7 @@ function ImportingView({ progress }: { progress: { current: number; total: numbe
             style={{ width: `${percent}%` }}
           />
         </div>
-        <p className="mt-2 text-sm text-center text-sub">
+        <p className="mt-2 text-body3 text-center text-sub">
           {progress.phase}
         </p>
       </div>
@@ -231,20 +231,20 @@ function ResultView({ result }: { result: ImportResult }) {
       </div>
 
       <div className="space-y-2">
-        <div className="flex justify-between px-3 py-2 bg-surface-secondary rounded-md text-sm">
+        <div className="flex justify-between px-3 py-2 bg-surface-secondary rounded-md text-body3">
           <span className="text-sub">가져온 거래</span>
-          <span className="font-medium text-heading">
+          <span className="text-body3-semi text-heading tabular-nums">
             {result.totalImported.toLocaleString()}건
           </span>
         </div>
-        <div className="flex justify-between px-3 py-2 bg-surface-secondary rounded-md text-sm">
+        <div className="flex justify-between px-3 py-2 bg-surface-secondary rounded-md text-body3">
           <span className="text-sub">기간</span>
-          <span className="font-medium text-heading">
+          <span className="text-body3-semi text-heading tabular-nums">
             {result.dateRange.from} ~ {result.dateRange.to}
           </span>
         </div>
         {result.createdCategories.length > 0 && (
-          <div className="px-3 py-2 bg-surface-secondary rounded-md text-sm">
+          <div className="px-3 py-2 bg-surface-secondary rounded-md text-body3">
             <span className="text-sub">생성된 카테고리</span>
             <p className="mt-1 text-heading">
               {result.createdCategories.join(', ')}
@@ -252,7 +252,7 @@ function ResultView({ result }: { result: ImportResult }) {
           </div>
         )}
         {result.createdPaymentMethods.length > 0 && (
-          <div className="px-3 py-2 bg-surface-secondary rounded-md text-sm">
+          <div className="px-3 py-2 bg-surface-secondary rounded-md text-body3">
             <span className="text-sub">생성된 거래수단</span>
             <p className="mt-1 text-heading">
               {result.createdPaymentMethods.join(', ')}
@@ -263,8 +263,8 @@ function ResultView({ result }: { result: ImportResult }) {
 
       {result.warnings.length > 0 && (
         <div className="p-3 bg-status-warning-soft rounded-lg">
-          <p className="text-body3 text-status-warning mb-1">경고</p>
-          <ul className="text-caption text-status-warning space-y-0.5">
+          <p className="text-body3-semi text-status-warning mb-1">경고</p>
+          <ul className="text-body3 text-status-warning space-y-0.5">
             {result.warnings.map((w, i) => (
               <li key={i}>{w}</li>
             ))}
@@ -279,7 +279,7 @@ function ErrorView({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center gap-3 py-8">
       <AlertTriangle className="w-12 h-12 text-status-danger" />
-      <p className="text-sm text-status-danger text-center">{message}</p>
+      <p className="text-body3 text-status-danger text-center">{message}</p>
     </div>
   )
 }

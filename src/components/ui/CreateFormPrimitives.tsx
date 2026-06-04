@@ -86,7 +86,7 @@ export function SegmentedControl<T extends string>({
             className={clsx(
               'relative rounded-full font-bold z-10 transition-colors',
               size === 'sm'
-                ? 'px-3.5 py-1.5 text-caption'
+                ? 'px-3.5 py-1.5 text-label3-medium'
                 : 'flex-1 py-2.5 px-4 text-body3 min-h-[44px]',
               active ? 'text-white' : 'text-sub hover:text-heading',
             )}
@@ -176,13 +176,13 @@ export function HeroAmountField({
             autoFocus={autoFocus}
             aria-label="금액"
             className={clsx(
-              'bg-transparent tabular-nums outline-none font-extrabold min-w-0 max-w-full text-3xl sm:text-4xl',
+              'bg-transparent tabular-nums outline-none font-extrabold min-w-0 max-w-full text-financial-fluid',
               active ? 'text-heading' : 'text-disabled',
             )}
             style={{ letterSpacing: '-0.025em', lineHeight: 1.15, width: `${Math.max(value.length || 1, 1)}ch`, flexShrink: 0 }}
           />
           <span
-            className={clsx('text-lg font-bold tabular-nums flex-shrink-0', active ? 'text-heading/80' : 'text-disabled')}
+            className={clsx('text-title3 font-bold tabular-nums flex-shrink-0', active ? 'text-heading/80' : 'text-disabled')}
             style={{ lineHeight: 1.2 }}
           >
             원

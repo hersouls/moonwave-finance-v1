@@ -220,7 +220,7 @@ export function AmountCalculator({ value, onApply, onClose }: AmountCalculatorPr
           type="button"
           onClick={() => dispatch({ type: 'CLEAR' })}
           whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
-          className="inline-flex items-center gap-1 px-3 py-2 rounded-full text-caption font-semibold text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
+          className="inline-flex items-center gap-1 px-3 py-2 rounded-full text-label3-medium font-semibold text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           초기화
@@ -230,7 +230,7 @@ export function AmountCalculator({ value, onApply, onClose }: AmountCalculatorPr
             type="button"
             onClick={onClose}
             whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
-            className="inline-flex items-center gap-1 px-4 py-2 rounded-full text-caption font-semibold text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
+            className="inline-flex items-center gap-1 px-4 py-2 rounded-full text-label3-medium font-semibold text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
           >
             <XIcon className="w-3.5 h-3.5" />
             취소
@@ -241,7 +241,7 @@ export function AmountCalculator({ value, onApply, onClose }: AmountCalculatorPr
             disabled={!canApply}
             whileTap={shouldReduceMotion || !canApply ? undefined : { scale: 0.96 }}
             className={clsx(
-              'inline-flex items-center gap-1 px-5 py-2.5 rounded-full text-caption font-bold transition-all',
+              'inline-flex items-center gap-1 px-5 py-2.5 rounded-full text-label3 transition-all',
               canApply
                 ? 'bg-[color:var(--color-primary-600)] text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)] hover:shadow-[0_6px_20px_color-mix(in_oklch,var(--color-primary-500)_40%,transparent)]'
                 : 'bg-surface-muted text-disabled cursor-not-allowed',
@@ -274,7 +274,7 @@ function KeyButton({ label, action, variant, reducedMotion, colSpan = 1 }: KeyBu
       whileTap={reducedMotion ? undefined : { scale: 0.93 }}
       transition={springSnappy}
       className={clsx(
-        'h-12 rounded-2xl text-body2-bold font-bold transition-all tabular-nums select-none',
+        'h-12 rounded-2xl text-body2-bold transition-all tabular-nums select-none',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring-focus)]',
         variant === 'digit' && 'bg-surface-primary text-heading ring-1 ring-[color:var(--border-default)] hover:ring-[color:var(--color-primary-300)] elevation-1',
         variant === 'util' && 'bg-[color:var(--status-warning-bg)] text-status-warning ring-1 ring-[color:var(--status-warning-border)] hover:shadow-[0_4px_10px_color-mix(in_oklch,var(--status-warning-text)_22%,transparent)]',

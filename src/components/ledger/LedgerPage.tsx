@@ -256,7 +256,7 @@ export function LedgerPage() {
                       type="button"
                       onClick={() => setViewMode('cards')}
                       aria-pressed={viewMode === 'cards'}
-                      className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3 font-medium transition-colors', viewMode === 'cards' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
+                      className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3-medium transition-colors', viewMode === 'cards' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
                     >
                       <LayoutGrid className="h-4 w-4" /> 카드
                     </button>
@@ -264,7 +264,7 @@ export function LedgerPage() {
                       type="button"
                       onClick={() => setViewMode('table')}
                       aria-pressed={viewMode === 'table'}
-                      className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3 font-medium transition-colors', viewMode === 'table' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
+                      className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3-medium transition-colors', viewMode === 'table' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
                     >
                       <Table2 className="h-4 w-4" /> 표
                     </button>
@@ -374,13 +374,13 @@ function AiCategorizeTrigger({ count, onOpen }: { count: number; onOpen: () => v
           <Sparkles className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-body3 font-bold text-heading flex items-center gap-1.5">
+          <p className="text-body3-bold text-heading flex items-center gap-1.5">
             AI 카테고리 자동 분류
             <span className="text-micro-bold leading-none uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[color:var(--color-primary-100)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/40 dark:text-[color:var(--color-primary-300)]">
               NEW
             </span>
           </p>
-          <p className="text-caption text-sub mt-0.5">
+          <p className="text-body3 text-sub mt-0.5">
             미분류 지출 <span className="font-bold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] tabular-nums">{count}건</span>을 가맹점별로 한 번에 분류
           </p>
         </div>
@@ -423,13 +423,13 @@ function DuplicateCleanupTrigger({ count, onOpen }: { count: number; onOpen: () 
           <Copy className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-body3 font-bold text-heading flex items-center gap-1.5">
+          <p className="text-body3-bold text-heading flex items-center gap-1.5">
             중복 거래 정리
             <span className="text-micro-bold leading-none uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-status-danger-soft text-status-danger">
               NEW
             </span>
           </p>
-          <p className="text-caption text-sub mt-0.5">
+          <p className="text-body3 text-sub mt-0.5">
             중복 의심 지출 <span className="font-bold text-value-negative tabular-nums">{count}건</span> 검토 후 정리 (같은 날짜 중복만 기본 선택)
           </p>
         </div>
@@ -473,13 +473,13 @@ function CardStatementImportTrigger({ onOpen }: { onOpen: () => void }) {
           <CardStatementIcon className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-body3 font-bold text-heading flex items-center gap-1.5">
+          <p className="text-body3-bold text-heading flex items-center gap-1.5">
             카드 명세서 가져오기
             <span className="text-micro-bold leading-none uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[color:var(--color-primary-100)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/40 dark:text-[color:var(--color-primary-300)]">
               NEW
             </span>
           </p>
-          <p className="text-caption text-sub mt-0.5">
+          <p className="text-body3 text-sub mt-0.5">
             신한카드 명세서를 붙여넣어 한 번에 등록 · 자동 카테고리 분류
           </p>
         </div>

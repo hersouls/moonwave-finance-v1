@@ -67,7 +67,7 @@ export function SwipeableRow({ actions, children, className, rounded = 'rounded-
               style={{ width: ACTION_W }}
             >
               <Icon className="h-5 w-5" aria-hidden="true" />
-              <span className="text-micro font-semibold">{a.label}</span>
+              <span className="text-label3-medium font-semibold">{a.label}</span>
             </button>
           )
         })}

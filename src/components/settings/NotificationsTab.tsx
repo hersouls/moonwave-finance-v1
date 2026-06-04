@@ -52,16 +52,16 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
           {permission === 'granted' && (
             <div className="flex items-center gap-2">
               <Bell className="w-4 h-4 text-status-success" />
-              <span className="text-sm text-status-success font-medium">알림이 허용되었습니다</span>
+              <span className="text-body3-semi text-status-success">알림이 허용되었습니다</span>
             </div>
           )}
           {permission === 'denied' && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <BellOff className="w-4 h-4 text-status-danger" />
-                <span className="text-sm text-status-danger font-medium">알림이 차단되었습니다</span>
+                <span className="text-body3-semi text-status-danger">알림이 차단되었습니다</span>
               </div>
-              <p className="text-caption text-sub">
+              <p className="text-body3 text-sub">
                 브라우저 설정에서 알림 권한을 허용해주세요
               </p>
             </div>
@@ -70,7 +70,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-body3 text-heading">푸시 알림 활성화</p>
-                <p className="text-caption text-sub">알림을 받으려면 브라우저 권한이 필요합니다</p>
+                <p className="text-body3 text-sub">알림을 받으려면 브라우저 권한이 필요합니다</p>
               </div>
               <Button
                 variant="primary"
@@ -85,7 +85,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
           {permission === 'unsupported' && (
             <div className="flex items-center gap-2">
               <BellOff className="w-4 h-4 text-disabled" />
-              <span className="text-sm text-sub">이 브라우저에서는 알림을 지원하지 않습니다</span>
+              <span className="text-body3 text-sub">이 브라우저에서는 알림을 지원하지 않습니다</span>
             </div>
           )}
         </div>
@@ -105,7 +105,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
           </div>
           {draft.notifications.budgetAlert && (
             <div className="p-4 bg-surface-secondary rounded-xl">
-              <p className="text-caption text-sub mb-2">알림 기준</p>
+              <p className="text-label2 text-sub mb-2">알림 기준</p>
               <SegmentedControl
                 size="sm"
                 layoutId="budget-threshold-pill"
@@ -133,7 +133,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
           </div>
           {draft.notifications.transactionReminder && (
             <div className="p-4 bg-surface-secondary rounded-xl">
-              <p className="text-caption text-sub mb-2">알림 시간</p>
+              <p className="text-label2 text-sub mb-2">알림 시간</p>
               <SegmentedControl
                 size="sm"
                 layoutId="reminder-time-pill"
@@ -161,7 +161,7 @@ export function NotificationsTab({ draft, onChange }: NotificationsTabProps) {
           </div>
           {draft.notifications.subscriptionBillingAlert && (
             <div className="p-4 bg-surface-secondary rounded-xl">
-              <p className="text-caption text-sub mb-2">알림 시점</p>
+              <p className="text-label2 text-sub mb-2">알림 시점</p>
               <div className="chip-group-wrap">
                 {ALERT_DAYS_OPTIONS.map((opt) => {
                   const currentDays = draft.notifications.subscriptionAlertDaysBefore ?? [0, 1, 3]

@@ -229,7 +229,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
             aria-expanded={isExpanded}
             aria-label="상세 필터 열기"
             className={clsx(
-              'relative flex-shrink-0 h-11 px-3.5 rounded-2xl flex items-center gap-1.5 text-caption font-semibold transition-all ring-1',
+              'relative flex-shrink-0 h-11 px-3.5 rounded-2xl flex items-center gap-1.5 text-label3-medium font-semibold transition-all ring-1',
               isExpanded || activeFilterCount > 0
                 ? 'bg-[color:var(--color-primary-500)] text-white ring-transparent shadow-[0_4px_16px_color-mix(in_oklch,var(--color-primary-500)_28%,transparent)]'
                 : 'bg-surface-primary text-body ring-base hover:ring-[color:var(--color-primary-300)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.06)]'
@@ -273,7 +273,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
               aria-selected={isActive}
               onClick={() => onTypeChange(tab.id)}
               className={clsx(
-                'relative flex-1 h-10 rounded-xl flex items-center justify-center gap-1.5 text-caption font-semibold transition-colors z-[1]',
+                'relative flex-1 h-10 rounded-xl flex items-center justify-center gap-1.5 text-label3-medium font-semibold transition-colors z-[1]',
                 isActive ? 'text-heading' : 'text-sub hover:text-body'
               )}
             >
@@ -392,7 +392,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                     layout
                     type="button"
                     onClick={onReset}
-                    className="flex-shrink-0 flex items-center gap-1 px-3 h-7 rounded-full text-caption font-semibold text-status-danger hover:bg-status-danger-soft transition-colors"
+                    className="flex-shrink-0 flex items-center gap-1 px-3 h-7 rounded-full text-label3-medium font-semibold text-status-danger hover:bg-status-danger-soft transition-colors"
                   >
                     <RotateCcw className="w-3 h-3" />
                     전체 초기화
@@ -489,7 +489,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                     <h2 id="filter-sheet-title" className="text-title2 font-bold text-heading leading-tight">
                       필터
                     </h2>
-                    <p className="text-caption text-sub leading-tight">
+                    <p className="text-body3 text-sub leading-tight">
                       {activeFilterCount > 0
                         ? `${activeFilterCount}개 조건 적용 중`
                         : '거래를 세밀하게 탐색해 보세요'}
@@ -558,7 +558,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                           type="button"
                           onClick={() => onCategoryChange(isActive ? null : c.id!)}
                           className={clsx(
-                            'flex-shrink-0 flex items-center gap-2 pl-2.5 pr-3.5 h-9 rounded-2xl text-caption font-semibold transition-all',
+                            'flex-shrink-0 flex items-center gap-2 pl-2.5 pr-3.5 h-9 rounded-2xl text-label3-medium font-semibold transition-all',
                             isActive
                               ? 'text-white shadow-[0_4px_12px_rgba(0,0,0,0.12)]'
                               : 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]'
@@ -605,7 +605,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                           type="button"
                           onClick={() => onMemberChange(isActive ? null : m.id!)}
                           className={clsx(
-                            'flex-shrink-0 flex items-center gap-2 pl-1.5 pr-3.5 h-9 rounded-2xl text-caption font-semibold transition-all',
+                            'flex-shrink-0 flex items-center gap-2 pl-1.5 pr-3.5 h-9 rounded-2xl text-label3-medium font-semibold transition-all',
                             isActive
                               ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_12px_color-mix(in_oklch,var(--color-primary-500)_28%,transparent)]'
                               : 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]'
@@ -649,7 +649,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                           type="button"
                           onClick={() => onPaymentMethodChange(isActive ? null : opt.value)}
                           className={clsx(
-                            'flex-shrink-0 flex items-center gap-1.5 pl-2.5 pr-3.5 h-9 rounded-2xl text-caption font-semibold transition-all',
+                            'flex-shrink-0 flex items-center gap-1.5 pl-2.5 pr-3.5 h-9 rounded-2xl text-label3-medium font-semibold transition-all',
                             isActive
                               ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_12px_color-mix(in_oklch,var(--color-primary-500)_28%,transparent)]'
                               : 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]'
@@ -685,7 +685,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                           type="button"
                           onClick={() => onSubscriptionCategoryChange(isActive ? null : 'none')}
                           className={clsx(
-                            'flex-shrink-0 flex items-center gap-2 pl-2.5 pr-3.5 h-9 rounded-2xl text-caption font-semibold transition-all',
+                            'flex-shrink-0 flex items-center gap-2 pl-2.5 pr-3.5 h-9 rounded-2xl text-label3-medium font-semibold transition-all',
                             isActive
                               ? 'bg-[color:var(--text-heading)] text-[color:var(--surface-primary)] elevation-2'
                               : 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]'
@@ -717,7 +717,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                           type="button"
                           onClick={() => onSubscriptionCategoryChange(isActive ? null : opt.value)}
                           className={clsx(
-                            'flex-shrink-0 flex items-center gap-2 pl-2.5 pr-3.5 h-9 rounded-2xl text-caption font-semibold transition-all',
+                            'flex-shrink-0 flex items-center gap-2 pl-2.5 pr-3.5 h-9 rounded-2xl text-label3-medium font-semibold transition-all',
                             isActive
                               ? 'text-white shadow-[0_4px_12px_rgba(0,0,0,0.12)]'
                               : 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]'
@@ -825,7 +825,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                     onClick={onReset}
                     disabled={activeFilterCount === 0}
                     className={clsx(
-                      'inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-caption font-semibold transition-all ring-1',
+                      'inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-label3-medium font-semibold transition-all ring-1',
                       activeFilterCount > 0
                         ? 'text-status-danger ring-status-danger/30 hover:bg-status-danger-soft hover:ring-status-danger/50'
                         : 'text-disabled ring-transparent cursor-not-allowed',
@@ -845,7 +845,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                     whileHover={shouldReduceMotion ? undefined : { y: -1 }}
                     whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
                     transition={springSnappy}
-                    className="px-6 lg:px-7 py-2.5 rounded-full text-white text-caption font-bold transition-colors"
+                    className="px-6 lg:px-7 py-2.5 rounded-full text-white text-label3 transition-colors"
                     style={{
                       background:
                         'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))',
@@ -912,7 +912,7 @@ function AllChip({ active, onClick }: { active: boolean; onClick: () => void }) 
       type="button"
       onClick={onClick}
       className={clsx(
-        'flex-shrink-0 flex items-center px-3.5 h-9 rounded-2xl text-caption font-semibold transition-all snap-start',
+        'flex-shrink-0 flex items-center px-3.5 h-9 rounded-2xl text-label3-medium font-semibold transition-all snap-start',
         active
           ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_12px_color-mix(in_oklch,var(--color-primary-500)_28%,transparent)]'
           : 'bg-surface-primary text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]'
@@ -944,7 +944,7 @@ function SegmentedChips<T extends string>({
             type="button"
             onClick={() => onChange(opt.value)}
             className={clsx(
-              'relative flex-1 min-w-0 h-8 px-1 rounded-lg text-caption xs:text-label3 font-semibold transition-colors tabular-nums',
+              'relative flex-1 min-w-0 h-8 px-1 rounded-lg text-label3-medium font-semibold transition-colors tabular-nums',
               isActive ? 'text-heading' : 'text-sub hover:text-body'
             )}
             aria-pressed={isActive}

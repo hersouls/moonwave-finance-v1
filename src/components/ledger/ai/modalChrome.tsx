@@ -42,7 +42,7 @@ export function PremiumModalHeader({
           </div>
           <div className="min-w-0">
             <h2 className="text-title2 font-bold text-heading tracking-tight truncate">{title}</h2>
-            <p className="text-caption text-sub font-medium mt-0.5 truncate">{subtitle}</p>
+            <p className="text-body3 text-sub font-medium mt-0.5 truncate">{subtitle}</p>
           </div>
         </div>
         {canClose && (

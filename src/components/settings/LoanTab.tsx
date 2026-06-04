@@ -147,13 +147,13 @@ export function LoanTab() {
         <h3 className="text-body3-semi text-heading">대출 관리</h3>
         <button
           onClick={openCreate}
-          className="flex items-center gap-1 text-caption text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+          className="flex items-center gap-1 text-label3-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
           대출 추가
         </button>
       </div>
-      <p className="text-caption text-sub mb-4">
+      <p className="text-body3 text-sub mb-4">
         대출 정보를 등록하면 부채 등록 및 가계부 이자 지출에 자동으로 연동할 수 있습니다.
       </p>
 
@@ -177,7 +177,7 @@ export function LoanTab() {
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-caption text-sub">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-caption text-sub tabular-nums">
                     <span className="flex items-center gap-1">
                       <Banknote className="w-3 h-3" />
                       잔액 {formatAmount(loan.currentBalance)}원
@@ -191,7 +191,7 @@ export function LoanTab() {
                       매월 {loan.paymentDay}일
                     </span>
                   </div>
-                  <div className="mt-1 text-caption text-primary-600 dark:text-primary-400">
+                  <div className="mt-1 text-label3-medium text-primary-600 dark:text-primary-400 tabular-nums">
                     월 예상이자: {formatAmount(getMonthlyInterest(loan))}원
                   </div>
                 </div>
@@ -216,7 +216,7 @@ export function LoanTab() {
           ))}
         </div>
       ) : (
-        <p className="text-caption text-disabled px-3 py-6 text-center">
+        <p className="text-body3 text-disabled px-3 py-6 text-center">
           등록된 대출이 없습니다.
         </p>
       )}
@@ -230,7 +230,7 @@ export function LoanTab() {
                 key={loan.id}
                 className="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-secondary opacity-60 group"
               >
-                <span className="flex-1 text-sm text-sub truncate">{loan.name}</span>
+                <span className="flex-1 text-body2 text-sub truncate">{loan.name}</span>
                 <button
                   onClick={() => openEdit(loan)}
                   className="touch-target-inset p-1.5 rounded-md text-disabled hover:text-body opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
@@ -393,7 +393,7 @@ export function LoanTab() {
             {previewBalance > 0 && previewRate > 0 && (
               <div className="rounded-lg bg-primary-50 dark:bg-primary-900/20 px-4 py-3">
                 <p className="text-caption text-sub mb-0.5">월 예상이자</p>
-                <p className="text-body2-semi text-primary-700 dark:text-primary-300 tabular-nums">
+                <p className="text-body2-bold text-primary-700 dark:text-primary-300 tabular-nums">
                   {formatAmount(previewMonthlyInterest)}원
                 </p>
                 <p className="text-caption text-disabled mt-0.5">
@@ -415,10 +415,10 @@ export function LoanTab() {
       <Dialog open={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)} size="sm">
         <DialogHeader title="대출 삭제" onClose={() => setIsDeleteConfirmOpen(false)} />
         <DialogBody>
-          <p className="text-sm text-sub">
-            <span className="font-medium text-heading">{deletingLoan?.name}</span>을(를) 삭제하시겠습니까?
+          <p className="text-body3 text-sub">
+            <span className="text-body3-semi text-heading">{deletingLoan?.name}</span>을(를) 삭제하시겠습니까?
           </p>
-          <p className="mt-2 text-caption text-sub">
+          <p className="mt-2 text-body3 text-sub">
             연결된 부채 항목과 가계부 기록에는 영향이 없습니다.
           </p>
         </DialogBody>

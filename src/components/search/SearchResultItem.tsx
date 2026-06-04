@@ -70,7 +70,7 @@ function TransactionIcon({ meta }: { meta: TransactionMeta }) {
       className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ring-1 ring-white/40"
       style={{ backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)` }}
     >
-      <span className="text-sm font-bold" style={{ color }}>
+      <span className="text-body2-bold" style={{ color }}>
         {isIncome ? '+' : '−'}
       </span>
     </div>

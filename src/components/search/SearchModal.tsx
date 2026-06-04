@@ -153,7 +153,7 @@ export function SearchModal() {
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="거래 메모, 자산, 구독, 카테고리 검색..."
-                className="flex-1 py-5 text-base bg-transparent text-heading placeholder:text-disabled focus:outline-none"
+                className="flex-1 py-5 text-body1 bg-transparent text-heading placeholder:text-disabled focus:outline-none"
                 autoComplete="off"
                 spellCheck={false}
                 aria-autocomplete="list"
@@ -207,7 +207,7 @@ export function SearchModal() {
                         </div>
                         <button
                           onClick={clearRecent}
-                          className="touch-target-inset text-caption text-disabled hover:text-heading transition-colors"
+                          className="touch-target-inset text-label3-medium text-disabled hover:text-heading transition-colors"
                         >
                           지우기
                         </button>
@@ -220,7 +220,7 @@ export function SearchModal() {
                           >
                             <button
                               onClick={() => setQuery(r)}
-                              className="pl-3 pr-1.5 py-1 text-caption text-heading"
+                              className="pl-3 pr-1.5 py-1 text-label3-medium text-heading"
                             >
                               {r}
                             </button>
@@ -247,7 +247,7 @@ export function SearchModal() {
                         <button
                           key={s}
                           onClick={() => setQuery(s)}
-                          className="px-3 py-1 rounded-full border border-base text-caption text-heading hover:bg-[color:var(--color-primary-50)] hover:border-[color:var(--color-primary-300)] dark:hover:bg-[color:var(--color-primary-900)]/20 transition-colors"
+                          className="px-3 py-1 rounded-full border border-base text-label3-medium text-heading hover:bg-[color:var(--color-primary-50)] hover:border-[color:var(--color-primary-300)] dark:hover:bg-[color:var(--color-primary-900)]/20 transition-colors"
                         >
                           {s}
                         </button>
@@ -256,7 +256,7 @@ export function SearchModal() {
                   </section>
 
                   <section className="pt-2 border-t border-base">
-                    <p className="text-caption text-disabled leading-relaxed">
+                    <p className="text-body3 text-disabled leading-relaxed">
                       거래 메모, 자산 이름, 구독 서비스, 카테고리를 한번에 검색하세요.
                       메모 내용은 <span className="text-heading font-semibold">하이라이트</span>로 강조됩니다.
                     </p>
@@ -273,7 +273,7 @@ export function SearchModal() {
                   <p className="text-body3 text-heading font-semibold mb-1">
                     "<span className="text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]">{query}</span>"에 대한 결과가 없어요
                   </p>
-                  <p className="text-caption text-sub">
+                  <p className="text-body3 text-sub">
                     다른 키워드로 시도해보거나, 철자를 확인해주세요.
                   </p>
                 </div>

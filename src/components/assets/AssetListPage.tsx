@@ -131,7 +131,7 @@ export function AssetListPage() {
           <button
             type="button"
             onClick={openAssetCategoryManager}
-            className="touch-target inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg bg-surface-tertiary px-3 text-label3 font-medium text-sub transition-colors hover:text-heading"
+            className="touch-target inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg bg-surface-tertiary px-3 text-label3-medium text-sub transition-colors hover:text-heading"
             aria-label="카테고리 관리"
           >
             <Tags className="h-4 w-4" /> <span className="hidden sm:inline">카테고리</span>
@@ -150,7 +150,7 @@ export function AssetListPage() {
                     type="button"
                     onClick={() => setViewMode('cards')}
                     aria-pressed={viewMode === 'cards'}
-                    className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3 font-medium transition-colors', viewMode === 'cards' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
+                    className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3-medium transition-colors', viewMode === 'cards' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
                   >
                     <LayoutGrid className="h-4 w-4" /> 카드
                   </button>
@@ -158,7 +158,7 @@ export function AssetListPage() {
                     type="button"
                     onClick={() => setViewMode('table')}
                     aria-pressed={viewMode === 'table'}
-                    className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3 font-medium transition-colors', viewMode === 'table' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
+                    className={clsx('inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-label3-medium transition-colors', viewMode === 'table' ? 'bg-surface-primary text-heading elevation-1' : 'text-sub hover:text-heading')}
                   >
                     <Table2 className="h-4 w-4" /> 표
                   </button>

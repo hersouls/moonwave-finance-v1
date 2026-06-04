@@ -87,7 +87,7 @@ export function AssetAllocationChart() {
                 style={{ backgroundColor: b.categoryColor, boxShadow: `0 0 6px ${b.categoryColor}40` }}
               />
               <span className="text-caption text-sub truncate flex-1">{b.categoryName}</span>
-              <span className="text-caption font-semibold text-heading tabular-nums">
+              <span className="text-caption-bold text-heading tabular-nums">
                 {formatPercent(b.percentage, 0)}
               </span>
             </div>

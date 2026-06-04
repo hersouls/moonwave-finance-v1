@@ -133,7 +133,7 @@ export function CategoryManagement() {
               className="w-3 h-3 rounded-full shrink-0"
               style={{ backgroundColor: cat.color }}
             />
-            <span className="flex-1 text-sm text-heading">{cat.name}</span>
+            <span className="flex-1 text-body2 text-heading">{cat.name}</span>
             <button
               onClick={() => openEdit(cat)}
               className="touch-target-inset p-1.5 rounded-md text-disabled hover:text-body hover:bg-[var(--hover-bg)] opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
@@ -217,14 +217,14 @@ export function CategoryManagement() {
               className="w-3 h-3 rounded-full shrink-0"
               style={{ backgroundColor: deletingCategory?.color }}
             />
-            <p className="text-sm text-sub">
-              <span className="font-medium text-heading">{deletingCategory?.name}</span>
+            <p className="text-body3 text-sub">
+              <span className="text-body3-semi text-heading">{deletingCategory?.name}</span>
               {' '}카테고리에 포함된 정보입니다.
             </p>
           </div>
 
           {isUsageLoading && (
-            <div className="py-6 text-center text-caption text-sub">사용 정보를 불러오는 중…</div>
+            <div className="py-6 text-center text-body3 text-sub">사용 정보를 불러오는 중…</div>
           )}
 
           {!isUsageLoading && usage && (
@@ -259,9 +259,9 @@ export function CategoryManagement() {
               {/* Income / Expense split when both exist */}
               {usage.transactionCount > 0 && usage.incomeCount > 0 && usage.expenseCount > 0 && (
                 <div className="flex gap-2 text-caption">
-                  <span className="value-positive">수입 {usage.incomeCount}건 · {formatKRW(usage.incomeTotal)}</span>
+                  <span className="value-positive tabular-nums">수입 {usage.incomeCount}건 · {formatKRW(usage.incomeTotal)}</span>
                   <span className="text-disabled">|</span>
-                  <span className="value-negative">지출 {usage.expenseCount}건 · {formatKRW(usage.expenseTotal)}</span>
+                  <span className="value-negative tabular-nums">지출 {usage.expenseCount}건 · {formatKRW(usage.expenseTotal)}</span>
                 </div>
               )}
 
@@ -271,7 +271,7 @@ export function CategoryManagement() {
                   <div className="text-caption text-sub mb-1.5">최근 거래</div>
                   <ul className="space-y-1">
                     {usage.recentTransactions.map(t => (
-                      <li key={t.id} className="flex items-center gap-2 text-caption">
+                      <li key={t.id} className="flex items-center gap-2 text-label3-medium">
                         <span className="text-disabled tabular-nums shrink-0">{t.date.slice(5)}</span>
                         <span className="flex-1 truncate text-body">{t.memo || '(메모 없음)'}</span>
                         <span className={clsx('tabular-nums shrink-0', t.type === 'income' ? 'value-positive' : 'value-negative')}>
@@ -287,20 +287,20 @@ export function CategoryManagement() {
               {usage.linkedSubscriptions.length > 0 && (
                 <div className="flex items-start gap-2 rounded-lg bg-status-warning-soft border border-[var(--status-warning-border)] px-3 py-2">
                   <AlertTriangle className="w-3.5 h-3.5 text-status-warning mt-0.5 shrink-0" />
-                  <div className="text-caption text-status-warning">
-                    구독 <span className="font-medium">{usage.linkedSubscriptions.map(s => s.name).join(', ')}</span>의 연결 카테고리가 해제됩니다.
+                  <div className="text-body3 text-status-warning">
+                    구독 <span className="text-body3-semi">{usage.linkedSubscriptions.map(s => s.name).join(', ')}</span>의 연결 카테고리가 해제됩니다.
                   </div>
                 </div>
               )}
 
               {/* Result summary */}
-              <div className="rounded-lg bg-surface-secondary px-3 py-2 text-caption text-sub">
+              <div className="rounded-lg bg-surface-secondary px-3 py-2 text-body3 text-sub">
                 {usage.transactionCount === 0 && usage.budgetCount === 0 && usage.linkedSubscriptions.length === 0 ? (
                   <span>이 카테고리에 연결된 데이터가 없어 안전하게 삭제할 수 있습니다.</span>
                 ) : (
                   <ul className="space-y-0.5 list-disc list-inside">
-                    {usage.transactionCount > 0 && <li>거래 {usage.transactionCount}건은 <span className="text-heading font-medium">미분류</span>로 변경됩니다.</li>}
-                    {usage.budgetCount > 0 && <li>이 카테고리에 설정된 <span className="text-heading font-medium">예산 {usage.budgetCount}건</span>은 함께 삭제되지 않으니 예산관리에서 확인하세요.</li>}
+                    {usage.transactionCount > 0 && <li>거래 {usage.transactionCount}건은 <span className="text-heading text-body3-semi">미분류</span>로 변경됩니다.</li>}
+                    {usage.budgetCount > 0 && <li>이 카테고리에 설정된 <span className="text-heading text-body3-semi">예산 {usage.budgetCount}건</span>은 함께 삭제되지 않으니 예산관리에서 확인하세요.</li>}
                     {usage.linkedSubscriptions.length > 0 && <li>연결된 구독은 카테고리 연결이 해제됩니다.</li>}
                   </ul>
                 )}
@@ -326,7 +326,7 @@ function UsageStat({ icon, label, value, sub }: { icon: React.ReactNode; label: 
         {icon}
         {label}
       </div>
-      <div className="text-sm font-medium text-heading tabular-nums">{value}</div>
+      <div className="text-body3-semi text-heading tabular-nums">{value}</div>
       {sub && <div className="text-caption text-disabled truncate">{sub}</div>}
     </div>
   )

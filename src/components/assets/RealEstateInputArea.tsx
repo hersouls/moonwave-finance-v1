@@ -21,7 +21,7 @@ export function RealEstateInputArea({ onValuesChange }: RealEstateInputAreaProps
         </span>
         부동산 자산 등록
       </h4>
-      <p className="text-caption text-sub mb-2 leading-relaxed">
+      <p className="text-body3 text-sub mb-2 leading-relaxed">
         부동산은 시세 변동이 적어, 입력하신 금액이 그대로 유지됩니다. 시세가 변동되었을 때에만 자산 상세 화면에서 실거래가나 시세를 다시 입력해주세요.
       </p>
       <div>
@@ -38,7 +38,7 @@ export function RealEstateInputArea({ onValuesChange }: RealEstateInputAreaProps
             placeholder="0"
             className="input-base text-right pr-8 tabular-nums"
           />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-disabled">원</span>
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-label3-medium text-disabled">원</span>
         </div>
       </div>
     </div>

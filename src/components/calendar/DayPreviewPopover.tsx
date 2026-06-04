@@ -102,14 +102,14 @@ export function DayPreviewPopover({
       {/* Top categories for the day */}
       {summary.expense > 0 && summary.expenseCategories.length > 0 && (
         <div className="mb-2">
-          <p className="text-label4 text-sub uppercase tracking-wide mb-1">지출 카테고리</p>
+          <p className="text-label3 text-sub uppercase tracking-wide mb-1">지출 카테고리</p>
           <div className="space-y-1">
             {summary.expenseCategories.slice(0, 3).map((c, i) => {
               const color = getCategoryColor(c.categoryId, categories, calFallback.expense)
               const name = getCategoryName(c.categoryId, categories)
               const pct = summary.expense > 0 ? (c.amount / summary.expense) * 100 : 0
               return (
-                <div key={i} className="flex items-center gap-2 text-xs">
+                <div key={i} className="flex items-center gap-2 text-body3">
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
                   <span className="flex-1 truncate text-heading">{name}</span>
                   <div className="w-10 h-1 rounded-full bg-[var(--surface-tertiary)] overflow-hidden">
@@ -131,12 +131,12 @@ export function DayPreviewPopover({
       {/* Transactions preview */}
       {dayTxns.length > 0 && (
         <div className="pt-2 border-t border-[var(--border-subtle)]">
-          <p className="text-label4 text-sub uppercase tracking-wide mb-1">최근 거래</p>
+          <p className="text-label3 text-sub uppercase tracking-wide mb-1">최근 거래</p>
           <div className="space-y-0.5">
             {dayTxns.map((t) => {
               const isIncome = t.type === 'income'
               return (
-                <div key={t.id} className="flex items-center gap-2 text-xs">
+                <div key={t.id} className="flex items-center gap-2 text-body3">
                   <span
                     className="w-1.5 h-1.5 rounded-full shrink-0"
                     style={{
@@ -187,7 +187,7 @@ function Stat({ label, value, tone, signed }: StatProps) {
   return (
     <div className="text-center">
       <p className="text-label4 text-sub">{label}</p>
-      <p className={clsx('text-xs font-semibold tabular-nums', toneClass)}>
+      <p className={clsx('text-label3 tabular-nums', toneClass)}>
         {value === 0 ? '—' : `${prefix}${formatKoreanUnit(value)}`}
       </p>
     </div>

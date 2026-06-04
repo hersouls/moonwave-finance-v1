@@ -30,10 +30,10 @@ export function UpcomingBillsCard() {
           <div className="w-7 h-7 rounded-lg bg-status-success-soft flex items-center justify-center">
             <CalendarClock className="w-3.5 h-3.5 text-status-success" />
           </div>
-          <span className="text-caption text-sub font-semibold">결제 예정</span>
+          <span className="text-label3-medium text-sub font-semibold">결제 예정</span>
         </div>
-        <p className="text-body3 text-heading font-bold">7일 내 없음</p>
-        <p className="text-caption text-sub mt-1">편히 쉬세요 😊</p>
+        <p className="text-body3-bold text-heading">7일 내 없음</p>
+        <p className="text-label3-medium text-sub mt-1">편히 쉬세요 😊</p>
       </motion.div>
     )
   }
@@ -62,7 +62,7 @@ export function UpcomingBillsCard() {
       />
       <div className="mt-2 space-y-0.5">
         {firstThree.map((sub) => (
-          <p key={sub.key} className="text-label4 text-sub truncate">
+          <p key={sub.key} className="text-label3-medium text-sub truncate">
             <span
               className="inline-block w-1.5 h-1.5 rounded-full mr-1 align-middle"
               style={{ backgroundColor: sub.color }}

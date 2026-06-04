@@ -476,7 +476,7 @@ function InvestmentHeroSection({ label, children, aurora }: { label: string; chi
       <div className="relative px-4 sm:px-6 py-5">
         <div className="flex items-center gap-1.5 mb-2">
           <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'color-mix(in srgb, var(--color-primary-500) 70%, transparent)' }} />
-          <p className="text-micro sm:text-caption font-bold tracking-[0.14em] uppercase text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]">
+          <p className="text-caption font-bold tracking-[0.14em] uppercase text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]">
             {label}
           </p>
         </div>
@@ -511,7 +511,7 @@ function TradeHero({ totalProfit, profitRate, totalSell, totalBuy, winRate, coun
           style={{ textShadow: '0 1px 2px color-mix(in srgb, var(--color-primary-500) 16%, transparent)' }}>
           {pos ? '+' : ''}{animatedProfit.toLocaleString('ko-KR')}
         </span>
-        <span className="text-body3-semi font-bold text-sub" style={{ fontSize: 'clamp(18px,4vw,22px)' }}>원</span>
+        <span className="text-title2 text-sub">원</span>
       </div>
       <div className="mt-3 flex items-center gap-2 flex-wrap">
         <span className={clsx(
@@ -543,7 +543,7 @@ function DividendHero({ totalDiv, totalTax, netDiv, count, stockCount }: {
           style={{ textShadow: '0 1px 2px color-mix(in srgb, var(--color-primary-500) 16%, transparent)' }}>
           +{animatedNet.toLocaleString('ko-KR')}
         </span>
-        <span className="text-body3-semi font-bold text-sub" style={{ fontSize: 'clamp(18px,4vw,22px)' }}>원</span>
+        <span className="text-title2 text-sub">원</span>
       </div>
       <div className="mt-3 flex items-center gap-2 flex-wrap">
         <ChipMetric label="총 배당" value={formatKRW(totalDiv)} />
@@ -567,7 +567,7 @@ function InterestHero({ totalInterest, totalTax, netInterest, count }: {
           style={{ textShadow: '0 1px 2px color-mix(in srgb, var(--color-primary-500) 16%, transparent)' }}>
           +{animatedNet.toLocaleString('ko-KR')}
         </span>
-        <span className="text-body3-semi font-bold text-sub" style={{ fontSize: 'clamp(18px,4vw,22px)' }}>원</span>
+        <span className="text-title2 text-sub">원</span>
       </div>
       <div className="mt-3 flex items-center gap-2 flex-wrap">
         <ChipMetric label="총 이자" value={formatKRW(totalInterest)} />
@@ -589,7 +589,7 @@ function MonthlyChart({ stats, valueKey, color }: {
     : { pos: 'var(--color-primary-500)', neg: 'var(--color-primary-500)', textPos: 'text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]', textNeg: 'text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]' }
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-primary flex items-center gap-1.5">
+      <h3 className="text-body3-semi text-primary flex items-center gap-1.5">
         <BarChart3 className="w-4 h-4 text-primary-500" />월별 현황
       </h3>
       <div className="space-y-1.5">
@@ -985,7 +985,7 @@ function PasteImportModal({ isOpen, onClose, onImportTrades, onImportDividends, 
 
           {/* Member selector */}
           <div className="mb-4">
-            <label className="text-caption font-bold text-sub block mb-1.5">구성원 선택</label>
+            <label className="text-label2 text-sub block mb-1.5">구성원 선택</label>
             <div className="chip-group-wrap">
               {members.map(m => (
                 <button key={m.id} onClick={() => setSelectedMemberId(m.id)}
@@ -998,7 +998,7 @@ function PasteImportModal({ isOpen, onClose, onImportTrades, onImportDividends, 
 
           {step === 'input' ? (
             <>
-              <p className="text-caption font-bold text-sub mb-2">{descriptions[importType]}</p>
+              <p className="text-body3 text-sub mb-2">{descriptions[importType]}</p>
               <div className="textarea-field h-48">
                 <textarea ref={textareaRef} value={text} onChange={e => setText(e.target.value)}
                   placeholder={placeholders[importType]}
@@ -1012,29 +1012,29 @@ function PasteImportModal({ isOpen, onClose, onImportTrades, onImportDividends, 
           ) : (
             <>
               <div className="flex items-center justify-between mb-3">
-                <p className="text-body3 font-bold text-heading">{parsedCount}건 인식됨</p>
+                <p className="text-body3-bold text-heading">{parsedCount}건 인식됨</p>
                 <button onClick={() => setStep('input')} className="btn-foundation btn-ghost btn-sm">다시 입력</button>
               </div>
               {parsedCount === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-secondary">
-                  <AlertCircle className="w-10 h-10 mb-2 opacity-40" /><p className="text-sm">인식된 데이터가 없습니다.</p>
+                  <AlertCircle className="w-10 h-10 mb-2 opacity-40" /><p className="text-body3">인식된 데이터가 없습니다.</p>
                 </div>
               ) : (
                 <div className="space-y-1 max-h-60 overflow-y-auto mb-4">
                   {importType === 'trades' ? parsedTrades.map((t, i) => (
                     <div key={i} className="list-item card-fill rounded-lg">
-                      <div><p className="text-body3 font-bold text-heading">{t.stockName}</p><p className="text-micro text-sub">{t.sellDate} · {formatShares(t.sellQuantity)}주</p></div>
-                      <span className={clsx('text-body3 font-bold financial-value', t.totalProfit >= 0 ? 'value-positive' : 'value-negative')}>{formatChange(t.totalProfit)}</span>
+                      <div><p className="text-body3-bold text-heading">{t.stockName}</p><p className="text-label3-medium text-sub">{t.sellDate} · {formatShares(t.sellQuantity)}주</p></div>
+                      <span className={clsx('text-body3-bold financial-value', t.totalProfit >= 0 ? 'value-positive' : 'value-negative')}>{formatChange(t.totalProfit)}</span>
                     </div>
                   )) : importType === 'dividends' ? parsedDivs.map((d, i) => (
                     <div key={i} className="list-item card-fill rounded-lg">
-                      <div><p className="text-body3 font-bold text-heading">{d.stockName}</p><p className="text-micro text-sub">{d.paymentDate} · {formatShares(d.quantity)}주</p></div>
-                      <span className="text-body3 font-bold financial-value value-positive">+{formatKoreanUnit(d.dividendAmount)}원</span>
+                      <div><p className="text-body3-bold text-heading">{d.stockName}</p><p className="text-label3-medium text-sub">{d.paymentDate} · {formatShares(d.quantity)}주</p></div>
+                      <span className="text-body3-bold financial-value value-positive">+{formatKoreanUnit(d.dividendAmount)}원</span>
                     </div>
                   )) : parsedInterests.map((r, i) => (
                     <div key={i} className="list-item card-fill rounded-lg">
-                      <div><p className="text-body3 font-bold text-heading">{r.interestType}</p><p className="text-micro text-sub">{r.depositDate} · 연 {r.interestRate}%</p></div>
-                      <span className="text-body3 font-bold financial-value value-positive">+{formatKoreanUnit(r.interestAmount)}원</span>
+                      <div><p className="text-body3-bold text-heading">{r.interestType}</p><p className="text-label3-medium text-sub">{r.depositDate} · 연 {r.interestRate}%</p></div>
+                      <span className="text-body3-bold financial-value value-positive">+{formatKoreanUnit(r.interestAmount)}원</span>
                     </div>
                   ))}
                 </div>
@@ -1086,7 +1086,7 @@ function TopStocksSection({ gainers, losers }: { gainers: InvestmentTrade[]; los
             </div>
           )
         })}
-        {list.length === 0 && <p className="text-caption font-bold text-muted py-3 text-center">데이터가 없습니다</p>}
+        {list.length === 0 && <p className="text-body3 text-muted py-3 text-center">데이터가 없습니다</p>}
       </div>
     </div>
   )
@@ -1175,7 +1175,7 @@ function InvestmentDashboard({
               style={isPositive ? { textShadow: '0 1px 2px color-mix(in srgb, var(--color-primary-500) 16%, transparent)' } : undefined}>
               {isPositive ? '+' : ''}{animatedTotal.toLocaleString('ko-KR')}
             </span>
-            <span aria-hidden="true" className="text-body3-semi font-bold text-sub" style={{ fontSize: 'clamp(18px,4vw,22px)' }}>원</span>
+            <span aria-hidden="true" className="text-title2 text-sub">원</span>
             <span className="sr-only">총 투자수익 합계 {formatChange(totalIncome)}</span>
           </div>
           {(tradeCount + divCount + interestCount) > 0 && (
@@ -1375,37 +1375,37 @@ function InvestmentDashboard({
                 </h3>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                   <div>
-                    <p className="text-micro text-disabled">평균 수익 (승)</p>
+                    <p className="text-label3-medium text-disabled">평균 수익 (승)</p>
                     <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>
                       +{formatKoreanUnit(Math.round(insights.tradeEfficiency.avgWinProfit))}원
                     </p>
                   </div>
                   <div>
-                    <p className="text-micro text-disabled">평균 손실 (패)</p>
+                    <p className="text-label3-medium text-disabled">평균 손실 (패)</p>
                     <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-negative)' }}>
                       −{formatKoreanUnit(Math.round(insights.tradeEfficiency.avgLossAmount))}원
                     </p>
                   </div>
                   <div>
-                    <p className="text-micro text-disabled">손익비</p>
+                    <p className="text-label3-medium text-disabled">손익비</p>
                     <p className="text-body3 font-bold tabular-nums text-heading">
                       {insights.tradeEfficiency.profitFactor === Infinity ? '∞' : insights.tradeEfficiency.profitFactor.toFixed(2)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-micro text-disabled">평균 수익률</p>
+                    <p className="text-label3-medium text-disabled">평균 수익률</p>
                     <p className="text-body3 font-bold tabular-nums text-heading">
                       {insights.tradeEfficiency.avgHoldReturn >= 0 ? '+' : ''}{insights.tradeEfficiency.avgHoldReturn.toFixed(1)}%
                     </p>
                   </div>
                   <div>
-                    <p className="text-micro text-disabled">최대 연승</p>
+                    <p className="text-label3-medium text-disabled">최대 연승</p>
                     <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>
                       {insights.tradeEfficiency.maxConsecutiveWins}연승
                     </p>
                   </div>
                   <div>
-                    <p className="text-micro text-disabled">최대 연패</p>
+                    <p className="text-label3-medium text-disabled">최대 연패</p>
                     <p className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-negative)' }}>
                       {insights.tradeEfficiency.maxConsecutiveLosses}연패
                     </p>
@@ -1421,11 +1421,11 @@ function InvestmentDashboard({
                   <BarChart3 className="w-4 h-4" style={{ color: 'var(--color-primary-500)' }} />수익 전망
                 </h3>
                 <div>
-                  <p className="text-micro text-disabled">월 평균 수익</p>
+                  <p className="text-label3-medium text-disabled">월 평균 수익</p>
                   <p className="text-body3 font-bold tabular-nums text-heading">{formatKRW(Math.round(insights.projectedIncome.monthlyAvg))}</p>
                 </div>
                 <div className="mt-2">
-                  <p className="text-micro text-disabled">연간 예상</p>
+                  <p className="text-label3-medium text-disabled">연간 예상</p>
                   <p className="text-title2 font-extrabold tabular-nums text-heading">
                     {formatKoreanUnit(Math.round(insights.projectedIncome.annualProjection))}원
                   </p>
@@ -1489,7 +1489,7 @@ function InvestmentDashboard({
                     {insights.concentration.riskLevel === 'high' ? '높음' : insights.concentration.riskLevel === 'medium' ? '보통' : '낮음'}
                   </span>
                 </div>
-                <p className="text-micro text-disabled mb-2">상위 5종목이 수익의 <span className="font-bold text-heading">{insights.concentration.top5Share.toFixed(0)}%</span>를 차지</p>
+                <p className="text-body3 text-disabled mb-2">상위 5종목이 수익의 <span className="font-bold text-heading">{insights.concentration.top5Share.toFixed(0)}%</span>를 차지</p>
                 <div className="flex h-2 rounded-full overflow-hidden bg-surface-tertiary mb-2">
                   {insights.concentration.top5Stocks.map((s, i) => {
                     const totalP = insights.concentration.top5Stocks.reduce((sum, x) => sum + x.profit, 0)
@@ -1499,9 +1499,9 @@ function InvestmentDashboard({
                 </div>
                 <div className="space-y-1">
                   {insights.concentration.top5Stocks.map(s => (
-                    <div key={s.name} className="flex items-center justify-between text-micro">
-                      <span className="text-sub truncate flex-1">{s.name}</span>
-                      <span className="font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>{formatKRW(s.profit)}</span>
+                    <div key={s.name} className="flex items-center justify-between">
+                      <span className="text-label3-medium text-sub truncate flex-1">{s.name}</span>
+                      <span className="text-label3 tabular-nums" style={{ color: 'var(--value-positive)' }}>{formatKRW(s.profit)}</span>
                     </div>
                   ))}
                 </div>
@@ -1518,18 +1518,18 @@ function InvestmentDashboard({
                   <Landmark className="w-4 h-4" style={{ color: 'var(--value-negative)' }} />수수료·세금
                 </h3>
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-micro">
-                    <span className="text-disabled">수수료</span>
-                    <span className="font-bold tabular-nums text-heading">{formatKRW(insights.feeAndTax.totalFees)}</span>
+                  <div className="flex justify-between">
+                    <span className="text-label3-medium text-disabled">수수료</span>
+                    <span className="text-body3 font-bold tabular-nums text-heading">{formatKRW(insights.feeAndTax.totalFees)}</span>
                   </div>
-                  <div className="flex justify-between text-micro">
-                    <span className="text-disabled">세금 합계</span>
-                    <span className="font-bold tabular-nums text-heading">{formatKRW(insights.feeAndTax.totalTaxAll)}</span>
+                  <div className="flex justify-between">
+                    <span className="text-label3-medium text-disabled">세금 합계</span>
+                    <span className="text-body3 font-bold tabular-nums text-heading">{formatKRW(insights.feeAndTax.totalTaxAll)}</span>
                   </div>
                   <div className="pt-1.5 border-t border-[color:var(--border-subtle)]">
-                    <div className="flex justify-between text-micro">
-                      <span className="text-disabled">실효 세율</span>
-                      <span className="font-bold tabular-nums" style={{ color: 'var(--value-negative)' }}>{insights.feeAndTax.effectiveTaxRate.toFixed(1)}%</span>
+                    <div className="flex justify-between">
+                      <span className="text-label3-medium text-disabled">실효 세율</span>
+                      <span className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-negative)' }}>{insights.feeAndTax.effectiveTaxRate.toFixed(1)}%</span>
                     </div>
                   </div>
                 </div>
@@ -1543,17 +1543,17 @@ function InvestmentDashboard({
                   <Banknote className="w-4 h-4" style={{ color: 'var(--chart-series-3)' }} />배당 분석
                 </h3>
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-micro">
-                    <span className="text-disabled">연간 예상</span>
-                    <span className="font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>{formatKRW(Math.round(insights.dividendInsight.annualizedRate))}</span>
+                  <div className="flex justify-between">
+                    <span className="text-label3-medium text-disabled">연간 예상</span>
+                    <span className="text-body3 font-bold tabular-nums" style={{ color: 'var(--value-positive)' }}>{formatKRW(Math.round(insights.dividendInsight.annualizedRate))}</span>
                   </div>
-                  <div className="flex justify-between text-micro">
-                    <span className="text-disabled">종목 수</span>
-                    <span className="font-bold tabular-nums text-heading">{insights.dividendInsight.uniqueStocks}종</span>
+                  <div className="flex justify-between">
+                    <span className="text-label3-medium text-disabled">종목 수</span>
+                    <span className="text-body3 font-bold tabular-nums text-heading">{insights.dividendInsight.uniqueStocks}종</span>
                   </div>
-                  <div className="flex justify-between text-micro">
-                    <span className="text-disabled">TOP1 비중</span>
-                    <span className={clsx('font-bold tabular-nums', insights.dividendInsight.topStockShare > 50 ? 'text-status-warning' : 'text-heading')}>
+                  <div className="flex justify-between">
+                    <span className="text-label3-medium text-disabled">TOP1 비중</span>
+                    <span className={clsx('text-body3 font-bold tabular-nums', insights.dividendInsight.topStockShare > 50 ? 'text-status-warning' : 'text-heading')}>
                       {insights.dividendInsight.topStockShare.toFixed(0)}%
                     </span>
                   </div>
@@ -1620,7 +1620,7 @@ function InvestmentDashboard({
         <div className="flex flex-col items-center justify-center py-16 text-body">
           <BarChart3 className="w-12 h-12 mb-3 opacity-20" />
           <p className="text-body3">등록된 데이터가 없습니다</p>
-          <p className="text-micro text-muted mt-1">상단의 "가져오기" 버튼으로 증권사 데이터를 붙여넣기 하세요</p>
+          <p className="text-body3 text-muted mt-1">상단의 "가져오기" 버튼으로 증권사 데이터를 붙여넣기 하세요</p>
         </div>
       )}
     </div>
@@ -1867,7 +1867,7 @@ function MarketFilterChips({ value, onChange, trades, dividends }: {
             whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
             transition={springSnappy}
             className={clsx(
-              'flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-caption font-bold transition-all',
+              'flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-label3 transition-all',
               isActive
                 ? 'text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
                 : 'bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -1876,7 +1876,7 @@ function MarketFilterChips({ value, onChange, trades, dividends }: {
           >
             {MARKET_LABELS[m]}
             <span className={clsx(
-              'min-w-[18px] px-1 h-[16px] rounded-full text-micro font-bold tabular-nums flex items-center justify-center',
+              'min-w-[18px] px-1 h-[16px] rounded-full text-micro-bold tabular-nums flex items-center justify-center',
               isActive ? 'bg-white/22 text-white' : 'bg-surface-tertiary text-sub',
             )}>{count}</span>
           </motion.button>
@@ -1912,7 +1912,7 @@ function MonthFilterChips({ value, onChange, months }: {
             transition={springSnappy}
             aria-pressed={isActive}
             className={clsx(
-              'flex-shrink-0 inline-flex items-center gap-1 px-3 h-8 rounded-full text-caption font-bold transition-all tabular-nums',
+              'flex-shrink-0 inline-flex items-center gap-1 px-3 h-8 rounded-full text-label3 transition-all tabular-nums',
               isActive
                 ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
                 : 'bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -1940,7 +1940,7 @@ function MemberFilterChips({ value, onChange, members }: {
         whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
         transition={springSnappy}
         className={clsx(
-          'flex-shrink-0 inline-flex items-center gap-1 px-3 h-8 rounded-full text-caption font-bold transition-all',
+          'flex-shrink-0 inline-flex items-center gap-1 px-3 h-8 rounded-full text-label3 transition-all',
           value === 'all'
             ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
             : 'bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -1956,7 +1956,7 @@ function MemberFilterChips({ value, onChange, members }: {
             whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
             transition={springSnappy}
             className={clsx(
-              'flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-caption font-bold transition-all',
+              'flex-shrink-0 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-label3 transition-all',
               isActive
                 ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
                 : 'bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -1989,7 +1989,7 @@ function SortChips({ value, onChange }: { value: string; onChange: (v: 'date' | 
             whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
             transition={springSnappy}
             className={clsx(
-              'flex-shrink-0 inline-flex items-center px-2.5 h-7 rounded-full text-micro font-bold transition-all',
+              'flex-shrink-0 inline-flex items-center px-2.5 h-7 rounded-full text-label3 transition-all',
               isActive
                 ? 'bg-[color:var(--color-primary-500)] text-white'
                 : 'bg-surface-tertiary text-sub hover:bg-[var(--hover-bg)]',
@@ -2208,25 +2208,25 @@ export function InvestmentPage() {
     <div className="fold:p-3 p-4 lg:p-6 space-y-5 pb-24">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-heading font-bold text-lg flex items-center gap-2">
+        <h1 className="text-heading text-title2 flex items-center gap-2">
           <TrendingUp className="w-5 h-5" style={{ color: 'var(--color-primary-500)' }} />투자수익
         </h1>
         <div className="flex items-center gap-2">
           {activeTab !== 'dashboard' && hasData && (
             <button onClick={() => setShowResetConfirm(true)}
-              className="inline-flex items-center gap-1 h-9 px-3 rounded-2xl text-caption font-bold ring-1 transition-all"
+              className="inline-flex items-center gap-1 h-9 px-3 rounded-2xl text-label3 ring-1 transition-all"
               style={{ color: 'var(--status-danger-text)', borderColor: 'color-mix(in srgb, var(--status-danger-text) 30%, transparent)', backgroundColor: 'var(--status-danger-bg)' }}>
               <RotateCcw className="w-3.5 h-3.5" />초기화
             </button>
           )}
           {activeTab !== 'dashboard' && (
             <button onClick={openNewForm}
-              className="inline-flex items-center gap-1 h-9 px-3 rounded-2xl text-caption font-bold text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] bg-surface-primary transition-all">
+              className="inline-flex items-center gap-1 h-9 px-3 rounded-2xl text-label3 text-body ring-1 ring-[color:var(--border-strong)] hover:ring-[color:var(--color-primary-400)] bg-surface-primary transition-all">
               <Plus className="w-4 h-4" />등록
             </button>
           )}
           <button onClick={() => setShowImport(true)}
-            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-2xl text-caption font-bold text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]"
+            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-2xl text-label3 text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]"
             style={{ background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))' }}>
             <Upload className="w-4 h-4" />가져오기
           </button>
@@ -2340,7 +2340,7 @@ export function InvestmentPage() {
         <div className="flex flex-col items-center justify-center py-16 text-body">
           {activeTab === 'trades' ? <TrendingUp className="w-12 h-12 mb-3 opacity-20" /> : <Banknote className="w-12 h-12 mb-3 opacity-20" />}
           <p className="text-body3">{!hasData ? (activeTab === 'trades' ? '등록된 투자수익이 없습니다' : activeTab === 'dividends' ? '등록된 배당금이 없습니다' : '등록된 계좌이자가 없습니다') : '검색 결과가 없습니다'}</p>
-          {!hasData && <p className="text-micro text-muted mt-1">상단의 "가져오기" 버튼으로 증권사 데이터를 붙여넣기 하세요</p>}
+          {!hasData && <p className="text-body3 text-muted mt-1">상단의 "가져오기" 버튼으로 증권사 데이터를 붙여넣기 하세요</p>}
         </div>
       ) : isDesktop && viewMode === 'table' ? (
         /* ═══ DESKTOP TABLE VIEW ═══ */
@@ -2461,7 +2461,7 @@ export function InvestmentPage() {
             <h3 className="text-body3-semi text-heading mb-1">
               {activeTab === 'trades' ? '판매수익' : activeTab === 'dividends' ? '배당금' : '계좌이자'} 초기화
             </h3>
-            <p className="text-caption text-sub mb-5">
+            <p className="text-body3 text-sub mb-5">
               등록된 모든 {activeTab === 'trades' ? '판매수익' : activeTab === 'dividends' ? '배당금' : '계좌이자'} 데이터가 삭제됩니다.<br />이 작업은 되돌릴 수 없습니다.
             </p>
             <div className="flex gap-2">

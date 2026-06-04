@@ -100,32 +100,37 @@
   --font-sans: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
 
-  /* ── KT Typography Scale (px 기반) ── */
-  --font-size-xs: 12px;
-  --font-size-sm: 14px;
-  --font-size-base: 16px;
-  --font-size-lg: 18px;
-  --font-size-xl: 20px;
-  --font-size-2xl: 24px;
-  --font-size-3xl: 32px;
+  /* ── 레거시 --font-size-* 별칭 ──────────────────
+   * 단일 SOT는 styles/tokens/typography.css 의 --typo-*-size 다.
+   * 과거 이 블록이 독립된 두 번째 스케일(label4 10px, display1 60px 등)로
+   * 존재해 파일마다 다른 크기 체계를 참조하는 '중구난방'의 근원이었다.
+   * 남은 소수 소비처(section.css, chip-badge.css, fin-aliases.css)를 위해
+   * 별칭으로만 유지한다. 신규 코드는 --typo-*-size / .text-* 클래스만 사용.
+   * 정책: src/styles/TYPOGRAPHY.md */
+  --font-size-xs: var(--typo-caption-size);      /* 12px */
+  --font-size-sm: var(--typo-body3-size);        /* 14px */
+  --font-size-base: var(--typo-body1-size);      /* 16px */
+  --font-size-lg: var(--typo-title2-size);       /* 18px */
+  --font-size-xl: var(--typo-title1-size);       /* 20px */
+  --font-size-2xl: var(--typo-heading2-size);    /* 24px */
+  --font-size-3xl: var(--typo-display1-size);    /* 32px */
 
-  /* KT 전용 사이즈 */
-  --font-size-display1: 60px;
-  --font-size-display2: 40px;
-  --font-size-display3: 36px;
-  --font-size-heading1: 32px;
-  --font-size-heading2: 24px;
-  --font-size-heading3: 22px;
-  --font-size-title1: 20px;
-  --font-size-title2: 18px;
-  --font-size-body1: 16px;
-  --font-size-body2: 15px;
-  --font-size-body3: 14px;
-  --font-size-label1: 17px;
-  --font-size-label2: 15px;
-  --font-size-label3: 13px;
-  --font-size-label4: 10px;
-  --font-size-caption: 12px;
+  --font-size-display1: var(--typo-display1-size);
+  --font-size-display2: var(--typo-display2-size);
+  --font-size-display3: var(--typo-display2-size);
+  --font-size-heading1: var(--typo-heading1-size);
+  --font-size-heading2: var(--typo-heading2-size);
+  --font-size-heading3: var(--typo-heading3-size);
+  --font-size-title1: var(--typo-title1-size);
+  --font-size-title2: var(--typo-title2-size);
+  --font-size-body1: var(--typo-body1-size);
+  --font-size-body2: var(--typo-body2-size);
+  --font-size-body3: var(--typo-body3-size);
+  --font-size-label1: var(--typo-label1-size);
+  --font-size-label2: var(--typo-label2-size);
+  --font-size-label3: var(--typo-label3-size);
+  --font-size-label4: var(--typo-label4-size);
+  --font-size-caption: var(--typo-caption-size);
 }
 
 /* ========================================
@@ -907,15 +912,19 @@ body {
 
 /* Z Fold 커버 (≤359px) */
 @media (max-width: 359px) {
+  /* 초소형 화면 밀도: 클래스별 !important 대신 토큰 자체를 한 단계 낮춰
+   * 모든 소비처가 일관되게 줄어들게 한다. */
+  :root {
+    --typo-body2-size: 13px;
+    --typo-title1-size: 19px;
+    --typo-title2-size: 17px;
+  }
   .px-4 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
   .px-3 { padding-left: 0.375rem !important; padding-right: 0.375rem !important; }
   .p-4 { padding: 0.5rem !important; }
   .p-5 { padding: 0.5rem !important; }
   .gap-4 { gap: 0.5rem !important; }
   .gap-3 { gap: 0.375rem !important; }
-  .text-2xl { font-size: 20px !important; }
-  .text-xl { font-size: 18px !important; }
-  .text-body2 { font-size: var(--font-size-label3) !important; }
   .grid:not([class*="grid-cols-1"]) { grid-template-columns: 1fr !important; }
   .flex-wrap { gap: 0.25rem !important; }
   .shrink-0 { flex-shrink: 1 !important; }
@@ -939,10 +948,13 @@ body {
   .mx-3 { margin-left: 0.25rem !important; margin-right: 0.25rem !important; }
   .gap-2 { gap: 0.25rem !important; }
   .gap-1\.5 { gap: 0.125rem !important; }
-  .text-lg { font-size: var(--font-size-body2) !important; }
-  .text-base { font-size: var(--font-size-body3) !important; }
-  .text-sm { font-size: var(--font-size-caption) !important; }
-  .text-xs { font-size: 11px !important; }
+  /* ≤280px 극단 밀도: 토큰을 한 단계 더 낮춘다 (raw Tailwind 크기 클래스는
+   * 코드베이스에서 제거됨 — TYPOGRAPHY.md 정책) */
+  :root {
+    --typo-body1-size: 15px;
+    --typo-body3-size: 13px;
+    --typo-caption-size: 11px;
+  }
   [role="dialog"] { padding: 0.5rem !important; }
   [role="dialog"] .p-4 { padding: 0.5rem !important; }
   [role="dialog"] .sm\:p-6 { padding: 0.5rem !important; }

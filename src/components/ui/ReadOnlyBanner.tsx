@@ -13,7 +13,7 @@ export function ReadOnlyBanner() {
   return (
     <div
       role="status"
-      className="flex items-center justify-center gap-2 px-4 py-2 text-caption font-medium text-white"
+      className="flex items-center justify-center gap-2 px-4 py-2 text-body3 font-medium text-white"
       style={{ background: 'linear-gradient(90deg, var(--color-primary-600), var(--color-primary-500))' }}
     >
       <Lock className="w-3.5 h-3.5 flex-shrink-0" />

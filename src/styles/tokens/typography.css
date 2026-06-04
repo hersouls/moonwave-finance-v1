@@ -1,6 +1,14 @@
 /* ===============================================
- * Typography Tokens — v2 "Obsidian" Refined
+ * Typography Tokens — v3 "하이엔드 압축"
  * Font: Pretendard Variable (systematic scale)
+ *
+ * v3: 실효 크기 가짓수를 Health_v1.0 리듬으로 압축.
+ * 인접 1px 단계(13/14/15, 17/18 혼재)가 '조잡함'의 원인이라
+ * 짝수 위주 + 최소 2px 점프로 통일:
+ *   10(micro) 11(칩) 12(메타) 14(텍스트) 16(카드)
+ *   18(섹션) 20(강조) 24+(페이지/히어로 fluid)
+ * 같은 크기 안의 위계는 굵기(500/600/700)로 표현한다.
+ * 정책: src/styles/TYPOGRAPHY.md
  * =============================================== */
 :root {
   /* ── Font Weights (5 tiers) ─────────────────── */
@@ -58,7 +66,7 @@
   --typo-title2-weight: 700;
   --typo-title2-line-height: var(--line-height-snug);
 
-  --typo-title3-size: 17px;
+  --typo-title3-size: 16px; /* v3: 17→16 — 카드 타이틀, title2(18)와 2px 간격 확보 */
   --typo-title3-weight: 600;
   --typo-title3-line-height: var(--line-height-snug);
 
@@ -71,13 +79,13 @@
   --typo-body1-bold-weight: 700;
   --typo-body1-bold-line-height: var(--line-height-relaxed);
 
-  --typo-body2-size: 15px;
+  --typo-body2-size: 14px; /* v3: 15→14 — 행/본문 단일 14 리듬, body3와는 행간으로 구분 */
   --typo-body2-weight: 500;
-  --typo-body2-line-height: var(--line-height-relaxed);
+  --typo-body2-line-height: var(--line-height-normal); /* v3: 1.7→1.5 — 리스트 행 밀도 */
 
-  --typo-body2-bold-size: 15px;
+  --typo-body2-bold-size: 14px; /* v3: 15→14 */
   --typo-body2-bold-weight: 700;
-  --typo-body2-bold-line-height: var(--line-height-relaxed);
+  --typo-body2-bold-line-height: var(--line-height-normal);
 
   --typo-body3-size: 14px;
   --typo-body3-weight: 500;
@@ -92,7 +100,7 @@
   --typo-body3-bold-line-height: var(--line-height-snug);
 
   /* Label */
-  --typo-label1-size: 15px;
+  --typo-label1-size: 14px; /* v3: 15→14 — 14 리듬 정합 */
   --typo-label1-weight: 600;
   --typo-label1-line-height: var(--line-height-snug);
 
@@ -100,11 +108,11 @@
   --typo-label2-weight: 600;
   --typo-label2-line-height: var(--line-height-snug);
 
-  --typo-label3-size: 13px;
+  --typo-label3-size: 12px; /* v3: 13→12 — 어중간한 13 단계 퇴출, 메타는 12로 통일 */
   --typo-label3-weight: 700;
   --typo-label3-line-height: var(--line-height-snug);
 
-  --typo-label3-medium-size: 13px;
+  --typo-label3-medium-size: 12px; /* v3: 13→12 */
   --typo-label3-medium-weight: 500;
   --typo-label3-medium-line-height: var(--line-height-snug);
 

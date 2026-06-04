@@ -129,7 +129,7 @@ export function LedgerHero({
         </motion.button>
 
         <div className="flex items-center gap-2">
-          <h2 className="text-body3 font-bold text-heading tabular-nums">
+          <h2 className="text-body3-bold text-heading tabular-nums">
             {formatMonthLabel(selectedMonth)}
           </h2>
           <AnimatePresence>
@@ -143,7 +143,7 @@ export function LedgerHero({
                 exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.7 }}
                 transition={springSnappy}
                 whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
-                className="text-caption leading-none px-2.5 py-0.5 rounded-full bg-[color:var(--color-primary-50)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/30 dark:text-[color:var(--color-primary-300)] font-semibold ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)] hover:brightness-95 transition-all"
+                className="text-label3-medium leading-none px-2.5 py-0.5 rounded-full bg-[color:var(--color-primary-50)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/30 dark:text-[color:var(--color-primary-300)] font-semibold ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)] hover:brightness-95 transition-all"
               >
                 오늘
               </motion.button>
@@ -181,7 +181,7 @@ export function LedgerHero({
               />
               <p
                 id="ledger-hero-label"
-                className="text-label4 sm:text-caption leading-none font-bold tracking-[0.14em] uppercase"
+                className="text-caption leading-none font-bold tracking-[0.14em] uppercase"
                 style={{ color: `color-mix(in srgb, ${valueColorVar} 75%, var(--text-sub))` }}
               >
                 {isCurrentMonth ? '이번 달' : formatMonthLabel(selectedMonth)} {isExpense ? '지출' : '수입'}
@@ -337,7 +337,7 @@ export function LedgerHero({
             </svg>
             <p
               className={clsx(
-                'text-body3-semi font-bold tabular-nums',
+                'text-body3-bold tabular-nums',
                 savingsRate >= 30 ? 'text-value-positive' : savingsRate >= 10 ? 'text-heading' : 'text-value-negative',
               )}
             >
@@ -355,7 +355,7 @@ function Metric({ label, value, colorClass, hidden }: { label: string; value: nu
   return (
     <div className="flex-1 min-w-0">
       <p className="text-caption text-sub mb-0.5 font-medium">{label}</p>
-      <p className={clsx('text-body3-semi font-bold tabular-nums truncate', colorClass)}>
+      <p className={clsx('text-body3-bold tabular-nums truncate', colorClass)}>
         {hidden ? '••••' : formatKoreanUnit(animated)}
       </p>
     </div>

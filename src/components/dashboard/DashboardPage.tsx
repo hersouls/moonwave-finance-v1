@@ -240,7 +240,7 @@ export function DashboardPage() {
               <h3 className="text-body3-semi text-heading">자산 구성</h3>
               <button
                 onClick={() => navigate('/assets')}
-                className="text-caption text-accent-primary hover:underline flex items-center gap-0.5 min-h-11 px-1 -mr-1"
+                className="text-label3-medium text-accent-primary hover:underline flex items-center gap-0.5 min-h-11 px-1 -mr-1"
               >
                 전체보기 <ArrowRight className="w-3 h-3" />
               </button>
@@ -267,7 +267,7 @@ export function DashboardPage() {
               <h3 className="text-body3-semi text-heading">부채 구성</h3>
               <button
                 onClick={() => navigate('/liabilities')}
-                className="text-caption text-accent-primary hover:underline flex items-center gap-0.5 min-h-11 px-1 -mr-1"
+                className="text-label3-medium text-accent-primary hover:underline flex items-center gap-0.5 min-h-11 px-1 -mr-1"
               >
                 전체보기 <ArrowRight className="w-3 h-3" />
               </button>
@@ -295,7 +295,7 @@ export function DashboardPage() {
             <h3 className="text-body3-semi text-heading">진행 중인 목표</h3>
             <button
               onClick={() => navigate('/profile')}
-              className="text-caption text-accent-primary hover:underline flex items-center gap-0.5 min-h-11 px-1 -mr-1"
+              className="text-label3-medium text-accent-primary hover:underline flex items-center gap-0.5 min-h-11 px-1 -mr-1"
             >
               전체보기 <ArrowRight className="w-3 h-3" />
             </button>

@@ -231,7 +231,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
               </motion.div>
               <span
                 className={clsx(
-                  'mt-1 text-label4 leading-none sm:text-caption font-medium transition-colors',
+                  'mt-1 text-caption leading-none font-medium transition-colors',
                   isCurrent ? 'text-primary-500' : isCompleted ? 'text-body' : 'text-disabled',
                 )}
               >
@@ -527,10 +527,10 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                         <Icon className="w-4 h-4" style={{ color }} />
                       </div>
                       <div className="flex flex-col items-start min-w-0 max-w-[120px]">
-                        <span className="text-caption text-sub truncate w-full leading-tight">
+                        <span className="text-label3-medium text-sub truncate w-full leading-tight">
                           {cat?.name || UNCATEGORIZED_LABEL}
                         </span>
-                        <span className="text-body3 font-bold text-heading tabular-nums truncate w-full leading-tight">
+                        <span className="text-body3-bold text-heading tabular-nums truncate w-full leading-tight">
                           {formatKoreanUnit(tmpl.amount)}원
                         </span>
                       </div>
@@ -568,10 +568,10 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                       whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
                       transition={springSnappy}
                     >
-                      <span className="text-caption text-status-danger truncate w-full leading-tight">
+                      <span className="text-label3-medium text-status-danger truncate w-full leading-tight">
                         {loan.name}
                       </span>
-                      <span className="text-body3 font-bold text-status-danger tabular-nums truncate w-full leading-tight">
+                      <span className="text-body3-bold text-status-danger tabular-nums truncate w-full leading-tight">
                         {formatKoreanUnit(interest)}원
                         <span className="text-label4 leading-none opacity-70 ml-0.5 font-medium">/월</span>
                       </span>
@@ -638,7 +638,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               aria-expanded={state.showCalculator}
               aria-label="계산기 열기"
               className={clsx(
-                'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-caption font-semibold transition-colors ring-1',
+                'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-label3-medium font-semibold transition-colors ring-1',
                 state.showCalculator
                   ? 'bg-[color:var(--color-primary-600)] text-white ring-transparent shadow-[0_2px_8px_color-mix(in_oklch,var(--color-primary-500)_28%,transparent)]'
                   : 'bg-surface-primary text-sub ring-[color:var(--border-strong)] hover:text-heading hover:ring-[color:var(--color-primary-300)]',
@@ -651,7 +651,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               <motion.button
                 type="button"
                 onClick={() => dispatch({ type: 'CLEAR_AMOUNT' })}
-                className="inline-flex items-center gap-1 text-caption text-sub hover:text-heading transition-colors"
+                className="inline-flex items-center gap-1 text-label3-medium text-sub hover:text-heading transition-colors"
                 aria-label="금액 지우기"
                 whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
               >
@@ -799,7 +799,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               <TrendingUp className="w-4 h-4 text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]" />
               <span>
                 <span className="text-body3 font-semibold text-heading block leading-tight">환급 거래</span>
-                <span className="text-caption text-sub">같은 카테고리에서 받은 환불을 음수로 기록</span>
+                <span className="text-body3 text-sub">같은 카테고리에서 받은 환불을 음수로 기록</span>
               </span>
             </span>
             <div className="relative">
@@ -923,7 +923,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               />
               <div className="relative">
                 <div className="flex items-center justify-between gap-2 mb-2.5">
-                  <span className="inline-flex items-center gap-1.5 text-caption font-bold text-[color:var(--color-primary-700)] dark:text-[color:var(--color-primary-300)]">
+                  <span className="inline-flex items-center gap-1.5 text-label3 text-[color:var(--color-primary-700)] dark:text-[color:var(--color-primary-300)]">
                     <Sparkles className="w-3.5 h-3.5" />
                     AI 추천 카테고리
                   </span>
@@ -966,22 +966,22 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                             <Icon className="w-5 h-5" style={{ color: selected ? '#ffffff' : cat.color }} />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className={clsx('text-body3 font-bold leading-tight truncate', selected ? 'text-white' : 'text-heading')}>
+                            <p className={clsx('text-body3-bold leading-tight truncate', selected ? 'text-white' : 'text-heading')}>
                               {cat.name}
                             </p>
                             {aiSuggestion.reason && (
-                              <p className={clsx('text-label4 leading-tight truncate mt-0.5', selected ? 'text-white/80' : 'text-sub')}>
+                              <p className={clsx('text-body3 leading-tight truncate mt-0.5', selected ? 'text-white/80' : 'text-sub')}>
                                 {aiSuggestion.reason}
                               </p>
                             )}
                           </div>
                           {selected ? (
-                            <span className="inline-flex items-center gap-1 text-label4 font-bold text-white flex-shrink-0">
+                            <span className="inline-flex items-center gap-1 text-label3 text-white flex-shrink-0">
                               <Check className="w-3.5 h-3.5" strokeWidth={3} />
                               {aiSuggestion.fromAI ? 'AI 선택' : '자동 선택'}
                             </span>
                           ) : (
-                            <span className="text-label4 font-bold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] flex-shrink-0">
+                            <span className="text-label3 text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] flex-shrink-0">
                               선택
                             </span>
                           )}
@@ -1000,7 +1000,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                               type="button"
                               onClick={() => selectCategory(alt.id!)}
                               whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
-                              className="inline-flex items-center gap-1 pl-1.5 pr-2.5 h-7 rounded-full bg-surface-primary ring-1 ring-base text-caption font-semibold text-sub hover:ring-[color:var(--color-primary-300)] hover:text-heading transition-all"
+                              className="inline-flex items-center gap-1 pl-1.5 pr-2.5 h-7 rounded-full bg-surface-primary ring-1 ring-base text-label3-medium font-semibold text-sub hover:ring-[color:var(--color-primary-300)] hover:text-heading transition-all"
                             >
                               <span
                                 className="w-4 h-4 rounded-md flex items-center justify-center"
@@ -1020,7 +1020,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                         type="button"
                         onClick={handleAiClassify}
                         disabled={aiClassifying}
-                        className="mt-2.5 inline-flex items-center gap-1 text-label4 font-semibold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] hover:underline disabled:opacity-50"
+                        className="mt-2.5 inline-flex items-center gap-1 text-label3-medium font-semibold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] hover:underline disabled:opacity-50"
                       >
                         {aiClassifying ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                         Claude로 더 정확히 분류
@@ -1029,7 +1029,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                   </>
                 ) : (
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-caption text-sub min-w-0">
+                    <p className="text-body3 text-sub min-w-0">
                       {aiReady
                         ? state.type === 'expense'
                           ? '로컬 추천 실패 — Claude로 분류해 보세요'
@@ -1042,7 +1042,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                         onClick={handleAiClassify}
                         disabled={aiClassifying}
                         whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
-                        className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full bg-[color:var(--color-primary-600)] text-white text-caption font-bold hover:brightness-110 disabled:opacity-50 flex-shrink-0"
+                        className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full bg-[color:var(--color-primary-600)] text-white text-label3 hover:brightness-110 disabled:opacity-50 flex-shrink-0"
                       >
                         {aiClassifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                         {aiClassifying ? '분류 중…' : 'AI 분류 받기'}
@@ -1108,7 +1108,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                 />
               </div>
               <span className={clsx(
-                'text-caption truncate max-w-full font-semibold leading-tight',
+                'text-label3-medium truncate max-w-full font-semibold leading-tight',
                 isSelected ? 'text-white' : 'text-heading',
               )}>
                 {cat.name}
@@ -1137,7 +1137,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
           <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center bg-surface-tertiary">
             <MoreHorizontal className="w-5 h-5 text-disabled" />
           </div>
-          <span className="text-caption truncate max-w-full font-semibold text-sub leading-tight">
+          <span className="text-label3-medium truncate max-w-full font-semibold text-sub leading-tight">
             미분류
           </span>
         </motion.button>
@@ -1168,7 +1168,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
               transition={springSnappy}
               className={clsx(
-                'px-4 py-2 rounded-full text-caption font-semibold ring-1',
+                'px-4 py-2 rounded-full text-label3-medium font-semibold ring-1',
                 state.date === chip.value
                   ? 'bg-[color:var(--color-primary-600)] text-white ring-transparent shadow-[0_4px_14px_color-mix(in_srgb,var(--color-primary-500)_28%,transparent)]'
                   : 'bg-surface-tertiary text-sub ring-transparent hover:bg-[var(--hover-bg)]',
@@ -1241,7 +1241,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
               transition={springSnappy}
               className={clsx(
-                'py-2.5 px-2 rounded-full text-caption font-semibold text-center ring-1',
+                'py-2.5 px-2 rounded-full text-label3-medium font-semibold text-center ring-1',
                 state.paymentMethod === opt.value
                   ? 'bg-[color:var(--color-primary-600)] text-white ring-transparent shadow-[0_4px_14px_color-mix(in_srgb,var(--color-primary-500)_28%,transparent)]'
                   : 'bg-surface-tertiary text-sub ring-transparent hover:bg-[var(--hover-bg)]',
@@ -1279,7 +1279,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                         }}
                         whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
                         className={clsx(
-                          'px-3 py-2 rounded-full text-caption font-semibold transition-colors',
+                          'px-3 py-2 rounded-full text-label3-medium font-semibold transition-colors',
                           state.paymentMethodItemId === item.id
                             ? 'bg-[color:var(--color-primary-600)] text-white shadow-[0_4px_14px_color-mix(in_srgb,var(--color-primary-500)_28%,transparent)]'
                             : 'bg-surface-primary text-sub hover:bg-[var(--hover-bg)] ring-1 ring-base',
@@ -1293,7 +1293,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                       onClick={() => { dispatch({ type: 'SET_FIELD', field: 'paymentMethodItemId', value: '' }); dispatch({ type: 'SET_FIELD', field: 'paymentMethodDetail', value: '' }) }}
                       whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
                       className={clsx(
-                        'px-3 py-2 rounded-full text-caption font-semibold transition-colors',
+                        'px-3 py-2 rounded-full text-label3-medium font-semibold transition-colors',
                         state.paymentMethodItemId === ''
                           ? 'bg-surface-tertiary text-heading ring-1 ring-[color:var(--border-strong)]'
                           : 'bg-surface-primary text-sub hover:bg-[var(--hover-bg)] ring-1 ring-base',
@@ -1384,7 +1384,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               >
                 <span className="inline-flex items-center gap-1.5 min-w-0">
                   <CalendarIcon className="w-3.5 h-3.5 text-sub flex-shrink-0" />
-                  <span className="text-caption text-heading tabular-nums truncate">
+                  <span className="text-label3-medium text-heading tabular-nums truncate">
                     {state.recurEndDate ? formatDate(state.recurEndDate) : '무기한'}
                   </span>
                 </span>
@@ -1396,7 +1396,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                       e.stopPropagation()
                       dispatch({ type: 'SET_FIELD', field: 'recurEndDate', value: '' })
                     }}
-                    className="text-caption text-sub hover:text-heading flex-shrink-0"
+                    className="text-label3-medium text-sub hover:text-heading flex-shrink-0"
                   >
                     지우기
                   </span>

@@ -84,7 +84,7 @@ export function Header() {
                 {user.photoURL ? (
                   <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full ring-2 ring-[var(--surface-primary)] elevation-1 object-cover" referrerPolicy="no-referrer" />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-accent-primary flex items-center justify-center text-accent-primary text-sm font-bold ring-2 ring-[var(--surface-primary)] elevation-1">
+                  <div className="w-8 h-8 rounded-full bg-accent-primary flex items-center justify-center text-accent-primary text-body3 font-bold ring-2 ring-[var(--surface-primary)] elevation-1">
                     {user.displayName?.[0] || user.email?.[0] || '?'}
                   </div>
                 )}
