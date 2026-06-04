@@ -1034,35 +1034,38 @@ export async function getPendingChangesCount(): Promise<number> {
   return db.syncChangeLog.where('processed').equals(0).count()
 }
 
-// Delete a single document from Firestore
+// Delete a single document from Firestore.
+//
+// THROWS on failure — callers must handle it. incrementalUpload relies on the
+// throw to keep the change-log entry pending (processed=0) for a later retry;
+// swallowing here used to make every failure look like success, permanently
+// marking unsynced deletes as processed.
 export async function deleteFromCloud(uid: string, tableName: SyncableTable, syncId: string): Promise<void> {
   if (!canDeviceWrite()) return  // read-only device: never write to the cloud
-  try {
-    await deleteDoc(doc(firestore, getUserDocPath(uid, tableName, syncId)))
-  } catch (err) {
-    console.error(`[sync] delete ${tableName}/${syncId} failed:`, err)
-  }
+  await deleteDoc(doc(firestore, getUserDocPath(uid, tableName, syncId)))
 }
 
-// Delete multiple documents from Firestore (batch)
+// Delete multiple documents from Firestore (batch). THROWS on failure — the
+// change-log/tombstone entries the deleting hooks queued stay pending, so
+// incrementalUpload retries the deletion later.
 export async function deleteMultipleFromCloud(uid: string, tableName: SyncableTable, syncIds: string[]): Promise<void> {
   if (!canDeviceWrite()) return  // read-only device: never write to the cloud
   if (syncIds.length === 0) return
-  try {
-    for (let i = 0; i < syncIds.length; i += BATCH_LIMIT) {
-      const chunk = syncIds.slice(i, i + BATCH_LIMIT)
-      const batch = writeBatch(firestore)
-      for (const syncId of chunk) {
-        batch.delete(doc(firestore, getUserDocPath(uid, tableName, syncId)))
-      }
-      await batch.commit()
+  for (let i = 0; i < syncIds.length; i += BATCH_LIMIT) {
+    const chunk = syncIds.slice(i, i + BATCH_LIMIT)
+    const batch = writeBatch(firestore)
+    for (const syncId of chunk) {
+      batch.delete(doc(firestore, getUserDocPath(uid, tableName, syncId)))
     }
-  } catch (err) {
-    console.error(`[sync] batch delete ${tableName} failed:`, err)
+    await batch.commit()
   }
 }
 
 // Upload a single record to Firestore. Full-doc replace; see uploadTable.
+//
+// THROWS on failure — incrementalUpload relies on the throw to keep the
+// change-log entry pending (processed=0) for a later retry; swallowing here
+// used to make every failed upload look like success.
 export async function uploadSingleRecord<T extends { syncId?: string }>(
   uid: string,
   tableName: SyncableTable,
@@ -1070,16 +1073,12 @@ export async function uploadSingleRecord<T extends { syncId?: string }>(
 ): Promise<void> {
   if (!canDeviceWrite()) return  // read-only device: never write to the cloud
   if (!record.syncId) return
-  try {
-    const batch = writeBatch(firestore)
-    const ref = doc(firestore, getUserDocPath(uid, tableName, record.syncId))
-    const enriched = { ...record } as Record<string, unknown>
-    await addFkSyncIds(tableName, enriched)
-    batch.set(ref, toCloudPayload(enriched))
-    await batch.commit()
-  } catch (err) {
-    console.error(`[sync] upload ${tableName}/${record.syncId} failed:`, err)
-  }
+  const batch = writeBatch(firestore)
+  const ref = doc(firestore, getUserDocPath(uid, tableName, record.syncId))
+  const enriched = { ...record } as Record<string, unknown>
+  await addFkSyncIds(tableName, enriched)
+  batch.set(ref, toCloudPayload(enriched))
+  await batch.commit()
 }
 
 // ─── Real-time Sync ───────────────────────────────────
