@@ -42,11 +42,22 @@
   flex: 1;
 }
 
-/* Column Variants */
-.tab-bar--2col .tab-item { flex: 1 1 50%; }
-.tab-bar--3col .tab-item { flex: 1 1 33.333%; }
-.tab-bar--4col .tab-item { flex: 1 1 25%; }
-.tab-bar--5col .tab-item { flex: 1 1 20%; }
+/* Column Variants.
+ * min-width:0 — flex 기본 min-width:auto는 nowrap 라벨('판매 (1,234)')이
+ * 길어지면 항목이 기준 폭(25% 등)을 깨고 바를 넘치게 한다(360px 폴드 커버
+ * 실측). 균등 분할을 강제하고 넘침은 ellipsis로 처리. */
+.tab-bar--2col .tab-item { flex: 1 1 50%; min-width: 0; }
+.tab-bar--3col .tab-item { flex: 1 1 33.333%; min-width: 0; }
+.tab-bar--4col .tab-item { flex: 1 1 25%; min-width: 0; }
+.tab-bar--5col .tab-item { flex: 1 1 20%; min-width: 0; }
+
+.tab-bar--2col .tab-item,
+.tab-bar--3col .tab-item,
+.tab-bar--4col .tab-item,
+.tab-bar--5col .tab-item {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* -------------------------------------------------
  * C. Scrollable Tab

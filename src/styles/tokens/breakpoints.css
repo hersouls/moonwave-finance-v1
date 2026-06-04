@@ -1,4 +1,14 @@
-/* 01_Foundation Responsive Breakpoints */
+/* 01_Foundation Responsive Breakpoints
+ *
+ * ── 협폭 기기 실측 매핑 (2026-06 확인) ─────────────────────────
+ *   Z Fold 7 전면:  CSS 360×840 (2520×1080 @DPR3, 21:9)
+ *     → xsmall이 아니라 small의 "최소 폭 + 초장신" 케이스.
+ *       일반 갤럭시 S(360×~780)와 같은 폭이므로 별도 티어 불필요 —
+ *       360px에서 기본 레이아웃이 완벽해야 한다 (index.css 참고).
+ *   구형 폴드 커버(Z Fold 3~6 전면): ~320–344px → xsmall 티어(≤359)
+ *   초협폭 레거시(구형 Flip 커버 등): ≤280px → index.css 극한 밀도 블록
+ *   Z Fold 7 메인(펼침): CSS 984×1092 @DPR2 → lg(768+) 레이아웃
+ * ──────────────────────────────────────────────────────────── */
 :root {
   --bp-xsmall-max: 359px;
   --bp-small-min: 360px;

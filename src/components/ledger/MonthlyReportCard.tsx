@@ -186,21 +186,21 @@ export function MonthlyReportCard({
 
           {/* 주요 메트릭 3-card */}
           <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="rounded-2xl bg-surface-primary/70 dark:bg-surface-primary/50 px-3 py-2.5 text-center backdrop-blur-sm">
+            <div className="min-w-0 rounded-2xl bg-surface-primary/70 dark:bg-surface-primary/50 px-3 py-2.5 text-center backdrop-blur-sm">
               <p className="text-caption text-sub mb-0.5">지출</p>
-              <Amount value={totalExpense} size="body" className="font-bold text-value-negative block" unit="" />
+              <Amount value={totalExpense} size="body" className="font-bold text-value-negative block truncate" unit="" />
             </div>
-            <div className="rounded-2xl bg-surface-primary/70 dark:bg-surface-primary/50 px-3 py-2.5 text-center backdrop-blur-sm">
+            <div className="min-w-0 rounded-2xl bg-surface-primary/70 dark:bg-surface-primary/50 px-3 py-2.5 text-center backdrop-blur-sm">
               <p className="text-caption text-sub mb-0.5">수입</p>
-              <Amount value={totalIncome} size="body" className="font-bold text-value-positive block" unit="" />
+              <Amount value={totalIncome} size="body" className="font-bold text-value-positive block truncate" unit="" />
             </div>
-            <div className="rounded-2xl bg-surface-primary/70 dark:bg-surface-primary/50 px-3 py-2.5 text-center backdrop-blur-sm">
+            <div className="min-w-0 rounded-2xl bg-surface-primary/70 dark:bg-surface-primary/50 px-3 py-2.5 text-center backdrop-blur-sm">
               <p className="text-caption text-sub mb-0.5">순저축</p>
               <Amount
                 value={netSavings}
                 size="body"
                 className={clsx(
-                  'font-bold block',
+                  'font-bold block truncate',
                   netSavings >= 0 ? 'text-value-positive' : 'text-value-negative',
                 )}
                 unit=""
