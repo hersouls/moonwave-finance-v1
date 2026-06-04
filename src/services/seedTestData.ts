@@ -1,4 +1,5 @@
 import { db, setSyncWritingFlag } from '@/services/database'
+import { clearSyncCheckpoint } from '@/services/syncCheckpoint'
 import { fullUpload } from '@/services/firestoreSync'
 import { assertWritable } from '@/lib/writeGuard'
 import type { DailyValue, Transaction, Budget } from '@/lib/types'
@@ -29,6 +30,8 @@ export async function seedTestDataAndUpload(uid: string): Promise<void> {
     await db.budgets.clear()
     await db.goals.clear()
   })
+  // 로컬 교체 → 델타 체크포인트 무효화 (다음 머지는 전량으로 재수렴)
+  await clearSyncCheckpoint()
 
   const now = new Date().toISOString()
   const uuid = () => crypto.randomUUID()

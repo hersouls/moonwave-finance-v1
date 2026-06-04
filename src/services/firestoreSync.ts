@@ -7,10 +7,14 @@ import {
   onSnapshot,
   query,
   limit,
+  where,
+  serverTimestamp,
+  Timestamp,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { firestore } from '@/lib/firebase'
 import { db, markSyncTransaction, runSyncWrite } from '@/services/database'
+import { getSyncCheckpoint, advanceSyncCheckpoint, type SyncCheckpointMap } from '@/services/syncCheckpoint'
 import { useAuthStore } from '@/stores/authStore'
 import { getDeviceId } from '@/lib/deviceId'
 import { canDeviceWrite } from '@/lib/writeGuard'
@@ -51,7 +55,7 @@ const ALL_TABLES: SyncableTable[] = ['members', 'assetCategories', 'assetItems',
 const CLOUD_SCHEMA_VERSION = 2
 
 /** Names of fields that exist only in the cloud payload — never persisted to Dexie. */
-const INTERNAL_CLOUD_FIELDS = new Set(['__deviceId', '__schemaV'])
+const INTERNAL_CLOUD_FIELDS = new Set(['__deviceId', '__schemaV', '__uploadedAt'])
 
 /** Builds the outbound cloud payload: drop undefined, stamp deviceId + schema version. */
 function toCloudPayload<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
@@ -62,6 +66,9 @@ function toCloudPayload<T extends Record<string, unknown>>(obj: T): Record<strin
   }
   out.__deviceId = getDeviceId()
   out.__schemaV = CLOUD_SCHEMA_VERSION
+  // 서버가 찍는 업로드 시각 — 델타 머지(downloadTable의 sinceMs)의 기준.
+  // 클라이언트 시계가 아니므로 기기 시계 오차로 문서를 놓칠 수 없다.
+  out.__uploadedAt = serverTimestamp()
   return out
 }
 
@@ -153,13 +160,35 @@ async function uploadTable<T extends { syncId?: string }>(
   }
 }
 
-async function downloadTable<T>(
+export async function downloadTable<T>(
   uid: string,
-  tableName: SyncableTable
+  tableName: SyncableTable,
+  sinceMs?: number | null,
 ): Promise<T[]> {
   const colRef = collection(firestore, getUserCollectionPath(uid, tableName))
-  const snapshot = await getDocs(colRef)
+  // 델타 모드: 마지막 머지 이후 서버에 업로드된 문서만 읽는다. 경계는 '>='로
+  // 겹치게 잡아(동일 타임스탬프 문서 재다운로드) 누락 가능성을 없앤다 —
+  // 머지는 멱등 LWW라 중복 적용이 안전하다. __uploadedAt이 없는 레거시
+  // 문서는 range 쿼리에 매칭되지 않는데, 그 문서들은 베이스라인(전량) 머지
+  // 때 이미 로컬에 있으므로 다시 읽을 필요가 없다.
+  const ref = sinceMs != null
+    ? query(colRef, where('__uploadedAt', '>=', Timestamp.fromMillis(sinceMs)))
+    : colRef
+  const snapshot = await getDocs(ref)
   return snapshot.docs.map(d => d.data() as T)
+}
+
+/** 다운로드 결과에서 가장 최신 __uploadedAt(서버 시각, ms)을 찾는다. 없으면 0. */
+function maxUploadedAtMs(records: Array<Record<string, unknown>>): number {
+  let max = 0
+  for (const r of records) {
+    const ts = r.__uploadedAt as { toMillis?: () => number } | null | undefined
+    if (ts && typeof ts.toMillis === 'function') {
+      const ms = ts.toMillis()
+      if (ms > max) max = ms
+    }
+  }
+  return max
 }
 
 function ensureSyncId<T extends { syncId?: string }>(record: T): T {
@@ -395,6 +424,21 @@ export async function fullDownload(uid: string): Promise<void> {
       downloadTable<Record<string, unknown>>(uid, 'accountInterests'),
     ]))
 
+    // 체크포인트 갱신용 최신 서버 업로드 시각 — 아래 strip이 __uploadedAt을
+    // 제거하므로 반드시 strip 전에 계산한다.
+    const fullByTable: Array<[SyncableTable, Record<string, unknown>[]]> = [
+      ['members', members], ['assetCategories', assetCategories], ['assetItems', assetItems],
+      ['dailyValues', dailyValues], ['transactionCategories', transactionCategories],
+      ['transactions', transactions], ['budgets', budgets], ['goals', goals],
+      ['paymentMethodItems', paymentMethodItems], ['subscriptions', subscriptions],
+      ['loans', loans], ['merchantAliases', merchantAliases],
+      ['investmentTrades', investmentTrades], ['dividends', dividends],
+      ['accountInterests', accountInterests],
+    ]
+    const fullMaxes = Object.fromEntries(
+      fullByTable.map(([t, recs]) => [t, maxUploadedAtMs(recs)]),
+    ) as SyncCheckpointMap
+
     // Strip cloud-only fields (__deviceId, __schemaV, *_syncId companions)
     // in place so the Dexie schema isn't polluted by transport metadata.
     for (const arr of [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans, merchantAliases, investmentTrades, dividends, accountInterests]) {
@@ -556,6 +600,10 @@ export async function fullDownload(uid: string): Promise<void> {
           await db.merchantAliases.add(rec as unknown as MerchantAlias)
         }
       })
+
+    // 전량 스냅샷을 성공적으로 적용했으므로 체크포인트도 그 시점으로 전진 —
+    // 다음 로그인 머지는 이 이후 변경분만 내려받는다.
+    await advanceSyncCheckpoint(uid, fullMaxes)
 
     useAuthStore.getState().setSyncStatus('synced')
     useAuthStore.getState().setLastSyncTime(new Date().toISOString())
@@ -797,6 +845,14 @@ export async function mergeTableWithRemap(
    * Return null/empty to skip a particular record.
    */
   reconcileByName?: (record: Record<string, unknown>) => string | null,
+  /**
+   * cloudRecords가 해당 컬렉션의 "전량 스냅샷"인가 (기본 true).
+   * 델타 머지는 부분집합을 넘기므로 false — 이때 "클라우드에 없음"을 근거로
+   * 하는 추론(이름 기반 syncId 입양, Case 3의 로컬-온리 업로드 큐잉)은
+   * 성립하지 않아 건너뛴다. false인데 건너뛰지 않으면 매 델타 머지마다
+   * 로컬 전체가 "클라우드에 없는 신규"로 오판되어 전량 재업로드가 일어난다.
+   */
+  cloudIsComplete: boolean = true,
 ): Promise<void> {
   const localTable = getLocalTable(tableName)
   const localRecords = await (localTable as typeof db.members).toArray()
@@ -816,7 +872,7 @@ export async function mergeTableWithRemap(
   // whose syncId is absent or NOT present in cloud, we look up a name+type
   // match in cloud and adopt that cloud syncId. This collapses the two
   // populations into a single LWW-merged record in the main loop below.
-  if (reconcileByName) {
+  if (reconcileByName && cloudIsComplete) {
     const cloudByName = new Map<string, string>() // natural key → cloud syncId
     const cloudSyncIdSet = new Set<string>()
     for (const rec of cloudRecords) {
@@ -936,8 +992,11 @@ export async function mergeTableWithRemap(
   const toUploadEntries = new Map<string, 'create' | 'update'>()
   for (const [syncId, local] of localMap) {
     const cloudRec = cloudMap.get(syncId)
-    const needsUpload = !cloudRec ||
-      ((local.record.updatedAt as string || '') > ((cloudRec?.updatedAt as string) || ''))
+    // 델타 부분집합에서 "cloudMap에 없음"은 "클라우드에 없음"이 아니다 —
+    // 전량 스냅샷일 때만 로컬-온리 추론을 허용한다.
+    const needsUpload = cloudRec
+      ? ((local.record.updatedAt as string || '') > ((cloudRec.updatedAt as string) || ''))
+      : cloudIsComplete
     if (needsUpload && syncId) {
       toUploadEntries.set(syncId, cloudRec ? 'update' : 'create')
     }
@@ -1072,7 +1131,20 @@ export async function mergeOnLogin(uid: string): Promise<void> {
       return
     }
 
-    // Download ALL cloud data in parallel — 15개 동기화 테이블 전체.
+    // 다운로드 범위 결정 — 체크포인트가 있으면 그 이후 서버 업로드분만(델타),
+    // 없으면(첫 로그인/로컬 초기화 후) 전량. 전량 다운로드는 문서 수만큼
+    // Firestore 읽기를 과금하므로(dailyValues 1만+ 환경에서 실행당 ~13K reads)
+    // 베이스라인 이후에는 반드시 델타로 내려받는다.
+    const checkpoint = await getSyncCheckpoint(uid)
+    const isDelta = checkpoint != null
+    // 체크포인트에 키가 없는 테이블은 이 기기가 한 번도 전량을 본 적 없는
+    // 테이블이다(예: 앱 업데이트로 새로 추가된 동기화 테이블) — 그 테이블만
+    // 전량(null)으로 내려받는다. 0으로 보내면 스탬프 없는 레거시 문서를
+    // 영원히 놓친다. (베이스라인을 본 테이블은 advance가 0이라도 키를 기록)
+    const sinceFor = (t: SyncableTable): number | null =>
+      isDelta ? (checkpoint[t] ?? null) : null
+
+    // Download cloud data in parallel — 15개 동기화 테이블 전체.
     // (이전에는 investmentTrades/dividends/accountInterests 3개가 빠져 있어
     // 새 기기 로그인 시 투자 데이터가 실시간 리스너로만 우연히 내려왔다)
     const [
@@ -1081,22 +1153,37 @@ export async function mergeOnLogin(uid: string): Promise<void> {
       cloudPaymentMethodItems, cloudSubscriptions, cloudLoans, cloudMerchantAliases,
       cloudInvestmentTrades, cloudDividends, cloudAccountInterests,
     ] = await Promise.all([
-      downloadTable<Record<string, unknown>>(uid, 'members'),
-      downloadTable<Record<string, unknown>>(uid, 'assetCategories'),
-      downloadTable<Record<string, unknown>>(uid, 'assetItems'),
-      downloadTable<Record<string, unknown>>(uid, 'dailyValues'),
-      downloadTable<Record<string, unknown>>(uid, 'transactionCategories'),
-      downloadTable<Record<string, unknown>>(uid, 'transactions'),
-      downloadTable<Record<string, unknown>>(uid, 'budgets'),
-      downloadTable<Record<string, unknown>>(uid, 'goals'),
-      downloadTable<Record<string, unknown>>(uid, 'paymentMethodItems'),
-      downloadTable<Record<string, unknown>>(uid, 'subscriptions'),
-      downloadTable<Record<string, unknown>>(uid, 'loans'),
-      downloadTable<Record<string, unknown>>(uid, 'merchantAliases'),
-      downloadTable<Record<string, unknown>>(uid, 'investmentTrades'),
-      downloadTable<Record<string, unknown>>(uid, 'dividends'),
-      downloadTable<Record<string, unknown>>(uid, 'accountInterests'),
+      downloadTable<Record<string, unknown>>(uid, 'members', sinceFor('members')),
+      downloadTable<Record<string, unknown>>(uid, 'assetCategories', sinceFor('assetCategories')),
+      downloadTable<Record<string, unknown>>(uid, 'assetItems', sinceFor('assetItems')),
+      downloadTable<Record<string, unknown>>(uid, 'dailyValues', sinceFor('dailyValues')),
+      downloadTable<Record<string, unknown>>(uid, 'transactionCategories', sinceFor('transactionCategories')),
+      downloadTable<Record<string, unknown>>(uid, 'transactions', sinceFor('transactions')),
+      downloadTable<Record<string, unknown>>(uid, 'budgets', sinceFor('budgets')),
+      downloadTable<Record<string, unknown>>(uid, 'goals', sinceFor('goals')),
+      downloadTable<Record<string, unknown>>(uid, 'paymentMethodItems', sinceFor('paymentMethodItems')),
+      downloadTable<Record<string, unknown>>(uid, 'subscriptions', sinceFor('subscriptions')),
+      downloadTable<Record<string, unknown>>(uid, 'loans', sinceFor('loans')),
+      downloadTable<Record<string, unknown>>(uid, 'merchantAliases', sinceFor('merchantAliases')),
+      downloadTable<Record<string, unknown>>(uid, 'investmentTrades', sinceFor('investmentTrades')),
+      downloadTable<Record<string, unknown>>(uid, 'dividends', sinceFor('dividends')),
+      downloadTable<Record<string, unknown>>(uid, 'accountInterests', sinceFor('accountInterests')),
     ])
+
+    // 체크포인트 전진용 — 머지가 끝까지 성공한 뒤에만 advance한다.
+    // (도중 실패 시 다음 머지가 같은 구간을 다시 읽는다 — 멱등이라 안전)
+    const downloadedByTable: Array<[SyncableTable, Record<string, unknown>[]]> = [
+      ['members', cloudMembers], ['assetCategories', cloudAssetCategories],
+      ['assetItems', cloudAssetItems], ['dailyValues', cloudDailyValues],
+      ['transactionCategories', cloudTransactionCategories], ['transactions', cloudTransactions],
+      ['budgets', cloudBudgets], ['goals', cloudGoals],
+      ['paymentMethodItems', cloudPaymentMethodItems], ['subscriptions', cloudSubscriptions],
+      ['loans', cloudLoans], ['merchantAliases', cloudMerchantAliases],
+      ['investmentTrades', cloudInvestmentTrades], ['dividends', cloudDividends],
+      ['accountInterests', cloudAccountInterests],
+    ]
+    const totalDocs = downloadedByTable.reduce((n, [, recs]) => n + recs.length, 0)
+    console.log(`[sync] merge on login (${isDelta ? '델타' : '전량'}): ${totalDocs}개 문서 다운로드`)
 
     // ── Layer 0: Independent tables (no FK dependencies) ──
     // Seed-derived tables (members + categories + payment methods) pass a
@@ -1112,10 +1199,10 @@ export async function mergeOnLogin(uid: string): Promise<void> {
       const name = r.name as string | undefined
       return name || null
     }
-    await mergeTableWithRemap('members', cloudMembers, nameOnlyKey)
-    await mergeTableWithRemap('assetCategories', cloudAssetCategories, nameTypeKey)
-    await mergeTableWithRemap('transactionCategories', cloudTransactionCategories, nameTypeKey)
-    await mergeTableWithRemap('goals', cloudGoals)
+    await mergeTableWithRemap('members', cloudMembers, nameOnlyKey, !isDelta)
+    await mergeTableWithRemap('assetCategories', cloudAssetCategories, nameTypeKey, !isDelta)
+    await mergeTableWithRemap('transactionCategories', cloudTransactionCategories, nameTypeKey, !isDelta)
+    await mergeTableWithRemap('goals', cloudGoals, undefined, !isDelta)
 
     // Legacy fkMappings: cloudId → localId. New clients resolve FKs by syncId
     // (resolveFksOnRecord) and rarely consult fkMappings, but it's still the
@@ -1129,18 +1216,18 @@ export async function mergeOnLogin(uid: string): Promise<void> {
     fkMappings['transactionCategories'] = buildIdMapping(cloudTransactionCategories, localTxnCats)
 
     // ── Layer 1: First-level dependents ──
-    await mergeTableWithRemap('assetItems', cloudAssetItems)
-    await mergeTableWithRemap('budgets', cloudBudgets)
+    await mergeTableWithRemap('assetItems', cloudAssetItems, undefined, !isDelta)
+    await mergeTableWithRemap('budgets', cloudBudgets, undefined, !isDelta)
     // 투자 3종 — memberId FK만 가지므로 members 이후면 안전
-    await mergeTableWithRemap('investmentTrades', cloudInvestmentTrades)
-    await mergeTableWithRemap('dividends', cloudDividends)
-    await mergeTableWithRemap('accountInterests', cloudAccountInterests)
+    await mergeTableWithRemap('investmentTrades', cloudInvestmentTrades, undefined, !isDelta)
+    await mergeTableWithRemap('dividends', cloudDividends, undefined, !isDelta)
+    await mergeTableWithRemap('accountInterests', cloudAccountInterests, undefined, !isDelta)
 
     fkMappings['assetItems'] = buildIdMapping(cloudAssetItems, await db.assetItems.toArray())
 
     // ── Layer 2: Second-level dependents ──
-    await mergeTableWithRemap('dailyValues', cloudDailyValues)
-    await mergeTableWithRemap('paymentMethodItems', cloudPaymentMethodItems)
+    await mergeTableWithRemap('dailyValues', cloudDailyValues, undefined, !isDelta)
+    await mergeTableWithRemap('paymentMethodItems', cloudPaymentMethodItems, undefined, !isDelta)
 
     fkMappings['paymentMethodItems'] = buildIdMapping(
       cloudPaymentMethodItems,
@@ -1148,18 +1235,18 @@ export async function mergeOnLogin(uid: string): Promise<void> {
     )
 
     // ── Layer 3: Third-level dependents ──
-    await mergeTableWithRemap('subscriptions', cloudSubscriptions)
+    await mergeTableWithRemap('subscriptions', cloudSubscriptions, undefined, !isDelta)
 
     fkMappings['subscriptions'] = buildIdMapping(cloudSubscriptions, await db.subscriptions.toArray())
 
     // ── Layer 4: Transactions (depends on members, txnCategories, payMethods, subscriptions) ──
-    await mergeTableWithRemap('transactions', cloudTransactions)
+    await mergeTableWithRemap('transactions', cloudTransactions, undefined, !isDelta)
 
     // ── Loans (depends on assetItems) ──
-    await mergeTableWithRemap('loans', cloudLoans)
+    await mergeTableWithRemap('loans', cloudLoans, undefined, !isDelta)
 
     // ── Merchant aliases (depends on transactionCategories + subscriptions) ──
-    await mergeTableWithRemap('merchantAliases', cloudMerchantAliases)
+    await mergeTableWithRemap('merchantAliases', cloudMerchantAliases, undefined, !isDelta)
 
     // Process tombstones
     await applyCloudTombstones(uid)
@@ -1174,6 +1261,12 @@ export async function mergeOnLogin(uid: string): Promise<void> {
     } catch (err) {
       console.error('[sync] tombstone GC on login failed:', err)
     }
+
+    // 머지가 끝까지 성공했을 때만 체크포인트 전진 — 다음 실행은 이번에 본
+    // 최신 서버 시각 이후의 변경분만 내려받는다.
+    await advanceSyncCheckpoint(uid, Object.fromEntries(
+      downloadedByTable.map(([t, recs]) => [t, maxUploadedAtMs(recs)]),
+    ) as SyncCheckpointMap)
 
     useAuthStore.getState().setSyncStatus('synced')
     useAuthStore.getState().setLastSyncTime(new Date().toISOString())

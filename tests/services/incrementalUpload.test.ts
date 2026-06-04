@@ -10,6 +10,8 @@ const h = vi.hoisted(() => ({
   failNextCommits: 0,
   /** 설정 시 실패하는 commit이 이 code를 가진 FirebaseError처럼 던진다 */
   failCode: null as string | null,
+  /** 마지막 batch.set 페이로드 — __uploadedAt 스탬핑 검증용 */
+  lastSetPayload: null as Record<string, unknown> | null,
 }))
 
 vi.mock('@/lib/firebase', () => ({ firestore: {}, auth: {} }))
@@ -21,10 +23,16 @@ vi.mock('firebase/firestore', () => ({
   onSnapshot: vi.fn(() => () => {}),
   query: vi.fn((c: unknown) => c),
   limit: vi.fn(),
+  where: vi.fn(),
+  serverTimestamp: vi.fn(() => ({ __sentinel: 'serverTimestamp' })),
+  Timestamp: { fromMillis: (ms: number) => ({ toMillis: () => ms }) },
   writeBatch: vi.fn(() => {
     const ops = { sets: 0, deletes: 0 }
     return {
-      set: () => { ops.sets++ },
+      set: (_ref: unknown, payload: Record<string, unknown>) => {
+        ops.sets++
+        h.lastSetPayload = payload
+      },
       delete: () => { ops.deletes++ },
       commit: async () => {
         h.commitAttempts++
@@ -96,6 +104,9 @@ describe('incrementalUpload 배치 경로', () => {
     await vi.waitFor(() => {
       expect(useAuthStore.getState().pendingChangesCount).toBe(0)
     })
+    // 모든 업로드 문서에 서버 업로드 시각이 스탬프된다 (델타 머지의 기준)
+    expect(h.lastSetPayload?.__uploadedAt).toEqual({ __sentinel: 'serverTimestamp' })
+    expect(h.lastSetPayload?.__deviceId).toBeTruthy()
   })
 
   it('한 그룹의 commit 실패 시 그 그룹만 pending으로 남기고 status=error로 정직하게 표시한다', async () => {
