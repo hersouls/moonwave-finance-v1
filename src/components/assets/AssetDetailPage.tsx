@@ -214,30 +214,30 @@ export function AssetDetailPage() {
   return (
     <div className="p-4 lg:p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <IconButton onClick={() => navigate(-1)} plain>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <IconButton onClick={() => navigate(-1)} plain className="flex-shrink-0">
             <ArrowLeft className="w-5 h-5" />
           </IconButton>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
               {category && (
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: category.color }} />
+                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: category.color }} />
               )}
-              <h1 className="text-title1 text-heading">{item.name}</h1>
+              <h1 className="text-title1 text-heading truncate">{item.name}</h1>
             </div>
-            <div className="flex items-center gap-2 text-label3-medium text-sub">
-              {category && <span>{category.name}</span>}
+            <div className="flex items-center gap-2 text-label3-medium text-sub min-w-0">
+              {category && <span className="truncate">{category.name}</span>}
               {member && (
                 <>
-                  <span className="text-disabled">·</span>
-                  <span>{member.name}</span>
+                  <span className="text-disabled flex-shrink-0">·</span>
+                  <span className="truncate">{member.name}</span>
                 </>
               )}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-shrink-0">
           <IconButton onClick={() => openAssetEditModal(itemId)} plain>
             <Pencil className="w-5 h-5" />
           </IconButton>

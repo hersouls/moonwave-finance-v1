@@ -85,7 +85,7 @@ export function TopCategoryCard({
       <Amount
         value={topAmount}
         size="emphasis"
-        className={clsx('font-bold block', isExpense ? 'text-value-negative' : 'text-value-positive')}
+        className={clsx('font-bold block truncate', isExpense ? 'text-value-negative' : 'text-value-positive')}
         unit=""
       />
       {trend.percent !== null && (

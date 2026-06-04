@@ -96,9 +96,9 @@ export function AssetProjectionFields({ value, onChange }: Props) {
             <span className={clsx('h-4 w-4 rounded-full border-2', dailyOn ? 'border-primary-500 bg-primary-500' : 'border-base')} />
           </button>
           {dailyOn && (
-            <div className="mt-2 flex items-center gap-2">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="text-caption text-sub">매일</span>
-              <input type="text" inputMode="numeric" value={dailyMag} onChange={(e) => { const v = fmtInt(parseInt0(e.target.value)); setDailyMag(v); emit({ dMag: v }) }} placeholder="0" className="input-base flex-1 text-right tabular-nums" />
+              <input type="text" inputMode="numeric" value={dailyMag} onChange={(e) => { const v = fmtInt(parseInt0(e.target.value)); setDailyMag(v); emit({ dMag: v }) }} placeholder="0" className="input-base flex-1 text-right tabular-nums min-w-0" />
               <span className="text-caption text-sub">원</span>
               <DirToggle dir={dailyDir} onChange={(d) => { setDailyDir(d); emit({ dDir: d }) }} up="증가" down="감소" />
             </div>

@@ -2207,11 +2207,11 @@ export function InvestmentPage() {
   return (
     <div className="fold:p-3 p-4 lg:p-6 space-y-5 pb-24">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-heading text-title2 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5" style={{ color: 'var(--color-primary-500)' }} />투자수익
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <h1 className="text-heading text-title2 flex items-center gap-2 min-w-0">
+          <TrendingUp className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-primary-500)' }} />투자수익
         </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           {activeTab !== 'dashboard' && hasData && (
             <button onClick={() => setShowResetConfirm(true)}
               className="inline-flex items-center gap-1 h-9 px-3 rounded-2xl text-label3 ring-1 transition-all"
@@ -2370,17 +2370,22 @@ export function InvestmentPage() {
       ) : viewMode === 'compact' ? (
         /* ═══ COMPACT VIEW ═══ */
         <div className="rounded-xl ring-1 ring-base overflow-hidden bg-surface-primary">
-          <CompactHeader type={activeTab as 'trades' | 'dividends' | 'interests'} />
-          <div className="max-h-[60vh] overflow-y-auto scrollbar-none">
-            {activeTab === 'trades' && filteredTrades.map(t => (
-              <CompactTradeRow key={t.id} trade={t} onClick={() => setSelectedTrade(t)} />
-            ))}
-            {activeTab === 'dividends' && filteredDivs.map(d => (
-              <CompactDividendRow key={d.id} div={d} onClick={() => setSelectedDiv(d)} />
-            ))}
-            {activeTab === 'interests' && filteredInterests.map(r => (
-              <CompactInterestRow key={r.id} interest={r} onClick={() => setSelectedInterest(r)} />
-            ))}
+          {/* 좁은 화면(≤360/320)에서 고정폭 컬럼 합이 화면을 넘으면 가로 스크롤 (클립 대신) */}
+          <div className="overflow-x-auto scrollbar-none">
+            <div className="min-w-[340px]">
+              <CompactHeader type={activeTab as 'trades' | 'dividends' | 'interests'} />
+              <div className="max-h-[60vh] overflow-y-auto scrollbar-none">
+                {activeTab === 'trades' && filteredTrades.map(t => (
+                  <CompactTradeRow key={t.id} trade={t} onClick={() => setSelectedTrade(t)} />
+                ))}
+                {activeTab === 'dividends' && filteredDivs.map(d => (
+                  <CompactDividendRow key={d.id} div={d} onClick={() => setSelectedDiv(d)} />
+                ))}
+                {activeTab === 'interests' && filteredInterests.map(r => (
+                  <CompactInterestRow key={r.id} interest={r} onClick={() => setSelectedInterest(r)} />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       ) : (

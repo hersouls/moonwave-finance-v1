@@ -196,6 +196,8 @@
     var(--shadow-3),
     inset 0 0 0 1px var(--card-border-color, rgba(0, 0, 0, 0.06));
   min-width: 220px;
+  /* 협폭(폴드 커버) 가드: 긴 동기화 오류 문구 등이 뷰포트를 넘지 않게 */
+  max-width: calc(100vw - 32px);
 }
 
 .toast-icon {

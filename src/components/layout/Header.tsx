@@ -91,11 +91,17 @@ export function Header() {
               </button>
             </Tooltip>
           )}
-          <Tooltip content="명령 팔레트 (⌘K)" placement="bottom">
-            <IconButton plain color="secondary" onClick={openCommandPalette} aria-label="명령 팔레트 열기" className="hidden lg:inline-flex">
-              <Command className="w-5 h-5" />
-            </IconButton>
-          </Tooltip>
+          {/* 데스크톱 전용 — IconButton 기저 inline-flex와 hidden이 동일 특이도
+            * display 충돌을 일으켜(hidden이 안 먹음) 래퍼로 격리한다.
+            * 모바일(≤lg)에서 이 버튼이 보이면 320px 폴드 커버에서 테마 버튼이
+            * 화면 밖으로 잘린다. */}
+          <div className="hidden lg:block">
+            <Tooltip content="명령 팔레트 (⌘K)" placement="bottom">
+              <IconButton plain color="secondary" onClick={openCommandPalette} aria-label="명령 팔레트 열기">
+                <Command className="w-5 h-5" />
+              </IconButton>
+            </Tooltip>
+          </div>
           <Tooltip content="검색 (/)" placement="bottom">
             <IconButton plain color="secondary" onClick={openSearchModal} aria-label="검색">
               <Search className="w-5 h-5" />
