@@ -21,7 +21,11 @@ import type {
   SyncTombstone,
 } from '@/lib/types'
 import { assertWritable } from '@/lib/writeGuard'
-import { clearSyncCheckpoint } from '@/services/syncCheckpoint'
+/** 기기-로컬 동기화 메타데이터 (델타 체크포인트 등) — 동기화 대상 아님. */
+interface SyncMetaRow {
+  key: string
+  value: unknown
+}
 
 class FinanceDatabase extends Dexie {
   members!: Table<Member>
@@ -41,6 +45,7 @@ class FinanceDatabase extends Dexie {
   merchantAliases!: Table<MerchantAlias>
   syncChangeLog!: Table<SyncChangeLogEntry>
   syncTombstones!: Table<SyncTombstone>
+  syncMeta!: Table<SyncMetaRow>
 
   constructor() {
     super('MoonwaveFinance')
@@ -269,10 +274,25 @@ class FinanceDatabase extends Dexie {
       syncChangeLog: '++id, tableName, syncId, processed, timestamp, [tableName+syncId]',
       syncTombstones: '++id, tableName, syncId, deletedAt, [tableName+syncId]',
     })
+
+    // v13: syncMeta — 델타 동기화 체크포인트 저장소. localStorage가 아니라
+    // Dexie에 두는 이유: 체크포인트는 "로컬 DB가 베이스라인을 갖고 있다"는
+    // 전제 위에서만 유효하므로 로컬 DB와 운명을 같이해야 한다. (IndexedDB만
+    // 삭제되고 localStorage가 살아남으면 빈 DB + 델타 머지 = 데이터 누락)
+    this.version(13).stores({
+      syncMeta: '&key',
+    })
   }
 }
 
 const db = new FinanceDatabase()
+
+// 스토리지 영속화 요청 — 재무 데이터 로컬 SOT가 브라우저 스토리지 압박으로
+// 무단 축출(eviction)되는 것을 방지한다. UA가 거부해도 동작에는 지장 없음
+// (덜 안전해질 뿐). Chrome/Safari PWA는 보통 무프롬프트로 승인한다.
+if (typeof navigator !== 'undefined' && navigator.storage?.persist) {
+  navigator.storage.persist().catch(() => { /* 미지원/거부 — 무시 */ })
+}
 
 // ─── Change Tracking for Incremental Sync ────────────
 // Tracks all local mutations to syncChangeLog for incremental upload.
@@ -1149,7 +1169,8 @@ export async function clearAllData(opts?: { force?: boolean }): Promise<void> {
 
     // 델타 동기화 체크포인트도 함께 리셋 — 빈 로컬 DB에 체크포인트가 살아
     // 있으면 다음 로그인 머지가 델타만 내려받아 과거 데이터가 누락된다.
-    clearSyncCheckpoint()
+    // (syncCheckpoint 모듈을 임포트하면 순환 의존이라 테이블을 직접 비운다)
+    await db.syncMeta.clear()
 
     const now = new Date().toISOString()
     await db.members.bulkAdd(

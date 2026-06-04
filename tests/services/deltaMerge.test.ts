@@ -44,7 +44,7 @@ const UID = 'delta-test-uid'
 
 beforeEach(async () => {
   h.getDocsRefs = []
-  clearSyncCheckpoint()
+  await clearSyncCheckpoint()
   setSyncWritingFlag(true)
   try {
     await db.transactions.clear()
@@ -56,28 +56,29 @@ beforeEach(async () => {
 })
 
 describe('syncCheckpoint 헬퍼', () => {
-  it('없으면 null — 베이스라인(전량) 머지 신호', () => {
-    expect(getSyncCheckpoint(UID)).toBeNull()
+  it('없으면 null — 베이스라인(전량) 머지 신호', async () => {
+    expect(await getSyncCheckpoint(UID)).toBeNull()
   })
 
-  it('advance는 단조 전진한다 (과거 값으로 후퇴 불가)', () => {
-    advanceSyncCheckpoint(UID, { transactions: 1000 })
-    advanceSyncCheckpoint(UID, { transactions: 500, members: 700 })
-    expect(getSyncCheckpoint(UID)).toEqual({ transactions: 1000, members: 700 })
+  it('advance는 단조 전진한다 (과거 값으로 후퇴 불가)', async () => {
+    await advanceSyncCheckpoint(UID, { transactions: 1000 })
+    await advanceSyncCheckpoint(UID, { transactions: 500, members: 700 })
+    expect(await getSyncCheckpoint(UID)).toEqual({ transactions: 1000, members: 700 })
   })
 
-  it('스탬프 문서가 0건이어도 "베이스라인 완료" 자체를 기록한다', () => {
-    advanceSyncCheckpoint(UID, { transactions: 0 })
-    // null이 아니어야 다음 실행이 델타 경로를 탄다
-    expect(getSyncCheckpoint(UID)).not.toBeNull()
+  it('스탬프 문서가 0건인 테이블도 키를 0으로 명시 기록한다 — "베이스라인을 봤다"는 증거', async () => {
+    await advanceSyncCheckpoint(UID, { transactions: 0 })
+    // null이 아니어야 다음 실행이 델타 경로를 타고, 키가 명시되어야
+    // "한 번도 전량을 본 적 없는 신규 테이블"(키 없음 → 전량)과 구분된다.
+    expect(await getSyncCheckpoint(UID)).toEqual({ transactions: 0 })
   })
 
-  it('clearSyncCheckpoint()는 uid 없이 모든 체크포인트를 지운다', () => {
-    advanceSyncCheckpoint(UID, { transactions: 1000 })
-    advanceSyncCheckpoint('other-uid', { members: 2000 })
-    clearSyncCheckpoint()
-    expect(getSyncCheckpoint(UID)).toBeNull()
-    expect(getSyncCheckpoint('other-uid')).toBeNull()
+  it('clearSyncCheckpoint()는 uid 없이 모든 체크포인트를 지운다', async () => {
+    await advanceSyncCheckpoint(UID, { transactions: 1000 })
+    await advanceSyncCheckpoint('other-uid', { members: 2000 })
+    await clearSyncCheckpoint()
+    expect(await getSyncCheckpoint(UID)).toBeNull()
+    expect(await getSyncCheckpoint('other-uid')).toBeNull()
   })
 })
 
@@ -154,8 +155,22 @@ describe('mergeTableWithRemap cloudIsComplete 게이트', () => {
 
 describe('로컬 교체 시 체크포인트 리셋', () => {
   it('clearAllData가 체크포인트를 지운다 — 다음 머지는 전량으로 재수렴', async () => {
-    advanceSyncCheckpoint(UID, { transactions: 99999 })
+    await advanceSyncCheckpoint(UID, { transactions: 99999 })
     await clearAllData({ force: true })
-    expect(getSyncCheckpoint(UID)).toBeNull()
+    expect(await getSyncCheckpoint(UID)).toBeNull()
+  })
+
+  it('체크포인트는 Dexie 안에 산다 — IndexedDB 삭제 시 운명을 같이한다 (데이터 누락 방지)', async () => {
+    await advanceSyncCheckpoint(UID, { transactions: 12345 })
+    // localStorage에는 어떤 체크포인트도 없어야 한다 — localStorage에 두면
+    // IndexedDB만 삭제(PWA 재설치/스토리지 축출)됐을 때 빈 DB + 델타 머지
+    // 조합으로 과거 데이터가 무성 누락된다 (적대적 리뷰 확정 결함).
+    const lsKeys: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k && k.toLowerCase().includes('checkpoint')) lsKeys.push(k)
+    }
+    expect(lsKeys).toEqual([])
+    expect(await db.syncMeta.count()).toBeGreaterThan(0)
   })
 })

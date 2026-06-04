@@ -603,7 +603,7 @@ export async function fullDownload(uid: string): Promise<void> {
 
     // 전량 스냅샷을 성공적으로 적용했으므로 체크포인트도 그 시점으로 전진 —
     // 다음 로그인 머지는 이 이후 변경분만 내려받는다.
-    advanceSyncCheckpoint(uid, fullMaxes)
+    await advanceSyncCheckpoint(uid, fullMaxes)
 
     useAuthStore.getState().setSyncStatus('synced')
     useAuthStore.getState().setLastSyncTime(new Date().toISOString())
@@ -1135,10 +1135,14 @@ export async function mergeOnLogin(uid: string): Promise<void> {
     // 없으면(첫 로그인/로컬 초기화 후) 전량. 전량 다운로드는 문서 수만큼
     // Firestore 읽기를 과금하므로(dailyValues 1만+ 환경에서 실행당 ~13K reads)
     // 베이스라인 이후에는 반드시 델타로 내려받는다.
-    const checkpoint = getSyncCheckpoint(uid)
+    const checkpoint = await getSyncCheckpoint(uid)
     const isDelta = checkpoint != null
+    // 체크포인트에 키가 없는 테이블은 이 기기가 한 번도 전량을 본 적 없는
+    // 테이블이다(예: 앱 업데이트로 새로 추가된 동기화 테이블) — 그 테이블만
+    // 전량(null)으로 내려받는다. 0으로 보내면 스탬프 없는 레거시 문서를
+    // 영원히 놓친다. (베이스라인을 본 테이블은 advance가 0이라도 키를 기록)
     const sinceFor = (t: SyncableTable): number | null =>
-      isDelta ? (checkpoint[t] ?? 0) : null
+      isDelta ? (checkpoint[t] ?? null) : null
 
     // Download cloud data in parallel — 15개 동기화 테이블 전체.
     // (이전에는 investmentTrades/dividends/accountInterests 3개가 빠져 있어
@@ -1260,7 +1264,7 @@ export async function mergeOnLogin(uid: string): Promise<void> {
 
     // 머지가 끝까지 성공했을 때만 체크포인트 전진 — 다음 실행은 이번에 본
     // 최신 서버 시각 이후의 변경분만 내려받는다.
-    advanceSyncCheckpoint(uid, Object.fromEntries(
+    await advanceSyncCheckpoint(uid, Object.fromEntries(
       downloadedByTable.map(([t, recs]) => [t, maxUploadedAtMs(recs)]),
     ) as SyncCheckpointMap)
 

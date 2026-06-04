@@ -31,7 +31,7 @@ export async function seedTestDataAndUpload(uid: string): Promise<void> {
     await db.goals.clear()
   })
   // 로컬 교체 → 델타 체크포인트 무효화 (다음 머지는 전량으로 재수렴)
-  clearSyncCheckpoint()
+  await clearSyncCheckpoint()
 
   const now = new Date().toISOString()
   const uuid = () => crypto.randomUUID()

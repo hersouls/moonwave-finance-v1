@@ -11,23 +11,27 @@
 // 구조적으로 불가능하다. 체크포인트는 머지가 "성공"한 뒤에만 전진한다
 // (실패 시 다음 머지가 같은 구간을 다시 본다 — 머지는 멱등 LWW라 안전).
 //
-// localStorage 사용 이유: 이것은 기기-로컬 상태("이 기기가 어디까지
-// 봤는가")라 Dexie 데이터처럼 동기화 대상이 되면 안 되고, clearAllData
-// (로그아웃/백업 복원)가 로컬 DB를 비울 때 반드시 함께 리셋되어야 한다 —
-// 빈 로컬 DB + 살아있는 체크포인트 조합은 곧 데이터 누락이다.
+// 저장소는 Dexie(syncMeta 테이블)다 — localStorage가 아니다. 체크포인트는
+// "로컬 DB가 베이스라인을 갖고 있다"는 전제 위에서만 유효하므로, 로컬 DB와
+// 운명을 같이해야 한다. localStorage에 두면 PWA 재설치·사이트 데이터 부분
+// 삭제·스토리지 축출로 IndexedDB만 사라졌을 때 체크포인트가 살아남아,
+// 빈 DB에 델타만 내려받는 무성 데이터 누락이 된다 (적대적 리뷰 확정 결함).
+// Dexie에 두면 그 시나리오에서 체크포인트도 함께 사라져 자동으로 전량
+// 머지로 폴백한다.
 
-const KEY_PREFIX = 'fin:syncCheckpoint:'
+import { db } from '@/services/database'
 
 /** tableName → 해당 테이블에서 본 최신 __uploadedAt (ms since epoch) */
 export type SyncCheckpointMap = Record<string, number>
 
+const keyFor = (uid: string) => `checkpoint:${uid}`
+
 /** null = 베이스라인(전량) 머지를 아직 마치지 못한 기기. */
-export function getSyncCheckpoint(uid: string): SyncCheckpointMap | null {
+export async function getSyncCheckpoint(uid: string): Promise<SyncCheckpointMap | null> {
   try {
-    const raw = localStorage.getItem(KEY_PREFIX + uid)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as unknown
-    return parsed !== null && typeof parsed === 'object' ? (parsed as SyncCheckpointMap) : null
+    const row = await db.syncMeta.get(keyFor(uid))
+    const value = row?.value
+    return value !== null && typeof value === 'object' ? (value as SyncCheckpointMap) : null
   } catch {
     return null
   }
@@ -35,38 +39,41 @@ export function getSyncCheckpoint(uid: string): SyncCheckpointMap | null {
 
 /**
  * 머지 성공 후 호출 — 본 것 중 최신 서버 시각으로 단조 전진시킨다.
- * 스탬프된 문서가 0건이어도 항상 저장한다: "전량 머지를 마쳤다"는 사실
- * 자체가 다음 실행을 델타 경로로 보내는 신호다.
+ *
+ * 스탬프된 문서가 0건인 테이블도 키를 0으로 "명시" 기록한다. 두 가지를
+ * 구분하기 위해서다: 키가 있는 테이블(베이스라인을 봤음 → 델타 안전)과
+ * 키가 없는 테이블(이 기기가 한 번도 전량을 본 적 없음 — 예: 앱 업데이트로
+ * 새로 추가된 동기화 테이블 → 전량 다운로드 필요). mergeOnLogin의 sinceFor가
+ * 이 구분(`?? null`)으로 미지의 테이블을 전량 경로로 보낸다.
  */
-export function advanceSyncCheckpoint(uid: string, updates: SyncCheckpointMap): void {
+export async function advanceSyncCheckpoint(uid: string, updates: SyncCheckpointMap): Promise<void> {
   try {
-    const current = getSyncCheckpoint(uid) ?? {}
+    const current = (await getSyncCheckpoint(uid)) ?? {}
     for (const [table, ms] of Object.entries(updates)) {
-      if (ms > (current[table] ?? 0)) current[table] = ms
+      current[table] = Math.max(current[table] ?? 0, ms)
     }
-    localStorage.setItem(KEY_PREFIX + uid, JSON.stringify(current))
-  } catch {
-    // storage 불가 환경: 체크포인트가 없으면 전량 머지로 폴백 — 정확성 유지
+    await db.syncMeta.put({ key: keyFor(uid), value: current })
+  } catch (err) {
+    // 저장 실패 = 다음 실행이 같은 구간을 다시 읽는다(정확성 유지, 비용 증가).
+    // 무성으로 두면 "왜 매번 전량이지"를 디버깅할 수 없으므로 흔적을 남긴다.
+    console.warn('[sync] checkpoint 저장 실패 — 다음 머지는 같은 구간을 재다운로드합니다:', err)
   }
 }
 
 /**
- * 체크포인트 리셋. uid 생략 시 모든 사용자분 제거 — clearAllData(로그아웃,
- * 백업 복원)는 uid를 모르는 컨텍스트에서 돌므로 prefix 전체를 지운다.
+ * 체크포인트 리셋. uid 생략 시 모든 사용자분 제거 — 로컬 데이터를 통째로
+ * 교체하는 흐름(백업 복원, 테스트 시드)은 uid를 모르는 컨텍스트에서 돌므로
+ * 전체를 지운다. (clearAllData는 db.syncMeta.clear()로 직접 지운다 —
+ * database.ts가 이 모듈을 임포트하면 순환 의존이 생기기 때문)
  */
-export function clearSyncCheckpoint(uid?: string): void {
+export async function clearSyncCheckpoint(uid?: string): Promise<void> {
   try {
     if (uid) {
-      localStorage.removeItem(KEY_PREFIX + uid)
+      await db.syncMeta.delete(keyFor(uid))
       return
     }
-    const keys: string[] = []
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i)
-      if (k && k.startsWith(KEY_PREFIX)) keys.push(k)
-    }
-    for (const k of keys) localStorage.removeItem(k)
+    await db.syncMeta.where('key').startsWith('checkpoint:').delete()
   } catch {
-    // noop
+    // noop — 테이블이 아직 없으면 지울 것도 없다
   }
 }
