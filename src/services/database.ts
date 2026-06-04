@@ -1,4 +1,4 @@
-import Dexie, { type Table } from 'dexie'
+import Dexie, { type Table, type Transaction as DexieTransaction } from 'dexie'
 import { DEFAULT_MEMBERS } from '@/utils/constants'
 import type {
   Member,
@@ -285,6 +285,56 @@ export function getSyncWritingFlag() { return _syncWritingCount > 0 }
 
 type SyncableTableName = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions' | 'loans' | 'investmentTrades' | 'dividends' | 'accountInterests' | 'merchantAliases'
 
+// ── Post-commit change-log queue ──────────────────────
+//
+// The CRUD hooks below fire INSIDE the source table's transaction. Writing to
+// db.syncChangeLog from there rejects with NotFoundError whenever syncChangeLog
+// isn't part of the active transaction scope — and it never is: neither implicit
+// single-table transactions nor any db.transaction('rw', ...) in this codebase
+// include it. The unawaited rejection was silently swallowed, so the data write
+// committed but NO change-log entry was ever recorded — incremental upload had
+// nothing to push (root cause of live sync never working; regression test:
+// tests/services/changeTracking.test.ts).
+//
+// Hooks therefore queue entries here, and a single 'complete' listener per
+// transaction persists them AFTER the commit, outside the transaction zone
+// (Dexie.ignoreTransaction). Writing post-commit also guarantees we never log a
+// change — or worse, a tombstone — for a transaction that ends up aborting.
+const _pendingChangeEntries = new WeakMap<DexieTransaction, {
+  changes: SyncChangeLogEntry[]
+  tombstones: SyncTombstone[]
+}>()
+
+function queueChangeEntry(entry: SyncChangeLogEntry, tombstone?: SyncTombstone): void {
+  const tx = Dexie.currentTransaction
+  if (!tx) {
+    // Hooks always run inside a transaction; defensive fallback only.
+    void db.syncChangeLog.add(entry).catch((err) => console.error('[sync] change-log write failed:', err))
+    if (tombstone) {
+      void db.syncTombstones.add(tombstone).catch((err) => console.error('[sync] tombstone write failed:', err))
+    }
+    return
+  }
+  let pending = _pendingChangeEntries.get(tx)
+  if (!pending) {
+    const fresh = { changes: [] as SyncChangeLogEntry[], tombstones: [] as SyncTombstone[] }
+    pending = fresh
+    _pendingChangeEntries.set(tx, fresh)
+    tx.on('complete', () => {
+      void Dexie.ignoreTransaction(async () => {
+        try {
+          if (fresh.changes.length > 0) await db.syncChangeLog.bulkAdd(fresh.changes)
+          if (fresh.tombstones.length > 0) await db.syncTombstones.bulkAdd(fresh.tombstones)
+        } catch (err) {
+          console.error('[sync] change-log write failed:', err)
+        }
+      })
+    })
+  }
+  pending.changes.push(entry)
+  if (tombstone) pending.tombstones.push(tombstone)
+}
+
 function installChangeTracking() {
   const tables: { table: Table; name: SyncableTableName }[] = [
     { table: db.members, name: 'members' },
@@ -312,7 +362,7 @@ function installChangeTracking() {
       if (_syncWritingCount > 0) return
       const syncId = obj?.syncId as string | undefined
       if (syncId) {
-        db.syncChangeLog.add({
+        queueChangeEntry({
           tableName: name,
           syncId,
           operation: 'create',
@@ -327,7 +377,7 @@ function installChangeTracking() {
       if (_syncWritingCount > 0) return
       const syncId = obj?.syncId as string | undefined
       if (syncId) {
-        db.syncChangeLog.add({
+        queueChangeEntry({
           tableName: name,
           syncId,
           operation: 'update',
@@ -342,18 +392,20 @@ function installChangeTracking() {
       if (_syncWritingCount > 0) return
       const syncId = obj?.syncId as string | undefined
       if (syncId) {
-        db.syncChangeLog.add({
-          tableName: name,
-          syncId,
-          operation: 'delete',
-          timestamp: new Date().toISOString(),
-          processed: 0,
-        })
-        db.syncTombstones.add({
-          tableName: name,
-          syncId,
-          deletedAt: new Date().toISOString(),
-        })
+        queueChangeEntry(
+          {
+            tableName: name,
+            syncId,
+            operation: 'delete',
+            timestamp: new Date().toISOString(),
+            processed: 0,
+          },
+          {
+            tableName: name,
+            syncId,
+            deletedAt: new Date().toISOString(),
+          },
+        )
       }
     })
   }
@@ -1005,12 +1057,18 @@ export async function getTransactionsBySubscriptionId(subscriptionId: number): P
  * used by logout, which must always be able to wipe this device's local copy
  * (cloud data is preserved and re-merged on next login). The user-facing
  * "전체 데이터 초기화" calls it without force, so it is blocked on a read-only
- * device. When forced, writes are wrapped in the sync-writing flag so the
- * default-member re-seed doesn't trip the read-only abort in the create hook.
+ * device.
+ *
+ * BOTH paths wrap the wipe in the sync-writing flag: this reset is local-only
+ * by design (cloud data is preserved and re-merged on next login), so the
+ * per-row deleting hooks must NOT queue change-log entries / tombstones here.
+ * Otherwise thousands of tombstones — including the deterministic default-seed
+ * syncIds — would race the trailing syncChangeLog/syncTombstones clear() and
+ * any survivors would propagate deletions to every other device.
  */
 export async function clearAllData(opts?: { force?: boolean }): Promise<void> {
   if (!opts?.force) assertWritable()
-  if (opts?.force) setSyncWritingFlag(true)
+  setSyncWritingFlag(true)
   try {
     await db.members.clear()
     await db.assetCategories.clear()
@@ -1035,6 +1093,6 @@ export async function clearAllData(opts?: { force?: boolean }): Promise<void> {
       DEFAULT_MEMBERS.map((m, i) => ({ ...m, isDefault: true, sortOrder: i, createdAt: now, updatedAt: now }))
     )
   } finally {
-    if (opts?.force) setSyncWritingFlag(false)
+    setSyncWritingFlag(false)
   }
 }
