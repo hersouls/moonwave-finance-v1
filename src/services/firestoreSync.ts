@@ -1114,15 +1114,28 @@ export async function uploadSingleRecord<T extends { syncId?: string }>(
 let unsubscribers: Unsubscribe[] = []
 let realtimeSyncPaused = false
 let syncWritingCount = 0
-let lastSnapshotAt = 0
+
+// 테이블별 마지막 스냅샷 시각. 전역 단일 타임스탬프를 쓰면 살아 있는 리스너
+// 하나(예: tombstones)가 죽은 리스너의 staleness를 가려 헬스체크가 영원히
+// 복구하지 못한다 — 최솟값(가장 오래된 테이블)으로 판정해야 한다.
+// 구독 시점을 baseline으로 깔아, 초기 스냅샷 로딩 중을 stale로 오인하지 않는다.
+const lastSnapshotByTable = new Map<string, number>()
 
 export function pauseRealtimeSync() { realtimeSyncPaused = true }
 export function resumeRealtimeSync() { realtimeSyncPaused = false }
 export function getIsSyncWriting() { return syncWritingCount > 0 }
 export function beginSyncWriting() { syncWritingCount++ }
 export function endSyncWriting() { syncWritingCount = Math.max(0, syncWritingCount - 1) }
-/** Timestamp (ms epoch) of the last Firestore snapshot fire. 0 if no snapshot yet. */
-export function getLastSnapshotAt() { return lastSnapshotAt }
+/**
+ * 가장 오래된(가장 stale한) 리스너의 마지막 스냅샷 시각(ms epoch).
+ * 구독이 없으면 0 — 호출부는 Infinity age로 취급한다.
+ */
+export function getLastSnapshotAt() {
+  if (lastSnapshotByTable.size === 0) return 0
+  let min = Infinity
+  for (const v of lastSnapshotByTable.values()) min = Math.min(min, v)
+  return min
+}
 
 // ─── FK Mapping for Real-time Sync ──────────────────────
 // Maps cloudId → localId per table, updated during merge and real-time sync
@@ -1478,8 +1491,10 @@ function shouldApplyCloudUpdate(
 
 function subscribeTable(uid: string, tableName: SyncableTable, generation: number, retryCount = 0): void {
   const colRef = collection(firestore, getUserCollectionPath(uid, tableName))
+  let hadSnapshot = false
   const unsub = onSnapshot(colRef, async (snapshot) => {
-    lastSnapshotAt = Date.now()
+    hadSnapshot = true
+    lastSnapshotByTable.set(tableName, Date.now())
     if (realtimeSyncPaused) return
 
     const localTable = getLocalTable(tableName)
@@ -1573,13 +1588,18 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
     }
   }, (err) => {
     console.error(`[sync] ${tableName} listener error:`, err)
-    // Auto-reconnect with exponential backoff (max 30s)
-    if (syncGeneration === generation && retryCount < 5) {
-      const delay = Math.min(Math.pow(2, retryCount) * 1000, 30000)
-      console.log(`[sync] retrying ${tableName} listener in ${delay}ms (attempt ${retryCount + 1})`)
+    // 무한 재연결 (지수 백오프, 최대 30초). 기존의 5회 상한은 토큰 만료 등
+    // 장시간 장애 후 리스너가 영구 사망한 채 방치되는 원인이었다 — 상한을
+    // 없애되 generation 가드로 stopRealtimeSync 이후의 유령 재구독은 차단.
+    // 한 번이라도 스냅샷을 받은 적 있는 리스너의 장애는 새 장애로 보고
+    // 백오프를 처음부터 다시 시작한다.
+    if (syncGeneration === generation) {
+      const nextRetry = hadSnapshot ? 0 : retryCount + 1
+      const delay = Math.min(Math.pow(2, nextRetry) * 1000, 30000)
+      console.log(`[sync] retrying ${tableName} listener in ${delay}ms`)
       setTimeout(() => {
         if (syncGeneration === generation) {
-          subscribeTable(uid, tableName, generation, retryCount + 1)
+          subscribeTable(uid, tableName, generation, nextRetry)
         }
       }, delay)
     }
@@ -1587,10 +1607,12 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
   unsubscribers.push(unsub)
 }
 
-function subscribeTombstones(uid: string, generation: number): void {
+function subscribeTombstones(uid: string, generation: number, retryCount = 0): void {
   const colRef = collection(firestore, `users/${uid}/syncTombstones`)
+  let hadSnapshot = false
   const unsub = onSnapshot(colRef, async (snapshot) => {
-    lastSnapshotAt = Date.now()
+    hadSnapshot = true
+    lastSnapshotByTable.set('__tombstones', Date.now())
     if (realtimeSyncPaused) return
 
     syncWritingCount++
@@ -1624,11 +1646,12 @@ function subscribeTombstones(uid: string, generation: number): void {
   }, (err) => {
     console.error('[sync] tombstones listener error:', err)
     if (syncGeneration === generation) {
-      const delay = 2000
+      const nextRetry = hadSnapshot ? 0 : retryCount + 1
+      const delay = Math.min(Math.pow(2, nextRetry) * 1000, 30000)
       console.log(`[sync] retrying tombstones listener in ${delay}ms`)
       setTimeout(() => {
         if (syncGeneration === generation) {
-          subscribeTombstones(uid, generation)
+          subscribeTombstones(uid, generation, nextRetry)
         }
       }, delay)
     }
@@ -1656,14 +1679,18 @@ export function startRealtimeSync(uid: string, force: boolean = false): void {
   activeListenerUid = uid
   syncGeneration++
   realtimeSyncPaused = false
-  lastSnapshotAt = 0
   const gen = syncGeneration
 
+  // 구독 시점을 staleness baseline으로 깐다 — 초기 스냅샷이 아직 안 온
+  // 테이블이 즉시 stale(Infinity age)로 판정되어 재시작 루프가 돌지 않게.
+  const now = Date.now()
   for (const tableName of ALL_TABLES) {
+    lastSnapshotByTable.set(tableName, now)
     subscribeTable(uid, tableName, gen)
   }
 
   // Also subscribe to tombstones for cross-device delete propagation
+  lastSnapshotByTable.set('__tombstones', now)
   subscribeTombstones(uid, gen)
 }
 
@@ -1675,4 +1702,5 @@ export function stopRealtimeSync(): void {
   }
   unsubscribers = []
   pendingChildren.clear()
+  lastSnapshotByTable.clear()
 }

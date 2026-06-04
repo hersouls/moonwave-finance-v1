@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { db } from '@/services/database'
+import { wakeFirestoreNetwork } from '@/lib/firebase'
 import {
   incrementalUpload,
   getIsSyncWriting,
@@ -61,6 +62,9 @@ export function useAutoSync() {
     // Sync when coming back online — uploads offline changes and force-restarts
     // listeners if the prior subscription has been silent for too long.
     const handleOnline = async () => {
+      // 죽은 네트워크 채널을 먼저 깨운다 — 모바일 백그라운드에서 SDK가
+      // 비활성화한 연결은 enableNetwork 없이는 재구독해도 안 살아날 수 있다.
+      await wakeFirestoreNetwork()
       const force = snapshotAgeMs() > STALE_ON_FOCUS_MS
       startRealtimeSync(user.uid, force)
 
@@ -83,8 +87,10 @@ export function useAutoSync() {
     // a re-subscribe so peer changes that arrived during sleep can flow in.
     const handleVisibility = () => {
       if (document.visibilityState !== 'visible') return
-      const force = snapshotAgeMs() > STALE_ON_FOCUS_MS
-      startRealtimeSync(user.uid, force)
+      void wakeFirestoreNetwork().then(() => {
+        const force = snapshotAgeMs() > STALE_ON_FOCUS_MS
+        startRealtimeSync(user.uid, force)
+      })
     }
     document.addEventListener('visibilitychange', handleVisibility)
 
@@ -95,7 +101,7 @@ export function useAutoSync() {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) return
       if (snapshotAgeMs() > STALE_FORCE_RESTART_MS) {
         console.warn('[auto-sync] listener appears stale, forcing restart')
-        startRealtimeSync(user.uid, true)
+        void wakeFirestoreNetwork().then(() => startRealtimeSync(user.uid, true))
       }
     }, HEALTH_POLL_MS)
 
