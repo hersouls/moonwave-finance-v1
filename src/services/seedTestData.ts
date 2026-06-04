@@ -1,4 +1,4 @@
-import { db } from '@/services/database'
+import { db, setSyncWritingFlag } from '@/services/database'
 import { fullUpload } from '@/services/firestoreSync'
 import { assertWritable } from '@/lib/writeGuard'
 import type { DailyValue, Transaction, Budget } from '@/lib/types'
@@ -6,9 +6,15 @@ import type { DailyValue, Transaction, Budget } from '@/lib/types'
 /**
  * 테스트용 가상 데이터를 로컬 DB에 넣고 Firebase에 업로드합니다.
  * 한국 가정의 현실적인 재정 데이터를 시뮬레이션합니다.
+ *
+ * 시드 쓰기는 sync-writing 플래그로 감싼다 — 클라우드 반영은 마지막의 명시적
+ * fullUpload가 담당하므로, 훅이 wipe 단계에서 기존 전 레코드의 delete 변경로그
+ * + 톰스톤을 적재해 삭제 전파를 일으키면 안 된다.
  */
 export async function seedTestDataAndUpload(uid: string): Promise<void> {
   assertWritable()  // read-only device: block the destructive seed before any wipe
+  setSyncWritingFlag(true)
+  try {
   // ─── 1. 기존 데이터 전부 초기화 ─────────────────────
   await db.transaction('rw', [
     db.members, db.assetCategories, db.assetItems, db.dailyValues,
@@ -312,6 +318,10 @@ export async function seedTestDataAndUpload(uid: string): Promise<void> {
       memo: '카카오뱅크 대출', isCompleted: false, createdAt: now, updatedAt: now,
     },
   ])
+
+  } finally {
+    setSyncWritingFlag(false)
+  }
 
   // ─── 10. Firebase에 업로드 ──────────────────────────
   await fullUpload(uid)
