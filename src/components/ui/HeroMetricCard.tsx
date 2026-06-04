@@ -8,11 +8,13 @@ import { useSettingsStore } from '@/stores/settingsStore'
 
 export type HeroVariant = 'primary' | 'success' | 'warning' | 'accent'
 
-const VARIANT_BG: Record<HeroVariant, string> = {
-  primary: 'hero-gradient',
-  success: 'hero-gradient-success',
-  warning: 'hero-gradient-warning',
-  accent: 'hero-gradient-accent',
+/* v3 플랫: 그라디언트 배경 → 플랫 카드 + 변형별 액센트 도트 (Health 문법).
+ * 카드 표면은 전부 동일(card-base), 변형 정체성은 라벨 옆 도트로만 표현. */
+const VARIANT_DOT: Record<HeroVariant, string> = {
+  primary: 'bg-[color:var(--color-primary-500)]',
+  success: 'bg-[color:var(--color-success-500)]',
+  warning: 'bg-[color:var(--color-warning-500)]',
+  accent: 'bg-[color:var(--color-primary-400)]',
 }
 
 interface Delta {
@@ -31,11 +33,6 @@ export interface HeroMetricCardProps {
   variant?: HeroVariant
   /** Deltas rendered in a row below the main value */
   deltas?: Delta[]
-  /** Enable spotlight cursor follow (desktop only) */
-  spotlight?: boolean
-  /** Shimmer + noise overlay (default true for primary) */
-  shimmer?: boolean
-  noise?: boolean
   /** Framer layoutId for shared morph transitions */
   layoutId?: string
   /** Clickable — shows pointer + onClick */
@@ -69,7 +66,7 @@ function TrendIcon({ value, goodWhenUp = true }: { value: number; goodWhenUp?: b
   const Icon = value > 0 ? TrendingUp : value < 0 ? TrendingDown : Minus
   const good = goodWhenUp ? value > 0 : value < 0
   const bad = goodWhenUp ? value < 0 : value > 0
-  const color = good ? 'text-value-positive-on-dark' : bad ? 'text-value-negative-on-dark' : 'text-white/50'
+  const color = good ? 'value-positive' : bad ? 'value-negative' : 'text-disabled'
   return (
     <motion.span
       initial={{ scale: 0.5, opacity: 0 }}
@@ -89,9 +86,6 @@ export function HeroMetricCard({
   unit = '원',
   variant = 'primary',
   deltas,
-  spotlight = false,
-  shimmer = true,
-  noise = true,
   layoutId,
   onClick,
   leading,
@@ -102,34 +96,19 @@ export function HeroMetricCard({
   const ref = useRef<HTMLDivElement | null>(null)
   const format = formatValue ?? formatKoreanUnit
 
-  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!spotlight || !ref.current) return
-    const rect = ref.current.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width) * 100
-    const y = ((e.clientY - rect.top) / rect.height) * 100
-    ref.current.style.setProperty('--spot-x', `${x}%`)
-    ref.current.style.setProperty('--spot-y', `${y}%`)
-  }
-
   return (
     <motion.div
       ref={ref}
       layoutId={layoutId}
       onClick={onClick}
-      onMouseMove={spotlight ? handleMove : undefined}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={springSnappy}
       whileHover={onClick ? { y: -2 } : undefined}
       whileTap={onClick ? { scale: 0.985 } : undefined}
       className={clsx(
-        'relative overflow-hidden rounded-2xl p-6',
-        VARIANT_BG[variant],
-        noise && 'noise-overlay',
-        shimmer && 'hero-shimmer',
-        spotlight && 'spotlight',
+        'card-base relative overflow-hidden rounded-2xl p-6',
         onClick && 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--surface-primary)]',
-        'el-glow-primary',
         className,
       )}
       role={onClick ? 'button' : undefined}
@@ -145,21 +124,24 @@ export function HeroMetricCard({
           : undefined
       }
     >
-      <div className="relative z-10">
+      <div className="relative">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-body3 text-white/70">{label}</span>
+          <span className="flex items-center gap-2 text-body3 text-sub">
+            <span className={clsx('h-1.5 w-1.5 rounded-full', VARIANT_DOT[variant])} aria-hidden="true" />
+            {label}
+          </span>
           {leading}
         </div>
         <p
           className={clsx(
-            'text-financial-fluid text-white tracking-tight',
+            'text-financial-fluid text-heading tracking-tight',
             hideAmounts && 'amount-masked',
           )}
           data-reveal={hideAmounts ? 'false' : undefined}
         >
           <AnimatedNumber value={value} format={format} />
-          {unit && <span className="text-title3 text-white/50 ml-1">{unit}</span>}
-          {suffix && <span className="text-title3 text-white/60 ml-1">{suffix}</span>}
+          {unit && <span className="text-title3 text-sub ml-1">{unit}</span>}
+          {suffix && <span className="text-title3 text-sub ml-1">{suffix}</span>}
         </p>
         {deltas && deltas.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1">
@@ -173,15 +155,15 @@ export function HeroMetricCard({
                   <span
                     className={clsx(
                       'text-body3 tabular-nums',
-                      good && 'text-value-positive-on-dark',
-                      bad && 'text-value-negative-on-dark',
-                      !good && !bad && 'text-white/50',
+                      good && 'value-positive',
+                      bad && 'value-negative',
+                      !good && !bad && 'text-disabled',
                       hideAmounts && 'amount-masked',
                     )}
                   >
                     {formatChangeUnit(d.value)}
                   </span>
-                  {d.label && <span className="text-caption text-white/40">{d.label}</span>}
+                  {d.label && <span className="text-caption text-disabled">{d.label}</span>}
                 </div>
               )
             })}

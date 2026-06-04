@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Cloud, CloudOff, Upload, Download, FileSpreadsheet,
   Loader2, CheckCircle2, AlertCircle, Database, FileUp,
@@ -33,12 +33,20 @@ export function DataTab() {
   const syncStatus = useAuthStore((s) => s.syncStatus)
   const lastSyncTime = useAuthStore((s) => s.lastSyncTime)
   const pendingChangesCount = useAuthStore((s) => s.pendingChangesCount)
+  const syncErrorMessage = useAuthStore((s) => s.syncErrorMessage)
+  const updatePendingCount = useAuthStore((s) => s.updatePendingCount)
   const manualUpload = useAuthStore((s) => s.manualUpload)
   const manualDownload = useAuthStore((s) => s.manualDownload)
   const settings = useSettingsStore((s) => s.settings)
   const setLastBackupDate = useSettingsStore((s) => s.setLastBackupDate)
   const addToast = useToastStore((s) => s.addToast)
   const readOnly = useIsDeviceReadOnly()
+
+  // 탭을 열 때마다 대기 카운트를 실제 DB 기준으로 재계산 — store 값은
+  // 마지막 동기화 시점의 스냅샷이라 그 사이 업로드/변경을 반영하지 못한다.
+  useEffect(() => {
+    void updatePendingCount()
+  }, [updatePendingCount])
 
   const [isBackingUp, setIsBackingUp] = useState(false)
   const [isRestoring, setIsRestoring] = useState(false)
@@ -125,6 +133,9 @@ export function DataTab() {
                       </span>
                     )}
                   </p>
+                  {syncStatus === 'error' && syncErrorMessage && (
+                    <p className="text-caption text-status-danger">{syncErrorMessage}</p>
+                  )}
                   {lastSyncTime && (
                     <p className="text-caption text-sub">
                       마지막 동기화: {formatRelativeTime(lastSyncTime)}

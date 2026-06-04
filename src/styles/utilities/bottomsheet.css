@@ -33,19 +33,15 @@
   background-color: var(--sheet-bg);
   border-top-left-radius: var(--sheet-radius);
   border-top-right-radius: var(--sheet-radius);
-  /* Edge Lighting: top edge glow */
-  box-shadow:
-    var(--sheet-shadow),
-    0 -2px 16px -4px oklch(0.64 0.16 250 / 0.06);
+  /* v3 플랫: 중립 elevation만 (top edge 글로우 제거) */
+  box-shadow: var(--sheet-shadow);
   overflow: hidden;
 }
 
 .dark .sheet-container {
-  border-top: 1px solid oklch(0.64 0.16 250 / 0.10);
-  box-shadow:
-    var(--sheet-shadow),
-    0 -4px 32px -8px oklch(0.55 0.20 250 / 0.16),
-    0 -1px 8px 0 oklch(0.55 0.20 250 / 0.06);
+  /* 중립 헤어라인 보더 유지, 글로우 box-shadow 제거 */
+  border-top: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+  box-shadow: var(--sheet-shadow);
 }
 
 /* -------------------------------------------------

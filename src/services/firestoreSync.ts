@@ -223,6 +223,30 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries: number = 3): Promi
 const SYNC_WRITE_TIMEOUT_MS = 15_000   // 단일 문서 쓰기/삭제/톰스톤
 const SYNC_BATCH_TIMEOUT_MS = 30_000   // 최대 499건 batch.commit
 const MAX_CONSECUTIVE_UPLOAD_FAILURES = 3 // 연속 실패 시 회로 차단(오프라인 추정)
+
+function isQuotaExhaustedError(err: unknown): boolean {
+  return (err as { code?: string })?.code === 'resource-exhausted'
+}
+
+/**
+ * Firestore/네트워크 오류를 사용자가 원인을 알 수 있는 한국어 메시지로 분류한다.
+ * '동기화 오류'라는 라벨만으로는 쿼터 소진(요금제)·권한·오프라인을 구분할 수
+ * 없어 사용자가 디버깅할 수 없었다 — UI는 이 메시지를 라벨 아래에 함께 보여준다.
+ */
+export function classifySyncError(err: unknown): string {
+  const code = (err as { code?: string })?.code
+  if (code === 'resource-exhausted') {
+    return '클라우드 사용량 한도 초과 — 한도가 리셋되면 자동으로 다시 동기화됩니다.'
+  }
+  if (code === 'permission-denied' || code === 'unauthenticated') {
+    return '클라우드 접근 권한 오류 — 로그아웃 후 다시 로그인해 보세요.'
+  }
+  const msg = err instanceof Error ? err.message : ''
+  if (msg.includes('timed out')) {
+    return '네트워크 응답 없음 — 연결 상태를 확인하세요. 다음 변경 시 다시 시도합니다.'
+  }
+  return '동기화 중 오류가 발생했습니다 — 다음 변경 또는 재접속 시 다시 시도합니다.'
+}
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined
   const timeout = new Promise<never>((_, reject) => {
@@ -343,6 +367,9 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
   } catch (err) {
     console.error('Full upload failed:', err)
     useAuthStore.getState().setSyncStatus('error')
+    useAuthStore.getState().setSyncError(classifySyncError(err))
+    // 호출자(manualUpload 토스트)가 성공/실패를 구분할 수 있도록 전파한다.
+    throw err
   }
 }
 
@@ -535,6 +562,8 @@ export async function fullDownload(uid: string): Promise<void> {
   } catch (err) {
     console.error('Full download failed:', err)
     useAuthStore.getState().setSyncStatus('error')
+    useAuthStore.getState().setSyncError(classifySyncError(err))
+    throw err
   }
 }
 
@@ -613,6 +642,7 @@ export async function incrementalUpload(uid: string): Promise<void> {
     // (오프라인 추정)면 중단해 헛수고를 멈춘다.
     let consecutiveFailures = 0
     let failedGroups = 0
+    let lastGroupError: unknown = null
     try {
       // ── 업서트: 테이블별 그룹 → 로컬 일괄 조회 → 배치 업로드 ──
       const upsertsByTable = new Map<SyncableTable, string[]>()
@@ -633,8 +663,12 @@ export async function incrementalUpload(uid: string): Promise<void> {
           consecutiveFailures = 0
         } catch (err) {
           console.error(`[sync] incremental upload ${tableName} (${syncIds.length}) failed:`, err)
+          lastGroupError = err
           consecutiveFailures++
           failedGroups++
+          // 쿼터 소진은 모든 그룹이 같은 이유로 실패한다 — 나머지 그룹 시도는
+          // 헛수고이므로 즉시 중단한다 (finally가 성공분 마킹은 보존).
+          if (isQuotaExhaustedError(err)) throw err
           if (consecutiveFailures >= MAX_CONSECUTIVE_UPLOAD_FAILURES) {
             throw new Error(`[sync] aborting incremental upload after ${consecutiveFailures} consecutive failures (offline?)`)
           }
@@ -659,8 +693,10 @@ export async function incrementalUpload(uid: string): Promise<void> {
           consecutiveFailures = 0
         } catch (err) {
           console.error(`[sync] incremental delete ${tableName} (${entries.length}) failed:`, err)
+          lastGroupError = err
           consecutiveFailures++
           failedGroups++
+          if (isQuotaExhaustedError(err)) throw err
           if (consecutiveFailures >= MAX_CONSECUTIVE_UPLOAD_FAILURES) {
             throw new Error(`[sync] aborting incremental upload after ${consecutiveFailures} consecutive failures (offline?)`)
           }
@@ -690,6 +726,7 @@ export async function incrementalUpload(uid: string): Promise<void> {
       // 일부 그룹이 실패해 pending으로 남음 — '동기화됨'으로 거짓 표시하지
       // 않는다. 다음 변경/online 이벤트의 재시도가 남은 항목을 처리한다.
       useAuthStore.getState().setSyncStatus('error')
+      useAuthStore.getState().setSyncError(classifySyncError(lastGroupError))
       return
     }
     useAuthStore.getState().setSyncStatus('synced')
@@ -697,6 +734,11 @@ export async function incrementalUpload(uid: string): Promise<void> {
   } catch (err) {
     console.error('[sync] incremental upload failed:', err)
     useAuthStore.getState().setSyncStatus('error')
+    useAuthStore.getState().setSyncError(classifySyncError(err))
+  } finally {
+    // 표시 카운트를 실제 DB 상태로 재계산 — 기존에는 로그인 시 1회만 계산되어
+    // 업로드가 성공해도 'N건 대기 중'이 화면에 영구 고정되는 거짓 표시였다.
+    void useAuthStore.getState().updatePendingCount()
   }
 }
 
@@ -1138,6 +1180,7 @@ export async function mergeOnLogin(uid: string): Promise<void> {
   } catch (err) {
     console.error('[sync] merge on login failed:', err)
     useAuthStore.getState().setSyncStatus('error')
+    useAuthStore.getState().setSyncError(classifySyncError(err))
   } finally {
     // 안전망: 어떤 early-return 경로에서도 'syncing'이 영구 고착되지 않도록 정리.
     // (정상 종료는 이미 'synced', 실패는 'error'로 빠져 있어 영향 없음)

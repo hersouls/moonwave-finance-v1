@@ -1,59 +1,11 @@
 /* ===============================================
- * Hero Effects — v2.0 "Obsidian"
- * Hero Gradient Variants · Aurora · Spotlight · Skeleton Wave
+ * Hero Effects — v3 "플랫 하이엔드"
+ * Aurora(로그인/온보딩 전용) · Skeleton Wave · 금융 시맨틱
+ *
+ * v3: Hero Gradient 변형 + Spotlight 커서 효과 퇴역 —
+ * 카드 표면은 card-base(중립 헤어라인 + soft elevation)로 통일.
+ * Aurora는 카드가 아닌 전면 배경(로그인/온보딩) 전용으로만 유지.
  * =============================================== */
-
-/* ─────────────────────────────────────────────────
- * A. Hero Gradient Variants
- * Primary (기본), Success (positive), Warning (alert)
- * ─────────────────────────────────────────────────*/
-
-:root {
-  /* Success hero (자산 증가, 목표 달성) */
-  --gradient-hero-success-start: oklch(0.55 0.18 145);
-  --gradient-hero-success-end: oklch(0.32 0.12 145);
-
-  /* Warning hero (부채 경고, 예산 초과) */
-  --gradient-hero-warning-start: oklch(0.62 0.18 30);
-  --gradient-hero-warning-end: oklch(0.38 0.15 25);
-
-  /* Accent hero (투자/수익) */
-  --gradient-hero-accent-start: oklch(0.55 0.18 290);
-  --gradient-hero-accent-end: oklch(0.30 0.12 290);
-}
-
-.dark {
-  --gradient-hero-success-start: oklch(0.38 0.14 145);
-  --gradient-hero-success-end: oklch(0.22 0.08 145);
-  --gradient-hero-warning-start: oklch(0.45 0.16 30);
-  --gradient-hero-warning-end: oklch(0.24 0.10 25);
-  --gradient-hero-accent-start: oklch(0.38 0.14 290);
-  --gradient-hero-accent-end: oklch(0.22 0.08 290);
-}
-
-.hero-gradient-success {
-  background: linear-gradient(
-    var(--gradient-hero-angle, 135deg),
-    var(--gradient-hero-success-start),
-    var(--gradient-hero-success-end)
-  );
-}
-
-.hero-gradient-warning {
-  background: linear-gradient(
-    var(--gradient-hero-angle, 135deg),
-    var(--gradient-hero-warning-start),
-    var(--gradient-hero-warning-end)
-  );
-}
-
-.hero-gradient-accent {
-  background: linear-gradient(
-    var(--gradient-hero-angle, 135deg),
-    var(--gradient-hero-accent-start),
-    var(--gradient-hero-accent-end)
-  );
-}
 
 /* ─────────────────────────────────────────────────
  * B. Aurora Gradient (로그인 / 온보딩 / 빈 상태)
@@ -107,47 +59,6 @@
   .aurora-bg::before {
     animation: none;
   }
-}
-
-/* ─────────────────────────────────────────────────
- * C. Spotlight Cursor Follow (desktop only)
- * CSS variables --spot-x, --spot-y set via JS (0-100%)
- * ─────────────────────────────────────────────────*/
-
-.spotlight {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  --spot-x: 50%;
-  --spot-y: 50%;
-  --spot-size: 60%;
-  --spot-opacity: 0.18;
-}
-
-.spotlight::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    var(--spot-size) var(--spot-size) at var(--spot-x) var(--spot-y),
-    oklch(1 0 0 / var(--spot-opacity)),
-    transparent 70%
-  );
-  pointer-events: none;
-  transition: opacity var(--dur-slow, 360ms) var(--ease-out, ease);
-  opacity: 0;
-  z-index: 3;
-  border-radius: inherit;
-}
-
-.spotlight:hover::before {
-  opacity: 1;
-}
-
-.dark .spotlight { --spot-opacity: 0.12; }
-
-@media (hover: none), (prefers-reduced-motion: reduce) {
-  .spotlight::before { display: none; }
 }
 
 /* ─────────────────────────────────────────────────

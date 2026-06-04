@@ -27,18 +27,14 @@
   background-color: var(--dim-overlay);
 }
 
-/* ── Elevation glow — tokenized hero/metric/FAB glow ──────── */
-/* Replaces inline boxShadow:'0 8px 32px var(--glow-primary)' duplicated 6+ times. */
-.el-glow-primary {
-  box-shadow: 0 8px 32px var(--glow-primary);
-}
-.el-glow-success {
-  box-shadow: 0 8px 32px var(--glow-success);
-}
+/* ── Elevation "glow" — v3 플랫: 중립 그림자로 재정의 ──────── */
+/* 클래스명 유지(tsx 9곳 캐스케이드). primary 틴트 글로우 → 중립 elevation. */
+.el-glow-primary,
+.el-glow-success,
 .el-glow-danger {
-  box-shadow: 0 8px 32px var(--glow-danger);
+  box-shadow: var(--shadow-2);
 }
-/* Softer ambient glow for resting cards / pull-to-refresh */
+/* Softer resting variant → 한 단계 낮은 중립 그림자 */
 .el-glow-soft {
-  box-shadow: 0 4px 20px -6px var(--glow-primary);
+  box-shadow: var(--shadow-1);
 }

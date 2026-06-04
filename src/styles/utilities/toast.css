@@ -17,11 +17,8 @@
   background-color: var(--toast-bg);
   color: var(--toast-text);
   border-radius: var(--toast-radius);
-  /* Edge Lighting: toast ambient glow */
-  box-shadow:
-    var(--toast-shadow),
-    0 0 16px -4px oklch(0.64 0.16 250 / 0.06),
-    0 0 4px 0 oklch(0.64 0.16 250 / 0.03);
+  /* v3 플랫: 중립 elevation만 (앰비언트 글로우 제거) */
+  box-shadow: var(--toast-shadow);
   max-height: var(--toast-max-height);
   overflow: hidden;
   font-size: var(--toast-font-size);
@@ -30,10 +27,7 @@
 }
 
 .dark .toast-foundation {
-  box-shadow:
-    var(--toast-shadow),
-    0 0 28px -4px oklch(0.55 0.20 250 / 0.16),
-    0 0 8px 0 oklch(0.55 0.20 250 / 0.06);
+  box-shadow: var(--toast-shadow);
 }
 
 /* Desktop: centered, max-width */

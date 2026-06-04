@@ -70,6 +70,5 @@
 .bg-weekend-sun { background-color: var(--text-weekend-sun); }
 .bg-weekend-sat { background-color: var(--text-weekend-sat); }
 
-/* ── Value colors on always-dark hero surfaces ──────────── */
-.text-value-positive-on-dark { color: var(--value-positive-on-dark); }
-.text-value-negative-on-dark { color: var(--value-negative-on-dark); }
+/* v3 플랫: always-dark hero 표면 퇴역 — on-dark value 클래스 제거됨.
+ * 카드 표면은 card-base 단일 문법, 일반 value-positive/negative 사용. */

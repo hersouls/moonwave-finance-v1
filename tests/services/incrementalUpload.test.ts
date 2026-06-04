@@ -6,7 +6,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 const h = vi.hoisted(() => ({
   commits: [] as Array<{ sets: number; deletes: number }>,
+  commitAttempts: 0,
   failNextCommits: 0,
+  /** 설정 시 실패하는 commit이 이 code를 가진 FirebaseError처럼 던진다 */
+  failCode: null as string | null,
 }))
 
 vi.mock('@/lib/firebase', () => ({ firestore: {}, auth: {} }))
@@ -24,9 +27,12 @@ vi.mock('firebase/firestore', () => ({
       set: () => { ops.sets++ },
       delete: () => { ops.deletes++ },
       commit: async () => {
+        h.commitAttempts++
         if (h.failNextCommits > 0) {
           h.failNextCommits--
-          throw new Error('commit failed (test)')
+          const err = new Error('commit failed (test)')
+          if (h.failCode) Object.assign(err, { code: h.failCode })
+          throw err
         }
         h.commits.push({ ...ops })
       },
@@ -63,12 +69,15 @@ async function waitForChangeLogCount(expected: number): Promise<void> {
 
 beforeEach(async () => {
   h.commits = []
+  h.commitAttempts = 0
   h.failNextCommits = 0
+  h.failCode = null
   await db.transactions.clear()
   await db.budgets.clear()
   await new Promise((r) => setTimeout(r, 30))
   await db.syncChangeLog.clear()
   await db.syncTombstones.clear()
+  useAuthStore.setState({ syncStatus: 'idle', syncErrorMessage: null, pendingChangesCount: 0 })
 })
 
 describe('incrementalUpload 배치 경로', () => {
@@ -83,6 +92,10 @@ describe('incrementalUpload 배치 경로', () => {
     expect(h.commits[1].sets).toBe(101)
     expect(await db.syncChangeLog.where('processed').equals(0).count()).toBe(0)
     expect(useAuthStore.getState().syncStatus).toBe('synced')
+    // 표시 카운트가 실제 DB 상태(0)로 재계산된다 — 로그인 시점 스냅샷 고정 금지
+    await vi.waitFor(() => {
+      expect(useAuthStore.getState().pendingChangesCount).toBe(0)
+    })
   })
 
   it('한 그룹의 commit 실패 시 그 그룹만 pending으로 남기고 status=error로 정직하게 표시한다', async () => {
@@ -106,6 +119,44 @@ describe('incrementalUpload 배치 경로', () => {
     expect(processed[0].tableName).toBe('budgets')
     // 부분 실패를 '동기화됨'으로 거짓 표시하지 않는다
     expect(useAuthStore.getState().syncStatus).toBe('error')
+    // 분류된 원인 메시지가 함께 노출된다
+    expect(useAuthStore.getState().syncErrorMessage).toBeTruthy()
+    // 표시 카운트도 실패분(2건)으로 재계산된다
+    await vi.waitFor(() => {
+      expect(useAuthStore.getState().pendingChangesCount).toBe(2)
+    })
+  })
+
+  it('쿼터 소진(resource-exhausted)은 즉시 중단하고 쿼터 메시지를 표시한다', async () => {
+    // 두 테이블 = 두 그룹. 첫 그룹이 쿼터 오류로 실패하면 둘째 그룹은 시도조차
+    // 하지 않아야 한다 (전부 같은 이유로 실패할 것이므로 헛수고 + 추가 과금).
+    await db.transactions.bulkAdd([makeTxn(), makeTxn()])
+    const now = new Date().toISOString()
+    await db.budgets.add({
+      syncId: crypto.randomUUID(), categoryId: null, month: '2026-06',
+      amount: 100, createdAt: now, updatedAt: now,
+    } as unknown as Budget)
+    await waitForChangeLogCount(3)
+
+    h.failNextCommits = 1
+    h.failCode = 'resource-exhausted'
+    await incrementalUpload('test-uid')
+
+    expect(h.commitAttempts).toBe(1) // 둘째 그룹(budgets) 미시도
+    expect(await db.syncChangeLog.where('processed').equals(0).count()).toBe(3)
+    expect(useAuthStore.getState().syncStatus).toBe('error')
+    expect(useAuthStore.getState().syncErrorMessage).toContain('한도')
+  })
+
+  it('성공 시 syncErrorMessage가 지워진다 (synced 전이 시 클리어)', async () => {
+    useAuthStore.setState({ syncErrorMessage: '이전 오류', syncStatus: 'error' })
+    await db.transactions.add(makeTxn())
+    await waitForChangeLogCount(1)
+
+    await incrementalUpload('test-uid')
+
+    expect(useAuthStore.getState().syncStatus).toBe('synced')
+    expect(useAuthStore.getState().syncErrorMessage).toBeNull()
   })
 
   it('삭제 백로그는 배치 삭제 + 톰스톤 배치 업로드로 처리한다', async () => {

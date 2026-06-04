@@ -72,12 +72,6 @@ export function LedgerHero({
   const trendIsBad = isExpense ? trend.direction === 'up' : trend.direction === 'down'
 
   const gradientId = `ledger-hero-grad-${type}`
-  const glowFilterId = `ledger-hero-glow-${type}`
-
-  // Aurora mesh — type-aware (지출은 핑크/레드, 수입은 그린/티얼)
-  const auroraPrimary = isExpense ? 'oklch(0.68 0.20 25 / 0.18)' : 'oklch(0.72 0.18 155 / 0.18)'
-  const auroraSecondary = isExpense ? 'oklch(0.78 0.16 340 / 0.14)' : 'oklch(0.74 0.14 195 / 0.14)'
-  const auroraTertiary = 'oklch(0.62 0.18 250 / 0.10)'
   const valueColorVar = isExpense ? 'var(--value-negative)' : 'var(--value-positive)'
 
   // Savings arc color
@@ -91,31 +85,8 @@ export function LedgerHero({
   return (
     <section
       aria-labelledby="ledger-hero-label"
-      className="relative overflow-hidden rounded-3xl bg-surface-primary"
-      style={{
-        boxShadow:
-          'inset 0 0 0 1px var(--border-default), var(--shadow-1)',
-      }}
+      className="card-base relative overflow-hidden rounded-3xl"
     >
-      {/* ─── Aurora gradient mesh (decorative) ───────── */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `
-            radial-gradient(circle at 18% 12%, ${auroraPrimary}, transparent 42%),
-            radial-gradient(circle at 88% 8%, ${auroraSecondary}, transparent 38%),
-            radial-gradient(circle at 50% 110%, ${auroraTertiary}, transparent 55%)
-          `,
-        }}
-      />
-      {/* Subtle inner top highlight (glass-like depth) */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-x-0 top-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%)' }}
-      />
-
       {/* ─── Month Navigator ─────────────────────────── */}
       <div className="relative flex items-center justify-between px-4 sm:px-5 pt-4 pb-1.5">
         <motion.button
@@ -195,9 +166,6 @@ export function LedgerHero({
                   'text-financial-fluid font-extrabold tracking-tight tabular-nums',
                   isExpense ? 'text-value-negative' : 'text-value-positive',
                 )}
-                style={{
-                  textShadow: `0 1px 2px color-mix(in srgb, ${valueColorVar} 18%, transparent)`,
-                }}
               >
                 {hideAmounts ? '••••••' : animatedAmount.toLocaleString('ko-KR')}
               </span>
@@ -262,13 +230,6 @@ export function LedgerHero({
                 <stop offset="0%" stopColor={valueColorVar} stopOpacity="0.28" />
                 <stop offset="100%" stopColor={valueColorVar} stopOpacity="0" />
               </linearGradient>
-              <filter id={glowFilterId} x="-10%" y="-50%" width="120%" height="200%">
-                <feGaussianBlur stdDeviation="2" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
             </defs>
             <motion.path
               d={sparklineArea}
@@ -284,7 +245,6 @@ export function LedgerHero({
               strokeWidth={2}
               strokeLinecap="round"
               strokeLinejoin="round"
-              filter={`url(#${glowFilterId})`}
               initial={shouldReduceMotion ? undefined : { pathLength: 0 }}
               animate={{ pathLength: 1 }}
               transition={{ duration: 1.1, ease: easeOutExpo, delay: 0.3 }}
@@ -295,12 +255,8 @@ export function LedgerHero({
 
       {/* ─── Secondary metrics row ──────────────────── */}
       <div
-        className="relative flex items-center justify-between gap-4 px-4 sm:px-6 py-3.5 border-t"
-        style={{
-          borderColor: 'var(--border-subtle)',
-          background: 'linear-gradient(180deg, color-mix(in srgb, var(--surface-secondary) 50%, transparent) 0%, transparent 100%)',
-          backdropFilter: 'blur(4px)',
-        }}
+        className="relative flex items-center justify-between gap-4 px-4 sm:px-6 py-3.5 border-t bg-[var(--surface-secondary)]"
+        style={{ borderColor: 'var(--border-subtle)' }}
       >
         <Metric label="수입" value={income} colorClass="text-value-positive" hidden={hideAmounts} />
         <Divider />
@@ -332,7 +288,6 @@ export function LedgerHero({
                 initial={shouldReduceMotion ? { strokeDashoffset: arcDashOffset } : { strokeDashoffset: ARC_CIRC }}
                 animate={{ strokeDashoffset: arcDashOffset }}
                 transition={{ duration: 0.9, ease: easeOutExpo, delay: 0.4 }}
-                style={{ filter: `drop-shadow(0 0 4px color-mix(in srgb, ${arcColor} 40%, transparent))` }}
               />
             </svg>
             <p

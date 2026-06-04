@@ -53,20 +53,16 @@
   min-width: var(--context-menu-min-width);
   background: var(--context-menu-bg);
   border-radius: var(--context-menu-radius);
-  /* Edge Lighting: context menu glow */
-  box-shadow:
-    var(--context-menu-shadow),
-    0 0 16px -4px oklch(0.64 0.16 250 / 0.06);
+  /* v3 플랫: 중립 elevation만 (글로우 제거) */
+  box-shadow: var(--context-menu-shadow);
   padding: var(--context-menu-padding-y) 0;
   outline: none;
 }
 
 .dark .context-menu {
-  border: 1px solid oklch(0.64 0.16 250 / 0.08);
-  box-shadow:
-    var(--context-menu-shadow),
-    0 0 28px -4px oklch(0.55 0.20 250 / 0.14),
-    0 0 8px 0 oklch(0.55 0.20 250 / 0.05);
+  /* 중립 헤어라인 보더 유지, 글로우 box-shadow 제거 */
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+  box-shadow: var(--context-menu-shadow);
 }
 
 .context-menu__item {

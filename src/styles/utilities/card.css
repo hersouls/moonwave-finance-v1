@@ -28,7 +28,7 @@
   overflow: hidden;
 }
 
-/* Card: Interactive (with Edge Lighting hover glow) */
+/* Card: Interactive (v3 플랫: hover = 보더 톤업 + elevation 한 단계, 글로우 제거) */
 .card-interactive {
   cursor: pointer;
   transition: border-color 300ms ease, box-shadow 300ms ease, transform 150ms ease;
@@ -36,18 +36,12 @@
 
 .card-interactive:hover {
   border-color: var(--card-hover-border-color);
-  box-shadow:
-    var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.08)),
-    0 0 16px -4px oklch(0.64 0.16 250 / 0.08),
-    0 0 4px 0 oklch(0.64 0.16 250 / 0.03);
+  box-shadow: var(--shadow-2, 0 4px 8px rgba(0, 0, 0, 0.10));
 }
 
 .dark .card-interactive:hover {
-  border-color: oklch(0.64 0.16 250 / 0.12);
-  box-shadow:
-    var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.24)),
-    0 0 28px -4px oklch(0.64 0.16 250 / 0.20),
-    0 0 8px 0 oklch(0.64 0.16 250 / 0.10);
+  border-color: var(--border-strong, rgba(255, 255, 255, 0.14));
+  box-shadow: var(--shadow-2, 0 4px 8px rgba(0, 0, 0, 0.24));
 }
 
 .card-interactive:active {
@@ -57,7 +51,6 @@
 .card-interactive:focus-visible {
   outline: 2px solid var(--color-primary-500, #3B82F6);
   outline-offset: 2px;
-  box-shadow: var(--el-glow-strong, 0 0 48px -4px oklch(0.64 0.16 250 / 0.20));
 }
 
 /* -------------------------------------------------

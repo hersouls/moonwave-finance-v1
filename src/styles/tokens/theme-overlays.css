@@ -98,9 +98,9 @@ html.dark[data-theme-overlay][data-theme-overlay="aurora"] {
   --accent-primary-text: oklch(0.75 0.15 168);
 }
 
-/* Survival mode focus glow for top-priority task */
+/* Survival mode focus ring for top-priority task (v3 플랫: 글로우 제거, 링 유지) */
 .survival-focus-glow {
-  box-shadow: 0 0 0 2px oklch(0.65 0.20 25), 0 0 16px oklch(0.65 0.20 25 / 0.3);
+  box-shadow: 0 0 0 2px oklch(0.65 0.20 25);
 }
 
 /* ===============================================

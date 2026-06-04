@@ -63,44 +63,46 @@ export function AssetSummaryHeader({ items, type }: AssetSummaryHeaderProps) {
   // 자산: 증가=긍정(green). 부채: 감소=긍정(green).
   const goodWhenUp = isAsset
   const deltaTone = (v: number) => {
-    if (v === 0) return 'text-white/55'
+    if (v === 0) return 'text-disabled'
     const positive = goodWhenUp ? v > 0 : v < 0
-    return positive ? 'text-value-positive-on-dark' : 'text-value-negative-on-dark'
+    return positive ? 'value-positive' : 'value-negative'
   }
   const sparkColor = (() => {
     const positive = goodWhenUp ? monthlyChange >= 0 : monthlyChange <= 0
     return positive ? getPositiveColor() : getNegativeColor()
   })()
 
-  const heroClass = isAsset ? 'hero-gradient' : 'hero-gradient-warning'
+  // v3 플랫: 변형 정체성은 라벨 옆 액센트 도트로만 표현 (자산=primary, 부채=warning).
+  const dotClass = isAsset
+    ? 'bg-[color:var(--color-primary-500)]'
+    : 'bg-[color:var(--color-warning-500)]'
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={springSnappy}
-      className={clsx(
-        'relative overflow-hidden rounded-2xl p-5 sm:p-6 noise-overlay hero-shimmer',
-        heroClass,
-        'el-glow-primary',
-      )}
+      className="card-base relative overflow-hidden rounded-2xl p-5 sm:p-6"
     >
-      <div className="relative z-10">
+      <div className="relative">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-body3 text-white/70">{isAsset ? '총 자산' : '총 부채'}</span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-caption text-white/80">
+              <span className="inline-flex items-center gap-2 text-body3 text-sub">
+                <span className={clsx('h-1.5 w-1.5 rounded-full', dotClass)} aria-hidden="true" />
+                {isAsset ? '총 자산' : '총 부채'}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-tertiary)] px-2 py-0.5 text-caption text-sub">
                 <Layers className="w-3 h-3" />
                 {items.length}개
               </span>
             </div>
             <p
-              className={clsx('text-financial-fluid text-white tracking-tight', hideAmounts && 'amount-masked')}
+              className={clsx('text-financial-fluid text-heading tracking-tight', hideAmounts && 'amount-masked')}
               data-reveal={hideAmounts ? 'false' : undefined}
             >
               {formatKoreanUnit(total)}
-              <span className="text-title3 text-white/50 ml-1">원</span>
+              <span className="text-title3 text-sub ml-1">원</span>
             </p>
           </div>
 
@@ -114,7 +116,7 @@ export function AssetSummaryHeader({ items, type }: AssetSummaryHeaderProps) {
                 color={sparkColor}
                 strokeWidth={2}
               />
-              <p className="text-caption text-white/40 text-right mt-0.5">최근 30일</p>
+              <p className="text-caption text-disabled text-right mt-0.5">최근 30일</p>
             </div>
           )}
         </div>
@@ -134,7 +136,7 @@ export function AssetSummaryHeader({ items, type }: AssetSummaryHeaderProps) {
                 <span className={clsx('text-body3 tabular-nums', deltaTone(d.value), hideAmounts && 'amount-masked')}>
                   {formatChangeUnit(d.value)}
                 </span>
-                <span className="text-caption text-white/40">{d.label}</span>
+                <span className="text-caption text-disabled">{d.label}</span>
               </div>
             )
           })}
