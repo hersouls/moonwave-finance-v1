@@ -559,6 +559,23 @@ async function uploadTombstone(
   await batch.commit()
 }
 
+/** 톰스톤 일괄 업로드 — incrementalUpload의 배치 삭제 경로용. THROWS on failure. */
+async function uploadTombstonesBatch(
+  uid: string,
+  entries: Array<{ tableName: string; syncId: string; deletedAt: string }>
+): Promise<void> {
+  for (let i = 0; i < entries.length; i += BATCH_LIMIT) {
+    const chunk = entries.slice(i, i + BATCH_LIMIT)
+    const batch = writeBatch(firestore)
+    for (const e of chunk) {
+      const tombstoneId = encodeDocId(`${e.tableName}_${e.syncId}`)
+      const ref = doc(firestore, `users/${uid}/syncTombstones/${tombstoneId}`)
+      batch.set(ref, toCloudPayload({ tableName: e.tableName, syncId: e.syncId, deletedAt: e.deletedAt }))
+    }
+    await withTimeout(batch.commit(), SYNC_BATCH_TIMEOUT_MS, 'tombstone batch upload')
+  }
+}
+
 export async function incrementalUpload(uid: string): Promise<void> {
   if (!canDeviceWrite()) return  // read-only device: never write to the cloud
   useAuthStore.getState().setSyncStatus('syncing')
@@ -579,33 +596,57 @@ export async function incrementalUpload(uid: string): Promise<void> {
 
     const successKeys = new Set<string>()
 
-    // 쓰기 단위 타임아웃 + 연속 실패 서킷브레이커. 일시적 실패는 항목만 pending으로
-    // 남기고 계속 전진하되, 연속 N회 실패(오프라인 추정)면 루프를 중단해 헛수고를 멈춘다.
+    // 테이블별 배치 업로드 + 그룹 단위 서킷브레이커. 행마다 commit 1회를 치던
+    // 기존 방식은 대량 백로그(CSV 임포트, 가치 전망 수천 행)에서 행×왕복으로
+    // 비현실적으로 느렸다 — uploadTable의 499건 writeBatch로 묶는다.
+    // 일시적 실패는 그 그룹만 pending으로 남기고 전진하되, 연속 N회 실패
+    // (오프라인 추정)면 중단해 헛수고를 멈춘다.
     let consecutiveFailures = 0
     try {
+      // ── 업서트: 테이블별 그룹 → 로컬 일괄 조회 → 배치 업로드 ──
+      const upsertsByTable = new Map<SyncableTable, string[]>()
       for (const change of deduped) {
+        if (change.operation === 'delete') continue
+        const t = change.tableName as SyncableTable
+        if (!upsertsByTable.has(t)) upsertsByTable.set(t, [])
+        upsertsByTable.get(t)!.push(change.syncId)
+      }
+      for (const [tableName, syncIds] of upsertsByTable) {
         try {
-          if (change.operation === 'delete') {
-            await withTimeout(
-              deleteFromCloud(uid, change.tableName as SyncableTable, change.syncId),
-              SYNC_WRITE_TIMEOUT_MS, `delete ${change.tableName}/${change.syncId}`)
-            await withTimeout(
-              uploadTombstone(uid, change.tableName, change.syncId, change.timestamp),
-              SYNC_WRITE_TIMEOUT_MS, `tombstone ${change.tableName}/${change.syncId}`)
-          } else {
-            const localTable = getLocalTable(change.tableName as SyncableTable)
-            const record = await (localTable as typeof db.members)
-              .where('syncId').equals(change.syncId).first()
-            if (record) {
-              await withTimeout(
-                uploadSingleRecord(uid, change.tableName as SyncableTable, record),
-                SYNC_WRITE_TIMEOUT_MS, `upload ${change.tableName}/${change.syncId}`)
-            }
-          }
-          successKeys.add(`${change.tableName}:${change.syncId}`)
+          const localTable = getLocalTable(tableName)
+          const records = await (localTable as typeof db.members)
+            .where('syncId').anyOf(syncIds).toArray()
+          await uploadTable(uid, tableName, records) // 내부에서 배치 + 배치별 타임아웃
+          // 로컬에서 이미 사라진(삭제된) syncId도 더 할 일이 없으므로 처리 완료
+          for (const sid of syncIds) successKeys.add(`${tableName}:${sid}`)
           consecutiveFailures = 0
         } catch (err) {
-          console.error(`[sync] incremental upload ${change.tableName}/${change.syncId} failed:`, err)
+          console.error(`[sync] incremental upload ${tableName} (${syncIds.length}) failed:`, err)
+          consecutiveFailures++
+          if (consecutiveFailures >= MAX_CONSECUTIVE_UPLOAD_FAILURES) {
+            throw new Error(`[sync] aborting incremental upload after ${consecutiveFailures} consecutive failures (offline?)`)
+          }
+        }
+      }
+
+      // ── 삭제: 테이블별 배치 삭제 + 톰스톤 배치 업로드 ──
+      const deletesByTable = new Map<SyncableTable, SyncChangeLogEntry[]>()
+      for (const change of deduped) {
+        if (change.operation !== 'delete') continue
+        const t = change.tableName as SyncableTable
+        if (!deletesByTable.has(t)) deletesByTable.set(t, [])
+        deletesByTable.get(t)!.push(change)
+      }
+      for (const [tableName, entries] of deletesByTable) {
+        try {
+          await deleteMultipleFromCloud(uid, tableName, entries.map(e => e.syncId))
+          await uploadTombstonesBatch(uid, entries.map(e => ({
+            tableName, syncId: e.syncId, deletedAt: e.timestamp,
+          })))
+          for (const e of entries) successKeys.add(`${tableName}:${e.syncId}`)
+          consecutiveFailures = 0
+        } catch (err) {
+          console.error(`[sync] incremental delete ${tableName} (${entries.length}) failed:`, err)
           consecutiveFailures++
           if (consecutiveFailures >= MAX_CONSECUTIVE_UPLOAD_FAILURES) {
             throw new Error(`[sync] aborting incremental upload after ${consecutiveFailures} consecutive failures (offline?)`)
@@ -1109,7 +1150,7 @@ export async function deleteMultipleFromCloud(uid: string, tableName: SyncableTa
     for (const syncId of chunk) {
       batch.delete(doc(firestore, getUserDocPath(uid, tableName, syncId)))
     }
-    await batch.commit()
+    await withTimeout(batch.commit(), SYNC_BATCH_TIMEOUT_MS, `${tableName} batch delete`)
   }
 }
 
