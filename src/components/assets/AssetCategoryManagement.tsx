@@ -149,7 +149,7 @@ export function AssetCategoryManagement() {
               </ul>
             )}
 
-            <button onClick={openCreate} className="mt-3 inline-flex items-center gap-1.5 text-body3 font-medium text-accent-primary transition-colors hover:opacity-80">
+            <button onClick={openCreate} className="mt-3 inline-flex items-center gap-1.5 text-body3 text-accent-primary transition-colors hover:opacity-80">
               <Plus className="h-4 w-4" />
               {activeType === 'asset' ? '자산' : '부채'} 카테고리 추가
             </button>

@@ -40,7 +40,7 @@ export function DateGroupHeader({ group, sticky = true, className }: DateGroupHe
           }}
           aria-hidden="true"
         />
-        <h3 className="text-caption font-bold text-heading tabular-nums truncate">
+        <h3 className="text-label3 text-heading tabular-nums truncate">
           {label}
         </h3>
         <span className="text-label4 leading-none text-disabled tabular-nums font-semibold flex-shrink-0">

@@ -226,7 +226,7 @@ export function AssetDetailPage() {
               )}
               <h1 className="text-title1 text-heading">{item.name}</h1>
             </div>
-            <div className="flex items-center gap-2 text-sm text-sub">
+            <div className="flex items-center gap-2 text-label3-medium text-sub">
               {category && <span>{category.name}</span>}
               {member && (
                 <>
@@ -256,7 +256,7 @@ export function AssetDetailPage() {
         <Card className="card-pad-lg el-card-elevated surface-inset-top">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <span className="text-sm text-sub">{isLiability ? '현재 잔액' : '현재 가치'}</span>
+              <span className="text-label2 text-sub">{isLiability ? '현재 잔액' : '현재 가치'}</span>
               <Amount
                 as="p"
                 value={latestValue}
@@ -266,7 +266,7 @@ export function AssetDetailPage() {
               />
               {diff !== 0 && (
                 <p className={clsx(
-                  'inline-flex items-center gap-1 text-sm tabular-nums mt-1',
+                  'inline-flex items-center gap-1 text-label3-medium tabular-nums mt-1',
                   diffIsGood ? 'text-status-success' : 'text-status-danger'
                 )}>
                   {diff > 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
@@ -283,12 +283,12 @@ export function AssetDetailPage() {
                   color={diffIsGood ? getPositiveColor() : getNegativeColor()}
                   strokeWidth={2}
                 />
-                <p className="text-label4 text-disabled text-right mt-0.5">최근 90일</p>
+                <p className="text-caption text-disabled text-right mt-0.5">최근 90일</p>
               </div>
             )}
           </div>
           {item.memo && (
-            <p className="text-sm text-sub mt-3 pt-3 border-t border-base">{item.memo}</p>
+            <p className="text-body3 text-sub mt-3 pt-3 border-t border-base">{item.memo}</p>
           )}
           <Button
             variant="secondary"
@@ -309,11 +309,11 @@ export function AssetDetailPage() {
         const sevTax = sevEstimated > 0 ? calculateSeveranceTax(sevEstimated, sevServiceYears) : null
         return (
           <Card className="card-pad-lg space-y-4">
-            <h3 className="text-body3-semi text-heading flex items-center gap-2">
+            <h3 className="text-title3 text-heading flex items-center gap-2">
               <RefreshCw className="w-4 h-4 text-sub" />
               퇴직금 재계산
             </h3>
-            <p className="text-caption text-sub leading-relaxed">
+            <p className="text-body3 text-sub leading-relaxed">
               입사일과 월 평균임금을 입력하면 입사일부터 오늘까지 일별 퇴직금을 다시 계산합니다.
             </p>
             <div className="space-y-3">
@@ -340,36 +340,36 @@ export function AssetDetailPage() {
                     placeholder="0"
                     className="input-base text-right pr-8 tabular-nums"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-disabled">원</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-label3-medium text-disabled">원</span>
                 </div>
                 <p className="text-caption text-sub mt-1">최근 3개월 급여총액 / 해당 기간 총일수 x 30</p>
               </div>
               {sevEstimated > 0 && (
                 <div className="pt-3 border-t border-base space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-body">퇴직금 예상액</span>
-                    <span className="text-lg font-bold text-status-success tabular-nums">
-                      {sevEstimated.toLocaleString('ko-KR')} <span className="text-sm font-normal">원</span>
+                    <span className="text-body2 text-body">퇴직금 예상액</span>
+                    <span className="text-title3 text-status-success tabular-nums">
+                      {sevEstimated.toLocaleString('ko-KR')} <span className="text-label3-medium">원</span>
                     </span>
                   </div>
                   {sevTax && sevTax.totalTax > 0 && (
                     <>
-                      <div className="flex justify-between items-center text-label2 leading-none">
+                      <div className="flex justify-between items-center text-label3-medium leading-none">
                         <span className="text-sub">퇴직소득세</span>
                         <span className="text-sub tabular-nums">
                           -{sevTax.incomeTax.toLocaleString('ko-KR')}원
                         </span>
                       </div>
-                      <div className="flex justify-between items-center text-label2 leading-none">
+                      <div className="flex justify-between items-center text-label3-medium leading-none">
                         <span className="text-sub">퇴직주민세</span>
                         <span className="text-sub tabular-nums">
                           -{sevTax.residentTax.toLocaleString('ko-KR')}원
                         </span>
                       </div>
                       <div className="flex justify-between items-center pt-2 border-t border-base">
-                        <span className="text-sm font-medium text-body">세후 예상 수령액</span>
-                        <span className="text-body1 font-bold text-accent-primary tabular-nums">
-                          {sevTax.netSeverance.toLocaleString('ko-KR')} <span className="text-sm font-normal">원</span>
+                        <span className="text-body2 text-body">세후 예상 수령액</span>
+                        <span className="text-title3 text-accent-primary tabular-nums">
+                          {sevTax.netSeverance.toLocaleString('ko-KR')} <span className="text-label3-medium">원</span>
                         </span>
                       </div>
                     </>
@@ -396,7 +396,7 @@ export function AssetDetailPage() {
           <IconButton onClick={() => setSelectedMonth(getPreviousMonth(selectedMonth))} plain size="sm">
             <ChevronLeft className="w-5 h-5" />
           </IconButton>
-          <h3 className="text-body3-semi text-heading">
+          <h3 className="text-title3 text-heading">
             {formatMonthLabel(selectedMonth)}
           </h3>
           <IconButton onClick={() => setSelectedMonth(getNextMonth(selectedMonth))} plain size="sm">
@@ -428,7 +428,7 @@ export function AssetDetailPage() {
                   onClick={() => !isEditing && handleCellClick(date)}
                 >
                   <span className={clsx(
-                    'w-12 text-sm tabular-nums flex items-center gap-1',
+                    'w-12 text-label3-medium tabular-nums flex items-center gap-1',
                     isToday ? 'text-primary-600 dark:text-primary-400 font-semibold' : 'text-sub'
                   )}>
                     {day}일
@@ -444,11 +444,11 @@ export function AssetDetailPage() {
                         onChange={(e) => setEditValue(e.target.value)}
                         onBlur={() => handleCellSave(date)}
                         onKeyDown={(e) => handleKeyDown(e, date, idx)}
-                        className="w-full px-2 py-1 rounded border border-primary-400 dark:border-primary-600 bg-surface-primary text-sm text-heading tabular-nums focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        className="w-full px-2 py-1 rounded border border-primary-400 dark:border-primary-600 bg-surface-primary text-body2 text-heading tabular-nums focus:outline-none focus:ring-1 focus:ring-primary-500"
                       />
                     ) : (
                       <span className={clsx(
-                        'text-sm tabular-nums',
+                        'text-body2 tabular-nums',
                         effective > 0 ? (val ? 'text-heading font-medium' : 'text-sub') : 'text-disabled'
                       )}>
                         {effective > 0 ? formatKRW(effective) : '-'}

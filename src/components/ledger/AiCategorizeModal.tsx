@@ -189,7 +189,7 @@ export function AiCategorizeModal({ open, onClose, onApplied }: Props) {
               className="py-14 flex flex-col items-center justify-center text-center">
               <Loader2 className="w-10 h-10 text-[color:var(--color-primary-500)] animate-spin mb-3" />
               <p className="text-body3 font-bold text-heading">미분류 거래 분석 중…</p>
-              <p className="text-caption text-sub mt-0.5">전체 거래내역을 스캔하고 있어요</p>
+              <p className="text-body3 text-sub mt-0.5">전체 거래내역을 스캔하고 있어요</p>
             </motion.div>
           )}
 
@@ -226,10 +226,10 @@ export function AiCategorizeModal({ open, onClose, onApplied }: Props) {
                   <div className="flex items-start gap-2">
                     <Sparkles className="w-4 h-4 text-accent-primary flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-caption font-bold text-accent-primary mb-0.5">
+                      <p className="text-label3 text-accent-primary mb-0.5">
                         AI로 분류 가능 — 미해결 가맹점 {stats.unresolvedCount}곳
                       </p>
-                      <p className="text-caption text-accent-primary leading-relaxed">
+                      <p className="text-body3 text-accent-primary leading-relaxed">
                         Claude API로 한 번에 분류하고 학습된 매핑을 저장합니다.
                         {!hasApiKey() && ' API 키는 설정 → 시스템에서 등록.'}
                       </p>
@@ -237,7 +237,7 @@ export function AiCategorizeModal({ open, onClose, onApplied }: Props) {
                         type="button"
                         onClick={handleAiClassify}
                         disabled={aiClassifying}
-                        className="mt-2 inline-flex items-center gap-1.5 px-3 h-8 rounded-full bg-[color:var(--color-primary-600)] text-white text-caption font-bold hover:brightness-110 disabled:opacity-50"
+                        className="mt-2 inline-flex items-center gap-1.5 px-3 h-8 rounded-full bg-[color:var(--color-primary-600)] text-white text-label3 hover:brightness-110 disabled:opacity-50"
                       >
                         {aiClassifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
                         {aiClassifying ? '분류 중…' : 'AI로 나머지 분류'}
@@ -278,7 +278,7 @@ export function AiCategorizeModal({ open, onClose, onApplied }: Props) {
                 <Loader2 className="relative w-16 h-16 text-[color:var(--color-primary-500)] animate-spin" />
               </div>
               <p className="text-body3 font-bold text-heading mb-1">카테고리 적용 중…</p>
-              <p className="text-caption text-sub">잠시만 기다려 주세요</p>
+              <p className="text-body3 text-sub">잠시만 기다려 주세요</p>
             </motion.div>
           )}
 
@@ -362,7 +362,7 @@ function SummaryCard({
         </div>
         <div className="text-right">
           <p className="text-label4 text-sub font-bold tracking-wider uppercase">{selectedTxns}건 · 합계</p>
-          <p className="text-body3-semi font-bold tabular-nums text-value-negative">
+          <p className="text-body3-bold tabular-nums text-value-negative">
             −{selectedAmount.toLocaleString('ko-KR')}원
           </p>
         </div>
@@ -370,11 +370,11 @@ function SummaryCard({
 
       <div className="flex items-center gap-2 mt-3 pt-3 border-t border-dashed border-[color:var(--border-default)] flex-wrap">
         <button type="button" onClick={onSelectAll}
-          className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full bg-surface-tertiary text-sub ring-1 ring-base text-caption font-semibold hover:bg-[var(--hover-bg)]">
+          className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full bg-surface-tertiary text-sub ring-1 ring-base text-label3-medium font-semibold hover:bg-[var(--hover-bg)]">
           <CheckSquare className="w-3.5 h-3.5" /> 분류 가능 전체 선택
         </button>
         <button type="button" onClick={onDeselectAll}
-          className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full bg-surface-tertiary text-sub ring-1 ring-base text-caption font-semibold hover:bg-[var(--hover-bg)]">
+          className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full bg-surface-tertiary text-sub ring-1 ring-base text-label3-medium font-semibold hover:bg-[var(--hover-bg)]">
           <Square className="w-3.5 h-3.5" /> 전체 해제
         </button>
         {memolessCount > 0 && (
@@ -433,7 +433,7 @@ function GroupRow({
         {/* body */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="text-caption font-bold text-heading truncate">{group.sampleMerchant}</span>
+            <span className="text-label3 text-heading truncate">{group.sampleMerchant}</span>
             <span className="text-label4 leading-none text-disabled tabular-nums font-semibold px-1.5 py-0.5 rounded-full bg-surface-tertiary flex-shrink-0">×{group.count}</span>
           </div>
           <div className="flex items-center gap-2 mt-0.5">
@@ -444,19 +444,19 @@ function GroupRow({
                 {reason && <span className="text-label4 text-disabled truncate hidden sm:inline">· {reason}</span>}
               </>
             ) : (
-              <span className="text-label4 text-status-warning font-semibold">미해결 — 카테고리 선택 필요</span>
+              <span className="text-label3-medium text-status-warning font-semibold">미해결 — 카테고리 선택 필요</span>
             )}
           </div>
         </div>
 
         {/* amount */}
         <div className="text-right flex-shrink-0 pr-1">
-          <p className="text-caption font-bold text-value-negative tabular-nums">−{group.amountTotal.toLocaleString('ko-KR')}</p>
+          <p className="text-label3 text-value-negative tabular-nums">−{group.amountTotal.toLocaleString('ko-KR')}</p>
         </div>
 
         {/* change category */}
         <button type="button" onClick={onExpand} aria-expanded={expanded}
-          className="inline-flex items-center gap-0.5 px-2 h-8 rounded-full text-label4 font-semibold text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors flex-shrink-0">
+          className="inline-flex items-center gap-0.5 px-2 h-8 rounded-full text-label3-medium font-semibold text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors flex-shrink-0">
           {category ? '변경' : '선택'}
           <ChevronDown className={clsx('w-3.5 h-3.5 transition-transform', expanded && 'rotate-180')} />
         </button>
@@ -488,7 +488,7 @@ function GroupRow({
                     style={isCur ? { backgroundColor: cat.color, boxShadow: `0 4px 14px -4px color-mix(in srgb, ${cat.color} 45%, transparent)` } : undefined}
                   >
                     <CatIcon className="w-4 h-4" style={{ color: isCur ? '#fff' : cat.color }} />
-                    <span className={clsx('text-label4 leading-none truncate max-w-full font-semibold', isCur ? 'text-white' : 'text-sub')}>{cat.name}</span>
+                    <span className={clsx('text-label3-medium leading-none truncate max-w-full font-semibold', isCur ? 'text-white' : 'text-sub')}>{cat.name}</span>
                   </motion.button>
                 )
               })}

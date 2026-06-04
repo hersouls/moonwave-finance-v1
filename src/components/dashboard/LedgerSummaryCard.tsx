@@ -37,7 +37,7 @@ export function LedgerSummaryCard() {
         <h3 className="text-body3-semi text-heading">이번 달 가계부</h3>
         <button
           onClick={() => navigate('/ledger/expense')}
-          className="text-caption text-accent-primary hover:underline flex items-center gap-0.5 min-h-11 px-1 -mr-1"
+          className="text-label3-medium text-accent-primary hover:underline flex items-center gap-0.5 min-h-11 px-1 -mr-1"
         >
           전체보기 <ArrowRight className="w-3 h-3" />
         </button>

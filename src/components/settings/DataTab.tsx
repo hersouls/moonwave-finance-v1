@@ -120,7 +120,7 @@ export function DataTab() {
                   <p className="text-body3 text-heading">
                     {SYNC_LABELS[syncStatus]}
                     {pendingChangesCount > 0 && syncStatus !== 'syncing' && (
-                      <span className="text-caption text-status-warning ml-2">
+                      <span className="text-caption text-status-warning ml-2 tabular-nums">
                         ({pendingChangesCount}건 대기 중)
                       </span>
                     )}
@@ -179,7 +179,7 @@ export function DataTab() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-surface-secondary rounded-xl">
             <div>
               <p className="text-body3 text-heading">백업 다운로드</p>
-              <p className="text-caption text-sub">
+              <p className="text-body3 text-sub">
                 {settings.lastBackupDate
                   ? `마지막 백업: ${formatRelativeTime(settings.lastBackupDate)}`
                   : '백업한 적이 없습니다'}
@@ -199,7 +199,7 @@ export function DataTab() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-surface-secondary rounded-xl">
             <div>
               <p className="text-body3 text-heading">데이터 복원</p>
-              <p className="text-caption text-sub">JSON 백업 파일에서 복원합니다</p>
+              <p className="text-body3 text-sub">JSON 백업 파일에서 복원합니다</p>
             </div>
             <Button
               variant="secondary"
@@ -222,7 +222,7 @@ export function DataTab() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-surface-secondary rounded-xl">
           <div>
             <p className="text-body3 text-heading">외부 데이터 가져오기</p>
-            <p className="text-caption text-sub">
+            <p className="text-body3 text-sub">
               편한가계부 앱의 Excel 내보내기 파일에서 거래 데이터를 가져옵니다
             </p>
           </div>
@@ -244,7 +244,7 @@ export function DataTab() {
       <section>
         <FormSectionLabel icon={FileSpreadsheet}>CSV 내보내기</FormSectionLabel>
         <div className="p-4 bg-surface-secondary rounded-xl">
-          <p className="text-caption text-sub mb-3">
+          <p className="text-body3 text-sub mb-3">
             Excel 호환 CSV 파일로 데이터를 내보냅니다
           </p>
           <div className="flex gap-2">

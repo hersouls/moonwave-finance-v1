@@ -255,7 +255,7 @@ export function CalendarPage() {
                 </IconButton>
                 <button
                   onClick={goToToday}
-                  className="px-2 py-1 text-base lg:text-lg font-semibold text-heading hover:text-primary-600 dark:hover:text-primary-400 transition-colors rounded-md"
+                  className="px-2 py-1 text-title3 lg:text-title2 text-heading hover:text-primary-600 dark:hover:text-primary-400 transition-colors rounded-md"
                   title="오늘로 이동 (T)"
                 >
                   {monthLabel}
@@ -339,7 +339,7 @@ export function CalendarPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedDate(null)}
-                  className="text-caption text-sub hover:text-heading transition-colors inline-flex items-center gap-1"
+                  className="text-label3-medium text-sub hover:text-heading transition-colors inline-flex items-center gap-1"
                   aria-label="선택 해제"
                 >
                   <CornerDownLeft className="w-3 h-3" />
@@ -347,7 +347,7 @@ export function CalendarPage() {
                 </button>
               </div>
               {selectedDayTransactions.length === 0 ? (
-                <p className="text-sm text-sub text-center py-6">기록된 거래가 없습니다.</p>
+                <p className="text-body3 text-sub text-center py-6">기록된 거래가 없습니다.</p>
               ) : (
                 <div className="space-y-2">
                   {selectedDayTransactions.map((t) => (

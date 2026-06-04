@@ -131,7 +131,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
                 className="w-8 h-8 rounded-full ring-2 ring-[var(--surface-primary)] elevation-1"
                 style={{ backgroundColor: palette.colors.primary }}
               />
-              <span className="text-caption text-sub">{palette.nameKo}</span>
+              <span className="text-label3-medium text-sub">{palette.nameKo}</span>
             </button>
           ))}
         </div>
@@ -162,7 +162,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
         <FormSectionLabel icon={ArrowLeftRight}>USD/KRW 환율</FormSectionLabel>
         <div className="p-4 bg-surface-secondary rounded-xl space-y-3">
           <div className="flex items-center gap-3">
-            <span className="text-sm text-sub whitespace-nowrap">1 USD =</span>
+            <span className="text-body3 text-sub whitespace-nowrap">1 USD =</span>
             <input
               type="number"
               value={rateInput}
@@ -174,7 +174,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
               }}
               className="input-base w-32 tabular-nums"
             />
-            <span className="text-sm text-sub">KRW</span>
+            <span className="text-body3 text-sub">KRW</span>
           </div>
           {exchangeRate?.lastUpdated && (
             <p className="text-caption text-disabled">
@@ -219,7 +219,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
         <div className="space-y-2">
           <div className="flex items-center gap-2 px-4 py-3 bg-surface-secondary rounded-xl">
             <Info className="w-4 h-4 text-disabled" />
-            <span className="text-sm text-sub">
+            <span className="text-body3 text-sub">
               {BACKUP_CONFIG.APP_NAME} v{BACKUP_CONFIG.CURRENT_VERSION}
             </span>
           </div>

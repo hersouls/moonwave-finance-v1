@@ -129,14 +129,14 @@ export function CumulativeProfitChart({
             scales: {
               x: {
                 grid: { display: false },
-                ticks: { color: getTextColor(), font: { size: 10, family: "'Pretendard', sans-serif" } },
+                ticks: { color: getTextColor(), font: { size: 11, family: "'Pretendard', sans-serif" } },
                 border: { display: false },
               },
               y: {
                 grid: { color: getGridColor() },
                 ticks: {
                   color: getTextColor(),
-                  font: { size: 10, family: "'Pretendard', sans-serif" },
+                  font: { size: 11, family: "'Pretendard', sans-serif" },
                   callback: (v) => `${formatKoreanUnit(Number(v))}`,
                 },
                 border: { display: false },
@@ -148,7 +148,7 @@ export function CumulativeProfitChart({
                 position: 'bottom',
                 labels: {
                   color: getTextColor(),
-                  font: { size: 10, family: "'Pretendard', sans-serif", weight: 'bold' },
+                  font: { size: 11, family: "'Pretendard', sans-serif", weight: 'bold' },
                   usePointStyle: true,
                   pointStyle: 'circle',
                   padding: 12,
@@ -237,16 +237,16 @@ export function AssetTypeDonutChart({ trades }: { trades: InvestmentTrade[] }) {
             }}
           />
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-[9px] text-disabled">투자금</span>
-            <span className="text-[12px] font-bold text-heading tabular-nums">{formatKoreanUnit(totalBuy)}</span>
+            <span className="text-micro text-disabled">투자금</span>
+            <span className="text-label3 text-heading tabular-nums">{formatKoreanUnit(totalBuy)}</span>
           </div>
         </div>
         <div className="flex-1 space-y-2 min-w-0">
           {breakdown.slice(0, 6).map(b => (
             <div key={b.type} className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: b.color, boxShadow: `0 0 6px ${b.color}40` }} />
-              <span className="text-[10px] text-sub truncate flex-1">{b.type}</span>
-              <span className="text-[10px] font-bold text-heading tabular-nums">{formatPercent(b.share, 0)}</span>
+              <span className="text-micro text-sub truncate flex-1">{b.type}</span>
+              <span className="text-micro-bold text-heading tabular-nums">{formatPercent(b.share, 0)}</span>
             </div>
           ))}
         </div>
@@ -294,29 +294,29 @@ export function SeasonHeatmap({ seasonality }: { seasonality: MonthlySeasonality
                   : 'none',
               }}
             >
-              <span className="text-[10px] font-bold text-heading">{m}월</span>
+              <span className="text-micro-bold text-heading">{m}월</span>
               {d ? (
                 <>
-                  <span className="text-[9px] font-bold tabular-nums mt-0.5" style={{ color: isPositive ? 'var(--value-positive)' : 'var(--value-negative)' }}>
+                  <span className="text-micro-bold tabular-nums mt-0.5" style={{ color: isPositive ? 'var(--value-positive)' : 'var(--value-negative)' }}>
                     {isPositive ? '+' : ''}{formatKoreanUnit(Math.round(d.avgProfit))}
                   </span>
-                  <span className="text-[8px] text-disabled tabular-nums">승률 {d.winRate.toFixed(0)}%</span>
+                  <span className="text-micro text-disabled tabular-nums">승률 {d.winRate.toFixed(0)}%</span>
                 </>
               ) : (
-                <span className="text-[8px] text-disabled mt-0.5">—</span>
+                <span className="text-micro text-disabled mt-0.5">—</span>
               )}
             </div>
           )
         })}
       </div>
       <div className="flex items-center justify-center gap-4 mt-3">
-        <span className="flex items-center gap-1 text-[9px] text-sub">
+        <span className="flex items-center gap-1 text-micro text-sub">
           <span className="w-3 h-2 rounded-sm" style={{ backgroundColor: 'color-mix(in srgb, var(--value-positive) 25%, transparent)' }} />수익
         </span>
-        <span className="flex items-center gap-1 text-[9px] text-sub">
+        <span className="flex items-center gap-1 text-micro text-sub">
           <span className="w-3 h-2 rounded-sm" style={{ backgroundColor: 'color-mix(in srgb, var(--value-negative) 25%, transparent)' }} />손실
         </span>
-        <span className="flex items-center gap-1 text-[9px] text-sub">
+        <span className="flex items-center gap-1 text-micro text-sub">
           <span className="w-3 h-2 rounded-sm bg-surface-tertiary" />데이터 없음
         </span>
       </div>
@@ -383,9 +383,9 @@ export function PeriodComparison({
         {/* Monthly */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-disabled">월간</span>
+            <span className="text-micro-bold uppercase tracking-wider text-disabled">월간</span>
             {monthDelta !== 0 && (
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold tabular-nums ring-1"
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-label4 tabular-nums ring-1"
                 style={{
                   backgroundColor: monthDelta >= 0 ? 'var(--status-success-bg)' : 'var(--status-danger-bg)',
                   color: monthDelta >= 0 ? 'var(--status-success-text)' : 'var(--status-danger-text)',
@@ -397,14 +397,14 @@ export function PeriodComparison({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-surface-tertiary rounded-xl px-3 py-2">
-              <p className="text-[9px] text-disabled">{thisMonth.label} (이번 달)</p>
-              <p className="text-body3 font-bold tabular-nums" style={{ color: thisMonth.value >= 0 ? 'var(--value-positive)' : 'var(--value-negative)' }}>
+              <p className="text-micro text-disabled">{thisMonth.label} (이번 달)</p>
+              <p className="text-body3-bold tabular-nums" style={{ color: thisMonth.value >= 0 ? 'var(--value-positive)' : 'var(--value-negative)' }}>
                 {thisMonth.value >= 0 ? '+' : ''}{formatKoreanUnit(thisMonth.value)}원
               </p>
             </div>
             <div className="bg-surface-tertiary rounded-xl px-3 py-2">
-              <p className="text-[9px] text-disabled">{lastMonth.label} (지난 달)</p>
-              <p className="text-body3 font-bold tabular-nums" style={{ color: lastMonth.value >= 0 ? 'var(--value-positive)' : 'var(--value-negative)' }}>
+              <p className="text-micro text-disabled">{lastMonth.label} (지난 달)</p>
+              <p className="text-body3-bold tabular-nums" style={{ color: lastMonth.value >= 0 ? 'var(--value-positive)' : 'var(--value-negative)' }}>
                 {lastMonth.value >= 0 ? '+' : ''}{formatKoreanUnit(lastMonth.value)}원
               </p>
             </div>
@@ -413,9 +413,9 @@ export function PeriodComparison({
         {/* Yearly */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-disabled">연간</span>
+            <span className="text-micro-bold uppercase tracking-wider text-disabled">연간</span>
             {yearDelta !== 0 && lastYear.value !== 0 && (
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold tabular-nums ring-1"
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-label4 tabular-nums ring-1"
                 style={{
                   backgroundColor: yearDelta >= 0 ? 'var(--status-success-bg)' : 'var(--status-danger-bg)',
                   color: yearDelta >= 0 ? 'var(--status-success-text)' : 'var(--status-danger-text)',
@@ -427,14 +427,14 @@ export function PeriodComparison({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-surface-tertiary rounded-xl px-3 py-2">
-              <p className="text-[9px] text-disabled">{thisYear.label}</p>
-              <p className="text-body3 font-bold tabular-nums" style={{ color: thisYear.value >= 0 ? 'var(--value-positive)' : 'var(--value-negative)' }}>
+              <p className="text-micro text-disabled">{thisYear.label}</p>
+              <p className="text-body3-bold tabular-nums" style={{ color: thisYear.value >= 0 ? 'var(--value-positive)' : 'var(--value-negative)' }}>
                 {thisYear.value >= 0 ? '+' : ''}{formatKoreanUnit(thisYear.value)}원
               </p>
             </div>
             <div className="bg-surface-tertiary rounded-xl px-3 py-2">
-              <p className="text-[9px] text-disabled">{lastYear.label}</p>
-              <p className="text-body3 font-bold tabular-nums" style={{ color: lastYear.value >= 0 ? 'var(--value-positive)' : 'var(--value-negative)' }}>
+              <p className="text-micro text-disabled">{lastYear.label}</p>
+              <p className="text-body3-bold tabular-nums" style={{ color: lastYear.value >= 0 ? 'var(--value-positive)' : 'var(--value-negative)' }}>
                 {lastYear.value >= 0 ? '+' : ''}{formatKoreanUnit(lastYear.value)}원
               </p>
             </div>

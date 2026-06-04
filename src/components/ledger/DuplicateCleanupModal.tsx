@@ -225,7 +225,7 @@ export function DuplicateCleanupModal({ open, onClose, onApplied }: Props) {
               className="py-14 flex flex-col items-center justify-center text-center">
               <Loader2 className="w-10 h-10 text-[color:var(--color-primary-500)] animate-spin mb-3" />
               <p className="text-body3 font-bold text-heading">중복 거래 분석 중…</p>
-              <p className="text-caption text-sub mt-0.5">전체 거래내역을 스캔하고 있어요</p>
+              <p className="text-body3 text-sub mt-0.5">전체 거래내역을 스캔하고 있어요</p>
             </motion.div>
           )}
 
@@ -240,7 +240,7 @@ export function DuplicateCleanupModal({ open, onClose, onApplied }: Props) {
               <p className="text-body3 text-sub">1개월 이내 같은 메모·금액의 중복 지출이 발견되지 않았습니다.</p>
               {displayAllowed > 0 && (
                 <button type="button" onClick={handleClearAllowances}
-                  className="mt-4 inline-flex items-center gap-1.5 text-caption font-semibold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] hover:underline">
+                  className="mt-4 inline-flex items-center gap-1.5 text-label3-medium font-semibold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] hover:underline">
                   <RotateCcw className="w-3.5 h-3.5" />
                   허용한 항목 {displayAllowed}건 다시 검사
                 </button>
@@ -265,7 +265,7 @@ export function DuplicateCleanupModal({ open, onClose, onApplied }: Props) {
               <div className="rounded-2xl p-3 bg-status-warning-soft ring-1 ring-[color:var(--status-warning-border)]">
                 <div className="flex items-start gap-2">
                   <ShieldCheck className="w-4 h-4 text-status-warning flex-shrink-0 mt-0.5" />
-                  <p className="text-caption text-status-warning leading-relaxed">
+                  <p className="text-body3 text-status-warning leading-relaxed">
                     기본 선택은 <b>같은 날짜</b>에 중복 등록된 건(완전 중복)만 자동 체크합니다. <b>다른 날짜</b>의 같은 금액 건은
                     매일 커피·교통처럼 실제 반복 지출일 수 있어 선택하지 않았으니 날짜를 직접 확인 후 체크하세요.
                     각 그룹에서 <b>1건은 유지</b>되며, 삭제는 모든 기기에 반영되고 되돌릴 수 없습니다.
@@ -300,7 +300,7 @@ export function DuplicateCleanupModal({ open, onClose, onApplied }: Props) {
 
               {displayAllowed > 0 && (
                 <button type="button" onClick={handleClearAllowances}
-                  className="inline-flex items-center gap-1.5 text-caption font-semibold text-sub hover:text-heading hover:underline">
+                  className="inline-flex items-center gap-1.5 text-label3-medium font-semibold text-sub hover:text-heading hover:underline">
                   <RotateCcw className="w-3.5 h-3.5" />
                   중복 아님으로 표시한 {displayAllowed}건 다시 검사
                 </button>
@@ -319,7 +319,7 @@ export function DuplicateCleanupModal({ open, onClose, onApplied }: Props) {
                 <Loader2 className="relative w-16 h-16 text-[color:var(--value-negative)] animate-spin" />
               </div>
               <p className="text-body3 font-bold text-heading mb-1">중복 거래 삭제 중…</p>
-              <p className="text-caption text-sub">잠시만 기다려 주세요</p>
+              <p className="text-body3 text-sub">잠시만 기다려 주세요</p>
             </motion.div>
           )}
 
@@ -400,7 +400,7 @@ function SummaryCard({
         </div>
         <div className="text-right">
           <p className="text-label4 text-sub font-bold tracking-wider uppercase">삭제 합계</p>
-          <p className="text-body3-semi font-bold tabular-nums text-value-negative">
+          <p className="text-body3-bold tabular-nums text-value-negative">
             −{selectedAmount.toLocaleString('ko-KR')}원
           </p>
         </div>
@@ -408,11 +408,11 @@ function SummaryCard({
 
       <div className="flex items-center gap-2 mt-3 pt-3 border-t border-dashed border-[color:var(--border-default)] flex-wrap">
         <button type="button" onClick={onSelectRecommended}
-          className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full bg-surface-tertiary text-sub ring-1 ring-base text-caption font-semibold hover:bg-[var(--hover-bg)]">
+          className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full bg-surface-tertiary text-sub ring-1 ring-base text-label3-medium font-semibold hover:bg-[var(--hover-bg)]">
           <CheckSquare className="w-3.5 h-3.5" /> 추천 중복 전체 선택
         </button>
         <button type="button" onClick={onDeselectAll}
-          className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full bg-surface-tertiary text-sub ring-1 ring-base text-caption font-semibold hover:bg-[var(--hover-bg)]">
+          className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full bg-surface-tertiary text-sub ring-1 ring-base text-label3-medium font-semibold hover:bg-[var(--hover-bg)]">
           <Square className="w-3.5 h-3.5" /> 전체 해제
         </button>
       </div>
@@ -450,7 +450,7 @@ function GroupBlock({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-caption font-bold text-heading truncate">{group.sampleMemo}</span>
+            <span className="text-label3 text-heading truncate">{group.sampleMemo}</span>
             <ConfBadge confidence={group.confidence} span={group.spanDays} />
             <span className="text-label4 leading-none text-disabled tabular-nums font-semibold px-1.5 py-0.5 rounded-full bg-surface-tertiary flex-shrink-0">×{group.count}</span>
           </div>
@@ -509,7 +509,7 @@ function GroupBlock({
                     )}
 
                     <div className="flex-1 min-w-0">
-                      <span className="inline-flex items-center gap-1 text-caption font-semibold text-heading tabular-nums">
+                      <span className="inline-flex items-center gap-1 text-label3-medium font-semibold text-heading tabular-nums">
                         <CalendarIcon className="w-3 h-3 text-disabled" />
                         {formatDate(t.date)}
                       </span>
@@ -529,7 +529,7 @@ function GroupBlock({
                       <button
                         type="button"
                         onClick={() => onSetKeeper(t.id!)}
-                        className="text-label4 font-semibold text-sub hover:text-heading hover:underline flex-shrink-0 px-1.5 py-1"
+                        className="text-label3-medium font-semibold text-sub hover:text-heading hover:underline flex-shrink-0 px-1.5 py-1"
                       >
                         이 항목 유지
                       </button>
@@ -542,7 +542,7 @@ function GroupBlock({
               <button
                 type="button"
                 onClick={onAllow}
-                className="mt-1 w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl bg-surface-secondary ring-1 ring-base text-caption font-semibold text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
+                className="mt-1 w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl bg-surface-secondary ring-1 ring-base text-label3-medium font-semibold text-sub hover:text-heading hover:bg-[var(--hover-bg)] transition-colors"
               >
                 <ThumbsUp className="w-3.5 h-3.5" />
                 중복 아님 — 다시 표시 안 함

@@ -233,7 +233,7 @@ export function MobileNav() {
                                   <button
                                     onClick={() => handleNavigate(child.path)}
                                     className={clsx(
-                                      'w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-colors min-h-[44px]',
+                                      'w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-body3 transition-colors min-h-[44px]',
                                       'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                                       childActive
                                         ? 'bg-accent-primary text-accent-primary font-medium'

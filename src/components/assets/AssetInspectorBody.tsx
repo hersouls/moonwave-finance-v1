@@ -112,7 +112,7 @@ export function AssetInspectorBody({ itemId, type, onEdit, onDelete, onRecordVal
         <button
           type="button"
           onClick={onRecordValue}
-          className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary-500 px-3 text-body3 font-semibold text-white transition-colors hover:bg-primary-600"
+          className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary-500 px-3 text-body3-semi text-white transition-colors hover:bg-primary-600"
         >
           <Wallet className="h-4 w-4" /> 오늘 값 기록
         </button>
@@ -120,14 +120,14 @@ export function AssetInspectorBody({ itemId, type, onEdit, onDelete, onRecordVal
           <button
             type="button"
             onClick={onEdit}
-            className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg bg-surface-secondary px-3 text-body3 font-medium text-heading transition-colors hover:bg-[var(--hover-bg)]"
+            className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg bg-surface-secondary px-3 text-body3 text-heading transition-colors hover:bg-[var(--hover-bg)]"
           >
             <Pencil className="h-4 w-4" /> 수정
           </button>
           <button
             type="button"
             onClick={() => navigate(`${basePath}/${itemId}`)}
-            className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg bg-surface-secondary px-3 text-body3 font-medium text-heading transition-colors hover:bg-[var(--hover-bg)]"
+            className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg bg-surface-secondary px-3 text-body3 text-heading transition-colors hover:bg-[var(--hover-bg)]"
           >
             전체 보기 <ArrowUpRight className="h-4 w-4" />
           </button>

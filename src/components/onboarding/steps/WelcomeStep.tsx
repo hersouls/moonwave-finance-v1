@@ -26,7 +26,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
             </div>
             <div>
               <p className="text-body3 text-heading">{f.title}</p>
-              <p className="text-caption text-sub">{f.desc}</p>
+              <p className="text-body3 text-sub">{f.desc}</p>
             </div>
           </div>
         ))}

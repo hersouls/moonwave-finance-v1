@@ -25,7 +25,7 @@ interface AmountProps {
 
 const SIZE_CLASS: Record<NonNullable<AmountProps['size']>, string> = {
   caption: 'text-caption tabular-nums',
-  body: 'text-sm tabular-nums',
+  body: 'text-body3 tabular-nums',
   emphasis: 'text-body3-semi tabular-nums',
   title: 'text-title2 tabular-nums',
   display: 'text-financial-fluid',

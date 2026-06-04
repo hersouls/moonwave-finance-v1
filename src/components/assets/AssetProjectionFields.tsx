@@ -17,7 +17,7 @@ function DirToggle({ dir, onChange, up, down }: { dir: 'up' | 'down'; onChange: 
     <div className="inline-flex flex-shrink-0 rounded-lg bg-surface-tertiary p-0.5">
       {(['up', 'down'] as const).map((d) => (
         <button key={d} type="button" onClick={() => onChange(d)}
-          className={clsx('rounded-md px-2.5 py-1.5 text-label3 font-medium transition-colors',
+          className={clsx('rounded-md px-2.5 py-1.5 text-label3-medium transition-colors',
             dir === d ? (d === 'up' ? 'bg-value-positive-soft text-value-positive' : 'bg-value-negative-soft text-value-negative') : 'text-sub')}>
           {d === 'up' ? up : down}
         </button>
@@ -86,12 +86,12 @@ export function AssetProjectionFields({ value, onChange }: Props) {
 
   return (
     <div>
-      <label className="mb-1.5 block text-body3 text-body">가치 변동 규칙 <span className="text-disabled">(선택 · 조합 가능)</span></label>
+      <label className="mb-1.5 block text-label2 text-body">가치 변동 규칙 <span className="text-disabled">(선택 · 조합 가능)</span></label>
       <div className="space-y-2.5 rounded-xl bg-surface-secondary p-3">
         {/* 매일 정액 */}
         <div>
           <button type="button" onClick={() => { const v = !dailyOn; setDailyOn(v); emit({ dOn: v }) }} aria-pressed={dailyOn}
-            className="flex w-full items-center justify-between text-body3 font-medium text-heading">
+            className="flex w-full items-center justify-between text-body3 text-heading">
             <span>매일 정액 변동 <span className="text-caption text-disabled">감가상각 등</span></span>
             <span className={clsx('h-4 w-4 rounded-full border-2', dailyOn ? 'border-primary-500 bg-primary-500' : 'border-base')} />
           </button>
@@ -108,7 +108,7 @@ export function AssetProjectionFields({ value, onChange }: Props) {
         {/* 매월 정액 */}
         <div className="border-t border-base pt-2.5">
           <button type="button" onClick={() => { const v = !monthlyOn; setMonthlyOn(v); emit({ mOn: v }) }} aria-pressed={monthlyOn}
-            className="flex w-full items-center justify-between text-body3 font-medium text-heading">
+            className="flex w-full items-center justify-between text-body3 text-heading">
             <span>매월 정액 변동 <span className="text-caption text-disabled">연금 불입·부채 상환</span></span>
             <span className={clsx('h-4 w-4 rounded-full border-2', monthlyOn ? 'border-primary-500 bg-primary-500' : 'border-base')} />
           </button>
@@ -128,7 +128,7 @@ export function AssetProjectionFields({ value, onChange }: Props) {
         {/* 연 정률 */}
         <div className="border-t border-base pt-2.5">
           <button type="button" onClick={() => { const v = !rateOn; setRateOn(v); emit({ rOn: v }) }} aria-pressed={rateOn}
-            className="flex w-full items-center justify-between text-body3 font-medium text-heading">
+            className="flex w-full items-center justify-between text-body3 text-heading">
             <span>연 정률 <span className="text-caption text-disabled">예금이자·기대수익·물가</span></span>
             <span className={clsx('h-4 w-4 rounded-full border-2', rateOn ? 'border-primary-500 bg-primary-500' : 'border-base')} />
           </button>
@@ -141,7 +141,7 @@ export function AssetProjectionFields({ value, onChange }: Props) {
               <div className="inline-flex flex-shrink-0 rounded-lg bg-surface-tertiary p-0.5">
                 {([['단리', false], ['복리', true]] as const).map(([lbl, c]) => (
                   <button key={lbl} type="button" onClick={() => { setCompound(c); emit({ comp: c }) }}
-                    className={clsx('rounded-md px-2.5 py-1.5 text-label3 font-medium transition-colors', compound === c ? 'bg-surface-primary text-heading elevation-1' : 'text-sub')}>
+                    className={clsx('rounded-md px-2.5 py-1.5 text-label3-medium transition-colors', compound === c ? 'bg-surface-primary text-heading elevation-1' : 'text-sub')}>
                     {lbl}
                   </button>
                 ))}

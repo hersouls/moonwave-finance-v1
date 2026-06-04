@@ -53,7 +53,7 @@ export function AccountTab() {
             <div className="w-14 h-14 rounded-full bg-[var(--surface-tertiary)] flex items-center justify-center mx-auto mb-3">
               <User className="w-7 h-7 text-disabled" />
             </div>
-            <p className="text-sm text-sub mb-4">
+            <p className="text-body3 text-sub mb-4">
               Google 로그인 시 프로필이 자동으로 표시됩니다.
             </p>
             <Button onClick={login} disabled={isSigningIn}>

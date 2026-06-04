@@ -26,7 +26,7 @@ export function IOSInstallBanner() {
           </p>
 
           {/* Step-by-step instructions */}
-          <div className="space-y-2 text-caption text-white/80">
+          <div className="space-y-2 text-body3 text-white/80">
             <div className="flex items-center gap-2.5">
               <span className="flex items-center justify-center w-6 h-6 rounded-md bg-white/10 shrink-0">
                 <Share className="w-3.5 h-3.5" />
@@ -49,7 +49,7 @@ export function IOSInstallBanner() {
           <button
             type="button"
             onClick={dismissPermanently}
-            className="mt-3 text-caption text-white/40 hover:text-white/70 underline underline-offset-2 transition-colors"
+            className="mt-3 text-label3-medium text-white/40 hover:text-white/70 underline underline-offset-2 transition-colors"
           >
             다시 보지 않기
           </button>

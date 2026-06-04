@@ -44,8 +44,8 @@ export function QuickRecordStrip() {
     <section aria-label="빠른 거래 기록">
       <div className="flex items-center gap-1.5 mb-2.5">
         <Zap className="w-3.5 h-3.5 text-[color:var(--color-primary-500)]" aria-hidden="true" />
-        <h3 className="text-caption font-bold text-heading">빠른 기록</h3>
-        <span className="text-label4 text-disabled">탭 1회로 오늘 날짜 기록</span>
+        <h3 className="text-label3 text-heading">빠른 기록</h3>
+        <span className="text-label3-medium text-disabled">탭 1회로 오늘 날짜 기록</span>
       </div>
 
       <div className="flex gap-2.5 overflow-x-auto scrollbar-none -mx-4 px-4 -my-1 py-1 snap-x">
@@ -75,12 +75,12 @@ export function QuickRecordStrip() {
                 <Icon className="w-4 h-4" style={{ color }} />
               </div>
               <div className="flex flex-col items-start min-w-0 flex-1">
-                <span className="text-caption text-sub truncate w-full leading-tight">
+                <span className="text-label3-medium text-sub truncate w-full leading-tight">
                   {cat?.name ?? '미분류'}{t.memo ? ` · ${t.memo}` : ''}
                 </span>
                 <span
                   className={clsx(
-                    'text-caption font-bold tabular-nums truncate w-full leading-tight',
+                    'text-label3 tabular-nums truncate w-full leading-tight',
                     isExpense ? 'text-value-negative' : 'text-value-positive',
                   )}
                 >

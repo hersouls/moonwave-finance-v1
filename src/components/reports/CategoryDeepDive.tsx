@@ -78,7 +78,7 @@ export function CategoryDeepDive({ analysis }: Props) {
             <PieChart className="w-4 h-4 text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)]" />
           </div>
           <div>
-            <h3 className="text-body3 font-extrabold text-heading tracking-tight">카테고리별 분석</h3>
+            <h3 className="text-title3 text-heading tracking-tight">카테고리별 분석</h3>
             <p className="text-caption text-sub mt-0.5">
               총 {positives.length}개 · 합계 {formatKoreanUnit(donutTotal)}원
             </p>
@@ -312,10 +312,10 @@ function CategoryRow({
         {/* Name + share */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <p className="text-caption font-bold text-heading truncate">{analysis.name}</p>
+            <p className="text-body2 text-heading truncate">{analysis.name}</p>
             <p
               className={clsx(
-                'text-body3 font-extrabold tabular-nums flex-shrink-0',
+                'text-body2-bold tabular-nums flex-shrink-0',
                 isRefundSlice ? 'text-status-success' : 'text-heading',
               )}
             >

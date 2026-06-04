@@ -32,7 +32,7 @@ export function Select({ value, onChange, options, placeholder, disabled, classN
           className={clsx(
             'absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl',
             'bg-surface-primary elevation-3 ring-1 ring-[var(--border-default)]',
-            'py-1 text-sm focus:outline-none',
+            'py-1 text-body3 focus:outline-none',
             'transition data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-150 data-[enter]:ease-out data-[leave]:ease-in'
           )}
         >

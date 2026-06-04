@@ -103,7 +103,7 @@ export function QuickValueModal() {
           </div>
 
           {autoCarry && (
-            <p className="text-caption text-disabled">입력하지 않아도 어제 값이 오늘로 자동 저장됩니다. 값이 바뀔 때만 기록하세요.</p>
+            <p className="text-body3 text-disabled">입력하지 않아도 어제 값이 오늘로 자동 저장됩니다. 값이 바뀔 때만 기록하세요.</p>
           )}
         </div>
       </DialogBody>

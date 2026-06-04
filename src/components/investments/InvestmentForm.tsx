@@ -28,7 +28,7 @@ function InputField({ label, value, onChange, type = 'text', placeholder, suffix
   const id = useId()
   return (
     <div>
-      <label htmlFor={id} className="text-micro font-bold uppercase tracking-[0.12em] text-sub block mb-1">
+      <label htmlFor={id} className="text-label2 uppercase tracking-[0.12em] text-sub block mb-1">
         {label}{required && <span className="text-value-negative" aria-hidden="true"> *</span>}
       </label>
       <div className="input-field" style={invalid ? { boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--value-negative) 55%, transparent)' } : undefined}>
@@ -49,7 +49,7 @@ function SelectField({ label, value, onChange, options }: {
   const id = useId()
   return (
     <div>
-      <label htmlFor={id} className="text-micro font-bold uppercase tracking-[0.12em] text-sub block mb-1">{label}</label>
+      <label htmlFor={id} className="text-label2 uppercase tracking-[0.12em] text-sub block mb-1">{label}</label>
       <div className="select-field">
         <select id={id} value={value} onChange={e => onChange(e.target.value)} className="input-value">
           {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}

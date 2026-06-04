@@ -247,7 +247,7 @@ export function Sidebar() {
                     <Link
                       to={child.path}
                       className={clsx(
-                        'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+                        'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-body3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                         childActive
                           ? 'bg-accent-primary text-accent-primary font-medium'
                           : 'text-sub hover:bg-[var(--hover-bg)] hover:text-heading'
@@ -346,7 +346,7 @@ export function Sidebar() {
             aria-expanded={true}
           >
             <ChevronLeft className="w-5 h-5" aria-hidden="true" />
-            <span className="text-sm">접기</span>
+            <span className="text-body3">접기</span>
           </button>
         )}
       </div>

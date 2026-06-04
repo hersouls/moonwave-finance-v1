@@ -123,7 +123,7 @@ export function SystemTab() {
 
           {!deviceWriteEnabled && (
             <div className="rounded-lg p-3 bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20 ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)]">
-              <p className="text-caption text-[color:var(--color-primary-700)] dark:text-[color:var(--color-primary-300)] leading-relaxed">
+              <p className="text-body3 text-[color:var(--color-primary-700)] dark:text-[color:var(--color-primary-300)] leading-relaxed">
                 읽기 전용으로 전환하면 이 기기에서는 모든 데이터 추가·수정·삭제와 가져오기(임포트)·클라우드 업로드가 차단됩니다.
                 클라우드의 변경 내용은 계속 내려받아 최신 상태로 유지됩니다.
                 이 설정은 이 기기에만 적용되며 다른 기기에 동기화되지 않습니다.
@@ -145,7 +145,7 @@ export function SystemTab() {
           {isStandalone ? (
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-status-success" />
-              <span className="text-sm text-status-success font-medium">
+              <span className="text-body3-semi text-status-success">
                 앱이 이미 설치되어 있습니다
               </span>
             </div>
@@ -153,7 +153,7 @@ export function SystemTab() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-body3 text-heading">앱으로 설치하기</p>
-                <p className="text-caption text-sub">
+                <p className="text-body3 text-sub">
                   홈 화면에 추가하여 더 빠르게 사용할 수 있습니다
                 </p>
               </div>
@@ -169,10 +169,10 @@ export function SystemTab() {
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="text-sm text-sub">
+              <p className="text-body3 text-sub">
                 앱 설치를 위해 브라우저 메뉴에서 설치 옵션을 사용하세요
               </p>
-              <div className="text-caption text-sub space-y-1">
+              <div className="text-body3 text-sub space-y-1">
                 <p>• Chrome: 주소줄 오른쪽 설치 아이콘 또는 메뉴 → 앱 설치</p>
                 <p>• Safari: 공유 → 홈 화면에 추가</p>
                 <p>• Samsung: 메뉴 → 페이지를 다음에 추가 → 홈 화면</p>
@@ -189,7 +189,7 @@ export function SystemTab() {
           AI 카테고리 분류
         </h3>
         <div className="p-4 bg-surface-secondary rounded-xl space-y-3">
-          <p className="text-caption text-sub">
+          <p className="text-body3 text-sub">
             거래 입력 마법사의 실시간 추천, 가계부 일괄 분류, 카드 명세서 가져오기에서
             로컬 추천이 실패한 가맹점을 Claude API로 자동 분류합니다.
             과거 거래·학습된 분류 기반의 추천은 키 없이도 동작하며, 키는 알 수 없는 가맹점에만 사용됩니다.
@@ -218,7 +218,7 @@ export function SystemTab() {
             </IconButton>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <span className="text-caption text-sub">
+            <span className="text-body3 text-sub">
               {apiKeySaved ? '✓ 저장됨 — 입력 마법사·일괄 분류·카드 명세서에서 AI 분류 사용 가능' : '아직 설정되지 않음 (로컬 추천은 키 없이 동작)'}
             </span>
             <div className="flex gap-2">
@@ -245,7 +245,7 @@ export function SystemTab() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-body3 text-status-danger">모든 데이터 삭제</p>
-              <p className="text-caption text-sub">
+              <p className="text-body3 text-sub">
                 모든 데이터를 삭제하고 초기 상태로 되돌립니다. 이 작업은 되돌릴 수 없습니다.
               </p>
             </div>

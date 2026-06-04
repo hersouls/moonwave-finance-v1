@@ -35,7 +35,7 @@ export function AssetLiabilityBreakdown({ stats }: AssetLiabilityBreakdownProps)
           <div className="flex items-center gap-2">
             <span className="text-body3 text-sub">총 부채</span>
             <span className={clsx(
-              'text-caption px-2 py-0.5 rounded-full font-medium',
+              'text-caption px-2 py-0.5 rounded-full',
               debtRatio < 30
                 ? 'bg-status-success-soft text-status-success'
                 : debtRatio < 60

@@ -349,24 +349,24 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
                   <div className="flex items-start gap-2">
                     <ShieldCheck className="w-4 h-4 text-status-warning flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-caption font-bold text-status-warning mb-0.5">
+                      <p className="text-label3 text-status-warning mb-0.5">
                         중복 가능성 {stats.dupTotal}건 감지
                       </p>
-                      <p className="text-caption text-status-warning leading-relaxed">
+                      <p className="text-body3 text-status-warning leading-relaxed">
                         완전 중복 {stats.dupExact} · 유사 {stats.dupLikely} · 가능성 {stats.dupPossible}
                       </p>
                       <div className="flex gap-2 mt-2 flex-wrap">
                         <button
                           type="button"
                           onClick={skipAllDuplicates}
-                          className="text-caption font-semibold px-2.5 min-h-11 sm:h-7 rounded-full bg-status-warning-soft text-status-warning ring-1 ring-[color:var(--status-warning-border)] hover:brightness-95"
+                          className="text-label3-medium font-semibold px-2.5 min-h-11 sm:h-7 rounded-full bg-status-warning-soft text-status-warning ring-1 ring-[color:var(--status-warning-border)] hover:brightness-95"
                         >
                           중복 전체 제외
                         </button>
                         <button
                           type="button"
                           onClick={includeAll}
-                          className="text-caption font-semibold px-2.5 min-h-11 sm:h-7 rounded-full bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]"
+                          className="text-label3-medium font-semibold px-2.5 min-h-11 sm:h-7 rounded-full bg-surface-primary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]"
                         >
                           전체 포함
                         </button>
@@ -382,10 +382,10 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
                   <div className="flex items-start gap-2">
                     <Sparkles className="w-4 h-4 text-accent-primary flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-caption font-bold text-accent-primary mb-0.5">
+                      <p className="text-label3 text-accent-primary mb-0.5">
                         AI 자동 분류 가능 — 미분류·낮은 신뢰도 가맹점 {uniqueAiMerchants.length}곳
                       </p>
-                      <p className="text-caption text-accent-primary leading-relaxed">
+                      <p className="text-body3 text-accent-primary leading-relaxed">
                         Claude API로 한 번에 분류하고 학습된 매핑을 영구 저장 (다음 import부터 즉시 적용).
                         {!hasApiKey() && ' API 키는 설정 → 시스템에서 등록.'}
                       </p>
@@ -394,7 +394,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
                           type="button"
                           onClick={handleAiClassify}
                           disabled={aiClassifying}
-                          className="text-caption font-semibold px-2.5 min-h-11 sm:h-7 rounded-full bg-[color:var(--color-primary-600)] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="text-label3-medium font-semibold px-2.5 min-h-11 sm:h-7 rounded-full bg-[color:var(--color-primary-600)] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {aiClassifying ? '분류 중…' : 'AI 분류 받기'}
                         </button>
@@ -440,7 +440,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
                 <Loader2 className="relative w-16 h-16 text-[color:var(--color-primary-500)] animate-spin" />
               </div>
               <p className="text-body3 font-bold text-heading mb-1">거래 가져오는 중...</p>
-              <p className="text-caption text-sub">잠시만 기다려 주세요</p>
+              <p className="text-body3 text-sub">잠시만 기다려 주세요</p>
             </motion.div>
           )}
 
@@ -517,7 +517,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
           <FooterButton variant="primary" onClick={handleClose} fullWidth>완료</FooterButton>
         )}
         {importError && step === 'review' && (
-          <p className="text-caption text-status-danger w-full text-center mt-2">{importError}</p>
+          <p className="text-body3 text-status-danger w-full text-center mt-2">{importError}</p>
         )}
       </DialogFooter>
     </Dialog>
@@ -566,7 +566,7 @@ function PremiumHeader({ step, onClose, canClose }: { step: Step; onClose: () =>
               <h2 className="text-title2 font-bold text-heading tracking-tight truncate">
                 {info.title}
               </h2>
-              <p className="text-caption text-sub font-medium mt-0.5 truncate">
+              <p className="text-body3 text-sub font-medium mt-0.5 truncate">
                 {info.subtitle}
               </p>
             </div>
@@ -647,7 +647,7 @@ function InputStep({
             value={text}
             onChange={(e) => onChange(e.target.value)}
             placeholder="신한·삼성카드 앱/웹에서 거래내역을 복사해 붙여넣으세요...&#10;&#10;[신한] 가맹점 / 금액원 / 2026.04.05 / 본인XXX&#10;[삼성] 가맹점 / 금액원 / 26. 4. 5본 인 XXXX&#10;        + 할인 라인(LINK할인혜택 -N원)은 자동 인식"
-            className="w-full min-h-[280px] p-4 bg-surface-primary rounded-2xl text-caption text-heading placeholder:text-disabled outline-none resize-y tabular-nums"
+            className="w-full min-h-[280px] p-4 bg-surface-primary rounded-2xl text-body3 text-heading placeholder:text-disabled outline-none resize-y tabular-nums"
             spellCheck={false}
           />
           {text.trim() && (
@@ -676,7 +676,7 @@ function InputStep({
       <button
         type="button"
         onClick={onToggleSample}
-        className="flex items-center gap-1.5 text-caption font-semibold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] hover:underline"
+        className="flex items-center gap-1.5 text-label3-medium font-semibold text-[color:var(--color-primary-600)] dark:text-[color:var(--color-primary-300)] hover:underline"
       >
         {showSample ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
         예시 형식 보기
@@ -693,7 +693,7 @@ function InputStep({
           >
             <div className="rounded-2xl bg-surface-tertiary ring-1 ring-base p-3.5 space-y-3">
               <div>
-                <p className="text-caption text-sub mb-2 font-semibold">
+                <p className="text-body3 text-sub mb-2 font-semibold">
                   <FileText className="inline w-3 h-3 mr-1" />
                   신한카드 — 4줄 블록 (가맹점 / 금액 / 날짜 / 카드주인) + 선택 항목
                 </p>
@@ -702,7 +702,7 @@ function InputStep({
                 </pre>
               </div>
               <div className="pt-2 border-t border-dashed border-[color:var(--border-default)]">
-                <p className="text-caption text-sub mb-2 font-semibold">
+                <p className="text-body3 text-sub mb-2 font-semibold">
                   <FileText className="inline w-3 h-3 mr-1" />
                   삼성카드 — 가맹점 / 금액 / "YY. M. DD본 인 XXXX" 3줄 + 할인 라인(자유 라벨)
                 </p>
@@ -750,7 +750,7 @@ function ReviewSummary({
         </div>
         <div className="text-right">
           <p className="text-label4 text-sub font-bold tracking-wider uppercase">합계</p>
-          <p className="text-body3-semi font-bold tabular-nums text-value-negative">
+          <p className="text-body3-bold tabular-nums text-value-negative">
             −{stats.totalAmount.toLocaleString('ko-KR')}원
           </p>
           {overrideDate ? (
@@ -831,7 +831,7 @@ function BillingDatePicker({
           transition={springSnappy}
           aria-pressed={enabled}
           className={clsx(
-            'inline-flex items-center gap-1 px-3 h-7 rounded-full text-caption font-bold leading-none transition-all',
+            'inline-flex items-center gap-1 px-3 h-7 rounded-full text-label3 leading-none transition-all',
             enabled
               ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_2px_8px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
               : 'bg-surface-tertiary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -868,10 +868,10 @@ function BillingDatePicker({
                     </p>
                     <p className="text-title2 font-extrabold text-heading tabular-nums leading-tight">
                       {format(selected, 'yyyy년 M월 d일')}
-                      <span className="ml-1.5 text-body3 font-bold text-sub">({dow})</span>
+                      <span className="ml-1.5 text-body3-bold text-sub">({dow})</span>
                     </p>
                   </div>
-                  <span className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full bg-surface-primary/80 backdrop-blur-sm ring-1 ring-base text-caption font-semibold leading-none text-sub tabular-nums">
+                  <span className="inline-flex items-center gap-1 px-2.5 h-7 rounded-full bg-surface-primary/80 backdrop-blur-sm ring-1 ring-base text-label3-medium font-semibold leading-none text-sub tabular-nums">
                     <CalendarIcon className="w-3 h-3" />
                     {formatDate(date)}
                   </span>
@@ -896,7 +896,7 @@ function BillingDatePicker({
                     transition={springSnappy}
                     aria-pressed={isActive}
                     className={clsx(
-                      'inline-flex items-center gap-1 px-3 h-7 rounded-full text-caption font-bold leading-none transition-all',
+                      'inline-flex items-center gap-1 px-3 h-7 rounded-full text-label3 leading-none transition-all',
                       isActive
                         ? 'bg-[color:var(--color-primary-100)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/40 dark:text-[color:var(--color-primary-300)] ring-1 ring-[color:var(--color-primary-300)] dark:ring-[color:var(--color-primary-700)]'
                         : 'bg-surface-tertiary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -917,7 +917,7 @@ function BillingDatePicker({
               className="!p-3 sm:!p-4"
             />
 
-            <p className="text-caption text-sub leading-relaxed">
+            <p className="text-body3 text-sub leading-relaxed">
               명세서의 거래일을 무시하고 위 날짜로 모든 거래를 등록합니다. 카드 대금 지급일에 맞춰 일별 현금흐름을 정확히 확인할 수 있어요.
             </p>
           </motion.div>
@@ -930,7 +930,7 @@ function BillingDatePicker({
             transition={{ duration: durations.fast, ease: easeOutExpo }}
             className="rounded-2xl p-3.5 bg-surface-tertiary ring-1 ring-base"
           >
-            <p className="text-caption text-sub leading-relaxed">
+            <p className="text-body3 text-sub leading-relaxed">
               명세서에 적힌 거래일을 그대로 사용합니다.
             </p>
           </motion.div>
@@ -969,7 +969,7 @@ function PaymentMethodPicker({
               transition={springSnappy}
               aria-pressed={isActive}
               className={clsx(
-                'inline-flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-2xl text-caption font-semibold transition-all',
+                'inline-flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-2xl text-label3-medium font-semibold transition-all',
                 isActive
                   ? 'bg-[color:var(--color-primary-500)] text-white shadow-[0_4px_14px_color-mix(in_oklch,var(--color-primary-500)_30%,transparent)]'
                   : 'bg-surface-tertiary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -995,7 +995,7 @@ function PaymentMethodPicker({
                 type="button"
                 onClick={() => onItemChange('')}
                 className={clsx(
-                  'inline-flex items-center gap-1 px-3 h-7 rounded-full text-caption font-semibold leading-none transition-all',
+                  'inline-flex items-center gap-1 px-3 h-7 rounded-full text-label3-medium font-semibold leading-none transition-all',
                   selectedItemId === ''
                     ? 'bg-surface-primary text-heading ring-1 ring-[color:var(--border-strong)]'
                     : 'bg-surface-secondary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -1009,7 +1009,7 @@ function PaymentMethodPicker({
                   type="button"
                   onClick={() => onItemChange(item.id!)}
                   className={clsx(
-                    'inline-flex items-center gap-1 px-3 h-7 rounded-full text-caption font-semibold leading-none transition-all',
+                    'inline-flex items-center gap-1 px-3 h-7 rounded-full text-label3-medium font-semibold leading-none transition-all',
                     selectedItemId === item.id
                       ? 'bg-[color:var(--color-primary-100)] text-[color:var(--color-primary-700)] dark:bg-[color:var(--color-primary-900)]/40 dark:text-[color:var(--color-primary-300)] ring-1 ring-[color:var(--color-primary-300)] dark:ring-[color:var(--color-primary-700)]'
                       : 'bg-surface-secondary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -1065,7 +1065,7 @@ function MemberMappingPicker({
                     whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
                     transition={springSnappy}
                     className={clsx(
-                      'inline-flex items-center gap-1.5 pl-1 pr-2.5 h-7 rounded-full text-caption font-bold leading-none transition-all',
+                      'inline-flex items-center gap-1.5 pl-1 pr-2.5 h-7 rounded-full text-label3 leading-none transition-all',
                       isActive ? 'text-white' : 'text-sub',
                     )}
                     style={
@@ -1124,7 +1124,7 @@ function SubscriptionCategoryPicker({
           transition={springSnappy}
           aria-pressed={value === ''}
           className={clsx(
-            'inline-flex items-center gap-1 px-3 h-7 rounded-full text-caption font-semibold leading-none transition-all',
+            'inline-flex items-center gap-1 px-3 h-7 rounded-full text-label3-medium font-semibold leading-none transition-all',
             value === ''
               ? 'bg-surface-primary text-heading ring-1 ring-[color:var(--border-strong)]'
               : 'bg-surface-secondary text-sub ring-1 ring-base hover:bg-[var(--hover-bg)]',
@@ -1210,7 +1210,7 @@ function RowList({
         <button
           type="button"
           onClick={onToggleShowAll}
-          className="mt-2.5 w-full inline-flex items-center justify-center gap-1 py-2 rounded-2xl bg-surface-tertiary ring-1 ring-base text-caption font-semibold text-sub hover:bg-[var(--hover-bg)] transition-colors"
+          className="mt-2.5 w-full inline-flex items-center justify-center gap-1 py-2 rounded-2xl bg-surface-tertiary ring-1 ring-base text-label3-medium font-semibold text-sub hover:bg-[var(--hover-bg)] transition-colors"
         >
           {showAll ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           {showAll ? '접기' : `+${rows.length - COLLAPSED}건 더보기`}
@@ -1280,7 +1280,7 @@ function RowItem({
         {/* Body */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-caption font-bold text-heading truncate">
+            <span className="text-label3 text-heading truncate">
               {row.merchant}
             </span>
             {dup !== 'none' && <DuplicateBadge level={dup} />}
@@ -1331,7 +1331,7 @@ function RowItem({
 
         {/* Amount */}
         <div className="text-right flex-shrink-0">
-          <p className="text-caption font-bold text-value-negative tabular-nums">
+          <p className="text-label3 text-value-negative tabular-nums">
             −{row.amount.toLocaleString('ko-KR')}
           </p>
           <p className="text-micro text-disabled">원</p>

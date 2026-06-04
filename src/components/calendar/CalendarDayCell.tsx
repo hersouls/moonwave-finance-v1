@@ -83,7 +83,7 @@ const CalendarDayCellBase = forwardRef<HTMLButtonElement, CalendarDayCellProps>(
         aria-pressed={isSelected}
         tabIndex={isFocused ? 0 : -1}
         className={clsx(
-          'group relative flex flex-col items-stretch rounded-lg text-sm transition-all',
+          'group relative flex flex-col items-stretch rounded-lg text-caption transition-all',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
           isDetailed
             ? 'min-h-[84px] xl:min-h-[104px] 2xl:min-h-[120px] p-1.5 gap-1'
@@ -100,7 +100,7 @@ const CalendarDayCellBase = forwardRef<HTMLButtonElement, CalendarDayCellProps>(
         <div className="flex items-center justify-between gap-1">
           <span
             className={clsx(
-              isDetailed ? 'text-xs font-medium' : 'text-caption',
+              isDetailed ? 'text-label3-medium' : 'text-caption',
               day.isToday && 'text-primary-600 dark:text-primary-400 font-bold',
               day.dayOfWeek === 0 && day.isCurrentMonth && !day.isToday && 'text-weekend-sun',
               day.dayOfWeek === 6 && day.isCurrentMonth && !day.isToday && 'text-weekend-sat',

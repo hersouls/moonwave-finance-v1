@@ -137,7 +137,7 @@ export function SettingsModal() {
                     'rounded-lg text-body3 whitespace-nowrap transition-all',
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                     isActive
-                      ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium elevation-1 lg:elevation-0'
+                      ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 elevation-1 lg:elevation-0'
                       : 'text-sub hover:bg-[var(--hover-bg)] active:bg-[var(--hover-bg)] lg:bg-transparent'
                   )}
                 >

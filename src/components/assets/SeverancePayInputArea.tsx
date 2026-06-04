@@ -60,7 +60,7 @@ export function SeverancePayInputArea({ onValuesChange }: SeverancePayInputAreaP
               placeholder="0"
               className="input-base text-right pr-8 tabular-nums"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-disabled">원</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-label3-medium text-disabled">원</span>
           </div>
           <p className="text-caption text-sub mt-1">최근 3개월 급여총액 / 해당 기간 총일수 x 30</p>
         </div>
@@ -68,29 +68,29 @@ export function SeverancePayInputArea({ onValuesChange }: SeverancePayInputAreaP
         {estimatedAmount > 0 && (
           <div className="pt-3 border-t border-base space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-body">퇴직금 예상액</span>
-              <span className="text-lg font-bold text-status-success tabular-nums">
-                {estimatedAmount.toLocaleString('ko-KR')} <span className="text-sm font-normal">원</span>
+              <span className="text-body2 text-body">퇴직금 예상액</span>
+              <span className="text-title3 text-status-success tabular-nums">
+                {estimatedAmount.toLocaleString('ko-KR')} <span className="text-label3-medium">원</span>
               </span>
             </div>
             {tax && tax.totalTax > 0 && (
               <>
-                <div className="flex justify-between items-center text-label2 leading-none">
+                <div className="flex justify-between items-center text-label3-medium leading-none">
                   <span className="text-sub">퇴직소득세</span>
                   <span className="text-sub tabular-nums">
                     -{tax.incomeTax.toLocaleString('ko-KR')}원
                   </span>
                 </div>
-                <div className="flex justify-between items-center text-label2 leading-none">
+                <div className="flex justify-between items-center text-label3-medium leading-none">
                   <span className="text-sub">퇴직주민세</span>
                   <span className="text-sub tabular-nums">
                     -{tax.residentTax.toLocaleString('ko-KR')}원
                   </span>
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t border-base">
-                  <span className="text-sm font-medium text-body">세후 예상 수령액</span>
-                  <span className="text-body1 font-bold text-accent-primary tabular-nums">
-                    {tax.netSeverance.toLocaleString('ko-KR')} <span className="text-sm font-normal">원</span>
+                  <span className="text-body2 text-body">세후 예상 수령액</span>
+                  <span className="text-title3 text-accent-primary tabular-nums">
+                    {tax.netSeverance.toLocaleString('ko-KR')} <span className="text-label3-medium">원</span>
                   </span>
                 </div>
               </>

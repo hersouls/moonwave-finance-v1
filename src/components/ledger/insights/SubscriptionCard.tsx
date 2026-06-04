@@ -23,10 +23,10 @@ export function SubscriptionCard() {
           <div className="w-7 h-7 rounded-lg bg-[color:var(--status-info-bg)] flex items-center justify-center">
             <Repeat className="w-3.5 h-3.5 text-status-info" />
           </div>
-          <span className="text-caption text-sub font-semibold">구독</span>
+          <span className="text-label3-medium text-sub font-semibold">구독</span>
         </div>
         <p className="text-body3 text-disabled">없음</p>
-        <p className="text-caption text-sub mt-1">거래에 구독 분류 태그하기 →</p>
+        <p className="text-label3-medium text-sub mt-1">거래에 구독 분류 태그하기 →</p>
       </motion.button>
     )
   }
@@ -44,7 +44,7 @@ export function SubscriptionCard() {
         <div className="w-7 h-7 rounded-lg bg-[color:var(--status-info-bg)] flex items-center justify-center">
           <Repeat className="w-3.5 h-3.5 text-status-info" />
         </div>
-        <span className="text-caption text-sub font-semibold">구독 {activeCount}개</span>
+        <span className="text-label3-medium text-sub font-semibold">구독 {activeCount}개</span>
       </div>
       <p className="text-caption text-sub mb-0.5">월 합계</p>
       <Amount
@@ -53,7 +53,7 @@ export function SubscriptionCard() {
         className="text-heading font-bold block"
         unit=""
       />
-      <p className="text-label4 text-disabled mt-2">자세히 보기 →</p>
+      <p className="text-label3-medium text-disabled mt-2">자세히 보기 →</p>
     </motion.button>
   )
 }

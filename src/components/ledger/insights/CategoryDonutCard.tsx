@@ -90,7 +90,7 @@ export function CategoryDonutCard({
           <div className="w-7 h-7 rounded-lg bg-surface-tertiary flex items-center justify-center">
             <PieChart className="w-3.5 h-3.5 text-sub" />
           </div>
-          <span className="text-caption text-sub font-semibold">카테고리 구성</span>
+          <span className="text-label3-medium text-sub font-semibold">카테고리 구성</span>
         </div>
         <p className="text-body3 text-disabled">거래 없음</p>
       </motion.div>
@@ -133,7 +133,7 @@ export function CategoryDonutCard({
           {/* 중앙 top 카테고리 */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-label4 text-disabled leading-none mb-0.5">Top</span>
-            <span className="text-caption font-bold text-heading tabular-nums leading-none">
+            <span className="text-label3 text-heading tabular-nums leading-none">
               {topSeg.percent.toFixed(0)}%
             </span>
           </div>
@@ -158,8 +158,8 @@ export function CategoryDonutCard({
                 style={{ backgroundColor: seg.color }}
                 aria-hidden="true"
               />
-              <span className="text-caption text-body truncate flex-1 leading-tight">{seg.name}</span>
-              <span className="text-caption text-sub font-semibold tabular-nums leading-tight">
+              <span className="text-label3-medium text-body truncate flex-1 leading-tight">{seg.name}</span>
+              <span className="text-label3-medium text-sub font-semibold tabular-nums leading-tight">
                 {seg.percent.toFixed(0)}%
               </span>
             </button>

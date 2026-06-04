@@ -158,8 +158,8 @@ export function HeroMetricCard({
           data-reveal={hideAmounts ? 'false' : undefined}
         >
           <AnimatedNumber value={value} format={format} />
-          {unit && <span className="text-lg text-white/50 ml-1">{unit}</span>}
-          {suffix && <span className="text-lg text-white/60 ml-1">{suffix}</span>}
+          {unit && <span className="text-title3 text-white/50 ml-1">{unit}</span>}
+          {suffix && <span className="text-title3 text-white/60 ml-1">{suffix}</span>}
         </p>
         {deltas && deltas.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1">

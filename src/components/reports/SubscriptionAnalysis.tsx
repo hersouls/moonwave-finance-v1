@@ -107,7 +107,7 @@ export function SubscriptionAnalysis() {
               />
             </div>
           ) : (
-            <p className="text-caption text-disabled text-center py-8">데이터 없음</p>
+            <p className="text-body3 text-disabled text-center py-8">데이터 없음</p>
           )}
         </Card>
 
@@ -149,10 +149,10 @@ export function SubscriptionAnalysis() {
                     className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: sub.color }}
                   />
-                  <span className="text-body3 text-body flex-1 min-w-0 truncate">
+                  <span className="text-body2 text-body flex-1 min-w-0 truncate">
                     {sub.name}
                   </span>
-                  <span className="text-body3 text-heading tabular-nums min-w-0 ml-auto sm:ml-0">
+                  <span className="text-body2-bold text-heading tabular-nums min-w-0 ml-auto sm:ml-0">
                     {formatKRW(sub.monthlyEquivalent)}/월
                   </span>
                   <span className="text-caption text-disabled w-12 text-right tabular-nums">

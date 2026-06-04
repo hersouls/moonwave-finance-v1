@@ -284,7 +284,7 @@ export function ProfilePage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-body3 font-bold"
                     style={{ backgroundColor: m.color }}
                   >
                     {m.name.charAt(0)}
@@ -337,7 +337,7 @@ export function ProfilePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-body3 text-heading">백업 복원</p>
-                <p className="text-caption text-sub">JSON 백업 파일에서 복원</p>
+                <p className="text-body3 text-sub">JSON 백업 파일에서 복원</p>
               </div>
               <Button variant="secondary" size="sm" onClick={handleImportBackup} disabled={readOnly} title={readOnly ? '읽기 전용 모드' : undefined} leftIcon={<Upload className="w-4 h-4" />}>
                 복원
@@ -348,7 +348,7 @@ export function ProfilePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-body3 text-heading">CSV 내보내기</p>
-                <p className="text-caption text-sub">거래내역 또는 자산가치를 Excel 호환 CSV로 내보내기</p>
+                <p className="text-body3 text-sub">거래내역 또는 자산가치를 Excel 호환 CSV로 내보내기</p>
               </div>
               <div className="flex gap-2">
                 <Button variant="secondary" size="sm" onClick={handleExportTransactionsCSV} leftIcon={<FileSpreadsheet className="w-4 h-4" />}>
@@ -365,7 +365,7 @@ export function ProfilePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-body3 text-status-warning">테스트 데이터 생성</p>
-                  <p className="text-caption text-sub">가상의 자산/거래/예산/목표 데이터를 생성하고 Firebase에 업로드합니다</p>
+                  <p className="text-body3 text-sub">가상의 자산/거래/예산/목표 데이터를 생성하고 Firebase에 업로드합니다</p>
                 </div>
                 <Button
                   variant="secondary"
@@ -397,7 +397,7 @@ export function ProfilePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-body3 text-status-danger">데이터 초기화</p>
-                <p className="text-caption text-sub">모든 데이터를 삭제하고 초기 상태로 되돌립니다</p>
+                <p className="text-body3 text-sub">모든 데이터를 삭제하고 초기 상태로 되돌립니다</p>
               </div>
               <Button variant="danger" size="sm" onClick={() => setShowResetConfirm(true)} disabled={readOnly} title={readOnly ? '읽기 전용 모드' : undefined} leftIcon={<Trash2 className="w-4 h-4" />}>
                 초기화
@@ -539,7 +539,7 @@ function MemberDeleteDialog({
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white text-base font-bold"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white text-body1 font-bold"
                 style={{ backgroundColor: member.color }}
               >
                 {member.name.charAt(0)}

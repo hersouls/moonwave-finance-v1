@@ -51,7 +51,7 @@ export function MonthInsightsPanel({
     .slice(0, 3)
 
   return (
-    <aside className="space-y-3 text-sm">
+    <aside className="space-y-3 text-body3">
       {/* KPI card */}
       <div className="card-base el-card relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none" aria-hidden>
@@ -61,8 +61,8 @@ export function MonthInsightsPanel({
           <div className="flex items-center justify-between mb-2">
             <div>
               <p className="text-caption text-sub">{monthLabel} 요약</p>
-              <p className="text-heading font-semibold text-body2-semi mt-0.5">
-                순 <span className={aggregates.net >= 0 ? 'text-status-success' : 'text-status-danger'}>
+              <p className="text-heading text-body2-bold mt-0.5">
+                순 <span className={clsx('tabular-nums', aggregates.net >= 0 ? 'text-status-success' : 'text-status-danger')}>
                   {aggregates.net >= 0 ? '+' : ''}{formatKoreanUnit(aggregates.net)}
                 </span>
               </p>
@@ -119,7 +119,7 @@ export function MonthInsightsPanel({
         <div className="card-base el-card">
           <div className="flex items-center gap-1.5 mb-2">
             <Crown className="w-4 h-4 text-status-warning" />
-            <h4 className="text-body3-semi text-heading">지출 상위 카테고리</h4>
+            <h4 className="text-title3 text-heading">지출 상위 카테고리</h4>
           </div>
           <div className="space-y-2">
             {topExpense.map((entry, i) => {
@@ -159,7 +159,7 @@ export function MonthInsightsPanel({
         <div className="card-base el-card">
           <div className="flex items-center gap-1.5 mb-2">
             <TrendingDown className="w-4 h-4 text-status-danger" />
-            <h4 className="text-body3-semi text-heading">지출 많은 날</h4>
+            <h4 className="text-title3 text-heading">지출 많은 날</h4>
           </div>
           <div className="space-y-1.5">
             {topSpendingDays.map((d) => {
@@ -171,7 +171,7 @@ export function MonthInsightsPanel({
                   type="button"
                   onClick={() => onSelectDate?.(d.date)}
                   className={clsx(
-                    'w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors',
+                    'w-full flex items-center justify-between px-2 py-1.5 rounded-md text-body3 transition-colors',
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                     isSelected
                       ? 'bg-primary-100 dark:bg-primary-900/30'
@@ -206,7 +206,7 @@ export function MonthInsightsPanel({
         <div className="card-base el-card">
           <div className="flex items-center gap-1.5 mb-2">
             <CalendarDays className="w-4 h-4 text-primary-500" />
-            <h4 className="text-body3-semi text-heading">요일별 지출 패턴</h4>
+            <h4 className="text-title3 text-heading">요일별 지출 패턴</h4>
           </div>
           <div className="grid grid-cols-7 gap-1 items-end h-20">
             {aggregates.weekdayExpense.map((amount, i) => {
@@ -244,7 +244,7 @@ export function MonthInsightsPanel({
         <div className="card-base el-card">
           <div className="flex items-center gap-1.5 mb-1">
             <RefreshCw className="w-4 h-4 text-primary-500" />
-            <h4 className="text-body3-semi text-heading">고정 지출</h4>
+            <h4 className="text-title3 text-heading">고정 지출</h4>
           </div>
           <div className="flex items-baseline justify-between">
             <span className="text-caption text-sub">반복·구독 합계</span>
@@ -287,7 +287,7 @@ function MiniStat({ icon, label, value, tone }: MiniStatProps) {
         <span className={toneClass}>{icon}</span>
         <span>{label}</span>
       </div>
-      <p className={clsx('tabular-nums font-semibold text-sm mt-0.5', toneClass)}>{value}</p>
+      <p className={clsx('tabular-nums text-body2-bold mt-0.5', toneClass)}>{value}</p>
     </div>
   )
 }

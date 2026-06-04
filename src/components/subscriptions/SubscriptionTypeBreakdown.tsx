@@ -125,8 +125,8 @@ export function SubscriptionTypeBreakdown({ detected }: Props) {
           <Sparkles className="w-4 h-4" style={{ color: featured.color, transition: 'color 360ms ease-out' }} />
         </div>
         <div className="min-w-0">
-          <h3 className="text-body3 font-extrabold text-heading tracking-tight">구독 분류별 분포</h3>
-          <p className="text-caption text-sub mt-0.5">
+          <h3 className="text-title3 font-extrabold text-heading tracking-tight">구독 분류별 분포</h3>
+          <p className="text-label3-medium text-sub mt-0.5 tabular-nums">
             {rows.length}개 분류 · 월 환산 합계 {formatKoreanUnit(total)}원
           </p>
         </div>
@@ -330,7 +330,7 @@ function BreakdownRowItem({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <p className="text-caption font-bold text-heading truncate">{row.label}</p>
+            <p className="text-body3-bold text-heading truncate">{row.label}</p>
             <p className="text-body3 font-extrabold text-heading tabular-nums flex-shrink-0">
               {formatKoreanUnit(row.totalMonthly)}
               <span className="text-label4 leading-none font-bold text-disabled ml-0.5">원</span>
