@@ -305,14 +305,36 @@ const _pendingChangeEntries = new WeakMap<DexieTransaction, {
   tombstones: SyncTombstone[]
 }>()
 
+// In-flight post-commit writes. Destructive resets (clearAllData, importBackup)
+// drain this before wiping syncChangeLog/syncTombstones — otherwise a write
+// committed just before the reset could land its change-log rows AFTER the
+// wipe, and a stale 'delete' entry would replay a cloud deletion next login.
+const _inflightChangeLogWrites = new Set<Promise<void>>()
+
+/** Waits for all queued post-commit change-log/tombstone writes to settle. */
+export async function drainChangeTracking(): Promise<void> {
+  while (_inflightChangeLogWrites.size > 0) {
+    await Promise.allSettled([..._inflightChangeLogWrites])
+  }
+}
+
+function persistQueuedEntries(changes: SyncChangeLogEntry[], tombstones: SyncTombstone[]): void {
+  const p: Promise<void> = Dexie.ignoreTransaction(async () => {
+    try {
+      if (changes.length > 0) await db.syncChangeLog.bulkAdd(changes)
+      if (tombstones.length > 0) await db.syncTombstones.bulkAdd(tombstones)
+    } catch (err) {
+      console.error('[sync] change-log write failed:', err)
+    }
+  }).finally(() => { _inflightChangeLogWrites.delete(p) })
+  _inflightChangeLogWrites.add(p)
+}
+
 function queueChangeEntry(entry: SyncChangeLogEntry, tombstone?: SyncTombstone): void {
   const tx = Dexie.currentTransaction
   if (!tx) {
     // Hooks always run inside a transaction; defensive fallback only.
-    void db.syncChangeLog.add(entry).catch((err) => console.error('[sync] change-log write failed:', err))
-    if (tombstone) {
-      void db.syncTombstones.add(tombstone).catch((err) => console.error('[sync] tombstone write failed:', err))
-    }
+    persistQueuedEntries([entry], tombstone ? [tombstone] : [])
     return
   }
   let pending = _pendingChangeEntries.get(tx)
@@ -320,16 +342,7 @@ function queueChangeEntry(entry: SyncChangeLogEntry, tombstone?: SyncTombstone):
     const fresh = { changes: [] as SyncChangeLogEntry[], tombstones: [] as SyncTombstone[] }
     pending = fresh
     _pendingChangeEntries.set(tx, fresh)
-    tx.on('complete', () => {
-      void Dexie.ignoreTransaction(async () => {
-        try {
-          if (fresh.changes.length > 0) await db.syncChangeLog.bulkAdd(fresh.changes)
-          if (fresh.tombstones.length > 0) await db.syncTombstones.bulkAdd(fresh.tombstones)
-        } catch (err) {
-          console.error('[sync] change-log write failed:', err)
-        }
-      })
-    })
+    tx.on('complete', () => persistQueuedEntries(fresh.changes, fresh.tombstones))
   }
   pending.changes.push(entry)
   if (tombstone) pending.tombstones.push(tombstone)
@@ -1085,6 +1098,9 @@ export async function clearAllData(opts?: { force?: boolean }): Promise<void> {
     await db.dividends.clear()
     await db.accountInterests.clear()
     await db.merchantAliases.clear()
+    // 직전 사용자 쓰기가 큐잉한 post-commit 변경로그가 아래 clear 이후에
+    // 도착해 잔존하지 않도록, 먼저 in-flight 기록을 모두 드레인한다.
+    await drainChangeTracking()
     await db.syncChangeLog.clear()
     await db.syncTombstones.clear()
 

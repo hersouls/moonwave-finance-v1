@@ -1,4 +1,4 @@
-import { db, setSyncWritingFlag } from '@/services/database'
+import { db, setSyncWritingFlag, drainChangeTracking } from '@/services/database'
 import { BACKUP_CONFIG } from '@/utils/constants'
 import { assertWritable } from '@/lib/writeGuard'
 import type { BackupFile } from '@/lib/types'
@@ -106,6 +106,13 @@ export async function importBackup(file: File): Promise<void> {
       if (backup.data.dividends?.length) await db.dividends.bulkAdd(backup.data.dividends)
       if (backup.data.accountInterests?.length) await db.accountInterests.bulkAdd(backup.data.accountInterests)
     })
+
+    // 복원 전 상태를 가리키는 잔여 동기화 큐를 정리한다 — 특히 pending 'delete'
+    // 항목은 복원으로 부활한 레코드(동일 syncId)를 다음 업로드에서 클라우드/피어
+    // 기기로부터 삭제시킬 수 있다. clearAllData와 동일한 로컬 교체 의미론.
+    await drainChangeTracking()
+    await db.syncChangeLog.clear()
+    await db.syncTombstones.clear()
   } finally {
     setSyncWritingFlag(false)
   }

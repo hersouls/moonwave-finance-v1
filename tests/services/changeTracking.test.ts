@@ -9,8 +9,8 @@
 // 단언은 vi.waitFor로 수렴을 기다린다.
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import Dexie from 'dexie'
-import { db, addTransaction, bulkSetDailyValues, setSyncWritingFlag } from '@/services/database'
-import type { Transaction } from '@/lib/types'
+import { db, addTransaction, bulkSetDailyValues, setSyncWritingFlag, clearAllData, drainChangeTracking } from '@/services/database'
+import type { Transaction, DailyValue } from '@/lib/types'
 
 function makeTxn(): Omit<Transaction, 'id'> {
   const now = new Date().toISOString()
@@ -131,5 +131,74 @@ describe('change-tracking 훅 → syncChangeLog 기록', () => {
     const ops = (await db.syncChangeLog.toArray()).map((l) => l.operation)
     expect(ops).toEqual(['create', 'create', 'create'])
     expect(Dexie.currentTransaction).toBeNull()
+  })
+
+  it('명시적 멀티테이블 트랜잭션: 테이블별 항목이 올바르게 섞여 기록된다', async () => {
+    const now = new Date().toISOString()
+    await db.transaction('rw', [db.transactions, db.dailyValues], async () => {
+      await db.transactions.add(makeTxn() as Transaction)
+      await db.dailyValues.add({
+        assetItemId: 1, date: '2026-06-03', value: 42,
+        syncId: crypto.randomUUID(), createdAt: now, updatedAt: now,
+      } as DailyValue)
+      await db.dailyValues.add({
+        assetItemId: 1, date: '2026-06-04', value: 43,
+        syncId: crypto.randomUUID(), createdAt: now, updatedAt: now,
+      } as DailyValue)
+    })
+    await waitForChangeLogCount(3)
+    const logs = await db.syncChangeLog.toArray()
+    expect(logs.filter((l) => l.tableName === 'transactions').length).toBe(1)
+    expect(logs.filter((l) => l.tableName === 'dailyValues').length).toBe(2)
+    expect(logs.every((l) => l.operation === 'create')).toBe(true)
+  })
+
+  it('bulkDelete: 행마다 delete 항목 + 톰스톤을 기록한다', async () => {
+    const ids = await db.transactions.bulkAdd(
+      [makeTxn(), makeTxn(), makeTxn()] as Transaction[],
+      { allKeys: true },
+    ) as number[]
+    await waitForChangeLogCount(3)
+    await db.syncChangeLog.clear()
+
+    await db.transactions.bulkDelete(ids)
+    await waitForChangeLogCount(3)
+    expect((await db.syncChangeLog.toArray()).every((l) => l.operation === 'delete')).toBe(true)
+    await vi.waitFor(async () => {
+      expect(await db.syncTombstones.count()).toBe(3)
+    }, { timeout: 2000 })
+  })
+
+  it('put(upsert): 기존 행은 update, 새 행은 create로 기록한다', async () => {
+    const txn = makeTxn()
+    const id = await db.transactions.add(txn as Transaction)
+    await waitForChangeLogCount(1)
+    await db.syncChangeLog.clear()
+
+    // 기존 키 put → updating 훅 → update
+    await db.transactions.put({ ...txn, id, amount: 7777 } as Transaction)
+    await waitForChangeLogCount(1)
+    expect((await db.syncChangeLog.toArray())[0].operation).toBe('update')
+    await db.syncChangeLog.clear()
+
+    // 새 행 put → creating 훅 → create
+    await db.transactions.put(makeTxn() as Transaction)
+    await waitForChangeLogCount(1)
+    expect((await db.syncChangeLog.toArray())[0].operation).toBe('create')
+  })
+
+  it('clearAllData: 로컬 전용 초기화 — 직전 쓰기가 있어도 changelog/톰스톤이 남지 않는다', async () => {
+    // 직전 사용자 쓰기 직후 즉시 초기화 → in-flight post-commit 기록과의
+    // 경합을 drainChangeTracking이 막는지 검증
+    await db.transactions.add(makeTxn() as Transaction)
+    await clearAllData()
+
+    expect(await db.transactions.count()).toBe(0)
+    await drainChangeTracking()
+    await new Promise((r) => setTimeout(r, 30))
+    expect(await db.syncChangeLog.count()).toBe(0)
+    expect(await db.syncTombstones.count()).toBe(0)
+    // 기본 멤버 재시드 확인 (초기화 의미론 유지)
+    expect(await db.members.count()).toBeGreaterThan(0)
   })
 })
