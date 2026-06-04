@@ -133,7 +133,7 @@ export const useDailyValueStore = create<DailyValueState>()(
             import('@/services/firestoreSync').then(({ deleteMultipleFromCloud }) =>
               import('./authStore').then(({ useAuthStore }) => {
                 const user = useAuthStore.getState().user
-                if (user) deleteMultipleFromCloud(user.uid, 'dailyValues', removed)
+                if (user) deleteMultipleFromCloud(user.uid, 'dailyValues', removed).catch(err => console.error('[projection] cloud cleanup failed (change log will retry):', err))
               })).catch(err => console.error('[projection] cloud cleanup failed:', err))
           }
           const soupStart = prevManual ? nextDayYmd(prevManual) : backfillStart(baseDate)

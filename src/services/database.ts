@@ -1,4 +1,4 @@
-import Dexie, { type Table } from 'dexie'
+import Dexie, { type Table, type Transaction as DexieTransaction } from 'dexie'
 import { DEFAULT_MEMBERS } from '@/utils/constants'
 import type {
   Member,
@@ -275,7 +275,20 @@ const db = new FinanceDatabase()
 
 // ─── Change Tracking for Incremental Sync ────────────
 // Tracks all local mutations to syncChangeLog for incremental upload.
-// Uses a module-level flag to skip logging writes that come from the sync system itself.
+//
+// 동기화 시스템 자신의 쓰기(다운로드 인제스트)는 changelog에 기록하면 안 되고
+// (echo 루프), 읽기전용 게이트도 우회해야 한다. 이를 구분하는 메커니즘 2종:
+//
+// 1. 트랜잭션 마커 (권장, runSyncWrite/markSyncTransaction) — 동기화 쓰기를
+//    명시적 Dexie 트랜잭션으로 감싸고 그 Transaction 객체를 WeakSet에 등록.
+//    훅은 자신이 속한 트랜잭션의 마커를 보므로, 동기화 인제스트가 진행되는
+//    동안 끼어든 "사용자" 쓰기(별도 트랜잭션)는 정확히 사용자 쓰기로 분류된다.
+//
+// 2. 전역 카운터 (레거시, setSyncWritingFlag) — clearAllData/importBackup/
+//    seedTestData처럼 여러 트랜잭션에 걸친 파괴적 모달 플로우에서만 사용.
+//    이 플래그가 켜진 동안의 모든 쓰기가 동기화 쓰기로 분류되므로, 사용자
+//    쓰기가 동시에 일어날 수 있는 장시간 흐름(스냅샷 인제스트 등)에는
+//    절대 쓰지 말 것 — 그 사용자 쓰기의 changelog가 조용히 누락된다.
 let _syncWritingCount = 0
 export function setSyncWritingFlag(v: boolean) {
   if (v) _syncWritingCount++
@@ -283,7 +296,101 @@ export function setSyncWritingFlag(v: boolean) {
 }
 export function getSyncWritingFlag() { return _syncWritingCount > 0 }
 
+const _syncWriteTransactions = new WeakSet<DexieTransaction>()
+
+/** 현재 Dexie 트랜잭션을 동기화 쓰기로 표시한다 (트랜잭션 콜백 안에서 호출). */
+export function markSyncTransaction(): void {
+  const tx = Dexie.currentTransaction
+  if (tx) _syncWriteTransactions.add(tx)
+}
+
+/**
+ * 이 쓰기가 동기화 시스템에서 비롯됐는가 — Dexie 훅 안에서 호출된다.
+ * 트랜잭션 마커를 우선 보고, 레거시 전역 카운터를 폴백으로 본다.
+ */
+export function isSyncWriteContext(): boolean {
+  const tx = Dexie.currentTransaction
+  if (tx && _syncWriteTransactions.has(tx)) return true
+  return _syncWritingCount > 0
+}
+
+/**
+ * 동기화 인제스트 쓰기를 마커가 달린 명시적 트랜잭션으로 실행한다.
+ * scope에는 쓰기 대상 테이블뿐 아니라 콜백이 읽는 테이블(FK 부모,
+ * syncTombstones 등)도 포함해야 한다. 콜백 안에서는 Dexie 연산 외의
+ * await(네트워크 등)를 하지 말 것 — 트랜잭션이 조기 커밋된다.
+ */
+export async function runSyncWrite<T>(tables: Table[], fn: () => Promise<T>): Promise<T> {
+  return db.transaction('rw', tables, async () => {
+    markSyncTransaction()
+    return fn()
+  })
+}
+
 type SyncableTableName = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions' | 'loans' | 'investmentTrades' | 'dividends' | 'accountInterests' | 'merchantAliases'
+
+// ── Post-commit change-log queue ──────────────────────
+//
+// The CRUD hooks below fire INSIDE the source table's transaction. Writing to
+// db.syncChangeLog from there rejects with NotFoundError whenever syncChangeLog
+// isn't part of the active transaction scope — and it never is: neither implicit
+// single-table transactions nor any db.transaction('rw', ...) in this codebase
+// include it. The unawaited rejection was silently swallowed, so the data write
+// committed but NO change-log entry was ever recorded — incremental upload had
+// nothing to push (root cause of live sync never working; regression test:
+// tests/services/changeTracking.test.ts).
+//
+// Hooks therefore queue entries here, and a single 'complete' listener per
+// transaction persists them AFTER the commit, outside the transaction zone
+// (Dexie.ignoreTransaction). Writing post-commit also guarantees we never log a
+// change — or worse, a tombstone — for a transaction that ends up aborting.
+const _pendingChangeEntries = new WeakMap<DexieTransaction, {
+  changes: SyncChangeLogEntry[]
+  tombstones: SyncTombstone[]
+}>()
+
+// In-flight post-commit writes. Destructive resets (clearAllData, importBackup)
+// drain this before wiping syncChangeLog/syncTombstones — otherwise a write
+// committed just before the reset could land its change-log rows AFTER the
+// wipe, and a stale 'delete' entry would replay a cloud deletion next login.
+const _inflightChangeLogWrites = new Set<Promise<void>>()
+
+/** Waits for all queued post-commit change-log/tombstone writes to settle. */
+export async function drainChangeTracking(): Promise<void> {
+  while (_inflightChangeLogWrites.size > 0) {
+    await Promise.allSettled([..._inflightChangeLogWrites])
+  }
+}
+
+function persistQueuedEntries(changes: SyncChangeLogEntry[], tombstones: SyncTombstone[]): void {
+  const p: Promise<void> = Dexie.ignoreTransaction(async () => {
+    try {
+      if (changes.length > 0) await db.syncChangeLog.bulkAdd(changes)
+      if (tombstones.length > 0) await db.syncTombstones.bulkAdd(tombstones)
+    } catch (err) {
+      console.error('[sync] change-log write failed:', err)
+    }
+  }).finally(() => { _inflightChangeLogWrites.delete(p) })
+  _inflightChangeLogWrites.add(p)
+}
+
+function queueChangeEntry(entry: SyncChangeLogEntry, tombstone?: SyncTombstone): void {
+  const tx = Dexie.currentTransaction
+  if (!tx) {
+    // Hooks always run inside a transaction; defensive fallback only.
+    persistQueuedEntries([entry], tombstone ? [tombstone] : [])
+    return
+  }
+  let pending = _pendingChangeEntries.get(tx)
+  if (!pending) {
+    const fresh = { changes: [] as SyncChangeLogEntry[], tombstones: [] as SyncTombstone[] }
+    pending = fresh
+    _pendingChangeEntries.set(tx, fresh)
+    tx.on('complete', () => persistQueuedEntries(fresh.changes, fresh.tombstones))
+  }
+  pending.changes.push(entry)
+  if (tombstone) pending.tombstones.push(tombstone)
+}
 
 function installChangeTracking() {
   const tables: { table: Table; name: SyncableTableName }[] = [
@@ -306,13 +413,15 @@ function installChangeTracking() {
 
   for (const { table, name } of tables) {
     table.hook('creating', function (_primKey, obj) {
-      // Read-only device gate: a write with the sync flag clear is user/app-
-      // initiated. Block it (sync downloads set the flag, so they pass through).
-      if (_syncWritingCount === 0) assertWritable()
-      if (_syncWritingCount > 0) return
+      // Sync-originated writes (transaction marker or legacy global flag)
+      // bypass the read-only gate and are never logged (echo suppression).
+      if (isSyncWriteContext()) return
+      // Read-only device gate: a user/app-initiated write on a read-only
+      // device is blocked here, the enforcement net of last resort.
+      assertWritable()
       const syncId = obj?.syncId as string | undefined
       if (syncId) {
-        db.syncChangeLog.add({
+        queueChangeEntry({
           tableName: name,
           syncId,
           operation: 'create',
@@ -323,11 +432,11 @@ function installChangeTracking() {
     })
 
     table.hook('updating', function (_mods, _primKey, obj) {
-      if (_syncWritingCount === 0) assertWritable()
-      if (_syncWritingCount > 0) return
+      if (isSyncWriteContext()) return
+      assertWritable()
       const syncId = obj?.syncId as string | undefined
       if (syncId) {
-        db.syncChangeLog.add({
+        queueChangeEntry({
           tableName: name,
           syncId,
           operation: 'update',
@@ -338,22 +447,24 @@ function installChangeTracking() {
     })
 
     table.hook('deleting', function (_primKey, obj) {
-      if (_syncWritingCount === 0) assertWritable()
-      if (_syncWritingCount > 0) return
+      if (isSyncWriteContext()) return
+      assertWritable()
       const syncId = obj?.syncId as string | undefined
       if (syncId) {
-        db.syncChangeLog.add({
-          tableName: name,
-          syncId,
-          operation: 'delete',
-          timestamp: new Date().toISOString(),
-          processed: 0,
-        })
-        db.syncTombstones.add({
-          tableName: name,
-          syncId,
-          deletedAt: new Date().toISOString(),
-        })
+        queueChangeEntry(
+          {
+            tableName: name,
+            syncId,
+            operation: 'delete',
+            timestamp: new Date().toISOString(),
+            processed: 0,
+          },
+          {
+            tableName: name,
+            syncId,
+            deletedAt: new Date().toISOString(),
+          },
+        )
       }
     })
   }
@@ -377,12 +488,13 @@ const defaultTxnCatSyncId = (type: string, name: string) => `default:txnCat:${ty
 export async function ensureDefaultCategories(): Promise<void> {
   const assetCats = await db.assetCategories.toArray()
   if (!assetCats.some((c) => c.name === '부동산')) {
-    setSyncWritingFlag(true)
-    try {
-      const now = new Date().toISOString()
-      const maxSort = assetCats
-        .filter((c) => c.type === 'asset')
-        .reduce((max, c) => Math.max(max, c.sortOrder), -1)
+    // 시드는 deterministic syncId로 기기 간 수렴하므로 changelog 불필요 —
+    // 마커 트랜잭션으로 읽기전용 게이트만 우회한다.
+    const now = new Date().toISOString()
+    const maxSort = assetCats
+      .filter((c) => c.type === 'asset')
+      .reduce((max, c) => Math.max(max, c.sortOrder), -1)
+    await runSyncWrite([db.assetCategories], async () => {
       await db.assetCategories.add({
         name: '부동산',
         type: 'asset',
@@ -393,18 +505,15 @@ export async function ensureDefaultCategories(): Promise<void> {
         createdAt: now,
         updatedAt: now,
       } as AssetCategory)
-    } finally {
-      setSyncWritingFlag(false)
-    }
+    })
   }
 
   const txnCats = await db.transactionCategories.toArray()
   if (!txnCats.some((c) => c.name === '대출이자')) {
-    setSyncWritingFlag(true)
-    try {
-      const now = new Date().toISOString()
-      const expenseCats = txnCats.filter((c) => c.type === 'expense')
-      const maxSort = expenseCats.reduce((max, c) => Math.max(max, c.sortOrder), -1)
+    const now = new Date().toISOString()
+    const expenseCats = txnCats.filter((c) => c.type === 'expense')
+    const maxSort = expenseCats.reduce((max, c) => Math.max(max, c.sortOrder), -1)
+    await runSyncWrite([db.transactionCategories], async () => {
       await db.transactionCategories.add({
         name: '대출이자',
         type: 'expense',
@@ -416,9 +525,7 @@ export async function ensureDefaultCategories(): Promise<void> {
         createdAt: now,
         updatedAt: now,
       } as TransactionCategory)
-    } finally {
-      setSyncWritingFlag(false)
-    }
+    })
   }
 }
 
@@ -1005,12 +1112,18 @@ export async function getTransactionsBySubscriptionId(subscriptionId: number): P
  * used by logout, which must always be able to wipe this device's local copy
  * (cloud data is preserved and re-merged on next login). The user-facing
  * "전체 데이터 초기화" calls it without force, so it is blocked on a read-only
- * device. When forced, writes are wrapped in the sync-writing flag so the
- * default-member re-seed doesn't trip the read-only abort in the create hook.
+ * device.
+ *
+ * BOTH paths wrap the wipe in the sync-writing flag: this reset is local-only
+ * by design (cloud data is preserved and re-merged on next login), so the
+ * per-row deleting hooks must NOT queue change-log entries / tombstones here.
+ * Otherwise thousands of tombstones — including the deterministic default-seed
+ * syncIds — would race the trailing syncChangeLog/syncTombstones clear() and
+ * any survivors would propagate deletions to every other device.
  */
 export async function clearAllData(opts?: { force?: boolean }): Promise<void> {
   if (!opts?.force) assertWritable()
-  if (opts?.force) setSyncWritingFlag(true)
+  setSyncWritingFlag(true)
   try {
     await db.members.clear()
     await db.assetCategories.clear()
@@ -1027,6 +1140,9 @@ export async function clearAllData(opts?: { force?: boolean }): Promise<void> {
     await db.dividends.clear()
     await db.accountInterests.clear()
     await db.merchantAliases.clear()
+    // 직전 사용자 쓰기가 큐잉한 post-commit 변경로그가 아래 clear 이후에
+    // 도착해 잔존하지 않도록, 먼저 in-flight 기록을 모두 드레인한다.
+    await drainChangeTracking()
     await db.syncChangeLog.clear()
     await db.syncTombstones.clear()
 
@@ -1035,6 +1151,6 @@ export async function clearAllData(opts?: { force?: boolean }): Promise<void> {
       DEFAULT_MEMBERS.map((m, i) => ({ ...m, isDefault: true, sortOrder: i, createdAt: now, updatedAt: now }))
     )
   } finally {
-    if (opts?.force) setSyncWritingFlag(false)
+    setSyncWritingFlag(false)
   }
 }

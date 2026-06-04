@@ -69,7 +69,7 @@ export const useGoalStore = create<GoalState>()(
           import('@/services/firestoreSync').then(({ deleteFromCloud }) => {
             import('./authStore').then(({ useAuthStore }) => {
               const user = useAuthStore.getState().user
-              if (user) deleteFromCloud(user.uid, 'goals', goal.syncId!)
+              if (user) deleteFromCloud(user.uid, 'goals', goal.syncId!).catch(err => console.error('[goal] cloud delete failed (change log will retry):', err))
             })
           }).catch(err => console.error('[goal] delete sync failed:', err))
         }

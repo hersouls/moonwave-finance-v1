@@ -1,4 +1,4 @@
-import { db } from '@/services/database'
+import { db, setSyncWritingFlag, drainChangeTracking } from '@/services/database'
 import { BACKUP_CONFIG } from '@/utils/constants'
 import { assertWritable } from '@/lib/writeGuard'
 import type { BackupFile } from '@/lib/types'
@@ -69,37 +69,53 @@ export async function importBackup(file: File): Promise<void> {
     throw new Error('올바르지 않은 백업 파일입니다.')
   }
 
-  await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions, db.loans, db.investmentTrades, db.dividends, db.accountInterests], async () => {
-    await db.members.clear()
-    await db.assetCategories.clear()
-    await db.assetItems.clear()
-    await db.dailyValues.clear()
-    await db.transactionCategories.clear()
-    await db.transactions.clear()
-    await db.budgets.clear()
-    await db.goals.clear()
-    await db.paymentMethodItems.clear()
-    await db.subscriptions.clear()
-    await db.loans.clear()
-    await db.investmentTrades.clear()
-    await db.dividends.clear()
-    await db.accountInterests.clear()
+  // 복원은 "로컬 교체"다 — 클라우드와의 수렴은 다음 mergeOnLogin이 담당한다.
+  // sync-writing 플래그 없이 돌리면 clear()가 기존 전 레코드의 deleting 훅을
+  // 행마다 발화시켜 수천 건의 delete 변경로그 + 톰스톤을 적재하고, 그 톰스톤이
+  // 다음 로그인 때 클라우드/피어 기기로 삭제 전파 폭풍을 일으킨다.
+  setSyncWritingFlag(true)
+  try {
+    await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions, db.loans, db.investmentTrades, db.dividends, db.accountInterests], async () => {
+      await db.members.clear()
+      await db.assetCategories.clear()
+      await db.assetItems.clear()
+      await db.dailyValues.clear()
+      await db.transactionCategories.clear()
+      await db.transactions.clear()
+      await db.budgets.clear()
+      await db.goals.clear()
+      await db.paymentMethodItems.clear()
+      await db.subscriptions.clear()
+      await db.loans.clear()
+      await db.investmentTrades.clear()
+      await db.dividends.clear()
+      await db.accountInterests.clear()
 
-    if (backup.data.members?.length) await db.members.bulkAdd(backup.data.members)
-    if (backup.data.assetCategories?.length) await db.assetCategories.bulkAdd(backup.data.assetCategories)
-    if (backup.data.assetItems?.length) await db.assetItems.bulkAdd(backup.data.assetItems)
-    if (backup.data.dailyValues?.length) await db.dailyValues.bulkAdd(backup.data.dailyValues)
-    if (backup.data.transactionCategories?.length) await db.transactionCategories.bulkAdd(backup.data.transactionCategories)
-    if (backup.data.transactions?.length) await db.transactions.bulkAdd(backup.data.transactions)
-    if (backup.data.budgets?.length) await db.budgets.bulkAdd(backup.data.budgets)
-    if (backup.data.goals?.length) await db.goals.bulkAdd(backup.data.goals)
-    if (backup.data.paymentMethodItems?.length) await db.paymentMethodItems.bulkAdd(backup.data.paymentMethodItems)
-    if (backup.data.subscriptions?.length) await db.subscriptions.bulkAdd(backup.data.subscriptions)
-    if (backup.data.loans?.length) await db.loans.bulkAdd(backup.data.loans)
-    if (backup.data.investmentTrades?.length) await db.investmentTrades.bulkAdd(backup.data.investmentTrades)
-    if (backup.data.dividends?.length) await db.dividends.bulkAdd(backup.data.dividends)
-    if (backup.data.accountInterests?.length) await db.accountInterests.bulkAdd(backup.data.accountInterests)
-  })
+      if (backup.data.members?.length) await db.members.bulkAdd(backup.data.members)
+      if (backup.data.assetCategories?.length) await db.assetCategories.bulkAdd(backup.data.assetCategories)
+      if (backup.data.assetItems?.length) await db.assetItems.bulkAdd(backup.data.assetItems)
+      if (backup.data.dailyValues?.length) await db.dailyValues.bulkAdd(backup.data.dailyValues)
+      if (backup.data.transactionCategories?.length) await db.transactionCategories.bulkAdd(backup.data.transactionCategories)
+      if (backup.data.transactions?.length) await db.transactions.bulkAdd(backup.data.transactions)
+      if (backup.data.budgets?.length) await db.budgets.bulkAdd(backup.data.budgets)
+      if (backup.data.goals?.length) await db.goals.bulkAdd(backup.data.goals)
+      if (backup.data.paymentMethodItems?.length) await db.paymentMethodItems.bulkAdd(backup.data.paymentMethodItems)
+      if (backup.data.subscriptions?.length) await db.subscriptions.bulkAdd(backup.data.subscriptions)
+      if (backup.data.loans?.length) await db.loans.bulkAdd(backup.data.loans)
+      if (backup.data.investmentTrades?.length) await db.investmentTrades.bulkAdd(backup.data.investmentTrades)
+      if (backup.data.dividends?.length) await db.dividends.bulkAdd(backup.data.dividends)
+      if (backup.data.accountInterests?.length) await db.accountInterests.bulkAdd(backup.data.accountInterests)
+    })
+
+    // 복원 전 상태를 가리키는 잔여 동기화 큐를 정리한다 — 특히 pending 'delete'
+    // 항목은 복원으로 부활한 레코드(동일 syncId)를 다음 업로드에서 클라우드/피어
+    // 기기로부터 삭제시킬 수 있다. clearAllData와 동일한 로컬 교체 의미론.
+    await drainChangeTracking()
+    await db.syncChangeLog.clear()
+    await db.syncTombstones.clear()
+  } finally {
+    setSyncWritingFlag(false)
+  }
 }
 
 export async function exportTransactionsCSV(): Promise<void> {

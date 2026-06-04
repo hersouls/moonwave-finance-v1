@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
-import { db } from '@/services/database'
+import { db, isSyncWriteContext } from '@/services/database'
+import { wakeFirestoreNetwork } from '@/lib/firebase'
 import {
   incrementalUpload,
-  getIsSyncWriting,
   startRealtimeSync,
   getLastSnapshotAt,
 } from '@/services/firestoreSync'
@@ -36,7 +36,12 @@ export function useAutoSync() {
     const scheduleSync = () => {
       if (timerRef.current) clearTimeout(timerRef.current)
       timerRef.current = setTimeout(async () => {
-        if (syncInProgressRef.current) return
+        // 업로드 진행 중이면 버리지 말고 재예약 — 기존에는 그냥 return해서
+        // 진행 중 발생한 변경이 다음 사용자 쓰기 전까지 업로드되지 않았다.
+        if (syncInProgressRef.current) {
+          scheduleSync()
+          return
+        }
         syncInProgressRef.current = true
         try {
           await incrementalUpload(user.uid)
@@ -56,6 +61,9 @@ export function useAutoSync() {
     // Sync when coming back online — uploads offline changes and force-restarts
     // listeners if the prior subscription has been silent for too long.
     const handleOnline = async () => {
+      // 죽은 네트워크 채널을 먼저 깨운다 — 모바일 백그라운드에서 SDK가
+      // 비활성화한 연결은 enableNetwork 없이는 재구독해도 안 살아날 수 있다.
+      await wakeFirestoreNetwork()
       const force = snapshotAgeMs() > STALE_ON_FOCUS_MS
       startRealtimeSync(user.uid, force)
 
@@ -78,8 +86,10 @@ export function useAutoSync() {
     // a re-subscribe so peer changes that arrived during sleep can flow in.
     const handleVisibility = () => {
       if (document.visibilityState !== 'visible') return
-      const force = snapshotAgeMs() > STALE_ON_FOCUS_MS
-      startRealtimeSync(user.uid, force)
+      void wakeFirestoreNetwork().then(() => {
+        const force = snapshotAgeMs() > STALE_ON_FOCUS_MS
+        startRealtimeSync(user.uid, force)
+      })
     }
     document.addEventListener('visibilitychange', handleVisibility)
 
@@ -90,23 +100,28 @@ export function useAutoSync() {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) return
       if (snapshotAgeMs() > STALE_FORCE_RESTART_MS) {
         console.warn('[auto-sync] listener appears stale, forcing restart')
-        startRealtimeSync(user.uid, true)
+        void wakeFirestoreNetwork().then(() => startRealtimeSync(user.uid, true))
       }
     }, HEALTH_POLL_MS)
 
-    // Dexie hooks: listen to creates, updates, deletes on all tables
+    // Dexie hooks: listen to creates, updates, deletes on ALL 15 synced tables.
+    // (빠진 테이블의 쓰기는 변경로그에는 남지만 업로드 디바운스를 깨우지
+    // 못해 다음 다른 쓰기/online 이벤트까지 업로드가 지연된다)
     const tables = [
       db.members, db.assetCategories, db.assetItems, db.dailyValues,
       db.transactionCategories, db.transactions, db.budgets, db.goals,
       db.paymentMethodItems, db.subscriptions, db.loans,
+      db.investmentTrades, db.dividends, db.accountInterests, db.merchantAliases,
     ]
 
     const hookRemovers: (() => void)[] = []
 
     for (const table of tables) {
-      const createHook = () => { if (!getIsSyncWriting()) scheduleSync() }
-      const updateHook = () => { if (!getIsSyncWriting()) scheduleSync() }
-      const deleteHook = () => { if (!getIsSyncWriting()) scheduleSync() }
+      // 동기화 인제스트의 echo는 업로드를 깨우지 않는다 — 훅은 자신이 속한
+      // 트랜잭션의 마커(또는 레거시 전역 플래그)로 출처를 판별한다.
+      const createHook = () => { if (!isSyncWriteContext()) scheduleSync() }
+      const updateHook = () => { if (!isSyncWriteContext()) scheduleSync() }
+      const deleteHook = () => { if (!isSyncWriteContext()) scheduleSync() }
 
       table.hook('creating', createHook)
       table.hook('updating', updateHook)

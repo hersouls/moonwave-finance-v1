@@ -5,10 +5,12 @@ import {
   writeBatch,
   deleteDoc,
   onSnapshot,
+  query,
+  limit,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { firestore } from '@/lib/firebase'
-import { db, setSyncWritingFlag } from '@/services/database'
+import { db, markSyncTransaction, runSyncWrite } from '@/services/database'
 import { useAuthStore } from '@/stores/authStore'
 import { getDeviceId } from '@/lib/deviceId'
 import { canDeviceWrite } from '@/lib/writeGuard'
@@ -25,6 +27,9 @@ import type {
   Subscription,
   Loan,
   MerchantAlias,
+  InvestmentTrade,
+  Dividend,
+  AccountInterest,
   SyncChangeLogEntry,
 } from '@/lib/types'
 
@@ -142,7 +147,9 @@ async function uploadTable<T extends { syncId?: string }>(
       await addFkSyncIds(tableName, enriched)
       batch.set(ref, toCloudPayload(enriched))
     }
-    await batch.commit()
+    // 배치 단위 타임아웃: 대용량 테이블(dailyValues 등)의 전체 업로드가 단일
+    // 예산에 걸려 통째로 실패하지 않도록, 멈춤 감지는 commit 하나 단위로 한다.
+    await withTimeout(batch.commit(), SYNC_BATCH_TIMEOUT_MS, `${tableName} batch upload`)
   }
 }
 
@@ -208,8 +215,14 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries: number = 3): Promi
  * resolve도 reject도 하지 않고 영원히 pending 될 수 있어(온라인 복귀 전까지), 타임아웃이
  * 없으면 동기화 함수가 'syncing'에 영구 고착된다(스피너 무한 회전 + useAutoSync 락 고착).
  * 타임아웃 시 reject → 호출자 catch가 'error'로 정리 → 다음 변경/온라인 복귀에 재시도.
+ *
+ * 타임아웃은 개별 쓰기/배치 단위로 건다 — 업로드 루프 전체에 단일 예산을 걸면
+ * 대량 백로그(CSV 임포트, 가치 전망 수천 행)가 예산을 초과할 때마다 통째로
+ * 실패해 같은 선두 레코드만 영원히 재업로드하는 wedge가 된다.
  */
-const SYNC_UPLOAD_TIMEOUT_MS = 60_000
+const SYNC_WRITE_TIMEOUT_MS = 15_000   // 단일 문서 쓰기/삭제/톰스톤
+const SYNC_BATCH_TIMEOUT_MS = 30_000   // 최대 499건 batch.commit
+const MAX_CONSECUTIVE_UPLOAD_FAILURES = 3 // 연속 실패 시 회로 차단(오프라인 추정)
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined
   const timeout = new Promise<never>((_, reject) => {
@@ -218,7 +231,9 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   return Promise.race([promise, timeout]).finally(() => { if (timer) clearTimeout(timer) })
 }
 
-// Ensure syncIds exist locally and persist them back to IndexedDB
+// Ensure syncIds exist locally and persist them back to IndexedDB.
+// 15개 동기화 테이블 전체 — 누락된 테이블의 syncId 없는 레코드는 fullUpload의
+// ensureSyncId가 업로드 때마다 새 UUID를 만들어 클라우드 중복을 쌓는다.
 async function ensureAndPersistSyncIds() {
   const tables = [
     { table: db.members, name: 'members' },
@@ -232,6 +247,10 @@ async function ensureAndPersistSyncIds() {
     { table: db.paymentMethodItems, name: 'paymentMethodItems' },
     { table: db.subscriptions, name: 'subscriptions' },
     { table: db.loans, name: 'loans' },
+    { table: db.investmentTrades, name: 'investmentTrades' },
+    { table: db.dividends, name: 'dividends' },
+    { table: db.accountInterests, name: 'accountInterests' },
+    { table: db.merchantAliases, name: 'merchantAliases' },
   ] as const
 
   for (const { table } of tables) {
@@ -246,7 +265,10 @@ async function ensureAndPersistSyncIds() {
 
 // ─── Full Upload (preserved for manual sync) ─────────────
 export async function fullUpload(uid: string, options?: { reconcile?: boolean }): Promise<void> {
-  if (!canDeviceWrite()) return  // read-only device: never write to the cloud
+  if (!canDeviceWrite()) {
+    console.info('[sync] full upload skipped: 이 기기는 읽기 전용입니다 (설정 → 시스템 → 기기 쓰기)')
+    return
+  }
   useAuthStore.getState().setSyncStatus('syncing')
   try {
     await ensureAndPersistSyncIds()
@@ -269,7 +291,9 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       db.merchantAliases.toArray(),
     ])
 
-    await withTimeout(withRetry(() => Promise.all([
+    // 전체 업로드에 단일 타임아웃을 걸지 않는다 — 수년치 데이터는 60초를 정상적으로
+    // 초과할 수 있다. 멈춤 감지는 uploadTable 내부의 배치 단위 타임아웃이 담당.
+    await withRetry(() => Promise.all([
       uploadTable(uid, 'members', members.map(ensureSyncId)),
       uploadTable(uid, 'assetCategories', assetCategories.map(ensureSyncId)),
       uploadTable(uid, 'assetItems', assetItems.map(ensureSyncId)),
@@ -285,7 +309,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       uploadTable(uid, 'dividends', dividends.map(ensureSyncId)),
       uploadTable(uid, 'accountInterests', accountInterests.map(ensureSyncId)),
       uploadTable(uid, 'merchantAliases', merchantAliases.map(ensureSyncId)),
-    ])), SYNC_UPLOAD_TIMEOUT_MS, 'full upload')
+    ]))
 
     // Reconcile: delete Firestore documents that no longer exist locally
     const localSyncIds: Record<SyncableTable, Set<string>> = {
@@ -326,7 +350,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
 export async function fullDownload(uid: string): Promise<void> {
   useAuthStore.getState().setSyncStatus('syncing')
   try {
-    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans, merchantAliases] = await withRetry(() => Promise.all([
+    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans, merchantAliases, investmentTrades, dividends, accountInterests] = await withRetry(() => Promise.all([
       downloadTable<Record<string, unknown>>(uid, 'members'),
       downloadTable<Record<string, unknown>>(uid, 'assetCategories'),
       downloadTable<Record<string, unknown>>(uid, 'assetItems'),
@@ -339,11 +363,14 @@ export async function fullDownload(uid: string): Promise<void> {
       downloadTable<Record<string, unknown>>(uid, 'subscriptions'),
       downloadTable<Record<string, unknown>>(uid, 'loans'),
       downloadTable<Record<string, unknown>>(uid, 'merchantAliases'),
+      downloadTable<Record<string, unknown>>(uid, 'investmentTrades'),
+      downloadTable<Record<string, unknown>>(uid, 'dividends'),
+      downloadTable<Record<string, unknown>>(uid, 'accountInterests'),
     ]))
 
     // Strip cloud-only fields (__deviceId, __schemaV, *_syncId companions)
     // in place so the Dexie schema isn't polluted by transport metadata.
-    for (const arr of [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans, merchantAliases]) {
+    for (const arr of [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans, merchantAliases, investmentTrades, dividends, accountInterests]) {
       for (const r of arr) {
         for (const k of Object.keys(r)) {
           if (INTERNAL_CLOUD_FIELDS.has(k) || (k.endsWith('_syncId') && k !== 'syncId')) {
@@ -353,10 +380,8 @@ export async function fullDownload(uid: string): Promise<void> {
       }
     }
 
-    syncWritingCount++
-    setSyncWritingFlag(true)
-    try {
-      await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions, db.loans, db.merchantAliases], async () => {
+    await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions, db.loans, db.merchantAliases, db.investmentTrades, db.dividends, db.accountInterests], async () => {
+        markSyncTransaction()
         // Clear all tables
         await db.members.clear()
         await db.assetCategories.clear()
@@ -370,6 +395,9 @@ export async function fullDownload(uid: string): Promise<void> {
         await db.subscriptions.clear()
         await db.loans.clear()
         await db.merchantAliases.clear()
+        await db.investmentTrades.clear()
+        await db.dividends.clear()
+        await db.accountInterests.clear()
 
         // ── Layer 0: Insert independent tables, build ID mappings ──
         const memberIdMap = new Map<number, number>()
@@ -462,6 +490,23 @@ export async function fullDownload(uid: string): Promise<void> {
           await db.loans.add(rec as unknown as Loan)
         }
 
+        // ── 투자 3종 (depends on members) ──
+        for (const rec of investmentTrades) {
+          delete rec.id
+          remapFkField(rec, 'memberId', memberIdMap)
+          await db.investmentTrades.add(rec as unknown as InvestmentTrade)
+        }
+        for (const rec of dividends) {
+          delete rec.id
+          remapFkField(rec, 'memberId', memberIdMap)
+          await db.dividends.add(rec as unknown as Dividend)
+        }
+        for (const rec of accountInterests) {
+          delete rec.id
+          remapFkField(rec, 'memberId', memberIdMap)
+          await db.accountInterests.add(rec as unknown as AccountInterest)
+        }
+
         // ── Merchant aliases (depends on transactionCategories, subscriptions) ──
         // Cloud may hold >1 doc per merchantKey (same merchant learned on two
         // devices before they converged). Dexie's &merchantKey unique index would
@@ -484,10 +529,6 @@ export async function fullDownload(uid: string): Promise<void> {
           await db.merchantAliases.add(rec as unknown as MerchantAlias)
         }
       })
-    } finally {
-      syncWritingCount = Math.max(0, syncWritingCount - 1)
-      setSyncWritingFlag(false)
-    }
 
     useAuthStore.getState().setSyncStatus('synced')
     useAuthStore.getState().setLastSyncTime(new Date().toISOString())
@@ -523,8 +564,30 @@ async function uploadTombstone(
   await batch.commit()
 }
 
+/** 톰스톤 일괄 업로드 — incrementalUpload의 배치 삭제 경로용. THROWS on failure. */
+async function uploadTombstonesBatch(
+  uid: string,
+  entries: Array<{ tableName: string; syncId: string; deletedAt: string }>
+): Promise<void> {
+  for (let i = 0; i < entries.length; i += BATCH_LIMIT) {
+    const chunk = entries.slice(i, i + BATCH_LIMIT)
+    const batch = writeBatch(firestore)
+    for (const e of chunk) {
+      const tombstoneId = encodeDocId(`${e.tableName}_${e.syncId}`)
+      const ref = doc(firestore, `users/${uid}/syncTombstones/${tombstoneId}`)
+      batch.set(ref, toCloudPayload({ tableName: e.tableName, syncId: e.syncId, deletedAt: e.deletedAt }))
+    }
+    await withTimeout(batch.commit(), SYNC_BATCH_TIMEOUT_MS, 'tombstone batch upload')
+  }
+}
+
 export async function incrementalUpload(uid: string): Promise<void> {
-  if (!canDeviceWrite()) return  // read-only device: never write to the cloud
+  if (!canDeviceWrite()) {
+    // 읽기전용 기기: 클라우드 쓰기 금지. 조용한 no-op은 "동기화가 안 된다"
+    // 디버깅을 어렵게 하므로 이유를 남긴다.
+    console.info('[sync] incremental upload skipped: 이 기기는 읽기 전용입니다 (설정 → 시스템 → 기기 쓰기)')
+    return
+  }
   useAuthStore.getState().setSyncStatus('syncing')
   try {
     await ensureAndPersistSyncIds()
@@ -543,36 +606,77 @@ export async function incrementalUpload(uid: string): Promise<void> {
 
     const successKeys = new Set<string>()
 
-    // 업로드 루프 전체에 타임아웃 — 오프라인/반쯤 끊긴 연결에서 개별 Firestore 쓰기가
-    // 영원히 pending 되어 루프가 멈추고 'syncing'이 고착되는 것을 방지(타임아웃 시 catch→'error').
-    await withTimeout((async () => {
+    // 테이블별 배치 업로드 + 그룹 단위 서킷브레이커. 행마다 commit 1회를 치던
+    // 기존 방식은 대량 백로그(CSV 임포트, 가치 전망 수천 행)에서 행×왕복으로
+    // 비현실적으로 느렸다 — uploadTable의 499건 writeBatch로 묶는다.
+    // 일시적 실패는 그 그룹만 pending으로 남기고 전진하되, 연속 N회 실패
+    // (오프라인 추정)면 중단해 헛수고를 멈춘다.
+    let consecutiveFailures = 0
+    let failedGroups = 0
+    try {
+      // ── 업서트: 테이블별 그룹 → 로컬 일괄 조회 → 배치 업로드 ──
+      const upsertsByTable = new Map<SyncableTable, string[]>()
       for (const change of deduped) {
+        if (change.operation === 'delete') continue
+        const t = change.tableName as SyncableTable
+        if (!upsertsByTable.has(t)) upsertsByTable.set(t, [])
+        upsertsByTable.get(t)!.push(change.syncId)
+      }
+      for (const [tableName, syncIds] of upsertsByTable) {
         try {
-          if (change.operation === 'delete') {
-            await deleteFromCloud(uid, change.tableName as SyncableTable, change.syncId)
-            await uploadTombstone(uid, change.tableName, change.syncId, change.timestamp)
-          } else {
-            const localTable = getLocalTable(change.tableName as SyncableTable)
-            const record = await (localTable as typeof db.members)
-              .where('syncId').equals(change.syncId).first()
-            if (record) {
-              await uploadSingleRecord(uid, change.tableName as SyncableTable, record)
-            }
-          }
-          successKeys.add(`${change.tableName}:${change.syncId}`)
+          const localTable = getLocalTable(tableName)
+          const records = await (localTable as typeof db.members)
+            .where('syncId').anyOf(syncIds).toArray()
+          await uploadTable(uid, tableName, records) // 내부에서 배치 + 배치별 타임아웃
+          // 로컬에서 이미 사라진(삭제된) syncId도 더 할 일이 없으므로 처리 완료
+          for (const sid of syncIds) successKeys.add(`${tableName}:${sid}`)
+          consecutiveFailures = 0
         } catch (err) {
-          console.error(`[sync] incremental upload ${change.tableName}/${change.syncId} failed:`, err)
+          console.error(`[sync] incremental upload ${tableName} (${syncIds.length}) failed:`, err)
+          consecutiveFailures++
+          failedGroups++
+          if (consecutiveFailures >= MAX_CONSECUTIVE_UPLOAD_FAILURES) {
+            throw new Error(`[sync] aborting incremental upload after ${consecutiveFailures} consecutive failures (offline?)`)
+          }
         }
       }
-    })(), SYNC_UPLOAD_TIMEOUT_MS, 'incremental upload')
 
-    // Mark only successfully synced entries as processed
-    const successIds = pendingChanges
-      .filter(c => successKeys.has(`${c.tableName}:${c.syncId}`))
-      .map(c => c.id!)
-      .filter(Boolean)
-    if (successIds.length > 0) {
-      await db.syncChangeLog.where('id').anyOf(successIds).modify({ processed: 1 })
+      // ── 삭제: 테이블별 배치 삭제 + 톰스톤 배치 업로드 ──
+      const deletesByTable = new Map<SyncableTable, SyncChangeLogEntry[]>()
+      for (const change of deduped) {
+        if (change.operation !== 'delete') continue
+        const t = change.tableName as SyncableTable
+        if (!deletesByTable.has(t)) deletesByTable.set(t, [])
+        deletesByTable.get(t)!.push(change)
+      }
+      for (const [tableName, entries] of deletesByTable) {
+        try {
+          await deleteMultipleFromCloud(uid, tableName, entries.map(e => e.syncId))
+          await uploadTombstonesBatch(uid, entries.map(e => ({
+            tableName, syncId: e.syncId, deletedAt: e.timestamp,
+          })))
+          for (const e of entries) successKeys.add(`${tableName}:${e.syncId}`)
+          consecutiveFailures = 0
+        } catch (err) {
+          console.error(`[sync] incremental delete ${tableName} (${entries.length}) failed:`, err)
+          consecutiveFailures++
+          failedGroups++
+          if (consecutiveFailures >= MAX_CONSECUTIVE_UPLOAD_FAILURES) {
+            throw new Error(`[sync] aborting incremental upload after ${consecutiveFailures} consecutive failures (offline?)`)
+          }
+        }
+      }
+    } finally {
+      // 어떤 중단 경로에서도 성공분은 processed 처리해 진행을 보존한다 — 다음
+      // 시도는 남은 항목부터 이어간다. (기존: 루프 전체 타임아웃 시 이 블록까지
+      // 통째로 스킵되어 대량 백로그가 영원히 처음부터 재시도되는 wedge였음)
+      const successIds = pendingChanges
+        .filter(c => successKeys.has(`${c.tableName}:${c.syncId}`))
+        .map(c => c.id!)
+        .filter(Boolean)
+      if (successIds.length > 0) {
+        await db.syncChangeLog.where('id').anyOf(successIds).modify({ processed: 1 })
+      }
     }
 
     // GC: remove processed entries older than 7 days
@@ -582,6 +686,12 @@ export async function incrementalUpload(uid: string): Promise<void> {
       .filter(c => c.timestamp < gcCutoff)
       .delete()
 
+    if (failedGroups > 0) {
+      // 일부 그룹이 실패해 pending으로 남음 — '동기화됨'으로 거짓 표시하지
+      // 않는다. 다음 변경/online 이벤트의 재시도가 남은 항목을 처리한다.
+      useAuthStore.getState().setSyncStatus('error')
+      return
+    }
     useAuthStore.getState().setSyncStatus('synced')
     useAuthStore.getState().setLastSyncTime(new Date().toISOString())
   } catch (err) {
@@ -689,19 +799,14 @@ export async function mergeTableWithRemap(
       }
     }
     if (adoptions.length > 0) {
-      setSyncWritingFlag(true)
-      syncWritingCount++
-      try {
+      await runSyncWrite([localTable], async () => {
         for (const { id, syncId } of adoptions) {
           await (localTable as typeof db.members).update(id, { syncId } as Partial<Member>)
           // Reflect the change in the in-memory copy used below
           const ref = localRecords.find(r => (r as { id?: number }).id === id)
           if (ref) (ref as { syncId?: string }).syncId = syncId
         }
-      } finally {
-        syncWritingCount = Math.max(0, syncWritingCount - 1)
-        setSyncWritingFlag(false)
-      }
+      })
     }
   }
 
@@ -710,9 +815,10 @@ export async function mergeTableWithRemap(
     if (rec.syncId) localMap.set(rec.syncId, { record: rec as unknown as Record<string, unknown>, id: rec.id! })
   }
 
-  setSyncWritingFlag(true)
-  syncWritingCount++
-  try {
+  // 마커 트랜잭션으로 인제스트 — 이 긴 루프가 도는 동안 끼어드는 사용자
+  // 쓰기(별도 트랜잭션)는 정상적으로 changelog에 기록된다. 스코프에는 쓰기
+  // 대상 외에 콜백이 읽는 syncTombstones와 FK 부모 테이블도 포함해야 한다.
+  await runSyncWrite([localTable, db.syncTombstones, ...getRefTables(tableName)], async () => {
     // Case 1: Cloud-only records → download if not locally deleted
     const uniqueKeyField = TABLE_UNIQUE_KEYS[tableName]
     for (const [syncId, cloudRec] of cloudMap) {
@@ -782,10 +888,7 @@ export async function mergeTableWithRemap(
         }
       }
     }
-  } finally {
-    syncWritingCount = Math.max(0, syncWritingCount - 1)
-    setSyncWritingFlag(false)
-  }
+  })
 
   // Case 3: Ensure local-only / newer-local records have syncChangeLog entries (BULK)
   const toUploadEntries = new Map<string, 'create' | 'update'>()
@@ -827,14 +930,12 @@ async function applyCloudTombstones(uid: string): Promise<void> {
   }
   if (snapshot.empty) return
 
-  setSyncWritingFlag(true)
-  syncWritingCount++
-  try {
-    for (const docSnap of snapshot.docs) {
-      const data = docSnap.data() as { tableName: string; syncId: string; deletedAt: string }
-      if (!ALL_TABLES.includes(data.tableName as SyncableTable)) continue
+  for (const docSnap of snapshot.docs) {
+    const data = docSnap.data() as { tableName: string; syncId: string; deletedAt: string }
+    if (!ALL_TABLES.includes(data.tableName as SyncableTable)) continue
 
-      const localTable = getLocalTable(data.tableName as SyncableTable)
+    const localTable = getLocalTable(data.tableName as SyncableTable)
+    await runSyncWrite([localTable], async () => {
       const existing = await (localTable as typeof db.members)
         .where('syncId').equals(data.syncId).first()
 
@@ -844,10 +945,7 @@ async function applyCloudTombstones(uid: string): Promise<void> {
           await (localTable as typeof db.members).delete(existing.id!)
         }
       }
-    }
-  } finally {
-    syncWritingCount = Math.max(0, syncWritingCount - 1)
-    setSyncWritingFlag(false)
+    })
   }
 }
 
@@ -856,9 +954,13 @@ async function uploadLocalTombstones(uid: string): Promise<void> {
   const localTombstones = await db.syncTombstones.toArray()
   for (const tombstone of localTombstones) {
     try {
-      await uploadTombstone(uid, tombstone.tableName, tombstone.syncId, tombstone.deletedAt)
+      await withTimeout(
+        uploadTombstone(uid, tombstone.tableName, tombstone.syncId, tombstone.deletedAt),
+        SYNC_WRITE_TIMEOUT_MS, `tombstone ${tombstone.tableName}/${tombstone.syncId}`)
       if (ALL_TABLES.includes(tombstone.tableName as SyncableTable)) {
-        await deleteFromCloud(uid, tombstone.tableName as SyncableTable, tombstone.syncId)
+        await withTimeout(
+          deleteFromCloud(uid, tombstone.tableName as SyncableTable, tombstone.syncId),
+          SYNC_WRITE_TIMEOUT_MS, `delete ${tombstone.tableName}/${tombstone.syncId}`)
       }
     } catch (err) {
       console.error(`[sync] upload tombstone ${tombstone.tableName}/${tombstone.syncId} failed:`, err)
@@ -897,14 +999,25 @@ async function garbageCollectTombstones(uid: string): Promise<void> {
   }
 }
 
+/**
+ * 클라우드에 데이터가 하나라도 있는가 — 15개 컬렉션 전체를 limit(1)로 프로브.
+ * members 컬렉션 하나만 보고 판정하면, members만 비어 있는 계정에서 첫 로그인
+ * 기기가 "클라우드 비어 있음 → fullUpload(reconcile)"를 타며 reconcileOrphans가
+ * 다른 기기가 올린 클라우드 데이터 전체를 고아로 오인해 삭제한다.
+ */
+async function cloudHasAnyData(uid: string): Promise<boolean> {
+  const probes = await Promise.all(ALL_TABLES.map(async (tableName) => {
+    const colRef = collection(firestore, getUserCollectionPath(uid, tableName))
+    const snap = await getDocs(query(colRef, limit(1)))
+    return !snap.empty
+  }))
+  return probes.some(Boolean)
+}
+
 export async function mergeOnLogin(uid: string): Promise<void> {
   useAuthStore.getState().setSyncStatus('syncing')
   try {
-    // Check if cloud has any data
-    const colRef = collection(firestore, getUserCollectionPath(uid, 'members'))
-    const snapshot = await getDocs(colRef)
-
-    if (snapshot.empty) {
+    if (!(await cloudHasAnyData(uid))) {
       // First time: upload everything (write-capable devices only).
       if (canDeviceWrite()) {
         await fullUpload(uid, { reconcile: true })
@@ -917,11 +1030,14 @@ export async function mergeOnLogin(uid: string): Promise<void> {
       return
     }
 
-    // Download ALL cloud data in parallel
+    // Download ALL cloud data in parallel — 15개 동기화 테이블 전체.
+    // (이전에는 investmentTrades/dividends/accountInterests 3개가 빠져 있어
+    // 새 기기 로그인 시 투자 데이터가 실시간 리스너로만 우연히 내려왔다)
     const [
       cloudMembers, cloudAssetCategories, cloudAssetItems, cloudDailyValues,
       cloudTransactionCategories, cloudTransactions, cloudBudgets, cloudGoals,
       cloudPaymentMethodItems, cloudSubscriptions, cloudLoans, cloudMerchantAliases,
+      cloudInvestmentTrades, cloudDividends, cloudAccountInterests,
     ] = await Promise.all([
       downloadTable<Record<string, unknown>>(uid, 'members'),
       downloadTable<Record<string, unknown>>(uid, 'assetCategories'),
@@ -935,6 +1051,9 @@ export async function mergeOnLogin(uid: string): Promise<void> {
       downloadTable<Record<string, unknown>>(uid, 'subscriptions'),
       downloadTable<Record<string, unknown>>(uid, 'loans'),
       downloadTable<Record<string, unknown>>(uid, 'merchantAliases'),
+      downloadTable<Record<string, unknown>>(uid, 'investmentTrades'),
+      downloadTable<Record<string, unknown>>(uid, 'dividends'),
+      downloadTable<Record<string, unknown>>(uid, 'accountInterests'),
     ])
 
     // ── Layer 0: Independent tables (no FK dependencies) ──
@@ -970,6 +1089,10 @@ export async function mergeOnLogin(uid: string): Promise<void> {
     // ── Layer 1: First-level dependents ──
     await mergeTableWithRemap('assetItems', cloudAssetItems)
     await mergeTableWithRemap('budgets', cloudBudgets)
+    // 투자 3종 — memberId FK만 가지므로 members 이후면 안전
+    await mergeTableWithRemap('investmentTrades', cloudInvestmentTrades)
+    await mergeTableWithRemap('dividends', cloudDividends)
+    await mergeTableWithRemap('accountInterests', cloudAccountInterests)
 
     fkMappings['assetItems'] = buildIdMapping(cloudAssetItems, await db.assetItems.toArray())
 
@@ -1034,35 +1157,38 @@ export async function getPendingChangesCount(): Promise<number> {
   return db.syncChangeLog.where('processed').equals(0).count()
 }
 
-// Delete a single document from Firestore
+// Delete a single document from Firestore.
+//
+// THROWS on failure — callers must handle it. incrementalUpload relies on the
+// throw to keep the change-log entry pending (processed=0) for a later retry;
+// swallowing here used to make every failure look like success, permanently
+// marking unsynced deletes as processed.
 export async function deleteFromCloud(uid: string, tableName: SyncableTable, syncId: string): Promise<void> {
   if (!canDeviceWrite()) return  // read-only device: never write to the cloud
-  try {
-    await deleteDoc(doc(firestore, getUserDocPath(uid, tableName, syncId)))
-  } catch (err) {
-    console.error(`[sync] delete ${tableName}/${syncId} failed:`, err)
-  }
+  await deleteDoc(doc(firestore, getUserDocPath(uid, tableName, syncId)))
 }
 
-// Delete multiple documents from Firestore (batch)
+// Delete multiple documents from Firestore (batch). THROWS on failure — the
+// change-log/tombstone entries the deleting hooks queued stay pending, so
+// incrementalUpload retries the deletion later.
 export async function deleteMultipleFromCloud(uid: string, tableName: SyncableTable, syncIds: string[]): Promise<void> {
   if (!canDeviceWrite()) return  // read-only device: never write to the cloud
   if (syncIds.length === 0) return
-  try {
-    for (let i = 0; i < syncIds.length; i += BATCH_LIMIT) {
-      const chunk = syncIds.slice(i, i + BATCH_LIMIT)
-      const batch = writeBatch(firestore)
-      for (const syncId of chunk) {
-        batch.delete(doc(firestore, getUserDocPath(uid, tableName, syncId)))
-      }
-      await batch.commit()
+  for (let i = 0; i < syncIds.length; i += BATCH_LIMIT) {
+    const chunk = syncIds.slice(i, i + BATCH_LIMIT)
+    const batch = writeBatch(firestore)
+    for (const syncId of chunk) {
+      batch.delete(doc(firestore, getUserDocPath(uid, tableName, syncId)))
     }
-  } catch (err) {
-    console.error(`[sync] batch delete ${tableName} failed:`, err)
+    await withTimeout(batch.commit(), SYNC_BATCH_TIMEOUT_MS, `${tableName} batch delete`)
   }
 }
 
 // Upload a single record to Firestore. Full-doc replace; see uploadTable.
+//
+// THROWS on failure — incrementalUpload relies on the throw to keep the
+// change-log entry pending (processed=0) for a later retry; swallowing here
+// used to make every failed upload look like success.
 export async function uploadSingleRecord<T extends { syncId?: string }>(
   uid: string,
   tableName: SyncableTable,
@@ -1070,32 +1196,37 @@ export async function uploadSingleRecord<T extends { syncId?: string }>(
 ): Promise<void> {
   if (!canDeviceWrite()) return  // read-only device: never write to the cloud
   if (!record.syncId) return
-  try {
-    const batch = writeBatch(firestore)
-    const ref = doc(firestore, getUserDocPath(uid, tableName, record.syncId))
-    const enriched = { ...record } as Record<string, unknown>
-    await addFkSyncIds(tableName, enriched)
-    batch.set(ref, toCloudPayload(enriched))
-    await batch.commit()
-  } catch (err) {
-    console.error(`[sync] upload ${tableName}/${record.syncId} failed:`, err)
-  }
+  const batch = writeBatch(firestore)
+  const ref = doc(firestore, getUserDocPath(uid, tableName, record.syncId))
+  const enriched = { ...record } as Record<string, unknown>
+  await addFkSyncIds(tableName, enriched)
+  batch.set(ref, toCloudPayload(enriched))
+  await batch.commit()
 }
 
 // ─── Real-time Sync ───────────────────────────────────
 
 let unsubscribers: Unsubscribe[] = []
 let realtimeSyncPaused = false
-let syncWritingCount = 0
-let lastSnapshotAt = 0
+
+// 테이블별 마지막 스냅샷 시각. 전역 단일 타임스탬프를 쓰면 살아 있는 리스너
+// 하나(예: tombstones)가 죽은 리스너의 staleness를 가려 헬스체크가 영원히
+// 복구하지 못한다 — 최솟값(가장 오래된 테이블)으로 판정해야 한다.
+// 구독 시점을 baseline으로 깔아, 초기 스냅샷 로딩 중을 stale로 오인하지 않는다.
+const lastSnapshotByTable = new Map<string, number>()
 
 export function pauseRealtimeSync() { realtimeSyncPaused = true }
 export function resumeRealtimeSync() { realtimeSyncPaused = false }
-export function getIsSyncWriting() { return syncWritingCount > 0 }
-export function beginSyncWriting() { syncWritingCount++ }
-export function endSyncWriting() { syncWritingCount = Math.max(0, syncWritingCount - 1) }
-/** Timestamp (ms epoch) of the last Firestore snapshot fire. 0 if no snapshot yet. */
-export function getLastSnapshotAt() { return lastSnapshotAt }
+/**
+ * 가장 오래된(가장 stale한) 리스너의 마지막 스냅샷 시각(ms epoch).
+ * 구독이 없으면 0 — 호출부는 Infinity age로 취급한다.
+ */
+export function getLastSnapshotAt() {
+  if (lastSnapshotByTable.size === 0) return 0
+  let min = Infinity
+  for (const v of lastSnapshotByTable.values()) min = Math.min(min, v)
+  return min
+}
 
 // ─── FK Mapping for Real-time Sync ──────────────────────
 // Maps cloudId → localId per table, updated during merge and real-time sync
@@ -1294,20 +1425,15 @@ async function flushPendingChildren(
     const queue = pendingChildren.get(key)
     if (!queue || queue.length === 0) continue
     pendingChildren.delete(key)
-    syncWritingCount++
-    setSyncWritingFlag(true)
-    try {
-      for (const { table, localId, field } of queue) {
-        try {
+    for (const { table, localId, field } of queue) {
+      try {
+        await runSyncWrite([getLocalTable(table)], async () => {
           await (getLocalTable(table) as typeof db.members).update(localId, { [field]: refLocalId } as never)
-          tablesTouched.add(table)
-        } catch (err) {
-          console.error(`[sync] flush deferred FK ${table}#${localId}.${field} failed:`, err)
-        }
+        })
+        tablesTouched.add(table)
+      } catch (err) {
+        console.error(`[sync] flush deferred FK ${table}#${localId}.${field} failed:`, err)
       }
-    } finally {
-      syncWritingCount = Math.max(0, syncWritingCount - 1)
-      setSyncWritingFlag(false)
     }
   }
   for (const t of tablesTouched) {
@@ -1333,6 +1459,13 @@ type DexieTable = typeof db.members | typeof db.assetCategories | typeof db.asse
   typeof db.dailyValues | typeof db.transactionCategories | typeof db.transactions |
   typeof db.budgets | typeof db.goals | typeof db.paymentMethodItems | typeof db.subscriptions |
   typeof db.loans | typeof db.investmentTrades | typeof db.dividends | typeof db.accountInterests | typeof db.merchantAliases
+
+/** tableName의 FK 부모 테이블들 — 인제스트 트랜잭션 스코프(읽기)용. */
+function getRefTables(tableName: SyncableTable): DexieTable[] {
+  const defs = TABLE_FK_DEFS[tableName]
+  if (!defs) return []
+  return [...new Set(defs.map((d) => getLocalTable(d.refTable)))]
+}
 
 function getLocalTable(tableName: SyncableTable): DexieTable {
   const map: Record<SyncableTable, DexieTable> = {
@@ -1405,15 +1538,12 @@ function scheduleFkRetry(
     }
 
     if (Object.keys(updates).length > 0) {
-      syncWritingCount++
-      setSyncWritingFlag(true)
       try {
-        await (localTable as typeof db.members).update(localId, updates)
+        await runSyncWrite([localTable], async () => {
+          await (localTable as typeof db.members).update(localId, updates)
+        })
       } catch (err) {
         console.error(`[sync] FK retry ${tableName}#${localId} failed:`, err)
-      } finally {
-        syncWritingCount = Math.max(0, syncWritingCount - 1)
-        setSyncWritingFlag(false)
       }
       if (stillUnmapped.length === 0) {
         window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: tableName } }))
@@ -1431,8 +1561,19 @@ function scheduleFkRetry(
  * updatedAt LWW with deviceId as a deterministic tiebreaker. Without the
  * tiebreaker, two devices writing at the same millisecond would both skip
  * each other's updates and stay diverged forever.
+ *
+ * 시계 오차 허용(TDL 패턴, 창은 더 보수적으로): updatedAt은 기기 로컬 시계로
+ * 찍히므로 기기 간 오차가 있다. ±500ms 이내의 차이는 '동시 기록'으로 보고
+ * deviceId로 결정적으로 판정한다 — 그렇지 않으면 시계 오차만큼 어긋난 동시
+ * 기록이 기기마다 다르게 판정되어 발산한다. 창을 좁게 잡은 이유: 가계부는
+ * 사용자가 2초 안에 같은 레코드를 연속 수정하는 일이 흔한데, 넓은 창은 그
+ * '진짜 나중' 수정을 deviceId 순서로 패배시킬 수 있다. 톰스톤 비교
+ * (deletedAt > updatedAt)에는 이 허용 창이 없다는 비대칭에 유의.
  */
-function shouldApplyCloudUpdate(
+const CLOCK_SKEW_TOLERANCE_MS = 500
+
+/** @internal Exported for unit tests (LWW + 시계오차 + echo 억제 회귀). */
+export function shouldApplyCloudUpdate(
   cloudUpdatedAt: string | undefined,
   cloudDeviceId: string | undefined,
   localUpdatedAt: string | undefined,
@@ -1440,20 +1581,48 @@ function shouldApplyCloudUpdate(
   if (!cloudUpdatedAt) return false
   const cAt = cloudUpdatedAt
   const lAt = localUpdatedAt || ''
+
+  const tiebreak = () => {
+    // Echo of our own write (same deviceId) returns false. Higher deviceId wins.
+    const peer = cloudDeviceId || ''
+    const self = getDeviceId()
+    return peer !== '' && peer !== self && peer > self
+  }
+
+  const cMs = Date.parse(cAt)
+  const lMs = lAt ? Date.parse(lAt) : NaN
+  if (!Number.isNaN(cMs) && !Number.isNaN(lMs) && Math.abs(cMs - lMs) <= CLOCK_SKEW_TOLERANCE_MS) {
+    return tiebreak()
+  }
+
   if (cAt > lAt) return true
   if (cAt < lAt) return false
-  // Equal timestamps — deterministic tiebreak by deviceId. Echo of our own
-  // write (same deviceId) returns false. Higher deviceId wins.
-  const peer = cloudDeviceId || ''
-  const self = getDeviceId()
-  return peer !== '' && peer !== self && peer > self
+  return tiebreak()
 }
+
+// 인제스트 트랜잭션 청크 크기 — 초기 스냅샷(수천 docChanges)을 단일 rw
+// 트랜잭션으로 처리하면 그 테이블에 대한 사용자 쓰기가 전체 기간 동안 직렬
+// 대기한다. 청크 단위로 쪼개 쓰기 락 점유를 짧게 유지한다(청크 사이에 사용자
+// 쓰기가 끼어들 수 있고, 그 쓰기는 마커가 없으므로 정상적으로 changelog에
+// 기록된다). 원자성은 청크 단위로 낮아지지만 실시간 경로는 다음 스냅샷이
+// 수습하므로 수용 가능한 트레이드오프.
+const INGEST_CHUNK_SIZE = 300
 
 function subscribeTable(uid: string, tableName: SyncableTable, generation: number, retryCount = 0): void {
   const colRef = collection(firestore, getUserCollectionPath(uid, tableName))
-  const unsub = onSnapshot(colRef, async (snapshot) => {
-    lastSnapshotAt = Date.now()
+  let hadSnapshot = false
+  const unsub = onSnapshot(colRef, { includeMetadataChanges: true }, async (snapshot) => {
+    hadSnapshot = true
+    // 서버가 확인한 스냅샷만 staleness 타이머를 리셋한다 — persistentLocalCache는
+    // 재구독 직후 캐시 전용 스냅샷(fromCache=true)을 즉시 발화하는데, 이것까지
+    // 신선함으로 치면 '캐시만 살아있는 죽은 서버 채널'을 헬스체크가 못 잡는다.
+    if (!snapshot.metadata.fromCache) {
+      lastSnapshotByTable.set(tableName, Date.now())
+    }
     if (realtimeSyncPaused) return
+
+    const docChanges = snapshot.docChanges()
+    if (docChanges.length === 0) return // metadata-only 발화 등
 
     const localTable = getLocalTable(tableName)
     // Records whose parent FK resolved successfully (or didn't need resolving)
@@ -1464,10 +1633,13 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
     // `fin-sync-update` during a bulk upload and flicker every consumer.
     let appliedCount = 0
 
-    syncWritingCount++
-    setSyncWritingFlag(true)
+    // 마커 트랜잭션으로 인제스트 — 전역 플래그와 달리, 스냅샷 적용이 도는
+    // 동안 끼어드는 사용자 쓰기(별도 트랜잭션)가 changelog에 정상 기록된다.
     try {
-      for (const change of snapshot.docChanges()) {
+      for (let chunkStart = 0; chunkStart < docChanges.length; chunkStart += INGEST_CHUNK_SIZE) {
+      const chunk = docChanges.slice(chunkStart, chunkStart + INGEST_CHUNK_SIZE)
+      await runSyncWrite([localTable, ...getRefTables(tableName)], async () => {
+      for (const change of chunk) {
         const cloudData = change.doc.data()
         const syncId = cloudData.syncId as string | undefined
         if (!syncId) continue
@@ -1531,9 +1703,11 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
           console.error(`[sync] real-time ${tableName} ${change.type} error:`, err)
         }
       }
-    } finally {
-      syncWritingCount = Math.max(0, syncWritingCount - 1)
-      setSyncWritingFlag(false)
+      })
+      }
+    } catch (err) {
+      // 트랜잭션 자체가 abort된 드문 경우 — 다음 스냅샷/재구독이 수습한다.
+      console.error(`[sync] real-time ${tableName} ingest transaction failed:`, err)
     }
 
     // Flush any children that were waiting on parents we just settled.
@@ -1546,13 +1720,18 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
     }
   }, (err) => {
     console.error(`[sync] ${tableName} listener error:`, err)
-    // Auto-reconnect with exponential backoff (max 30s)
-    if (syncGeneration === generation && retryCount < 5) {
-      const delay = Math.min(Math.pow(2, retryCount) * 1000, 30000)
-      console.log(`[sync] retrying ${tableName} listener in ${delay}ms (attempt ${retryCount + 1})`)
+    // 무한 재연결 (지수 백오프, 최대 30초). 기존의 5회 상한은 토큰 만료 등
+    // 장시간 장애 후 리스너가 영구 사망한 채 방치되는 원인이었다 — 상한을
+    // 없애되 generation 가드로 stopRealtimeSync 이후의 유령 재구독은 차단.
+    // 한 번이라도 스냅샷을 받은 적 있는 리스너의 장애는 새 장애로 보고
+    // 백오프를 처음부터 다시 시작한다.
+    if (syncGeneration === generation) {
+      const nextRetry = hadSnapshot ? 0 : retryCount + 1
+      const delay = Math.min(Math.pow(2, nextRetry) * 1000, 30000)
+      console.log(`[sync] retrying ${tableName} listener in ${delay}ms`)
       setTimeout(() => {
         if (syncGeneration === generation) {
-          subscribeTable(uid, tableName, generation, retryCount + 1)
+          subscribeTable(uid, tableName, generation, nextRetry)
         }
       }, delay)
     }
@@ -1560,35 +1739,42 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
   unsubscribers.push(unsub)
 }
 
-function subscribeTombstones(uid: string, generation: number): void {
+function subscribeTombstones(uid: string, generation: number, retryCount = 0): void {
   const colRef = collection(firestore, `users/${uid}/syncTombstones`)
-  const unsub = onSnapshot(colRef, async (snapshot) => {
-    lastSnapshotAt = Date.now()
+  let hadSnapshot = false
+  const unsub = onSnapshot(colRef, { includeMetadataChanges: true }, async (snapshot) => {
+    hadSnapshot = true
+    // 서버 확인 스냅샷만 staleness 리셋 — subscribeTable과 동일한 이유.
+    if (!snapshot.metadata.fromCache) {
+      lastSnapshotByTable.set('__tombstones', Date.now())
+    }
     if (realtimeSyncPaused) return
 
-    syncWritingCount++
-    setSyncWritingFlag(true)
-    try {
-      for (const change of snapshot.docChanges()) {
-        if (change.type !== 'added') continue
+    for (const change of snapshot.docChanges()) {
+      if (change.type !== 'added') continue
 
-        const data = change.doc.data() as { tableName: string; syncId: string; deletedAt: string }
-        if (!ALL_TABLES.includes(data.tableName as SyncableTable)) continue
+      const data = change.doc.data() as { tableName: string; syncId: string; deletedAt: string }
+      if (!ALL_TABLES.includes(data.tableName as SyncableTable)) continue
 
-        try {
-          const localTable = getLocalTable(data.tableName as SyncableTable)
+      try {
+        const localTable = getLocalTable(data.tableName as SyncableTable)
+        await runSyncWrite([localTable], async () => {
           const existing = await (localTable as typeof db.members)
             .where('syncId').equals(data.syncId).first()
           if (existing) {
-            await (localTable as typeof db.members).delete(existing.id!)
+            // LWW 검사 — applyCloudTombstones와 동일. 재구독 초기 스냅샷은
+            // 과거 톰스톤 전부를 'added'로 재생하므로, 무조건 삭제하면 삭제
+            // 이후 같은 syncId로 갱신/복원된 레코드를 포그라운드 복귀마다
+            // 다시 지워버린다.
+            const localUpdatedAt = (existing as unknown as Record<string, unknown>).updatedAt as string || ''
+            if (data.deletedAt && data.deletedAt > localUpdatedAt) {
+              await (localTable as typeof db.members).delete(existing.id!)
+            }
           }
-        } catch (err) {
-          console.error(`[sync] tombstone apply ${data.tableName}/${data.syncId} error:`, err)
-        }
+        })
+      } catch (err) {
+        console.error(`[sync] tombstone apply ${data.tableName}/${data.syncId} error:`, err)
       }
-    } finally {
-      syncWritingCount = Math.max(0, syncWritingCount - 1)
-      setSyncWritingFlag(false)
     }
 
     if (snapshot.docChanges().length > 0) {
@@ -1597,11 +1783,12 @@ function subscribeTombstones(uid: string, generation: number): void {
   }, (err) => {
     console.error('[sync] tombstones listener error:', err)
     if (syncGeneration === generation) {
-      const delay = 2000
+      const nextRetry = hadSnapshot ? 0 : retryCount + 1
+      const delay = Math.min(Math.pow(2, nextRetry) * 1000, 30000)
       console.log(`[sync] retrying tombstones listener in ${delay}ms`)
       setTimeout(() => {
         if (syncGeneration === generation) {
-          subscribeTombstones(uid, generation)
+          subscribeTombstones(uid, generation, nextRetry)
         }
       }, delay)
     }
@@ -1629,14 +1816,18 @@ export function startRealtimeSync(uid: string, force: boolean = false): void {
   activeListenerUid = uid
   syncGeneration++
   realtimeSyncPaused = false
-  lastSnapshotAt = 0
   const gen = syncGeneration
 
+  // 구독 시점을 staleness baseline으로 깐다 — 초기 스냅샷이 아직 안 온
+  // 테이블이 즉시 stale(Infinity age)로 판정되어 재시작 루프가 돌지 않게.
+  const now = Date.now()
   for (const tableName of ALL_TABLES) {
+    lastSnapshotByTable.set(tableName, now)
     subscribeTable(uid, tableName, gen)
   }
 
   // Also subscribe to tombstones for cross-device delete propagation
+  lastSnapshotByTable.set('__tombstones', now)
   subscribeTombstones(uid, gen)
 }
 
@@ -1648,4 +1839,5 @@ export function stopRealtimeSync(): void {
   }
   unsubscribers = []
   pendingChildren.clear()
+  lastSnapshotByTable.clear()
 }

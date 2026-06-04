@@ -206,7 +206,7 @@ export const useTransactionStore = create<TransactionState>()(
           import('@/services/firestoreSync').then(({ deleteFromCloud }) => {
             import('./authStore').then(({ useAuthStore }) => {
               const user = useAuthStore.getState().user
-              if (user) deleteFromCloud(user.uid, 'transactions', prev.syncId!)
+              if (user) deleteFromCloud(user.uid, 'transactions', prev.syncId!).catch(err => console.error('[transaction] cloud delete failed (change log will retry):', err))
             })
           }).catch(err => console.error('[transaction] delete sync failed:', err))
         }
@@ -248,7 +248,7 @@ export const useTransactionStore = create<TransactionState>()(
           import('@/services/firestoreSync').then(({ deleteFromCloud }) => {
             import('./authStore').then(({ useAuthStore }) => {
               const user = useAuthStore.getState().user
-              if (user) deleteFromCloud(user.uid, 'transactionCategories', cat.syncId!)
+              if (user) deleteFromCloud(user.uid, 'transactionCategories', cat.syncId!).catch(err => console.error('[transaction] cloud delete failed (change log will retry):', err))
             })
           }).catch(err => console.error('[transaction] delete category sync failed:', err))
         }
@@ -288,7 +288,7 @@ export const useTransactionStore = create<TransactionState>()(
           import('@/services/firestoreSync').then(({ deleteFromCloud }) => {
             import('./authStore').then(({ useAuthStore }) => {
               const user = useAuthStore.getState().user
-              if (user) deleteFromCloud(user.uid, 'paymentMethodItems', item.syncId!)
+              if (user) deleteFromCloud(user.uid, 'paymentMethodItems', item.syncId!).catch(err => console.error('[transaction] cloud delete failed (change log will retry):', err))
             })
           }).catch(err => console.error('[transaction] delete paymentMethod sync failed:', err))
         }

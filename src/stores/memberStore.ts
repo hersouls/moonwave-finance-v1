@@ -129,10 +129,13 @@ export const useMemberStore = create<MemberState>()(
           import('./authStore').then(({ useAuthStore }) => {
             const user = useAuthStore.getState().user
             if (!user) return
-            if (prev.syncId) deleteFromCloud(user.uid, 'members', prev.syncId)
-            deleteMultipleFromCloud(user.uid, 'assetItems', cascadeItemSyncIds)
-            deleteMultipleFromCloud(user.uid, 'dailyValues', cascadeDailyValueSyncIds)
-            deleteMultipleFromCloud(user.uid, 'transactions', memberTxnSyncIds)
+            // Failures are logged only — the deleting hooks queued change-log
+            // entries, so incrementalUpload retries these cloud deletes later.
+            const logFail = (err: unknown) => console.error('[member] cloud delete failed (change log will retry):', err)
+            if (prev.syncId) deleteFromCloud(user.uid, 'members', prev.syncId).catch(logFail)
+            deleteMultipleFromCloud(user.uid, 'assetItems', cascadeItemSyncIds).catch(logFail)
+            deleteMultipleFromCloud(user.uid, 'dailyValues', cascadeDailyValueSyncIds).catch(logFail)
+            deleteMultipleFromCloud(user.uid, 'transactions', memberTxnSyncIds).catch(logFail)
           })
         }).catch(err => console.error('[member] delete sync failed:', err))
         useToastStore.getState().addToast(`${prev.name} 구성원이 삭제되었습니다.`, 'info')
