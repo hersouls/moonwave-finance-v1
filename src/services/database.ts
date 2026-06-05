@@ -432,6 +432,17 @@ function installChangeTracking() {
     { table: db.merchantAliases, name: 'merchantAliases' },
   ]
 
+  // dailyValues만 (자산×일자) 좌표를 changelog에 동반 기록한다 — 번들
+  // 업로드(자산×월 묶음 문서)가 삭제 항목의 좌표를 복원할 유일한 출처다
+  // (행은 이미 지워져 syncId로는 좌표를 알 수 없다).
+  const dvMeta = (name: SyncableTableName, obj: unknown): { assetItemId?: number; date?: string } => {
+    if (name !== 'dailyValues') return {}
+    const dv = obj as { assetItemId?: number; date?: string } | undefined
+    return dv?.assetItemId != null && dv?.date
+      ? { assetItemId: dv.assetItemId, date: dv.date }
+      : {}
+  }
+
   for (const { table, name } of tables) {
     table.hook('creating', function (_primKey, obj) {
       // Sync-originated writes (transaction marker or legacy global flag)
@@ -448,6 +459,7 @@ function installChangeTracking() {
           operation: 'create',
           timestamp: new Date().toISOString(),
           processed: 0,
+          ...dvMeta(name, obj),
         })
       }
     })
@@ -463,6 +475,7 @@ function installChangeTracking() {
           operation: 'update',
           timestamp: new Date().toISOString(),
           processed: 0,
+          ...dvMeta(name, obj),
         })
       }
     })
@@ -479,6 +492,7 @@ function installChangeTracking() {
             operation: 'delete',
             timestamp: new Date().toISOString(),
             processed: 0,
+            ...dvMeta(name, obj),
           },
           {
             tableName: name,

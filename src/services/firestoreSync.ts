@@ -1,9 +1,12 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
+  setDoc,
   writeBatch,
   deleteDoc,
+  deleteField,
   onSnapshot,
   query,
   limit,
@@ -15,6 +18,12 @@ import {
 import { firestore } from '@/lib/firebase'
 import { db, markSyncTransaction, runSyncWrite } from '@/services/database'
 import { getSyncCheckpoint, advanceSyncCheckpoint, type SyncCheckpointMap } from '@/services/syncCheckpoint'
+import {
+  DV_BUNDLE_COLLECTION,
+  buildBundlePatches,
+  buildFullBundles,
+  explodeBundleDoc,
+} from '@/services/dailyValueBundles'
 import { useAuthStore } from '@/stores/authStore'
 import { getDeviceId } from '@/lib/deviceId'
 import { canDeviceWrite } from '@/lib/writeGuard'
@@ -350,7 +359,11 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       uploadTable(uid, 'members', members.map(ensureSyncId)),
       uploadTable(uid, 'assetCategories', assetCategories.map(ensureSyncId)),
       uploadTable(uid, 'assetItems', assetItems.map(ensureSyncId)),
-      uploadTable(uid, 'dailyValues', dailyValues.map(ensureSyncId)),
+      // 레거시 per-row dailyValues는 정리(purge) 전까지만 — 구버전 기기의
+      // 읽기 호환용. 신버전 표현은 아래 uploadAllDvBundles가 담당한다.
+      legacyDvActive
+        ? uploadTable(uid, 'dailyValues', dailyValues.map(ensureSyncId))
+        : Promise.resolve(),
       uploadTable(uid, 'transactionCategories', transactionCategories.map(ensureSyncId)),
       uploadTable(uid, 'transactions', transactions.map(ensureSyncId)),
       uploadTable(uid, 'budgets', budgets.map(ensureSyncId)),
@@ -363,6 +376,9 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       uploadTable(uid, 'accountInterests', accountInterests.map(ensureSyncId)),
       uploadTable(uid, 'merchantAliases', merchantAliases.map(ensureSyncId)),
     ]))
+
+    // 일별가치의 신버전 클라우드 표현 — 자산×월 번들 (완전한 진실, 통째 set)
+    await withRetry(() => uploadAllDvBundles(uid))
 
     // Reconcile: delete Firestore documents that no longer exist locally
     const localSyncIds: Record<SyncableTable, Set<string>> = {
@@ -406,11 +422,14 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
 export async function fullDownload(uid: string): Promise<void> {
   useAuthStore.getState().setSyncStatus('syncing')
   try {
-    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans, merchantAliases, investmentTrades, dividends, accountInterests] = await withRetry(() => Promise.all([
+    await refreshDvMigrationState(uid)
+    const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans, merchantAliases, investmentTrades, dividends, accountInterests, dvBundles] = await withRetry(() => Promise.all([
       downloadTable<Record<string, unknown>>(uid, 'members'),
       downloadTable<Record<string, unknown>>(uid, 'assetCategories'),
       downloadTable<Record<string, unknown>>(uid, 'assetItems'),
-      downloadTable<Record<string, unknown>>(uid, 'dailyValues'),
+      legacyDvActive
+        ? downloadTable<Record<string, unknown>>(uid, 'dailyValues')
+        : Promise.resolve([] as Record<string, unknown>[]),
       downloadTable<Record<string, unknown>>(uid, 'transactionCategories'),
       downloadTable<Record<string, unknown>>(uid, 'transactions'),
       downloadTable<Record<string, unknown>>(uid, 'budgets'),
@@ -422,11 +441,12 @@ export async function fullDownload(uid: string): Promise<void> {
       downloadTable<Record<string, unknown>>(uid, 'investmentTrades'),
       downloadTable<Record<string, unknown>>(uid, 'dividends'),
       downloadTable<Record<string, unknown>>(uid, 'accountInterests'),
+      downloadDvBundles(uid),
     ]))
 
     // 체크포인트 갱신용 최신 서버 업로드 시각 — 아래 strip이 __uploadedAt을
     // 제거하므로 반드시 strip 전에 계산한다.
-    const fullByTable: Array<[SyncableTable, Record<string, unknown>[]]> = [
+    const fullByTable: Array<[string, Record<string, unknown>[]]> = [
       ['members', members], ['assetCategories', assetCategories], ['assetItems', assetItems],
       ['dailyValues', dailyValues], ['transactionCategories', transactionCategories],
       ['transactions', transactions], ['budgets', budgets], ['goals', goals],
@@ -434,6 +454,7 @@ export async function fullDownload(uid: string): Promise<void> {
       ['loans', loans], ['merchantAliases', merchantAliases],
       ['investmentTrades', investmentTrades], ['dividends', dividends],
       ['accountInterests', accountInterests],
+      [DV_BUNDLE_COLLECTION, dvBundles],
     ]
     const fullMaxes = Object.fromEntries(
       fullByTable.map(([t, recs]) => [t, maxUploadedAtMs(recs)]),
@@ -601,6 +622,16 @@ export async function fullDownload(uid: string): Promise<void> {
         }
       })
 
+    // 번들을 레거시 행 위에 겹쳐 적용 — 일자 단위 LWW라 더 새로운 쪽이 이긴다.
+    // (자산은 위 트랜잭션에서 이미 삽입됨)
+    for (const b of dvBundles) {
+      try {
+        await ingestDvBundleDoc(b)
+      } catch (err) {
+        console.error('[sync] dv bundle full-download ingest failed:', err)
+      }
+    }
+
     // 전량 스냅샷을 성공적으로 적용했으므로 체크포인트도 그 시점으로 전진 —
     // 다음 로그인 머지는 이 이후 변경분만 내려받는다.
     await advanceSyncCheckpoint(uid, fullMaxes)
@@ -692,10 +723,31 @@ export async function incrementalUpload(uid: string): Promise<void> {
     let failedGroups = 0
     let lastGroupError: unknown = null
     try {
+      // ── dailyValues: 자산×월 번들 경로 (업서트는 더 이상 per-row 문서를
+      // 쓰지 않는다 — 삭제의 레거시 정리/톰스톤은 핸들러 내부에서 수행) ──
+      const dvChanges = deduped.filter(c => c.tableName === 'dailyValues')
+      if (dvChanges.length > 0) {
+        try {
+          await uploadDailyValueChanges(uid, dvChanges)
+          for (const c of dvChanges) successKeys.add(`dailyValues:${c.syncId}`)
+          consecutiveFailures = 0
+        } catch (err) {
+          console.error(`[sync] incremental dailyValues bundle upload (${dvChanges.length}) failed:`, err)
+          lastGroupError = err
+          consecutiveFailures++
+          failedGroups++
+          if (isQuotaExhaustedError(err)) throw err
+          if (consecutiveFailures >= MAX_CONSECUTIVE_UPLOAD_FAILURES) {
+            throw new Error(`[sync] aborting incremental upload after ${consecutiveFailures} consecutive failures (offline?)`)
+          }
+        }
+      }
+
       // ── 업서트: 테이블별 그룹 → 로컬 일괄 조회 → 배치 업로드 ──
       const upsertsByTable = new Map<SyncableTable, string[]>()
       for (const change of deduped) {
         if (change.operation === 'delete') continue
+        if (change.tableName === 'dailyValues') continue // 번들 경로에서 처리됨
         const t = change.tableName as SyncableTable
         if (!upsertsByTable.has(t)) upsertsByTable.set(t, [])
         upsertsByTable.get(t)!.push(change.syncId)
@@ -727,6 +779,7 @@ export async function incrementalUpload(uid: string): Promise<void> {
       const deletesByTable = new Map<SyncableTable, SyncChangeLogEntry[]>()
       for (const change of deduped) {
         if (change.operation !== 'delete') continue
+        if (change.tableName === 'dailyValues') continue // 번들 경로에서 처리됨
         const t = change.tableName as SyncableTable
         if (!deletesByTable.has(t)) deletesByTable.set(t, [])
         deletesByTable.get(t)!.push(change)
@@ -737,6 +790,14 @@ export async function incrementalUpload(uid: string): Promise<void> {
           await uploadTombstonesBatch(uid, entries.map(e => ({
             tableName, syncId: e.syncId, deletedAt: e.timestamp,
           })))
+          // 자산 삭제는 그 자산의 일별가치 번들도 통째로 청소한다 — 행 단위
+          // 삭제 항목은 자산이 이미 사라져 번들 좌표를 해석할 수 없으므로,
+          // 번들 정리는 자산 삭제 이벤트가 유일한 트리거다.
+          if (tableName === 'assetItems') {
+            for (const e of entries) {
+              await deleteDvBundlesForAsset(uid, e.syncId)
+            }
+          }
           for (const e of entries) successKeys.add(`${tableName}:${e.syncId}`)
           consecutiveFailures = 0
         } catch (err) {
@@ -788,6 +849,314 @@ export async function incrementalUpload(uid: string): Promise<void> {
     // 업로드가 성공해도 'N건 대기 중'이 화면에 영구 고정되는 거짓 표시였다.
     void useAuthStore.getState().updatePendingCount()
   }
+}
+
+// ─── Daily Value Bundles (자산×월 묶음 문서) ───────────────────────
+//
+// dailyValues는 행 수가 지배적(1만+ — 클라우드 문서의 ~91%)이라 per-row
+// 문서로는 신규 기기 베이스라인 비용이 비현실적이다. 클라우드 표현만
+// 자산×월 1문서로 묶는다 (로컬 Dexie는 행 단위 그대로). 패치는 일자 단위
+// merge:true — 두 기기가 같은 달의 다른 날을 동시에 써도 클로버링 없음.
+// 일자 삭제 전파는 기존 per-row 톰스톤을 그대로 쓰고(행 syncId는 일자
+// 엔트리의 sid로 기기 간 공유됨), 번들 문서에서는 deleteField()로 해당
+// 일자를 제거해 톰스톤 GC(30일) 이후의 부활을 막는다.
+//
+// 마이그레이션(혼용 호환): 쓰기는 번들로만 하되, 레거시 dailyValues
+// 컬렉션은 dvMigration 마커가 설정될 때까지 계속 읽는다(구버전 기기의
+// 쓰기 수신). 전 기기 업데이트 후 purgeLegacyDailyValues가 번들 전량
+// 업로드 → 레거시 문서 삭제 → 마커 설정으로 전환을 완결한다.
+// ⚠️ 레거시 문서 삭제는 구버전 리스너의 'removed' 핸들러가 로컬 행을
+// 지우게 만든다 — 반드시 모든 기기가 신버전일 때만 실행할 것.
+
+/**
+ * 레거시 dailyValues 컬렉션이 아직 살아있는가. 마커 문서가 설정되기 전까지
+ * true — 머지/리스너가 레거시 컬렉션도 읽는다. 세션 시작 머지에서 1회 갱신.
+ */
+let legacyDvActive = true
+export function isLegacyDvActive(): boolean { return legacyDvActive }
+
+const dvMigrationDocPath = (uid: string) => `users/${uid}/syncControl/dvMigration`
+
+async function refreshDvMigrationState(uid: string): Promise<void> {
+  try {
+    const snap = await getDoc(doc(firestore, dvMigrationDocPath(uid)))
+    legacyDvActive = !(snap.exists() && snap.data()?.legacyCleared === true)
+  } catch {
+    // 마커를 못 읽으면 보수적으로 레거시 읽기를 유지한다 (정확성 우선)
+  }
+}
+
+/** 번들 컬렉션 다운로드 — downloadTable과 동일한 델타 의미론. */
+async function downloadDvBundles(uid: string, sinceMs?: number | null): Promise<Record<string, unknown>[]> {
+  const colRef = collection(firestore, `users/${uid}/${DV_BUNDLE_COLLECTION}`)
+  const ref = sinceMs != null
+    ? query(colRef, where('__uploadedAt', '>=', Timestamp.fromMillis(sinceMs)))
+    : colRef
+  const snapshot = await getDocs(ref)
+  return snapshot.docs.map(d => d.data())
+}
+
+/**
+ * dailyValues changelog 항목들을 클라우드에 반영한다. THROWS on failure —
+ * incrementalUpload가 그룹 실패로 처리해 항목을 pending으로 보존한다.
+ *
+ * 두 갈래를 모두 수행해야 한 항목이 "완료"다:
+ * 1) 삭제 항목: 레거시 per-row 문서 삭제 + 톰스톤 (구버전 기기 + 피어 행
+ *    삭제 전파 — 신버전 피어도 톰스톤으로 행을 지운다)
+ * 2) 번들 패치: 일자 단위 merge 업서트 / deleteField 제거
+ */
+async function uploadDailyValueChanges(uid: string, entries: SyncChangeLogEntry[]): Promise<void> {
+  const deleteEntries = entries.filter(e => e.operation === 'delete')
+  const upsertEntries = entries.filter(e => e.operation !== 'delete')
+
+  // ① 레거시 삭제 + 톰스톤 (per-row syncId 기반 — sid 공유로 피어에 매칭됨)
+  if (deleteEntries.length > 0) {
+    await deleteMultipleFromCloud(uid, 'dailyValues', deleteEntries.map(e => e.syncId))
+    await uploadTombstonesBatch(uid, deleteEntries.map(e => ({
+      tableName: 'dailyValues', syncId: e.syncId, deletedAt: e.timestamp,
+    })))
+  }
+
+  // ② 좌표 해석: 로컬 행(syncId/[asset+date]) + 자산 syncId
+  const rows = upsertEntries.length > 0
+    ? await db.dailyValues.where('syncId').anyOf(upsertEntries.map(e => e.syncId)).toArray()
+    : []
+  const rowBySyncId = new Map(rows.map(r => [r.syncId!, r]))
+
+  const metaPairs: Array<[number, string]> = []
+  for (const e of entries) {
+    if (e.assetItemId != null && e.date) metaPairs.push([e.assetItemId, e.date])
+  }
+  const metaRows = metaPairs.length > 0
+    ? await db.dailyValues.where('[assetItemId+date]').anyOf(metaPairs).toArray()
+    : []
+  const rowByAssetDate = new Map(metaRows.map(r => [`${r.assetItemId}|${r.date}`, r]))
+
+  const assetIds = new Set<number>()
+  for (const r of [...rows, ...metaRows]) assetIds.add(r.assetItemId)
+  for (const e of entries) { if (e.assetItemId != null) assetIds.add(e.assetItemId) }
+  const assets = assetIds.size > 0 ? await db.assetItems.bulkGet([...assetIds]) : []
+  const assetSyncById = new Map<number, string>()
+  for (const a of assets) {
+    if (a?.id != null && a.syncId) assetSyncById.set(a.id, a.syncId)
+  }
+
+  // ③ 패치 빌드 + 배치 커밋 (일자 단위 merge)
+  const { patches, unresolved } = buildBundlePatches(entries, rowBySyncId, rowByAssetDate, assetSyncById)
+  if (unresolved > 0) {
+    // 자산 cascade 삭제(번들은 자산 삭제 경로가 통째로 지움) 또는 메타 없는
+    // 레거시 로그 — 일자 패치 없이 완료 처리해도 안전한 경우들이다.
+    console.info(`[sync] dailyValues ${unresolved}건은 번들 패치 생략 (자산 삭제됨/레거시 로그)`)
+  }
+  for (let i = 0; i < patches.length; i += BATCH_LIMIT) {
+    const chunk = patches.slice(i, i + BATCH_LIMIT)
+    const batch = writeBatch(firestore)
+    for (const p of chunk) {
+      const ref = doc(firestore, `users/${uid}/${DV_BUNDLE_COLLECTION}/${encodeDocId(p.bundleKey)}`)
+      const days: Record<string, unknown> = {}
+      for (const d of p.deletes) days[d] = deleteField()
+      for (const [d, entry] of Object.entries(p.upserts)) days[d] = entry
+      batch.set(ref, {
+        bundleKey: p.bundleKey,
+        assetItem_syncId: p.assetSyncId,
+        month: p.month,
+        days,
+        updatedAt: p.maxUpdatedAt,
+        __deviceId: getDeviceId(),
+        __schemaV: CLOUD_SCHEMA_VERSION,
+        __uploadedAt: serverTimestamp(),
+      }, { merge: true })
+    }
+    await withTimeout(batch.commit(), SYNC_BATCH_TIMEOUT_MS, 'dailyValue bundle upload')
+  }
+}
+
+/** 자산 삭제 시 그 자산의 번들 문서를 통째로 제거. THROWS on failure. */
+async function deleteDvBundlesForAsset(uid: string, assetSyncId: string): Promise<void> {
+  const colRef = collection(firestore, `users/${uid}/${DV_BUNDLE_COLLECTION}`)
+  const snap = await getDocs(query(colRef, where('assetItem_syncId', '==', assetSyncId)))
+  if (snap.empty) return
+  const refs = snap.docs.map(d => d.ref)
+  for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
+    const batch = writeBatch(firestore)
+    for (const ref of refs.slice(i, i + BATCH_LIMIT)) batch.delete(ref)
+    await withTimeout(batch.commit(), SYNC_BATCH_TIMEOUT_MS, 'dailyValue bundle cascade delete')
+  }
+}
+
+/**
+ * 번들 문서 1개를 로컬 행으로 풀어 적용 (머지/리스너 공용).
+ * @returns false = 부모 자산이 아직 로컬에 없음 (호출자가 재시도/스킵 결정)
+ *
+ * 일자 단위 LWW: 클라우드 u가 더 새로울 때만 적용. 행 생성 시 클라우드
+ * sid를 입양한다 — 모든 기기가 같은 논리 행에 같은 syncId를 갖게 되어
+ * per-row 톰스톤(삭제 전파)이 기기 간에 매칭된다.
+ * @internal Exported for unit tests.
+ */
+export async function ingestDvBundleDoc(data: Record<string, unknown>): Promise<boolean> {
+  const exploded = explodeBundleDoc(data)
+  if (!exploded) return true // malformed — 재시도 무의미
+  const asset = await db.assetItems.where('syncId').equals(exploded.assetSyncId).first()
+  if (!asset?.id) return false
+  const assetItemId = asset.id
+
+  await runSyncWrite([db.dailyValues], async () => {
+    for (const { date, entry } of exploded.days) {
+      const existing = await db.dailyValues
+        .where('[assetItemId+date]').equals([assetItemId, date]).first()
+      if (!existing) {
+        await db.dailyValues.add({
+          syncId: entry.sid,
+          assetItemId,
+          date,
+          value: entry.v,
+          source: (entry.s ?? undefined) as DailyValue['source'],
+          createdAt: entry.u,
+          updatedAt: entry.u,
+        } as DailyValue)
+      } else if ((entry.u || '') > (existing.updatedAt || '')) {
+        await db.dailyValues.update(existing.id!, {
+          value: entry.v,
+          source: (entry.s ?? undefined) as DailyValue['source'],
+          updatedAt: entry.u,
+          // sid 입양 — 같은 논리 일자가 기기마다 다른 syncId를 갖는 분기를 수렴
+          ...(existing.syncId !== entry.sid ? { syncId: entry.sid } : {}),
+        })
+      }
+    }
+  })
+  return true
+}
+
+/** 전량 번들 업로드 — merge 없이 통째 set (클라우드의 묵은 일자 청소). */
+async function uploadAllDvBundles(uid: string): Promise<number> {
+  const rows = await db.dailyValues.toArray()
+  const assets = await db.assetItems.toArray()
+  const assetSyncById = new Map<number, string>()
+  for (const a of assets) { if (a.id != null && a.syncId) assetSyncById.set(a.id, a.syncId) }
+  const { bundles, unresolved } = buildFullBundles(rows, assetSyncById)
+  if (unresolved > 0) console.warn(`[sync] full bundle upload: ${unresolved}개 행은 자산 해석 불가로 생략`)
+  for (let i = 0; i < bundles.length; i += BATCH_LIMIT) {
+    const chunk = bundles.slice(i, i + BATCH_LIMIT)
+    const batch = writeBatch(firestore)
+    for (const b of chunk) {
+      const ref = doc(firestore, `users/${uid}/${DV_BUNDLE_COLLECTION}/${encodeDocId(b.bundleKey)}`)
+      batch.set(ref, {
+        bundleKey: b.bundleKey,
+        assetItem_syncId: b.assetSyncId,
+        month: b.month,
+        days: b.days,
+        updatedAt: b.maxUpdatedAt,
+        __deviceId: getDeviceId(),
+        __schemaV: CLOUD_SCHEMA_VERSION,
+        __uploadedAt: serverTimestamp(),
+      })
+    }
+    await withTimeout(batch.commit(), SYNC_BATCH_TIMEOUT_MS, 'dailyValue full bundle upload')
+  }
+  return bundles.length
+}
+
+/**
+ * Phase B — 레거시 per-row dailyValues 컬렉션 정리. 순서가 안전의 전부다:
+ * ① 전량 번들 업로드(완전한 진실 확보) → ② 레거시 문서 삭제 → ③ 마커.
+ * 어느 단계에서 실패해도 다음 실행이 이어서 안전하다 (①은 멱등, ②는
+ * 재실행 가능, 마커 전까지 레거시 읽기가 유지된다).
+ *
+ * ⚠️ 구버전 기기의 리스너는 레거시 문서 삭제를 'removed'로 받아 로컬 행을
+ * 지운다 — 반드시 모든 기기가 신버전으로 업데이트된 후 실행할 것 (호출 UI가
+ * 경고를 표시한다).
+ */
+export async function purgeLegacyDailyValues(uid: string): Promise<{ bundles: number; deleted: number }> {
+  if (!canDeviceWrite()) throw new Error('읽기 전용 기기에서는 실행할 수 없습니다.')
+
+  const bundles = await uploadAllDvBundles(uid)
+
+  const colRef = collection(firestore, `users/${uid}/dailyValues`)
+  const snap = await getDocs(colRef)
+  const refs = snap.docs.map(d => d.ref)
+  for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
+    const batch = writeBatch(firestore)
+    for (const ref of refs.slice(i, i + BATCH_LIMIT)) batch.delete(ref)
+    await withTimeout(batch.commit(), SYNC_BATCH_TIMEOUT_MS, 'legacy dailyValues purge')
+  }
+
+  await setDoc(doc(firestore, dvMigrationDocPath(uid)), {
+    legacyCleared: true,
+    clearedAt: new Date().toISOString(),
+    __deviceId: getDeviceId(),
+  })
+  legacyDvActive = false
+  // 레거시 dailyValues 리스너를 내리고 번들 리스너만 남긴다
+  startRealtimeSync(uid, true)
+  return { bundles, deleted: refs.length }
+}
+
+/** 번들 컬렉션 실시간 구독 — subscribeTable과 동일한 생존/백오프 규약. */
+function subscribeDvBundles(uid: string, generation: number, retryCount = 0): void {
+  const colRef = collection(firestore, `users/${uid}/${DV_BUNDLE_COLLECTION}`)
+  let hadSnapshot = false
+  const unsub = onSnapshot(colRef, { includeMetadataChanges: true }, async (snapshot) => {
+    hadSnapshot = true
+    if (!snapshot.metadata.fromCache) {
+      lastSnapshotByTable.set(DV_BUNDLE_COLLECTION, Date.now())
+    }
+    if (realtimeSyncPaused) return
+
+    const docChanges = snapshot.docChanges()
+    if (docChanges.length === 0) return
+
+    let appliedCount = 0
+    for (const change of docChanges) {
+      const data = change.doc.data()
+      try {
+        if (change.type === 'added' || change.type === 'modified') {
+          const ok = await ingestDvBundleDoc(data)
+          if (ok) appliedCount++
+          // 부모 자산 미도착(ok=false): assetItems 스냅샷이 곧 도착하면 그
+          // 다음 번들 스냅샷/머지가 수습한다 — 행 단위 FK 재시도와 달리
+          // 번들은 멱등 재인제스트가 싸므로 별도 큐를 두지 않는다.
+        } else if (change.type === 'removed') {
+          // 번들 제거 = 자산 cascade 삭제(또는 빈 달 정리). 로컬의 해당
+          // 자산×월 행을 제거한다. 자산이 이미 로컬에서 지워졌으면 남은
+          // 행들은 per-row 톰스톤이 처리한다.
+          const assetSyncId = data.assetItem_syncId as string | undefined
+          const month = data.month as string | undefined
+          if (assetSyncId && month) {
+            const asset = await db.assetItems.where('syncId').equals(assetSyncId).first()
+            if (asset?.id != null) {
+              await runSyncWrite([db.dailyValues], async () => {
+                await db.dailyValues
+                  .where('[assetItemId+date]')
+                  .between([asset.id!, `${month}-00`], [asset.id!, `${month}-99`])
+                  .delete()
+              })
+              appliedCount++
+            }
+          }
+        }
+      } catch (err) {
+        console.error(`[sync] dv bundle ${change.type} ingest error:`, err)
+      }
+    }
+
+    if (appliedCount > 0) {
+      window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: 'dailyValues' } }))
+    }
+  }, (err) => {
+    console.error('[sync] dv bundles listener error:', err)
+    if (syncGeneration === generation) {
+      const nextRetry = hadSnapshot ? 0 : retryCount + 1
+      const delay = Math.min(Math.pow(2, nextRetry) * 1000, 30000)
+      console.log(`[sync] retrying dv bundles listener in ${delay}ms`)
+      setTimeout(() => {
+        if (syncGeneration === generation) {
+          subscribeDvBundles(uid, generation, nextRetry)
+        }
+      }, delay)
+    }
+  })
+  unsubscribers.push(unsub)
 }
 
 // ─── FK Remapping Utilities ──────────────────────────────
@@ -1131,6 +1500,10 @@ export async function mergeOnLogin(uid: string): Promise<void> {
       return
     }
 
+    // 레거시 dailyValues 컬렉션이 정리(purge)되었는지 마커로 확인 —
+    // 정리 전에는 구버전 기기의 쓰기를 받기 위해 레거시도 계속 읽는다.
+    await refreshDvMigrationState(uid)
+
     // 다운로드 범위 결정 — 체크포인트가 있으면 그 이후 서버 업로드분만(델타),
     // 없으면(첫 로그인/로컬 초기화 후) 전량. 전량 다운로드는 문서 수만큼
     // Firestore 읽기를 과금하므로(dailyValues 1만+ 환경에서 실행당 ~13K reads)
@@ -1152,11 +1525,16 @@ export async function mergeOnLogin(uid: string): Promise<void> {
       cloudTransactionCategories, cloudTransactions, cloudBudgets, cloudGoals,
       cloudPaymentMethodItems, cloudSubscriptions, cloudLoans, cloudMerchantAliases,
       cloudInvestmentTrades, cloudDividends, cloudAccountInterests,
+      cloudDvBundles,
     ] = await Promise.all([
       downloadTable<Record<string, unknown>>(uid, 'members', sinceFor('members')),
       downloadTable<Record<string, unknown>>(uid, 'assetCategories', sinceFor('assetCategories')),
       downloadTable<Record<string, unknown>>(uid, 'assetItems', sinceFor('assetItems')),
-      downloadTable<Record<string, unknown>>(uid, 'dailyValues', sinceFor('dailyValues')),
+      // 레거시 dailyValues는 정리 마커 이후 더 이상 읽지 않는다 (베이스라인
+      // 1만+ 읽기의 주범 — 번들 컬렉션이 대체)
+      legacyDvActive
+        ? downloadTable<Record<string, unknown>>(uid, 'dailyValues', sinceFor('dailyValues'))
+        : Promise.resolve([] as Record<string, unknown>[]),
       downloadTable<Record<string, unknown>>(uid, 'transactionCategories', sinceFor('transactionCategories')),
       downloadTable<Record<string, unknown>>(uid, 'transactions', sinceFor('transactions')),
       downloadTable<Record<string, unknown>>(uid, 'budgets', sinceFor('budgets')),
@@ -1168,11 +1546,12 @@ export async function mergeOnLogin(uid: string): Promise<void> {
       downloadTable<Record<string, unknown>>(uid, 'investmentTrades', sinceFor('investmentTrades')),
       downloadTable<Record<string, unknown>>(uid, 'dividends', sinceFor('dividends')),
       downloadTable<Record<string, unknown>>(uid, 'accountInterests', sinceFor('accountInterests')),
+      downloadDvBundles(uid, isDelta ? (checkpoint['dailyValueBundles'] ?? null) : null),
     ])
 
     // 체크포인트 전진용 — 머지가 끝까지 성공한 뒤에만 advance한다.
     // (도중 실패 시 다음 머지가 같은 구간을 다시 읽는다 — 멱등이라 안전)
-    const downloadedByTable: Array<[SyncableTable, Record<string, unknown>[]]> = [
+    const downloadedByTable: Array<[string, Record<string, unknown>[]]> = [
       ['members', cloudMembers], ['assetCategories', cloudAssetCategories],
       ['assetItems', cloudAssetItems], ['dailyValues', cloudDailyValues],
       ['transactionCategories', cloudTransactionCategories], ['transactions', cloudTransactions],
@@ -1181,9 +1560,10 @@ export async function mergeOnLogin(uid: string): Promise<void> {
       ['loans', cloudLoans], ['merchantAliases', cloudMerchantAliases],
       ['investmentTrades', cloudInvestmentTrades], ['dividends', cloudDividends],
       ['accountInterests', cloudAccountInterests],
+      [DV_BUNDLE_COLLECTION, cloudDvBundles],
     ]
     const totalDocs = downloadedByTable.reduce((n, [, recs]) => n + recs.length, 0)
-    console.log(`[sync] merge on login (${isDelta ? '델타' : '전량'}): ${totalDocs}개 문서 다운로드`)
+    console.log(`[sync] merge on login (${isDelta ? '델타' : '전량'}): ${totalDocs}개 문서 다운로드 (번들 ${cloudDvBundles.length})`)
 
     // ── Layer 0: Independent tables (no FK dependencies) ──
     // Seed-derived tables (members + categories + payment methods) pass a
@@ -1226,7 +1606,20 @@ export async function mergeOnLogin(uid: string): Promise<void> {
     fkMappings['assetItems'] = buildIdMapping(cloudAssetItems, await db.assetItems.toArray())
 
     // ── Layer 2: Second-level dependents ──
-    await mergeTableWithRemap('dailyValues', cloudDailyValues, undefined, !isDelta)
+    // 레거시 dailyValues: 정리 전까지만 머지. 정리 후에는 빈 배열을 전량으로
+    // 머지하면 Case 3이 로컬 전체를 업로드 큐에 넣으므로 호출 자체를 건너뛴다.
+    if (legacyDvActive) {
+      await mergeTableWithRemap('dailyValues', cloudDailyValues, undefined, !isDelta)
+    }
+    // 번들 인제스트 — 자산(Layer 1)이 머지된 뒤라 부모 해석이 안전하다.
+    // 일자 단위 LWW이므로 레거시 머지 결과 위에 겹쳐도 멱등이다.
+    for (const b of cloudDvBundles) {
+      try {
+        await ingestDvBundleDoc(b)
+      } catch (err) {
+        console.error('[sync] dv bundle merge ingest failed:', err)
+      }
+    }
     await mergeTableWithRemap('paymentMethodItems', cloudPaymentMethodItems, undefined, !isDelta)
 
     fkMappings['paymentMethodItems'] = buildIdMapping(
@@ -1958,9 +2351,16 @@ export function startRealtimeSync(uid: string, force: boolean = false): void {
   // 테이블이 즉시 stale(Infinity age)로 판정되어 재시작 루프가 돌지 않게.
   const now = Date.now()
   for (const tableName of ALL_TABLES) {
+    // 레거시 dailyValues는 정리(purge) 후 구독하지 않는다 — 빈 컬렉션 +
+    // 신규 기기 초기 스냅샷 비용 절감. 일별가치 실시간은 번들 리스너가 담당.
+    if (tableName === 'dailyValues' && !legacyDvActive) continue
     lastSnapshotByTable.set(tableName, now)
     subscribeTable(uid, tableName, gen)
   }
+
+  // 일별가치 번들 (자산×월 묶음) 실시간 구독
+  lastSnapshotByTable.set(DV_BUNDLE_COLLECTION, now)
+  subscribeDvBundles(uid, gen)
 
   // Also subscribe to tombstones for cross-device delete propagation
   lastSnapshotByTable.set('__tombstones', now)

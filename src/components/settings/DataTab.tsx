@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useIsDeviceReadOnly } from '@/lib/writeGuard'
 import { Button } from '@/components/ui/Button'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { FormSectionLabel } from '@/components/ui/CreateFormPrimitives'
 import { exportBackup, importBackup, exportTransactionsCSV, exportAssetValuesCSV } from '@/services/backup'
 import { formatRelativeTime } from '@/utils/format'
@@ -52,6 +53,24 @@ export function DataTab() {
   const [isRestoring, setIsRestoring] = useState(false)
   const [showEasyLedgerImport, setShowEasyLedgerImport] = useState(false)
   const [easyLedgerFile, setEasyLedgerFile] = useState<File | null>(null)
+  const [showDvPurgeConfirm, setShowDvPurgeConfirm] = useState(false)
+  const [isPurgingDv, setIsPurgingDv] = useState(false)
+
+  const handlePurgeLegacyDv = async () => {
+    if (!user) return
+    setIsPurgingDv(true)
+    try {
+      const { purgeLegacyDailyValues } = await import('@/services/firestoreSync')
+      const r = await purgeLegacyDailyValues(user.uid)
+      addToast(`저장 구조 최적화 완료 — 번들 ${r.bundles}개 업로드, 구형 문서 ${r.deleted}개 정리`, 'success')
+      setShowDvPurgeConfirm(false)
+    } catch (err) {
+      console.error('Legacy dailyValues purge failed:', err)
+      addToast('최적화에 실패했습니다. 잠시 후 다시 시도하세요.', 'error')
+    } finally {
+      setIsPurgingDv(false)
+    }
+  }
 
   const handleExportBackup = async () => {
     setIsBackingUp(true)
@@ -179,6 +198,26 @@ export function DataTab() {
                 클라우드 → 로컬
               </Button>
             </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-surface-secondary rounded-xl">
+              <div>
+                <p className="text-body3 text-heading">클라우드 저장 구조 최적화</p>
+                <p className="text-caption text-sub">
+                  자산 일별가치를 월 단위 묶음으로 전환해 새 기기 동기화 속도와 비용을 줄입니다.
+                  <span className="text-status-warning"> 모든 기기가 최신 버전으로 업데이트된 후 1회 실행하세요.</span>
+                </p>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowDvPurgeConfirm(true)}
+                disabled={isPurgingDv || readOnly || syncStatus === 'syncing'}
+                title={readOnly ? '읽기 전용 모드' : undefined}
+                leftIcon={isPurgingDv ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
+                className="w-full sm:w-auto"
+              >
+                {isPurgingDv ? '최적화 중...' : '최적화 실행'}
+              </Button>
+            </div>
           </div>
         </section>
       )}
@@ -287,6 +326,19 @@ export function DataTab() {
           setShowEasyLedgerImport(false)
           setEasyLedgerFile(null)
         }}
+      />
+
+      {/* Legacy dailyValues purge confirm */}
+      <ConfirmDialog
+        open={showDvPurgeConfirm}
+        onClose={() => { if (!isPurgingDv) setShowDvPurgeConfirm(false) }}
+        onConfirm={handlePurgeLegacyDv}
+        title="클라우드 저장 구조 최적화"
+        description="일별가치 데이터를 월 단위 묶음으로 전환하고 구형 문서를 정리합니다. 구버전 앱이 실행 중인 기기가 있으면 그 기기의 일별가치가 비워질 수 있습니다 — 반드시 모든 기기에서 앱을 한 번씩 열어 최신 버전으로 업데이트한 뒤 실행하세요."
+        confirmText="모든 기기가 최신입니다 — 실행"
+        cancelText="취소"
+        variant="warning"
+        isLoading={isPurgingDv}
       />
     </div>
   )

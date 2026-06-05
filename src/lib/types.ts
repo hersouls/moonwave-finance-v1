@@ -498,6 +498,11 @@ export interface SyncChangeLogEntry {
   operation: 'create' | 'update' | 'delete'
   timestamp: string
   processed: number       // 0 = pending, 1 = synced
+  // dailyValues 전용 위치 메타 — 번들 업로드가 (자산×월×일) 좌표를 알아야
+  // 하는데, 삭제 항목은 행이 이미 사라져 syncId만으로는 좌표를 복원할 수
+  // 없다. 훅이 변경되는 객체에서 캡처해 둔다. (다른 테이블은 undefined)
+  assetItemId?: number
+  date?: string
 }
 
 export interface SyncTombstone {
