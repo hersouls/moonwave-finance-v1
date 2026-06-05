@@ -289,11 +289,11 @@
 }
 
 .tab-bar--vertical .tab-item--selected {
-  background-color: var(--color-primary-50, #EFF6FF);
+  background-color: var(--color-primary-50, #faf5ff);
 }
 
 .dark .tab-bar--vertical .tab-item--selected {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(168, 85, 247, 0.1);
 }
 
 .tab-bar--vertical .tab-item--selected::after {
@@ -305,7 +305,7 @@
   width: 3px;
   height: 60%;
   border-radius: 0 1.5px 1.5px 0;
-  background-color: var(--color-primary-500, #3B82F6);
+  background-color: var(--color-primary-500, #a855f7);
   bottom: auto;
   right: auto;
   /* 측면 인디케이터 바 유지 (글로우 제거) */

@@ -1,13 +1,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ThemeMode, ColorPalette, Settings, NotificationSettings, Density } from '@/lib/types'
+import type { ThemeMode, Settings, NotificationSettings, Density } from '@/lib/types'
 
 interface SettingsState {
   settings: Settings
   _hasHydrated: boolean
   initialize: () => void
   setTheme: (theme: ThemeMode) => void
-  setColorPalette: (palette: ColorPalette) => void
   setLastBackupDate: (date: Date) => void
   setGoogleDriveStatus: (isConnected: boolean) => void
   toggleAutoBackup: () => void
@@ -21,7 +20,6 @@ interface SettingsState {
   setDensity: (density: Density) => void
   toggleOledMode: () => void
   toggleHideAmounts: () => void
-  toggleTimeBasedTheme: () => void
   toggleAutoCarryForward: () => void
   setDeviceWriteEnabled: (enabled: boolean) => void
 }
@@ -33,14 +31,9 @@ export function applyTheme(theme: ThemeMode) {
   document.documentElement.classList.toggle('dark', isDark)
 }
 
-export function applyColorPalette(palette: ColorPalette) {
-  const root = document.documentElement
-  if (palette === 'default') {
-    root.removeAttribute('data-palette')
-  } else {
-    root.setAttribute('data-palette', palette)
-  }
-}
+/* v4 "One Purple": 팔레트 전환 시스템 퇴역 — 브랜드 보라가 @theme 베이스.
+ * 과거 FOUC/스토어가 설정하던 data-palette 속성은 CSS 셀렉터가 사라져
+ * 효력이 없으며, initialize()에서 잔존 속성을 제거한다. */
 
 export function applyDensity(density: Density | undefined) {
   const root = document.documentElement
@@ -63,7 +56,6 @@ export const useSettingsStore = create<SettingsState>()(
       _hasHydrated: false,
       settings: {
         theme: 'light' as ThemeMode,
-        colorPalette: 'purple' as ColorPalette,
         currencyUnit: 'won' as const,
         userProfile: { name: '사용자' },
         hasCompletedOnboarding: false,
@@ -88,13 +80,6 @@ export const useSettingsStore = create<SettingsState>()(
         const { theme } = state.settings
         const newSettings = { ...state.settings }
         let hasChanges = false
-
-        // BORA 디자인 이식: 미설정(default) 팔레트는 BORA 보라(purple)를 기본으로.
-        // 사용자가 명시적으로 고른 ocean/rose/forest 는 존중.
-        if (newSettings.colorPalette === undefined || newSettings.colorPalette === 'default') {
-          newSettings.colorPalette = 'purple'
-          hasChanges = true
-        }
 
         if (!newSettings.googleDrive) {
           newSettings.googleDrive = { isConnected: false, autoBackup: false }
@@ -147,10 +132,6 @@ export const useSettingsStore = create<SettingsState>()(
           newSettings.hideAmounts = false
           hasChanges = true
         }
-        if (newSettings.timeBasedTheme === undefined) {
-          newSettings.timeBasedTheme = false
-          hasChanges = true
-        }
         if (newSettings.autoCarryForward === undefined) {
           newSettings.autoCarryForward = true
           hasChanges = true
@@ -162,9 +143,11 @@ export const useSettingsStore = create<SettingsState>()(
         if (hasChanges) set({ settings: newSettings })
 
         applyTheme(theme)
-        applyColorPalette(newSettings.colorPalette)
         applyDensity(newSettings.density)
         applyOledMode(!!newSettings.oledMode)
+        // v4: 레거시 팔레트/시간테마 속성 잔재 정리 (CSS 셀렉터는 제거됨)
+        document.documentElement.removeAttribute('data-palette')
+        document.documentElement.removeAttribute('data-time-period')
 
         if (!themeListenerAdded) {
           themeListenerAdded = true
@@ -177,11 +160,6 @@ export const useSettingsStore = create<SettingsState>()(
       setTheme: (theme) => {
         set((state) => ({ settings: { ...state.settings, theme } }))
         applyTheme(theme)
-      },
-
-      setColorPalette: (palette) => {
-        set((state) => ({ settings: { ...state.settings, colorPalette: palette } }))
-        applyColorPalette(palette)
       },
 
       setLastBackupDate: (date) => {
@@ -266,10 +244,6 @@ export const useSettingsStore = create<SettingsState>()(
 
       toggleHideAmounts: () => {
         set((state) => ({ settings: { ...state.settings, hideAmounts: !state.settings.hideAmounts } }))
-      },
-
-      toggleTimeBasedTheme: () => {
-        set((state) => ({ settings: { ...state.settings, timeBasedTheme: !state.settings.timeBasedTheme } }))
       },
 
       toggleAutoCarryForward: () => {

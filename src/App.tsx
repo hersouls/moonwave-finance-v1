@@ -35,7 +35,6 @@ import { useGlobalShortcuts } from './hooks/useGlobalShortcuts'
 import { usePullToRefresh } from './hooks/usePullToRefresh'
 import { incrementalUpload, startRealtimeSync } from './services/firestoreSync'
 import { ensureDefaultCategories } from './services/database'
-import { startTimePeriodWatcher } from './lib/timeTheme'
 import { canDeviceWrite } from './lib/writeGuard'
 
 export default function App() {
@@ -44,7 +43,6 @@ export default function App() {
   const isSidebarOpen = useUIStore((s) => s.isSidebarOpen)
   const hasCompletedOnboarding = useSettingsStore((s) => s.settings.hasCompletedOnboarding)
   const setHasCompletedOnboarding = useSettingsStore((s) => s.setHasCompletedOnboarding)
-  const timeBasedTheme = useSettingsStore((s) => !!s.settings.timeBasedTheme)
   const isOnline = useOnlineStatus()
   useAutoSync()
   useGlobalShortcuts()
@@ -63,11 +61,6 @@ export default function App() {
     await new Promise((resolve) => setTimeout(resolve, 350))
   }, [])
   const pull = usePullToRefresh({ onRefresh: handleRefresh })
-
-  useEffect(() => {
-    const dispose = startTimePeriodWatcher(timeBasedTheme)
-    return dispose
-  }, [timeBasedTheme])
 
   useEffect(() => {
     const initApp = async () => {

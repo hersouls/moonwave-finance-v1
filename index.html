@@ -43,9 +43,7 @@
       if (t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme:dark)').matches)) {
         document.documentElement.classList.add('dark');
       }
-      // BORA 디자인: 미설정/default 팔레트는 purple(BORA 보라)을 기본 적용
-      var p = st && st.colorPalette;
-      document.documentElement.setAttribute('data-palette', (p && p !== 'default') ? p : 'purple');
+      // v4 "One Purple": 브랜드 보라가 CSS @theme 베이스 — data-palette 불필요
       if (st && st.oledMode) document.documentElement.setAttribute('data-oled', 'true');
     } catch(e) {}
   </script>

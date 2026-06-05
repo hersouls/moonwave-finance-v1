@@ -3,7 +3,8 @@
  * 중성색 violet-tint · Light(hue 292) / Dark·OLED(hue 287) 3-tier
  * 모든 회색을 primary 보라와 한 패밀리로 통일(저채도 oklch)
  * 대비-임계 전경 보라는 var(--color-primary-*) 대신 명시적 oklch 리터럴 사용
- * (기본 :root primary는 파랑 hue 250, 다크 보라 스케일은 반전 — 팔레트 무관 정합 보장)
+ * (v4: 기본 :root primary = BORA 보라 HEX, 다크는 html.dark의 287 반전 스케일.
+ *  반전 때문에 다크 전경에 primary-100~300을 쓰면 다크-위-다크 — 리터럴 유지 이유)
  * =============================================== */
 
 :root {

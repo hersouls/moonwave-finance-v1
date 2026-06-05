@@ -132,9 +132,8 @@ src/styles/
 │   ├── misc.css              # 기타 (divider, tooltip, filter)
 │   ├── semantic-colors.css   # 시맨틱 컬러 (surface/text/border + OLED + 차트)
 │   ├── table.css             # 테이블 토큰
-│   ├── category-colors.css   # 카테고리 컬러 팔레트 (TDL)
-│   ├── edge-lighting.css     # Edge Lighting 토큰 (TDL)
-│   └── theme-overlays.css    # 테마 오버레이 (TDL)
+│   ├── category-colors.css   # 카테고리 컬러 팔레트 (기능 식별색)
+│   └── edge-lighting.css     # Edge Lighting 토큰 (v3에서 플랫 중화됨)
 └── utilities/                # 유틸리티 클래스 (19 files)
     ├── typography.css        # 타이포그래피 클래스
     ├── elevation.css         # 그림자 유틸리티
@@ -157,13 +156,12 @@ src/styles/
     └── edge-lighting.css     # Edge Lighting 유틸리티 (TDL)
 ```
 
-### Color System
+### Color System — v4 "One Purple" (단일 브랜드 정체성)
 
-- **Primary**: OKLCH hue 250 (Blue 기본) — `--color-primary-50` ~ `--color-primary-900`.
-- **4색 팔레트 전환**: `data-palette="ocean|rose|purple|forest"` (Light + Dark).
-- **시간 기반 테마**: `data-time-period="morning|evening|night"` — 시간대별 hue 자동 변경.
-- **테마 오버레이**: `data-theme-overlay="..."` — 카테고리/날씨 기반 색상 오버레이.
-- **시맨틱 컬러**: `--surface-primary`, `--text-secondary`, `--border-default` 등 (Light/Dark/OLED 3단계).
+- **Primary = FIN 보라 단일** (BORA bora-50~950 정확값): 라이트 `#a855f7`(500)/`#7c3aed`(600) HEX 스케일이 `@theme` 베이스. 다크는 `html.dark` 블록의 violet hue 287 **반전 스케일**(50=어두움, 900=밝음) — ⚠️ 다크 전경(text/ring)에 `primary-100~300`을 쓰면 다크-위-다크.
+- **퇴역(부활 금지)**: 팔레트 전환(`data-palette`), 시간대 테마(`data-time-period`), 테마 오버레이(`data-theme-overlay`) — 정체성 분산의 원인이라 v4에서 제거됨.
+- **색 사용 규율**: UI 강조는 전부 보라. 빨강/초록은 **금액 숫자에만**(`.value-positive`/`.value-negative`). 상태색(success/warning/danger)은 상태 배지·텍스트 전용. 카테고리 색(`--cat-*`)은 기능 식별색.
+- **시맨틱 컬러**: `--surface-primary`, `--text-secondary`, `--border-default` 등 violet-tint 중성 (Light/Dark/OLED 3단계).
 - **OLED 모드**: `html.dark[data-oled="true"]` — 순수 블랙 배경.
 - Tailwind 클래스: `text-primary-500`, `bg-primary-600` 등.
 
@@ -186,13 +184,11 @@ Custom variants: `dark`, `fold` (≤340px), `mobile` (<600px), `tablet` (600~102
 - **Dexie + Firestore 동기화**: `firestoreSync.ts`가 양방향 동기화 처리. Dexie가 로컬 SOT, Firestore가 클라우드 백업.
 - **Store 초기화 흐름**: `authStatus === 'authenticated'` → `App.tsx`에서 스토어 `initialize()` → Dexie 로드 → Firestore 구독.
 - **금융 데이터 표시**: `.tabular-nums` 또는 `.financial-value` 클래스 필수. `font-variant-numeric: tabular-nums`.
-- **수입/지출 색상**: `.value-positive` (green), `.value-negative` (red) — index.css Finance-Specific 섹션.
-- **팔레트 전환**: `settingsStore.palette` → `html[data-palette]` 속성으로 적용. JS에서 `document.documentElement.dataset.palette = 'ocean'`.
+- **수입/지출 색상**: `.value-positive` (green), `.value-negative` (red) — index.css Finance-Specific 섹션. 금액 숫자 외에는 사용 금지.
 - **iOS Safari**: input `font-size: max(16px, 1em)` — 자동 줌 방지 (index.css에 설정됨).
 - **Safe Area**: 하단 고정 요소에 `pb-safe` 또는 `env(safe-area-inset-bottom)` 필수.
 - **Wizard 전환**: `.wizard-step-forward` / `.wizard-step-backward` — TransactionWizard에서 사용.
-- **Hero 카드**: `.hero-gradient` + `.noise-overlay` + `.hero-shimmer` 조합.
-- **Glassmorphism**: `.glass` (blur 16px) / `.glass-heavy` (blur 24px).
-- **Edge Lighting**: `.edge-lighting` — 알림/강조 효과용 glow 애니메이션.
+- **카드 표면(v3 플랫)**: `card-base` 단일 문법 — 중립 헤어라인 + `--shadow-1`, hover는 보더 톤업 + `--shadow-2`. 글로우/노이즈/그라디언트/Edge Lighting은 퇴역(부활 금지). Hero 카드는 `HeroMetricCard`(플랫 + 액센트 도트) 참조.
+- **Glassmorphism**: `.glass` (blur 16px) / `.glass-heavy` (blur 24px) — 헤더/바텀내비 등 크롬 전용.
 - **Vendor Chunking**: react, firebase, charts, ui, data, motion 6개 청크 (vite.config.ts).
 - **CSV Import**: `easyLedgerImport.ts`로 편한가계부 CSV 직접 임포트 가능.

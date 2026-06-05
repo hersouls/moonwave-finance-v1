@@ -131,7 +131,7 @@ export function CalendarFilterBar({
                   'inline-flex items-center gap-1 px-2 py-1 rounded-full text-label3-medium transition-all',
                   'ring-1',
                   active
-                    ? 'bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 ring-primary-400 dark:ring-primary-600'
+                    ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 ring-primary-400 dark:ring-primary-600'
                     : 'ring-[color:var(--border-subtle)] text-sub hover:text-heading hover:bg-[var(--hover-bg)]',
                 )}
               >
@@ -153,7 +153,7 @@ export function CalendarFilterBar({
           className={clsx(
             'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label3-medium transition-all ring-1',
             filters.categoryIds.length > 0
-              ? 'bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 ring-primary-400 dark:ring-primary-600'
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 ring-primary-400 dark:ring-primary-600'
               : 'ring-[color:var(--border-subtle)] text-sub hover:text-heading hover:bg-[var(--hover-bg)]',
           )}
         >
@@ -218,7 +218,7 @@ export function CalendarFilterBar({
         className={clsx(
           'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-label3-medium transition-all ring-1',
           filters.recurringOnly
-            ? 'bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 ring-primary-400 dark:ring-primary-600'
+            ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 ring-primary-400 dark:ring-primary-600'
             : 'ring-[color:var(--border-subtle)] text-sub hover:text-heading hover:bg-[var(--hover-bg)]',
         )}
       >

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useSettingsStore, applyTheme, applyColorPalette } from '@/stores/settingsStore'
+import { useSettingsStore, applyTheme } from '@/stores/settingsStore'
 import type { Settings } from '@/lib/types'
 
 export function useSettingsModal(isOpen: boolean) {
@@ -17,18 +17,12 @@ export function useSettingsModal(isOpen: boolean) {
     }
   }, [isOpen])
 
-  // Live preview for theme and palette
+  // Live preview for theme (v4: 팔레트 전환 퇴역 — 보라 단일)
   useEffect(() => {
     if (isOpen) {
       applyTheme(draft.theme)
     }
   }, [draft.theme, isOpen])
-
-  useEffect(() => {
-    if (isOpen) {
-      applyColorPalette(draft.colorPalette)
-    }
-  }, [draft.colorPalette, isOpen])
 
   const updateDraft = useCallback((updates: Partial<Settings>) => {
     setDraft(prev => ({ ...prev, ...updates }))
@@ -37,7 +31,6 @@ export function useSettingsModal(isOpen: boolean) {
   const save = useCallback(() => {
     const store = useSettingsStore.getState()
     store.setTheme(draft.theme)
-    store.setColorPalette(draft.colorPalette)
     store.setCurrencyUnit(draft.currencyUnit)
     if (draft.highContrastMode !== snapshot.highContrastMode) {
       store.toggleHighContrast()
@@ -47,12 +40,10 @@ export function useSettingsModal(isOpen: boolean) {
 
   const cancel = useCallback(() => {
     applyTheme(snapshot.theme)
-    applyColorPalette(snapshot.colorPalette)
   }, [snapshot])
 
   const isDirty =
     draft.theme !== snapshot.theme ||
-    draft.colorPalette !== snapshot.colorPalette ||
     draft.currencyUnit !== snapshot.currencyUnit ||
     draft.highContrastMode !== snapshot.highContrastMode ||
     draft.notifications.budgetAlert !== snapshot.notifications.budgetAlert ||

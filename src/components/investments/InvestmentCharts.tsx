@@ -61,8 +61,8 @@ export function CumulativeProfitChart({
         borderColor: getChartSeries(1),
         backgroundColor: (ctx) => {
           const chart = ctx.chart
-          if (!chart.chartArea) return 'rgba(59,130,246,0.1)'
-          return createLineGradientRGBA(chart.ctx, chart.chartArea, 59, 130, 246, 0.18, 0.01)
+          if (!chart.chartArea) return 'rgba(168,85,247,0.1)'
+          return createLineGradientRGBA(chart.ctx, chart.chartArea, 168, 85, 247, 0.18, 0.01)
         },
         fill: true,
         tension: 0.35,

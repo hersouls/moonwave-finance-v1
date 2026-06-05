@@ -36,7 +36,7 @@ export function NetWorthTrendChart() {
         backgroundColor: (ctx) => {
           const chart = ctx.chart
           const { ctx: context, chartArea } = chart
-          if (!chartArea) return 'rgba(59, 130, 246, 0.1)'
+          if (!chartArea) return 'rgba(168, 85, 247, 0.1)'
           const c = getChartColor('netWorth').fill
           return createLineGradientRGBA(context, chartArea, c[0], c[1], c[2], 0.2, 0.01)
         },
