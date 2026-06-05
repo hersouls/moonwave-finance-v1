@@ -32,6 +32,46 @@ export function formatPercent(value: number, decimals: number = 1): string {
   return value.toFixed(decimals) + '%'
 }
 
+/**
+ * 차트 y축 눈금용 한국식 단위 표기 — 눈금 간격(step)에 맞춰 소수 자릿수를 정한다.
+ *
+ * 정수 억 반올림(`Math.round(num/1억) + '억'`)은 값이 같은 억 구간 안에서
+ * 움직일 때(예: 5.1억~5.4억) 모든 눈금이 "5억"으로 붕괴해 축을 읽을 수 없다 —
+ * 인접 눈금이 서로 다른 라벨이 되는 최소 자릿수를 step에서 역산한다(최대 3자리).
+ *
+ * @param ticks Chart.js tick 배열 — 인접 두 눈금의 간격으로 자릿수를 정한다.
+ *              생략 시 소수 없이 반올림(기존 동작).
+ */
+export function formatKoreanAxisTick(
+  value: number | string,
+  ticks?: ReadonlyArray<{ value: number }>
+): string {
+  const num = typeof value === 'string' ? parseFloat(value) : value
+  if (!Number.isFinite(num)) return String(value)
+
+  const step = ticks && ticks.length > 1 ? Math.abs(ticks[1].value - ticks[0].value) : 0
+
+  const withUnit = (unit: number, suffix: string): string => {
+    let decimals = 0
+    if (step > 0) {
+      const ratio = step / unit
+      decimals = ratio < 1 ? Math.min(3, Math.ceil(-Math.log10(ratio))) : 0
+      // step이 해당 자릿수에서 떨어지지 않으면(예: 0.25억, 2.5만) 한 자리 더
+      while (decimals < 3 && Math.abs(ratio * 10 ** decimals - Math.round(ratio * 10 ** decimals)) > 1e-6) {
+        decimals++
+      }
+    }
+    const fixed = (num / unit).toFixed(decimals)
+    // 후행 0 제거: "5.0억" → "5억", "5.10억" → "5.1억"
+    const trimmed = decimals > 0 ? fixed.replace(/\.?0+$/, '') : fixed
+    return trimmed + suffix
+  }
+
+  if (Math.abs(num) >= KOREAN_UNIT_EUK) return withUnit(KOREAN_UNIT_EUK, '억')
+  if (Math.abs(num) >= KOREAN_UNIT_MAN) return withUnit(KOREAN_UNIT_MAN, '만')
+  return num.toLocaleString('ko-KR')
+}
+
 /** 보유 수량 표기 — 정수면 그대로, 소수(해외 단주)면 불필요한 0 제거 후 최대 4자리. */
 export function formatShares(qty: number): string {
   if (!Number.isFinite(qty)) return '0'
