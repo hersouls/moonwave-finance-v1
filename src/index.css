@@ -17,17 +17,22 @@
 @custom-variant zfold-open (&:where(@media (min-width: 600px) and (max-width: 767px)));
 
 @theme {
-  /* Colors — Default (Blue, hue 250) */
-  --color-primary-50: oklch(0.97 0.02 250);
-  --color-primary-100: oklch(0.93 0.04 250);
-  --color-primary-200: oklch(0.86 0.08 250);
-  --color-primary-300: oklch(0.76 0.12 250);
-  --color-primary-400: oklch(0.64 0.16 250);
-  --color-primary-500: oklch(0.55 0.20 250);
-  --color-primary-600: oklch(0.48 0.18 250);
-  --color-primary-700: oklch(0.40 0.15 250);
-  --color-primary-800: oklch(0.33 0.12 250);
-  --color-primary-900: oklch(0.27 0.09 250);
+  /* ── Colors — FIN 브랜드 단일 정체성 (v4 "One Purple") ──
+   * BORA bora-50~950 정확값 = 유일한 브랜드 스케일.
+   * 과거: 베이스 파랑(250) + 팔레트 4종 + 시간대별 hue 자동 변경 +
+   * 테마 오버레이가 겹쳐 "정체성 없음" — 전부 퇴역하고 보라 하나로 고정.
+   * 다크 모드 스케일은 아래 html.dark 블록 (violet 287, 반전 스케일). */
+  --color-primary-50: #faf5ff;
+  --color-primary-100: #f3e8ff;
+  --color-primary-200: #e9d5ff;
+  --color-primary-300: #d8b4fe;
+  --color-primary-400: #c084fc;
+  --color-primary-500: #a855f7;
+  --color-primary-600: #7c3aed;
+  --color-primary-700: #6d28d9;
+  --color-primary-800: #5b21b6;
+  --color-primary-900: #3b0764;
+  --color-primary-950: #1e0038;
 
   --color-success-50: oklch(0.97 0.03 145);
   --color-success-500: oklch(0.62 0.18 145);
@@ -267,98 +272,12 @@ select {
 }
 
 /* ========================================
-   Color Palettes (Light Mode Only)
+   Dark Mode Brand Scale (v4 "One Purple")
+   violet hue 287, 반전 스케일 — primary-50이 가장 어둡고 900이 가장 밝다.
+   ⚠️ 다크 전경(text/ring)에 primary-100~300을 쓰면 다크-위-다크가 되는
+   기존 함정은 그대로 유효 (bora-design-port 메모 참조).
    ======================================== */
-
-html:not(.dark)[data-palette="ocean"] {
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  --color-primary-950: #172554;
-}
-
-html:not(.dark)[data-palette="rose"] {
-  --color-primary-50: #fdf2f8;
-  --color-primary-100: #fce7f3;
-  --color-primary-200: #fbcfe8;
-  --color-primary-300: #f9a8d4;
-  --color-primary-400: #f472b6;
-  --color-primary-500: #ec4899;
-  --color-primary-600: #db2777;
-  --color-primary-700: #be185d;
-  --color-primary-800: #9d174d;
-  --color-primary-900: #831843;
-  --color-primary-950: #500724;
-}
-
-/* BORA Purple — bora-50~950 정확값 일치 (BORA globals.css @theme) */
-html:not(.dark)[data-palette="purple"] {
-  --color-primary-50: #faf5ff;
-  --color-primary-100: #f3e8ff;
-  --color-primary-200: #e9d5ff;
-  --color-primary-300: #d8b4fe;
-  --color-primary-400: #c084fc;
-  --color-primary-500: #a855f7;
-  --color-primary-600: #7c3aed;
-  --color-primary-700: #6d28d9;
-  --color-primary-800: #5b21b6;
-  --color-primary-900: #3b0764;
-  --color-primary-950: #1e0038;
-}
-
-html:not(.dark)[data-palette="forest"] {
-  --color-primary-50: #ecfdf5;
-  --color-primary-100: #d1fae5;
-  --color-primary-200: #a7f3d0;
-  --color-primary-300: #6ee7b7;
-  --color-primary-400: #34d399;
-  --color-primary-500: #10b981;
-  --color-primary-600: #059669;
-  --color-primary-700: #047857;
-  --color-primary-800: #065f46;
-  --color-primary-900: #064e3b;
-  --color-primary-950: #022c22;
-}
-
-/* ========================================
-   Color Palettes (Dark Mode)
-   ======================================== */
-
-html.dark[data-palette="ocean"] {
-  --color-primary-50: oklch(0.15 0.03 250);
-  --color-primary-100: oklch(0.20 0.05 250);
-  --color-primary-200: oklch(0.28 0.08 250);
-  --color-primary-300: oklch(0.38 0.12 250);
-  --color-primary-400: oklch(0.50 0.16 250);
-  --color-primary-500: oklch(0.60 0.18 250);
-  --color-primary-600: oklch(0.68 0.16 250);
-  --color-primary-700: oklch(0.75 0.13 250);
-  --color-primary-800: oklch(0.82 0.10 250);
-  --color-primary-900: oklch(0.90 0.06 250);
-}
-
-html.dark[data-palette="rose"] {
-  --color-primary-50: oklch(0.15 0.03 350);
-  --color-primary-100: oklch(0.20 0.05 350);
-  --color-primary-200: oklch(0.28 0.08 350);
-  --color-primary-300: oklch(0.38 0.14 350);
-  --color-primary-400: oklch(0.50 0.18 350);
-  --color-primary-500: oklch(0.60 0.20 350);
-  --color-primary-600: oklch(0.68 0.18 350);
-  --color-primary-700: oklch(0.75 0.14 350);
-  --color-primary-800: oklch(0.82 0.10 350);
-  --color-primary-900: oklch(0.90 0.06 350);
-}
-
-/* BORA Purple (Dark) — bora-600 #7c3aed ≈ oklch(...287) 기준 violet hue */
-html.dark[data-palette="purple"] {
+html.dark {
   --color-primary-50: oklch(0.15 0.03 287);
   --color-primary-100: oklch(0.20 0.05 287);
   --color-primary-200: oklch(0.28 0.08 287);
@@ -369,138 +288,26 @@ html.dark[data-palette="purple"] {
   --color-primary-700: oklch(0.75 0.14 287);
   --color-primary-800: oklch(0.82 0.10 287);
   --color-primary-900: oklch(0.90 0.06 287);
-}
-
-html.dark[data-palette="forest"] {
-  --color-primary-50: oklch(0.15 0.03 160);
-  --color-primary-100: oklch(0.20 0.05 160);
-  --color-primary-200: oklch(0.28 0.08 160);
-  --color-primary-300: oklch(0.38 0.14 160);
-  --color-primary-400: oklch(0.50 0.18 160);
-  --color-primary-500: oklch(0.60 0.20 160);
-  --color-primary-600: oklch(0.68 0.16 160);
-  --color-primary-700: oklch(0.75 0.12 160);
-  --color-primary-800: oklch(0.82 0.08 160);
-  --color-primary-900: oklch(0.90 0.04 160);
+  --color-primary-950: oklch(0.95 0.03 287);
 }
 
 /* ========================================
-   Hero Gradient & Glow Tokens
+   Hero Gradient & Glow Tokens — 보라 단일
    ======================================== */
 :root {
-  --gradient-hero-start: var(--color-primary-600);
-  --gradient-hero-end: var(--color-primary-800);
+  --gradient-hero-start: #7c3aed;
+  --gradient-hero-end: #5b21b6;
   --gradient-hero-angle: 135deg;
-  --glow-primary: oklch(0.55 0.20 250 / 0.15);
+  --glow-primary: rgba(124, 58, 237, 0.2);
   --glow-success: oklch(0.62 0.18 145 / 0.15);
   --glow-danger: oklch(0.58 0.22 25 / 0.15);
   --glow-spread: 20px;
 }
 
-html:not(.dark)[data-palette="ocean"] {
-  --gradient-hero-start: #2563eb;
-  --gradient-hero-end: #1e40af;
-  --glow-primary: rgba(37, 99, 235, 0.2);
-}
-html:not(.dark)[data-palette="rose"] {
-  --gradient-hero-start: #db2777;
-  --gradient-hero-end: #9d174d;
-  --glow-primary: rgba(219, 39, 119, 0.2);
-}
-html:not(.dark)[data-palette="purple"] {
-  --gradient-hero-start: #7c3aed;
-  --gradient-hero-end: #5b21b6;
-  --glow-primary: rgba(124, 58, 237, 0.2);
-}
-html:not(.dark)[data-palette="forest"] {
-  --gradient-hero-start: #059669;
-  --gradient-hero-end: #065f46;
-  --glow-primary: rgba(5, 150, 105, 0.2);
-}
-
-html.dark[data-palette="ocean"] {
-  --gradient-hero-start: oklch(0.35 0.12 250);
-  --gradient-hero-end: oklch(0.22 0.08 250);
-  --glow-primary: oklch(0.50 0.16 250 / 0.2);
-}
-html.dark[data-palette="rose"] {
-  --gradient-hero-start: oklch(0.35 0.14 350);
-  --gradient-hero-end: oklch(0.22 0.08 350);
-  --glow-primary: oklch(0.50 0.18 350 / 0.2);
-}
-html.dark[data-palette="purple"] {
+.dark {
   --gradient-hero-start: oklch(0.35 0.14 287);
   --gradient-hero-end: oklch(0.22 0.08 287);
   --glow-primary: oklch(0.50 0.18 287 / 0.2);
-}
-html.dark[data-palette="forest"] {
-  --gradient-hero-start: oklch(0.35 0.14 160);
-  --gradient-hero-end: oklch(0.22 0.08 160);
-  --glow-primary: oklch(0.50 0.16 160 / 0.2);
-}
-
-.dark {
-  --gradient-hero-start: oklch(0.33 0.12 250);
-  --gradient-hero-end: oklch(0.20 0.08 250);
-}
-
-/* ========================================
-   Time-based Theme Variables (from TDL)
-   ======================================== */
-
-/* Morning: warm tones */
-html[data-time-period="morning"] {
-  --color-primary-50: oklch(0.97 0.03 70);
-  --color-primary-100: oklch(0.93 0.05 70);
-  --color-primary-200: oklch(0.86 0.09 70);
-  --color-primary-300: oklch(0.76 0.13 70);
-  --color-primary-400: oklch(0.64 0.16 70);
-  --color-primary-500: oklch(0.55 0.18 70);
-  --color-primary-600: oklch(0.48 0.16 70);
-  --color-primary-700: oklch(0.40 0.13 70);
-  --color-primary-800: oklch(0.33 0.10 70);
-  --color-primary-900: oklch(0.27 0.07 70);
-}
-
-/* Evening: cool purple tones */
-html[data-time-period="evening"] {
-  --color-primary-50: oklch(0.97 0.02 290);
-  --color-primary-100: oklch(0.93 0.04 290);
-  --color-primary-200: oklch(0.86 0.08 290);
-  --color-primary-300: oklch(0.76 0.12 290);
-  --color-primary-400: oklch(0.64 0.16 290);
-  --color-primary-500: oklch(0.55 0.18 290);
-  --color-primary-600: oklch(0.48 0.16 290);
-  --color-primary-700: oklch(0.40 0.13 290);
-  --color-primary-800: oklch(0.33 0.10 290);
-  --color-primary-900: oklch(0.27 0.07 290);
-}
-
-/* Night: deep blue tones */
-html.dark[data-time-period="night"] {
-  --color-primary-50: oklch(0.15 0.03 260);
-  --color-primary-100: oklch(0.20 0.05 260);
-  --color-primary-200: oklch(0.28 0.08 260);
-  --color-primary-300: oklch(0.38 0.12 260);
-  --color-primary-400: oklch(0.50 0.16 260);
-  --color-primary-500: oklch(0.60 0.18 260);
-  --color-primary-600: oklch(0.68 0.16 260);
-  --color-primary-700: oklch(0.75 0.13 260);
-  --color-primary-800: oklch(0.82 0.10 260);
-  --color-primary-900: oklch(0.90 0.06 260);
-}
-
-html.dark[data-time-period="evening"] {
-  --color-primary-50: oklch(0.15 0.03 290);
-  --color-primary-100: oklch(0.20 0.05 290);
-  --color-primary-200: oklch(0.28 0.08 290);
-  --color-primary-300: oklch(0.38 0.14 290);
-  --color-primary-400: oklch(0.50 0.18 290);
-  --color-primary-500: oklch(0.60 0.20 290);
-  --color-primary-600: oklch(0.68 0.18 290);
-  --color-primary-700: oklch(0.75 0.14 290);
-  --color-primary-800: oklch(0.82 0.10 290);
-  --color-primary-900: oklch(0.90 0.06 290);
 }
 
 /* ========================================
@@ -698,20 +505,17 @@ html.dark[data-time-period="evening"] {
 }
 
 /* ========================================
-   Theme Overlays (must be AFTER palettes for cascade priority)
-   ======================================== */
-@import './styles/tokens/theme-overlays.css';
-
-/* ========================================
    High Contrast Mode
    ======================================== */
 @media (prefers-contrast: more) {
   :root {
-    --color-primary-500: oklch(0.45 0.25 250);
+    --color-primary-500: oklch(0.45 0.25 287);
   }
 
-  .dark {
-    --color-primary-500: oklch(0.70 0.22 250);
+  /* html.dark — 다크 베이스 스케일(html.dark, 특이도 0,1,1)을 이기려면
+   * 동일 특이도 이상이어야 한다. 과거 .dark(0,1,0)는 항상 패배하던 죽은 규칙. */
+  html.dark {
+    --color-primary-500: oklch(0.70 0.22 287);
   }
 
   * {

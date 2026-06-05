@@ -25,7 +25,7 @@ export function PremiumModalHeader({
         style={{
           background: `
             radial-gradient(circle at 16% 0%, oklch(0.62 0.18 280 / 0.20), transparent 50%),
-            radial-gradient(circle at 90% 10%, oklch(0.70 0.16 250 / 0.16), transparent 46%)
+            radial-gradient(circle at 90% 10%, oklch(0.70 0.16 287 / 0.16), transparent 46%)
           `,
         }}
       />

@@ -5,12 +5,12 @@ import { clsx } from 'clsx'
 import {
   LayoutDashboard, Receipt, TrendingDown, Landmark, CreditCard, Calendar,
   Repeat, TrendingUp, BarChart3, User, Search, Plus, Settings, HelpCircle,
-  Sun, Palette, Eye, EyeOff, Moon, Rows3, Command as CommandIcon, CornerDownLeft,
+  Sun, Eye, EyeOff, Moon, Rows3, Command as CommandIcon, CornerDownLeft,
   type LucideIcon,
 } from 'lucide-react'
 import { useUIStore } from '@/stores/uiStore'
 import { useSettingsStore } from '@/stores/settingsStore'
-import type { ColorPalette, Density, ThemeMode } from '@/lib/types'
+import type { Density, ThemeMode } from '@/lib/types'
 
 type Group = 'navigation' | 'action' | 'appearance' | 'help'
 
@@ -32,11 +32,7 @@ const GROUP_LABEL: Record<Group, string> = {
 }
 
 const THEME_ORDER: ThemeMode[] = ['light', 'dark', 'system']
-const PALETTE_ORDER: ColorPalette[] = ['default', 'ocean', 'rose', 'purple', 'forest']
 const DENSITY_ORDER: Density[] = ['comfortable', 'compact', 'spacious']
-const PALETTE_LABEL: Record<ColorPalette, string> = {
-  default: '기본', ocean: '오션', rose: '로즈', purple: '퍼플', forest: '포레스트',
-}
 const DENSITY_LABEL: Record<Density, string> = {
   comfortable: '보통', compact: '촘촘하게', spacious: '여유롭게',
 }
@@ -59,12 +55,10 @@ export function CommandPalette() {
   const openAssetCreateModal = useUIStore((s) => s.openAssetCreateModal)
 
   const theme = useSettingsStore((s) => s.settings.theme)
-  const palette = useSettingsStore((s) => s.settings.colorPalette)
   const density = useSettingsStore((s) => s.settings.density ?? 'comfortable')
   const hideAmounts = useSettingsStore((s) => !!s.settings.hideAmounts)
   const oled = useSettingsStore((s) => !!s.settings.oledMode)
   const setTheme = useSettingsStore((s) => s.setTheme)
-  const setColorPalette = useSettingsStore((s) => s.setColorPalette)
   const setDensity = useSettingsStore((s) => s.setDensity)
   const toggleOledMode = useSettingsStore((s) => s.toggleOledMode)
   const toggleHideAmounts = useSettingsStore((s) => s.toggleHideAmounts)
@@ -85,7 +79,6 @@ export function CommandPalette() {
 
   const commands = useMemo<Command[]>(() => {
     const cycleTheme = () => setTheme(THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length])
-    const cyclePalette = () => setColorPalette(PALETTE_ORDER[(PALETTE_ORDER.indexOf(palette) + 1) % PALETTE_ORDER.length])
     const cycleDensity = () => setDensity(DENSITY_ORDER[(DENSITY_ORDER.indexOf(density) + 1) % DENSITY_ORDER.length])
     return [
       // ── Navigation ──
@@ -106,7 +99,6 @@ export function CommandPalette() {
       { id: 'act-search', label: '거래 검색', group: 'action', keywords: 'search find 검색 찾기', icon: Search, hint: '/', run: openSearchModal },
       // ── Appearance ──
       { id: 'ap-theme', label: `테마 전환 (현재: ${theme === 'light' ? '라이트' : theme === 'dark' ? '다크' : '시스템'})`, group: 'appearance', keywords: 'theme dark light 테마 다크 라이트', icon: Sun, run: cycleTheme },
-      { id: 'ap-palette', label: `색상 팔레트 (현재: ${PALETTE_LABEL[palette]})`, group: 'appearance', keywords: 'palette color 색상 팔레트 ocean rose purple forest', icon: Palette, run: cyclePalette },
       { id: 'ap-density', label: `정보 밀도 (현재: ${DENSITY_LABEL[density]})`, group: 'appearance', keywords: 'density compact spacious 밀도 촘촘 여유', icon: Rows3, run: cycleDensity },
       { id: 'ap-oled', label: oled ? 'OLED 블랙 끄기' : 'OLED 블랙 켜기', group: 'appearance', keywords: 'oled black 블랙 amoled', icon: Moon, run: toggleOledMode },
       { id: 'ap-mask', label: hideAmounts ? '금액 표시' : '금액 숨기기', group: 'appearance', keywords: 'hide amount mask 금액 숨김 보안', icon: hideAmounts ? Eye : EyeOff, run: toggleHideAmounts },
@@ -115,7 +107,7 @@ export function CommandPalette() {
       { id: 'help-faq', label: 'FAQ / 도움말', group: 'help', keywords: 'faq help 도움말 질문', icon: HelpCircle, run: openFAQModal },
       { id: 'help-keys', label: '키보드 단축키', group: 'help', keywords: 'keyboard shortcuts 단축키 키보드', icon: CommandIcon, hint: '?', run: openShortcutsModal },
     ]
-  }, [theme, palette, density, oled, hideAmounts, setTheme, setColorPalette, setDensity, toggleOledMode, toggleHideAmounts, openSearchModal, openSettingsModal, openFAQModal, openShortcutsModal, openTransactionCreateModal, openAssetCreateModal]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [theme, density, oled, hideAmounts, setTheme, setDensity, toggleOledMode, toggleHideAmounts, openSearchModal, openSettingsModal, openFAQModal, openShortcutsModal, openTransactionCreateModal, openAssetCreateModal]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()

@@ -45,7 +45,7 @@
 
   /* Context Menu Item States */
   --context-menu-item-hover-bg: #F5F5F5;
-  --context-menu-item-focus-bg: #EFF6FF;
+  --context-menu-item-focus-bg: #faf5ff;
   --context-menu-item-pressed-bg: #E5E5E5;
   --context-menu-item-danger-color: #DC2626;
 
@@ -80,7 +80,7 @@
   --prose-code-radius: 4px;
   --prose-code-font: 'Fira Code', 'Consolas', monospace;
   --prose-code-font-size: 13px;
-  --prose-link-color: var(--color-primary, #2563eb);
+  --prose-link-color: var(--color-primary, #7c3aed);
   --prose-table-border: #E5E7EB;
   --prose-table-header-bg: #F9FAFB;
   --prose-table-cell-padding: 8px 12px;
@@ -113,7 +113,7 @@
   --context-menu-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
   --context-menu-item-color: #F4F4F5;
   --context-menu-item-hover-bg: #3F3F46;
-  --context-menu-item-focus-bg: rgba(37, 99, 235, 0.15);
+  --context-menu-item-focus-bg: rgba(124, 58, 237, 0.18);
   --context-menu-item-pressed-bg: #52525B;
   --context-menu-item-danger-color: #F87171;
 

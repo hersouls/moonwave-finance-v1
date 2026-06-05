@@ -1,47 +1,6 @@
-export type ColorPalette = 'default' | 'ocean' | 'rose' | 'purple' | 'forest'
-
-export interface PaletteDefinition {
-  id: ColorPalette
-  name: string
-  nameKo: string
-  colors: {
-    primary: string
-    secondary: string
-  }
-}
-
-export const COLOR_PALETTES: Record<ColorPalette, PaletteDefinition> = {
-  default: {
-    id: 'default',
-    name: 'Mint',
-    nameKo: '민트',
-    colors: { primary: '#2EFFB4', secondary: '#00A86B' },
-  },
-  ocean: {
-    id: 'ocean',
-    name: 'Ocean',
-    nameKo: '오션',
-    colors: { primary: '#3B82F6', secondary: '#1D4ED8' },
-  },
-  rose: {
-    id: 'rose',
-    name: 'Rose',
-    nameKo: '로즈',
-    colors: { primary: '#F472B6', secondary: '#DB2777' },
-  },
-  purple: {
-    id: 'purple',
-    name: 'Purple',
-    nameKo: '퍼플',
-    colors: { primary: '#A78BFA', secondary: '#7C3AED' },
-  },
-  forest: {
-    id: 'forest',
-    name: 'Forest',
-    nameKo: '포레스트',
-    colors: { primary: '#34D399', secondary: '#059669' },
-  },
-}
+/* v4 "One Purple": ColorPalette/COLOR_PALETTES 퇴역 — 브랜드 보라 단일.
+ * 팔레트 전환·시간 테마·오버레이가 겹쳐 정체성이 분산되던 것을
+ * index.css @theme 의 BORA 보라 스케일 하나로 고정. */
 
 export const DEFAULT_MEMBERS = [
   { name: '대성', color: '#3B82F6' },

@@ -68,7 +68,7 @@ export function getTooltipText(): string {
 // ─── Data-Viz Series (palette-aware via CSS vars) ──
 export function getChartSeries(index: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8): string {
   const fallbacks: Record<number, string> = {
-    1: '#3b82f6', 2: '#10b981', 3: '#f59e0b', 4: '#ef4444',
+    1: '#a855f7', 2: '#10b981', 3: '#f59e0b', 4: '#ef4444',
     5: '#8b5cf6', 6: '#06b6d4', 7: '#ec4899', 8: '#a16207',
   }
   return cssVar(`--chart-series-${index}`, fallbacks[index])
@@ -163,15 +163,15 @@ export function createLineGradientRGBA(
 export const chartColors = {
   income: { line: '#10b981', fill: [16, 185, 129] as const },
   expense: { line: '#ef4444', fill: [239, 68, 68] as const },
-  netWorth: { line: '#3b82f6', fill: [59, 130, 246] as const },
-  asset: { line: '#3b82f6', fill: [59, 130, 246] as const },
+  netWorth: { line: '#a855f7', fill: [168, 85, 247] as const },
+  asset: { line: '#a855f7', fill: [168, 85, 247] as const },
   liability: { line: '#f59e0b', fill: [245, 158, 11] as const },
   savings: { line: '#8b5cf6', fill: [139, 92, 246] as const },
   dark: {
     income: { line: '#34d399', fill: [52, 211, 153] as const },
     expense: { line: '#f87171', fill: [248, 113, 113] as const },
-    netWorth: { line: '#60a5fa', fill: [96, 165, 250] as const },
-    asset: { line: '#60a5fa', fill: [96, 165, 250] as const },
+    netWorth: { line: '#a78bfa', fill: [167, 139, 250] as const },
+    asset: { line: '#a78bfa', fill: [167, 139, 250] as const },
     liability: { line: '#fbbf24', fill: [251, 191, 36] as const },
     savings: { line: '#a78bfa', fill: [167, 139, 250] as const },
   },

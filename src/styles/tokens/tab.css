@@ -38,7 +38,7 @@
   /* --- Interaction --- */
   --tab-hover-bg: rgba(0, 0, 0, 0.03);
   --tab-pressed-bg: rgba(0, 0, 0, 0.06);
-  --tab-focus-ring-color: var(--color-primary-500, #3B82F6);
+  --tab-focus-ring-color: var(--color-primary-500, #a855f7);
   --tab-focus-ring-width: 2px;
 
   /* --- Animation --- */

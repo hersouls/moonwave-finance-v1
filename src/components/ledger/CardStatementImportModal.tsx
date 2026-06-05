@@ -545,8 +545,8 @@ function PremiumHeader({ step, onClose, canClose }: { step: Step; onClose: () =>
         className="absolute inset-0 pointer-events-none"
         style={{
           background: `
-            radial-gradient(circle at 18% 0%, oklch(0.62 0.18 250 / 0.18), transparent 50%),
-            radial-gradient(circle at 88% 12%, oklch(0.72 0.16 195 / 0.14), transparent 45%)
+            radial-gradient(circle at 18% 0%, oklch(0.62 0.18 287 / 0.18), transparent 50%),
+            radial-gradient(circle at 88% 12%, oklch(0.72 0.16 310 / 0.14), transparent 45%)
           `,
         }}
       />

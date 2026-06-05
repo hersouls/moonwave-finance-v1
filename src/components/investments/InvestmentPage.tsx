@@ -486,15 +486,17 @@ function InvestmentHeroSection({ label, children, aurora }: { label: string; chi
   )
 }
 
-const AURORA_DEFAULT = `radial-gradient(circle at 15% 10%, oklch(0.65 0.18 280 / 0.18), transparent 50%),
-  radial-gradient(circle at 90% 20%, oklch(0.72 0.16 195 / 0.14), transparent 45%),
-  radial-gradient(circle at 50% 110%, oklch(0.68 0.18 25 / 0.10), transparent 55%)`
-const AURORA_WARM = `radial-gradient(circle at 15% 10%, oklch(0.68 0.18 25 / 0.16), transparent 50%),
-  radial-gradient(circle at 90% 20%, oklch(0.72 0.16 70 / 0.14), transparent 45%),
-  radial-gradient(circle at 50% 110%, oklch(0.65 0.18 145 / 0.10), transparent 55%)`
-const AURORA_COOL = `radial-gradient(circle at 15% 10%, oklch(0.65 0.18 250 / 0.16), transparent 50%),
-  radial-gradient(circle at 90% 20%, oklch(0.72 0.16 195 / 0.14), transparent 45%),
-  radial-gradient(circle at 50% 110%, oklch(0.65 0.18 290 / 0.10), transparent 55%)`
+/* v4 "One Purple": 히어로 워시 3종을 전부 보라 단일 계열로 — 청록/금색/초록
+ * 혼합 워시는 브랜드 정체성을 희석한다. 변형 간 차이는 밝기·채도·위치로만. */
+const AURORA_DEFAULT = `radial-gradient(circle at 15% 10%, oklch(0.65 0.18 287 / 0.18), transparent 50%),
+  radial-gradient(circle at 90% 20%, oklch(0.72 0.14 295 / 0.14), transparent 45%),
+  radial-gradient(circle at 50% 110%, oklch(0.55 0.16 278 / 0.10), transparent 55%)`
+const AURORA_WARM = `radial-gradient(circle at 15% 10%, oklch(0.70 0.16 300 / 0.16), transparent 50%),
+  radial-gradient(circle at 90% 20%, oklch(0.76 0.12 290 / 0.14), transparent 45%),
+  radial-gradient(circle at 50% 110%, oklch(0.62 0.15 285 / 0.10), transparent 55%)`
+const AURORA_COOL = `radial-gradient(circle at 15% 10%, oklch(0.65 0.18 287 / 0.16), transparent 50%),
+  radial-gradient(circle at 90% 20%, oklch(0.72 0.16 275 / 0.14), transparent 45%),
+  radial-gradient(circle at 50% 110%, oklch(0.60 0.17 295 / 0.10), transparent 55%)`
 
 // ─── Trade Hero ──────────────────────────────────
 function TradeHero({ totalProfit, profitRate, totalSell, totalBuy, winRate, count, wins, losses }: {
@@ -1494,7 +1496,7 @@ function InvestmentDashboard({
                   {insights.concentration.top5Stocks.map((s, i) => {
                     const totalP = insights.concentration.top5Stocks.reduce((sum, x) => sum + x.profit, 0)
                     const w = totalP > 0 ? (s.profit / totalP) * (insights.concentration.top5Share) : 0
-                    return <div key={s.name} className="h-full" style={{ width: `${w}%`, backgroundColor: `oklch(0.65 0.18 ${250 + i * 30})`, opacity: 1 - i * 0.12 }} />
+                    return <div key={s.name} className="h-full" style={{ width: `${w}%`, backgroundColor: `oklch(0.65 0.18 ${287 + i * 22})`, opacity: 1 - i * 0.12 }} />
                   })}
                 </div>
                 <div className="space-y-1">

@@ -24,16 +24,17 @@
   isolation: isolate;
 }
 
+/* v4 "One Purple": 파랑/초록 혼합 → 보라 단일 계열 모노크롬 (밝기 변주만) */
 .aurora-bg::before {
   content: '';
   position: absolute;
   inset: -50%;
   background: conic-gradient(
     from var(--aurora-angle),
-    oklch(0.55 0.18 250 / 0.20),
-    oklch(0.55 0.18 290 / 0.18),
-    oklch(0.55 0.18 160 / 0.18),
-    oklch(0.55 0.18 250 / 0.20)
+    oklch(0.55 0.20 287 / 0.20),
+    oklch(0.66 0.16 295 / 0.16),
+    oklch(0.48 0.18 280 / 0.18),
+    oklch(0.55 0.20 287 / 0.20)
   );
   animation: aurora-rotate 24s linear infinite;
   filter: blur(48px);
@@ -44,10 +45,10 @@
 .dark .aurora-bg::before {
   background: conic-gradient(
     from var(--aurora-angle),
-    oklch(0.55 0.22 250 / 0.32),
-    oklch(0.55 0.22 290 / 0.28),
-    oklch(0.55 0.22 160 / 0.28),
-    oklch(0.55 0.22 250 / 0.32)
+    oklch(0.50 0.22 287 / 0.32),
+    oklch(0.62 0.18 295 / 0.26),
+    oklch(0.42 0.20 280 / 0.28),
+    oklch(0.50 0.22 287 / 0.32)
   );
 }
 

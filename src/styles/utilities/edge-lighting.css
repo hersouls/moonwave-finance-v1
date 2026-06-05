@@ -52,7 +52,7 @@
 }
 
 .el-focus:focus-visible {
-  box-shadow: 0 0 0 3px var(--glow-primary, oklch(0.55 0.20 250 / 0.25));
+  box-shadow: 0 0 0 3px var(--glow-primary, oklch(0.55 0.20 287 / 0.25));
   outline: none;
 }
 
@@ -186,7 +186,7 @@
 }
 
 .el-input:focus-within {
-  box-shadow: 0 0 0 3px var(--glow-primary, oklch(0.55 0.20 250 / 0.25));
+  box-shadow: 0 0 0 3px var(--glow-primary, oklch(0.55 0.20 287 / 0.25));
   border-color: var(--color-primary-500);
 }
 

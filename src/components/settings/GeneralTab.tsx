@@ -1,14 +1,13 @@
 import { useState } from 'react'
-import { Sun, Info, HelpCircle, FileText, Rows3, Palette, SlidersHorizontal, Coins, ArrowLeftRight, History, Eye } from 'lucide-react'
-import { clsx } from 'clsx'
-import { COLOR_PALETTES, BACKUP_CONFIG, UI_DELAYS } from '@/utils/constants'
+import { Sun, Info, HelpCircle, FileText, Rows3, SlidersHorizontal, Coins, ArrowLeftRight, History, Eye } from 'lucide-react'
+import { BACKUP_CONFIG, UI_DELAYS } from '@/utils/constants'
 import { useUIStore } from '@/stores/uiStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { Button } from '@/components/ui/Button'
 import { ToggleSwitch } from './ToggleSwitch'
 import { FormSectionLabel, SegmentedControl } from '@/components/ui/CreateFormPrimitives'
 import { formatRelativeTime } from '@/utils/format'
-import type { Settings, ThemeMode, ColorPalette, Density } from '@/lib/types'
+import type { Settings, ThemeMode, Density } from '@/lib/types'
 
 const DENSITY_OPTIONS: { value: Density; label: string }[] = [
   { value: 'compact', label: '컴팩트' },
@@ -36,13 +35,11 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
   const setDensity = useSettingsStore((s) => s.setDensity)
   const toggleOledMode = useSettingsStore((s) => s.toggleOledMode)
   const toggleHideAmounts = useSettingsStore((s) => s.toggleHideAmounts)
-  const toggleTimeBasedTheme = useSettingsStore((s) => s.toggleTimeBasedTheme)
   const toggleAutoCarryForward = useSettingsStore((s) => s.toggleAutoCarryForward)
   const autoCarryForward = useSettingsStore((s) => s.settings.autoCarryForward !== false)
   const density = useSettingsStore((s) => s.settings.density) ?? 'comfortable'
   const oledMode = useSettingsStore((s) => !!s.settings.oledMode)
   const hideAmounts = useSettingsStore((s) => !!s.settings.hideAmounts)
-  const timeBasedTheme = useSettingsStore((s) => !!s.settings.timeBasedTheme)
   const [rateInput, setRateInput] = useState(String(exchangeRate?.usdToKrw ?? 1350))
 
   const handleOpenFAQ = () => {
@@ -98,12 +95,6 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
             disabled={draft.theme !== 'dark' && draft.theme !== 'system'}
           />
           <ToggleSwitch
-            checked={timeBasedTheme}
-            onChange={() => toggleTimeBasedTheme()}
-            label="시간대 자동 테마"
-            description="아침/낮/저녁/밤에 따라 색상 톤을 자동 조정합니다"
-          />
-          <ToggleSwitch
             checked={hideAmounts}
             onChange={() => toggleHideAmounts()}
             label="금액 숨기기"
@@ -112,35 +103,7 @@ export function GeneralTab({ draft, onChange }: GeneralTabProps) {
         </div>
       </section>
 
-      {/* Color Palette */}
-      <section>
-        <FormSectionLabel icon={Palette}>강조 색상</FormSectionLabel>
-        <div className="grid grid-cols-5 gap-2">
-          {(Object.values(COLOR_PALETTES) as { id: ColorPalette; nameKo: string; colors: { primary: string } }[]).map((palette) => (
-            <button
-              key={palette.id}
-              onClick={() => onChange({ colorPalette: palette.id })}
-              className={clsx(
-                'flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all',
-                draft.colorPalette === palette.id
-                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                  : 'border-transparent hover:bg-[var(--hover-bg)]'
-              )}
-            >
-              <div
-                className="w-8 h-8 rounded-full ring-2 ring-[var(--surface-primary)] elevation-1"
-                style={{ backgroundColor: palette.colors.primary }}
-              />
-              <span className="text-label3-medium text-sub">{palette.nameKo}</span>
-            </button>
-          ))}
-        </div>
-        {draft.theme === 'dark' && (
-          <p className="text-caption text-sub mt-2">
-            다크 모드에서는 색상이 자동 조정됩니다
-          </p>
-        )}
-      </section>
+      {/* v4 "One Purple": 강조 색상 선택 퇴역 — FIN 브랜드 보라 단일 정체성 */}
 
       {/* Currency Unit */}
       <section>
