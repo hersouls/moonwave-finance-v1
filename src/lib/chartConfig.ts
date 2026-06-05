@@ -10,7 +10,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
-import { KOREAN_UNIT_EUK, KOREAN_UNIT_MAN } from '@/utils/format'
+import { formatKoreanAxisTick } from '@/utils/format'
 
 ChartJS.register(
   CategoryScale,
@@ -217,11 +217,10 @@ export const commonLineOptions = {
       ticks: {
         get color() { return getTextColor() },
         font: { family: "'Pretendard', sans-serif", size: 11 },
-        callback: function(value: number | string) {
-          const num = typeof value === 'string' ? parseFloat(value) : value
-          if (Math.abs(num) >= KOREAN_UNIT_EUK) return Math.round(num / KOREAN_UNIT_EUK) + '억'
-          if (Math.abs(num) >= KOREAN_UNIT_MAN) return Math.round(num / KOREAN_UNIT_MAN) + '만'
-          return String(num)
+        // 눈금 간격 기반 자릿수 — 정수 억 반올림은 5.1억~5.4억 구간에서
+        // 모든 눈금이 "5억"으로 붕괴했다 (순자산 추이 y축 판독 불가).
+        callback: function(value: number | string, _index: number, ticks: ReadonlyArray<{ value: number }>) {
+          return formatKoreanAxisTick(value, ticks)
         },
       },
       border: { display: false },
