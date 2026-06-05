@@ -95,12 +95,13 @@ beforeEach(async () => {
 })
 
 describe('buildBundlePatches (순수)', () => {
+  const DEV = 'test-device'
   const entry = (over: Partial<SyncChangeLogEntry>): SyncChangeLogEntry => ({
     tableName: 'dailyValues', syncId: 's1', operation: 'update',
     timestamp: NOW, processed: 0, ...over,
   })
 
-  it('자산×월로 그룹핑하고 일자 엔트리에 {v,s,u,sid}를 싣는다', () => {
+  it('자산×월로 그룹핑하고 일자 튜플 [v,s,u,sid,d]를 싣는다', () => {
     const r1 = makeRow({ syncId: 's1', date: '2026-06-05', value: 100, source: 'manual' })
     const r2 = makeRow({ syncId: 's2', date: '2026-06-09', value: 200 })
     const r3 = makeRow({ syncId: 's3', date: '2026-07-01', value: 300 })
@@ -109,22 +110,23 @@ describe('buildBundlePatches (순수)', () => {
       new Map([['s1', r1], ['s2', r2], ['s3', r3]]),
       new Map(),
       new Map([[1, 'asset-A']]),
+      DEV,
     )
     expect(unresolved).toBe(0)
     expect(patches).toHaveLength(2) // 6월, 7월
     const june = patches.find(p => p.month === '2026-06')!
     expect(june.bundleKey).toBe(dvBundleKey('asset-A', '2026-06'))
-    expect(june.upserts['05']).toEqual({ v: 100, s: 'manual', u: NOW, sid: 's1' })
-    expect(june.upserts['09']).toEqual({ v: 200, s: null, u: NOW, sid: 's2' })
+    expect(june.days['05']).toEqual([100, 'manual', NOW, 's1', DEV])
+    expect(june.days['09']).toEqual([200, null, NOW, 's2', DEV])
   })
 
-  it('삭제 항목은 (assetItemId, date) 메타로 일자 제거를 만든다', () => {
+  it('삭제 항목은 (assetItemId, date) 메타로 v=null 삭제 마커를 만든다', () => {
     const { patches } = buildBundlePatches(
       [entry({ syncId: 'gone', operation: 'delete', assetItemId: 1, date: '2026-06-05' })],
-      new Map(), new Map(), new Map([[1, 'asset-A']]),
+      new Map(), new Map(), new Map([[1, 'asset-A']]), DEV,
     )
     expect(patches).toHaveLength(1)
-    expect(patches[0].deletes).toEqual(['05'])
+    expect(patches[0].days['05']).toEqual([null, null, NOW, 'gone', DEV])
   })
 
   it('삭제 후 재생성된 일자는 현재 로컬 행(업서트)이 이긴다', () => {
@@ -137,10 +139,10 @@ describe('buildBundlePatches (순수)', () => {
       new Map([['s-new', live]]),
       new Map([['1|2026-06-05', live]]),
       new Map([[1, 'asset-A']]),
+      DEV,
     )
     expect(patches).toHaveLength(1)
-    expect(patches[0].deletes).toEqual([]) // 삭제가 업서트에 흡수됨
-    expect(patches[0].upserts['05'].v).toBe(777)
+    expect(patches[0].days['05'][0]).toBe(777) // 마커가 아니라 살아있는 값
   })
 
   it('syncId 미스 + 좌표 메타로 같은 논리 일자를 재해석한다 (sid 입양 후 pending 업서트 보존)', () => {
@@ -150,15 +152,17 @@ describe('buildBundlePatches (순수)', () => {
       new Map(), // syncId로는 못 찾음
       new Map([['1|2026-06-05', adopted]]),
       new Map([[1, 'asset-A']]),
+      DEV,
     )
     expect(unresolved).toBe(0)
-    expect(patches[0].upserts['05']).toMatchObject({ v: 555, sid: 's-adopted' })
+    expect(patches[0].days['05'][0]).toBe(555)
+    expect(patches[0].days['05'][3]).toBe('s-adopted')
   })
 
   it('자산이 사라진 항목은 unresolved로 계수하고 패치를 만들지 않는다 (자산 삭제 경로가 번들을 통째 정리)', () => {
     const { patches, unresolved } = buildBundlePatches(
       [entry({ syncId: 'x', operation: 'delete', assetItemId: 99, date: '2026-06-05' })],
-      new Map(), new Map(), new Map(), // 자산 99 해석 불가
+      new Map(), new Map(), new Map(), DEV, // 자산 99 해석 불가
     )
     expect(patches).toHaveLength(0)
     expect(unresolved).toBe(1)
@@ -172,7 +176,7 @@ describe('buildFullBundles + explodeBundleDoc (순수)', () => {
       makeRow({ syncId: 'b', date: '2026-06-15', value: 2 }),
       makeRow({ syncId: 'c', date: '2026-07-01', value: 3 }),
     ]
-    const { bundles } = buildFullBundles(rows, new Map([[1, 'asset-A']]))
+    const { bundles } = buildFullBundles(rows, new Map([[1, 'asset-A']]), 'dev-1')
     expect(bundles).toHaveLength(2)
 
     const june = bundles.find(b => b.month === '2026-06')!
@@ -181,15 +185,21 @@ describe('buildFullBundles + explodeBundleDoc (순수)', () => {
     })!
     expect(exploded.days).toHaveLength(2)
     const d01 = exploded.days.find(d => d.date === '2026-06-01')!
-    expect(d01.entry).toEqual({ v: 1, s: 'manual', u: NOW, sid: 'a' })
+    expect(d01).toMatchObject({ v: 1, s: 'manual', u: NOW, sid: 'a', d: 'dev-1' })
   })
 
-  it('형식이 어긋난 일자 엔트리는 건너뛴다', () => {
+  it('형식이 어긋난 일자 엔트리는 건너뛰고, v=null 마커는 보존한다', () => {
     const exploded = explodeBundleDoc({
       assetItem_syncId: 'asset-A', month: '2026-06',
-      days: { '01': { v: 1, u: NOW, sid: 'a' }, '02': { v: 'oops', u: NOW, sid: 'b' }, '03': null },
+      days: {
+        '01': [1, null, NOW, 'a', 'dev'],
+        '02': ['oops', null, NOW, 'b', 'dev'], // v 타입 불량
+        '03': null,                              // 엔트리 자체 불량
+        '04': [null, null, NOW, 'c', 'dev'],     // 삭제 마커 — 유효
+      },
     })!
-    expect(exploded.days).toHaveLength(1)
+    expect(exploded.days).toHaveLength(2)
+    expect(exploded.days.find(d => d.date === '2026-06-04')!.v).toBeNull()
   })
 })
 
@@ -230,9 +240,12 @@ describe('업로드 통합 (incrementalUpload)', () => {
     expect(bundleSets).toHaveLength(2) // 6월 + 7월
     const june = bundleSets.find(s => (s.payload.month === '2026-06'))!
     expect(june.options).toEqual({ merge: true })
-    const days = june.payload.days as Record<string, { v: number; sid: string }>
-    expect(days['05']).toMatchObject({ v: 100, sid: 'u1' })
-    expect(days['06']).toMatchObject({ v: 200, sid: 'u2' })
+    const days = june.payload.days as Record<string, [number | null, string | null, string, string, string]>
+    expect(days['05'][0]).toBe(100)
+    expect(days['05'][3]).toBe('u1')
+    expect(days['06'][0]).toBe(200)
+    expect(days['06'][3]).toBe('u2')
+    expect(typeof days['05'][4]).toBe('string') // deviceId 동봉 (LWW 타이브레이커)
     expect(june.payload.assetItem_syncId).toBe('asset-A')
     expect(june.payload.__uploadedAt).toEqual({ __sentinel: 'serverTimestamp' })
     // 전부 processed 처리
@@ -240,7 +253,7 @@ describe('업로드 통합 (incrementalUpload)', () => {
     expect(useAuthStore.getState().syncStatus).toBe('synced')
   })
 
-  it('삭제는 레거시 정리 + 톰스톤 + 번들 deleteField를 모두 수행한다', async () => {
+  it('삭제는 레거시 정리 + 톰스톤 + 번들 v=null 마커를 모두 수행한다', async () => {
     const assetId = await seedAsset('asset-A')
     const rowId = await db.dailyValues.add(
       makeRow({ syncId: 'd1', assetItemId: assetId, date: '2026-06-05' }),
@@ -263,22 +276,39 @@ describe('업로드 통합 (incrementalUpload)', () => {
     const tombstoneSets = h.sets.filter(s => s.path.includes('syncTombstones'))
     expect(tombstoneSets).toHaveLength(1)
     expect(tombstoneSets[0].payload.syncId).toBe('d1')
-    // ③ 번들 deleteField
+    // ③ 번들 삭제 마커 (v=null) — 좌표 기반 삭제 전파 (sid 분기에도 닿음)
     const bundleSets = h.sets.filter(s => s.path.includes('dailyValueBundles'))
     expect(bundleSets).toHaveLength(1)
-    const days = bundleSets[0].payload.days as Record<string, unknown>
-    expect(days['05']).toEqual({ __sentinel: 'deleteField' })
+    expect(bundleSets[0].options).toEqual({ merge: true })
+    const days = bundleSets[0].payload.days as Record<string, [number | null, ...unknown[]]>
+    expect(days['05'][0]).toBeNull()
+    expect(days['05'][3]).toBe('d1')
     expect(await db.syncChangeLog.where('processed').equals(0).count()).toBe(0)
   })
 })
 
-describe('ingestDvBundleDoc (일자 LWW + sid 입양)', () => {
+describe('ingestDvBundleDoc (일자 LWW + sid 입양 + 삭제 마커)', () => {
   it('부모 자산이 없으면 false — 행을 만들지 않는다', async () => {
     const ok = await ingestDvBundleDoc({
       assetItem_syncId: 'no-such-asset', month: '2026-06',
-      days: { '05': { v: 1, s: null, u: NOW, sid: 'x' } },
+      days: { '05': [1, null, NOW, 'x', 'peer'] },
     })
     expect(ok).toBe(false)
+    expect(await db.dailyValues.count()).toBe(0)
+  })
+
+  it('부모 자산이 톰스톤(삭제됨)이면 true — 영구 보류 대신 완료 처리', async () => {
+    setSyncWritingFlag(true)
+    try {
+      await db.syncTombstones.add({ tableName: 'assetItems', syncId: 'ghost-asset', deletedAt: NOW })
+    } finally {
+      setSyncWritingFlag(false)
+    }
+    const ok = await ingestDvBundleDoc({
+      assetItem_syncId: 'ghost-asset', month: '2026-06',
+      days: { '05': [1, null, NOW, 'x', 'peer'] },
+    })
+    expect(ok).toBe(true)
     expect(await db.dailyValues.count()).toBe(0)
   })
 
@@ -286,7 +316,7 @@ describe('ingestDvBundleDoc (일자 LWW + sid 입양)', () => {
     const assetId = await seedAsset('asset-A')
     const ok = await ingestDvBundleDoc({
       assetItem_syncId: 'asset-A', month: '2026-06',
-      days: { '05': { v: 123, s: 'manual', u: NOW, sid: 'cloud-sid' } },
+      days: { '05': [123, 'manual', NOW, 'cloud-sid', 'peer'] },
     })
     expect(ok).toBe(true)
     const row = await db.dailyValues.where('[assetItemId+date]').equals([assetId, '2026-06-05']).first()
@@ -308,7 +338,7 @@ describe('ingestDvBundleDoc (일자 LWW + sid 입양)', () => {
     }
     await ingestDvBundleDoc({
       assetItem_syncId: 'asset-A', month: '2026-06',
-      days: { '05': { v: 1, s: null, u: NOW, sid: 'cloud-sid' } }, // NOW < 로컬 u
+      days: { '05': [1, null, NOW, 'cloud-sid', 'peer'] }, // NOW < 로컬 u
     })
     const row = await db.dailyValues.where('[assetItemId+date]').equals([assetId, '2026-06-05']).first()
     expect(row!.value).toBe(999)
@@ -328,9 +358,75 @@ describe('ingestDvBundleDoc (일자 LWW + sid 입양)', () => {
     }
     await ingestDvBundleDoc({
       assetItem_syncId: 'asset-A', month: '2026-06',
-      days: { '05': { v: 424242, s: null, u: NOW, sid: 'cloud-sid' } },
+      days: { '05': [424242, null, NOW, 'cloud-sid', 'peer'] },
     })
     const row = await db.dailyValues.where('[assetItemId+date]').equals([assetId, '2026-06-05']).first()
     expect(row).toMatchObject({ value: 424242, syncId: 'cloud-sid', updatedAt: NOW })
+  })
+
+  it('삭제 마커(v=null)는 좌표로 로컬 행을 지운다 — sid가 달라도 전파된다', async () => {
+    const assetId = await seedAsset('asset-A')
+    setSyncWritingFlag(true)
+    try {
+      // 피어와 sid가 분기된 행 (per-row 톰스톤으로는 매칭 불가한 상황)
+      await db.dailyValues.add(makeRow({
+        syncId: 'diverged-local-sid', assetItemId: assetId, date: '2026-06-05',
+        value: 100, updatedAt: '2026-06-01T00:00:00.000Z',
+      }))
+    } finally {
+      setSyncWritingFlag(false)
+    }
+    await ingestDvBundleDoc({
+      assetItem_syncId: 'asset-A', month: '2026-06',
+      days: { '05': [null, null, NOW, 'peer-sid', 'peer'] }, // 삭제 마커, NOW > 로컬 u
+    })
+    expect(await db.dailyValues.count()).toBe(0)
+  })
+
+  it('삭제 마커가 로컬보다 오래되면 보존한다 (삭제 후 재생성 보호)', async () => {
+    const assetId = await seedAsset('asset-A')
+    setSyncWritingFlag(true)
+    try {
+      await db.dailyValues.add(makeRow({
+        syncId: 'recreated', assetItemId: assetId, date: '2026-06-05',
+        value: 500, updatedAt: '2026-06-09T00:00:00.000Z', // 마커(NOW)보다 새로움
+      }))
+    } finally {
+      setSyncWritingFlag(false)
+    }
+    await ingestDvBundleDoc({
+      assetItem_syncId: 'asset-A', month: '2026-06',
+      days: { '05': [null, null, NOW, 'old-sid', 'peer'] },
+    })
+    expect(await db.dailyValues.count()).toBe(1)
+  })
+
+  it('타임스탬프 동률은 deviceId 타이브레이커로 결정적으로 수렴한다 (영구 발산 방지)', async () => {
+    const assetId = await seedAsset('asset-A')
+    const { getDeviceId } = await import('@/lib/deviceId')
+    const self = getDeviceId()
+    setSyncWritingFlag(true)
+    try {
+      await db.dailyValues.add(makeRow({
+        syncId: 'local-sid', assetItemId: assetId, date: '2026-06-05',
+        value: 100, updatedAt: NOW,
+      }))
+    } finally {
+      setSyncWritingFlag(false)
+    }
+    // 같은 u, 사전순으로 더 큰 peer deviceId → 클라우드가 이긴다 (수렴)
+    await ingestDvBundleDoc({
+      assetItem_syncId: 'asset-A', month: '2026-06',
+      days: { '05': [200, null, NOW, 'peer-sid', `${self}~~`] },
+    })
+    const row = await db.dailyValues.where('[assetItemId+date]').equals([assetId, '2026-06-05']).first()
+    expect(row!.value).toBe(200)
+    // 같은 u, 사전순으로 더 작은 deviceId → 로컬 보존 (반대 기기에서는 반대로 적용 → 양쪽 동일 결론)
+    await ingestDvBundleDoc({
+      assetItem_syncId: 'asset-A', month: '2026-06',
+      days: { '05': [300, null, NOW, 'x', '!'] },
+    })
+    const row2 = await db.dailyValues.where('[assetItemId+date]').equals([assetId, '2026-06-05']).first()
+    expect(row2!.value).toBe(200)
   })
 })
