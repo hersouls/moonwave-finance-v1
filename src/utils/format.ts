@@ -72,6 +72,31 @@ export function formatKoreanAxisTick(
   return num.toLocaleString('ko-KR')
 }
 
+/**
+ * 한국식 축약 금액 — "4.5억" / "3,450만" / "9,500". 히어로 칩처럼 좁은 공간 전용.
+ * 선행 수가 100 미만이면 소수 1자리(4.5억, 98.5만), 이상이면 정수(3,450만).
+ */
+export function formatKoreanCompact(value: number): string {
+  if (!Number.isFinite(value)) return '0'
+  const sign = value < 0 ? '-' : ''
+  const abs = Math.abs(Math.round(value))
+  const part = (n: number): string =>
+    n >= 100
+      ? Math.round(n).toLocaleString('ko-KR')
+      : (Math.round(n * 10) / 10).toLocaleString('ko-KR') // .0은 toLocaleString이 자동 제거
+  if (abs >= KOREAN_UNIT_EUK) return `${sign}${part(abs / KOREAN_UNIT_EUK)}억`
+  if (abs >= KOREAN_UNIT_MAN) return `${sign}${part(abs / KOREAN_UNIT_MAN)}만`
+  return `${sign}${abs.toLocaleString('ko-KR')}`
+}
+
+/** 부호 포함 축약 증감 — "+120만" / "-4.5억" / "0". */
+export function formatKoreanCompactChange(value: number): string {
+  const formatted = formatKoreanCompact(Math.abs(value))
+  if (value > 0) return '+' + formatted
+  if (value < 0) return '-' + formatted
+  return formatted
+}
+
 /** 보유 수량 표기 — 정수면 그대로, 소수(해외 단주)면 불필요한 0 제거 후 최대 4자리. */
 export function formatShares(qty: number): string {
   if (!Number.isFinite(qty)) return '0'

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatKoreanUnit, formatPercent, formatNumber, formatKRW, formatKoreanAxisTick } from '@/utils/format'
+import { formatKoreanUnit, formatPercent, formatNumber, formatKRW, formatKoreanAxisTick, formatKoreanCompact, formatKoreanCompactChange } from '@/utils/format'
 
 describe('formatKoreanUnit', () => {
   it('formats hundreds of millions exactly', () => {
@@ -96,5 +96,42 @@ describe('formatKoreanAxisTick', () => {
   it('falls back to integer rounding without ticks', () => {
     expect(formatKoreanAxisTick(523_000_000)).toBe('5억')
     expect(formatKoreanAxisTick(52_300_000)).toBe('5230만')
+  })
+})
+
+describe('formatKoreanCompact (히어로 칩 축약 표기)', () => {
+  it('shows one decimal in the 억 range below 100억', () => {
+    expect(formatKoreanCompact(450_000_000)).toBe('4.5억')
+    expect(formatKoreanCompact(178_154_775)).toBe('1.8억')
+  })
+
+  it('drops the trailing .0 ("5.0억" → "5억")', () => {
+    expect(formatKoreanCompact(500_000_000)).toBe('5억')
+  })
+
+  it('uses integers at 100억 and above', () => {
+    expect(formatKoreanCompact(12_345_000_000)).toBe('123억')
+  })
+
+  it('shows one decimal in the 만 range below 100만', () => {
+    expect(formatKoreanCompact(155_000)).toBe('15.5만')
+    expect(formatKoreanCompact(53_000_000)).toBe('5,300만')
+  })
+
+  it('keeps sub-만 values as comma-grouped numbers', () => {
+    expect(formatKoreanCompact(9_500)).toBe('9,500')
+    expect(formatKoreanCompact(0)).toBe('0')
+  })
+
+  it('handles negative values (부채/적자)', () => {
+    expect(formatKoreanCompact(-450_000_000)).toBe('-4.5억')
+  })
+})
+
+describe('formatKoreanCompactChange', () => {
+  it('prefixes the sign by direction', () => {
+    expect(formatKoreanCompactChange(1_200_000)).toBe('+120만')
+    expect(formatKoreanCompactChange(-450_000_000)).toBe('-4.5억')
+    expect(formatKoreanCompactChange(0)).toBe('0')
   })
 })

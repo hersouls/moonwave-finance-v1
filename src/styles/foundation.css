@@ -131,6 +131,9 @@
 /* Hero Effects — aurora(로그인/온보딩), skeleton wave, 금융 시맨틱 */
 @import './utilities/hero-effects.css';
 
+/* Dashboard Hero — 대시보드 그라데이션 히어로 밴드 (Health dash-hero 1:1 포트) */
+@import './utilities/dashboard-hero.css';
+
 /* Container Queries — inline-size based layout */
 @import './utilities/container-queries.css';
 

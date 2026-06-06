@@ -6,8 +6,6 @@ import {
   reducedStaggerContainer,
   reducedStaggerItem,
   motionVariants,
-  heroContainer,
-  heroItem,
 } from '@/lib/motionConfig'
 import { useNavigate } from 'react-router-dom'
 import { Plus, ArrowRight } from 'lucide-react'
@@ -17,7 +15,7 @@ import { useMemberStore } from '@/stores/memberStore'
 import { useGoalStore } from '@/stores/goalStore'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useAssetStats, useCategoryBreakdown } from '@/hooks/useAssetStats'
-import { HeroMetricCard } from '@/components/ui/HeroMetricCard'
+import { DashboardHero } from './DashboardHero'
 import { AssetLiabilityBreakdown } from './AssetLiabilityBreakdown'
 import { LedgerSummaryCard } from './LedgerSummaryCard'
 import { NetWorthTracker } from './NetWorthTracker'
@@ -76,8 +74,6 @@ export function DashboardPage() {
   const shouldReduceMotion = useReducedMotion()
   const containerV = motionVariants(shouldReduceMotion, staggerContainer, reducedStaggerContainer)
   const itemV = motionVariants(shouldReduceMotion, staggerItem, reducedStaggerItem)
-  const heroContainerV = motionVariants(shouldReduceMotion, heroContainer, reducedStaggerContainer)
-  const heroItemV = motionVariants(shouldReduceMotion, heroItem, reducedStaggerItem)
 
   useEffect(() => { loadData() }, [])
   useSyncListener(() => loadData({ silent: true }))
@@ -108,7 +104,8 @@ export function DashboardPage() {
 
   if (items.length === 0) {
     return (
-      <div className="p-4 lg:p-6">
+      <div className="p-4 lg:p-6 space-y-6">
+        <DashboardHero stats={stats} welcome />
         <EmptyState
           icon={
             <svg className="w-full h-full" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -132,10 +129,6 @@ export function DashboardPage() {
     )
   }
 
-  // 월초 대비 자산/부채 변화 (각각 전용 집계 — 순자산 기준 근사치 아님)
-  const assetTrend = stats.assetMonthlyChange
-  const liabilityTrend = stats.liabilityMonthlyChange
-
   return (
     <motion.div
       className="p-4 lg:p-6 space-y-6"
@@ -152,58 +145,9 @@ export function DashboardPage() {
         progress={ptr.progress}
         refreshing={ptr.refreshing}
       />
-      {/* ── Hero Row: 3-card financial snapshot ─────────────── */}
-      <motion.section
-        variants={heroContainerV}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 lg:grid-cols-3 gap-4"
-        aria-label="재무 요약"
-      >
-        <motion.div
-          variants={heroItemV}
-          role="button"
-          tabIndex={0}
-          onClick={() => navigate('/assets')}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              navigate('/assets')
-            }
-          }}
-          className="cursor-pointer"
-        >
-          <HeroMetricCard
-            label="순자산"
-            value={stats.netWorth}
-            variant="primary"
-            layoutId="hero-networth"
-            deltas={[
-              { value: stats.dailyChange, label: '오늘' },
-              { value: stats.monthlyChange, label: '이번달' },
-            ]}
-          />
-        </motion.div>
-
-        <motion.div variants={heroItemV}>
-          <HeroMetricCard
-            label="총자산"
-            value={stats.totalAssets}
-            variant="success"
-            deltas={[
-              { value: assetTrend, label: '이번달' },
-            ]}
-          />
-        </motion.div>
-
-        <motion.div variants={heroItemV}>
-          <HeroMetricCard
-            label="총부채"
-            value={stats.totalLiabilities}
-            variant={stats.totalLiabilities > stats.totalAssets * 0.5 ? 'warning' : 'accent'}
-            deltas={stats.totalLiabilities > 0 ? [{ value: liabilityTrend, label: '이번달', goodWhenUp: false }] : undefined}
-          />
-        </motion.div>
+      {/* ── 히어로 밴드: 인사 + 예산 미션 + 핵심지표 글래스 칩 (Health dash-hero 포트) ── */}
+      <motion.section variants={itemV} aria-label="재무 요약">
+        <DashboardHero stats={stats} />
       </motion.section>
 
       {/* 자산증식 추세 — 순자산 일자별 증감 + 증가율(기울기) */}
