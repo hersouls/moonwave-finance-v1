@@ -22,6 +22,16 @@ export function getCurrentMonthString(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
+const WEEKDAYS_KO = ['일', '월', '화', '수', '목', '금', '토'] as const
+
+/**
+ * 대시보드 히어로용 날짜 라벨 — "6월 6일 (금)".
+ * 사용자에게 보여주는 달력 날짜이므로 (UTC 프레임의 getTodayString과 달리) 로컬 시간 기준.
+ */
+export function formatMonthDayWeekKo(d: Date = new Date()): string {
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS_KO[d.getDay()]})`
+}
+
 export function formatDate(dateStr: string): string {
   const date = parseISO(dateStr)
   const today = startOfDay(new Date())

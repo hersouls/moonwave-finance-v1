@@ -27,22 +27,23 @@ function SkeletonBlock({
 export function DashboardSkeleton() {
   return (
     <div className="p-4 lg:p-6 space-y-6">
-      {/* Hero row — 3 cards (xl+), stack (md-) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="card-base card-pad-xl el-card relative overflow-hidden"
-            style={{ minHeight: 148 }}
-          >
-            <SkeletonBlock variant="diagonal" className="absolute inset-0" />
-            <div className="relative space-y-3">
-              <SkeletonBlock variant="breath" className="h-3 w-20" />
-              <SkeletonBlock variant="wave" className="h-8 w-40" />
-              <SkeletonBlock variant="breath" className="h-4 w-28" />
-            </div>
+      {/* Hero band — 그라데이션 히어로 자리 (인사 + 미션 + 칩 그리드) */}
+      <div
+        className="relative overflow-hidden rounded-3xl p-6 sm:p-8"
+        style={{ minHeight: 280 }}
+      >
+        <SkeletonBlock variant="diagonal" className="absolute inset-0 rounded-3xl" />
+        <div className="relative space-y-3">
+          <SkeletonBlock variant="breath" className="h-3 w-24" />
+          <SkeletonBlock variant="wave" className="h-8 w-56" />
+          <SkeletonBlock variant="breath" className="h-4 w-40" />
+          <SkeletonBlock variant="wave" className="h-20 w-full rounded-2xl" />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => (
+              <SkeletonBlock key={i} variant="breath" className="h-20 rounded-2xl" />
+            ))}
           </div>
-        ))}
+        </div>
       </div>
 
       {/* Chart row */}

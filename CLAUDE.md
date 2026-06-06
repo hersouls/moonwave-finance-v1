@@ -188,7 +188,8 @@ Custom variants: `dark`, `fold` (≤340px), `mobile` (<600px), `tablet` (600~102
 - **iOS Safari**: input `font-size: max(16px, 1em)` — 자동 줌 방지 (index.css에 설정됨).
 - **Safe Area**: 하단 고정 요소에 `pb-safe` 또는 `env(safe-area-inset-bottom)` 필수.
 - **Wizard 전환**: `.wizard-step-forward` / `.wizard-step-backward` — TransactionWizard에서 사용.
-- **카드 표면(v3 플랫)**: `card-base` 단일 문법 — 중립 헤어라인 + `--shadow-1`, hover는 보더 톤업 + `--shadow-2`. 글로우/노이즈/그라디언트/Edge Lighting은 퇴역(부활 금지). Hero 카드는 `HeroMetricCard`(플랫 + 액센트 도트) 참조.
+- **카드 표면(v3 플랫)**: `card-base` 단일 문법 — 중립 헤어라인 + `--shadow-1`, hover는 보더 톤업 + `--shadow-2`. 글로우/노이즈/그라디언트/Edge Lighting은 퇴역(부활 금지). 플랫 메트릭 카드 패턴은 `HeroMetricCard`(플랫 + 액센트 도트) 참조.
+- **대시보드 히어로 밴드**: `.dash-hero`(`utilities/dashboard-hero.css`, Health 1:1 포트) — 카드가 아닌 페이지 상단 브랜드 밴드로, **유일하게 허용된 그라데이션 표면**. 색은 고정 HEX 보라(다크 반전 무관 — `var(--color-primary-*)` 사용 금지). v3 카드 플랫 규율의 적용 대상이 아님. 컴포넌트는 `DashboardHero`(인사 + 예산 미션 링 + 글래스 칩 4개).
 - **Glassmorphism**: `.glass` (blur 16px) / `.glass-heavy` (blur 24px) — 헤더/바텀내비 등 크롬 전용.
 - **Vendor Chunking**: react, firebase, charts, ui, data, motion 6개 청크 (vite.config.ts).
 - **CSV Import**: `easyLedgerImport.ts`로 편한가계부 CSV 직접 임포트 가능.
