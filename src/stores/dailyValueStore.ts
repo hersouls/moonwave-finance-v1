@@ -3,7 +3,7 @@ import { devtools } from 'zustand/middleware'
 import type { DailyValue, AssetValueProjection } from '@/lib/types'
 import * as db from '@/services/database'
 import { getCurrentMonthString, getTodayString } from '@/lib/dateUtils'
-import { buildForward, buildBackfill, backfillStart, isFlatProjection, nextDayYmd } from '@/services/valueProjection'
+import { buildForward, isFlatProjection, planValueSeries } from '@/services/valueProjection'
 import { useToastStore } from './toastStore'
 import { useAssetStore } from './assetStore'
 import { useSettingsStore } from './settingsStore'
@@ -26,7 +26,8 @@ interface DailyValueState {
   /**
    * 기준값/기준일/규칙으로 일자별 값 시리즈를 DB에 일괄 기록한다.
    * - 전방(기준일~(Y+1)-12-31): 규칙 적용, 변경분만 기록(멱등)
-   * - 백필((Y-1)-01-01~최초기록 직전): 평탄(기준값), 빈 날짜만
+   * - 평탄 백필((Y-1)-01-01): 기준일 이전에 기존 앵커가 **없을 때만**(첫 기록) 추가.
+   *   직전 앵커가 있으면 그 값이 forward-fill 로 공백을 덮으므로 백필하지 않는다(기존 값 보존).
    * 반환 = 기록(추가/변경)한 건수.
    */
   applyValueSeries: (assetItemId: number, baseValue: number, baseDate: string, projection?: AssetValueProjection) => Promise<number>
@@ -114,20 +115,12 @@ export const useDailyValueStore = create<DailyValueState>()(
       },
 
       applyValueSeries: async (assetItemId, baseValue, baseDate, projection) => {
-        const flat = isFlatProjection(projection)
+        // forItem 은 정리 전 스냅샷 — planValueSeries 가 보는 "직전 앵커"는 정리에도 살아남는
+        // 수동/레거시 기록뿐이라 정리 전후가 동일하다.
         const forItem = get().allValues.filter(v => v.assetItemId === assetItemId)
-        const manualDates = new Set(forItem.filter(v => v.source === 'manual').map(v => v.date))
-        const existingVal = new Map(forItem.map(v => [v.date, v.value] as const))
-        let prevManual: string | null = null
-        for (const d of manualDates) if (d < baseDate && (prevManual === null || d > prevManual)) prevManual = d
 
-        const base0 = Math.max(0, Math.round(baseValue))
-        const entries: { assetItemId: number; date: string; value: number; source: 'manual' | 'projected' }[] = []
-        // 입력일 = 수동 앵커
-        entries.push({ assetItemId, date: baseDate, value: base0, source: 'manual' })
-
-        if (flat) {
-          // 평탄 = 희소 저장: 기존 자동(projected) 정리 + 소급/백필 앵커 1개. 미래는 forward-fill 이 커버.
+        if (isFlatProjection(projection)) {
+          // 평탄 = 희소 저장: 기존 자동(projected) 정리. 미래/공백은 forward-fill 이 커버.
           const removed = await db.clearProjectedDailyValues(assetItemId)
           if (removed.length > 0) {
             import('@/services/firestoreSync').then(({ deleteMultipleFromCloud }) =>
@@ -136,19 +129,10 @@ export const useDailyValueStore = create<DailyValueState>()(
                 if (user) deleteMultipleFromCloud(user.uid, 'dailyValues', removed).catch(err => console.error('[projection] cloud cleanup failed (change log will retry):', err))
               })).catch(err => console.error('[projection] cloud cleanup failed:', err))
           }
-          const soupStart = prevManual ? nextDayYmd(prevManual) : backfillStart(baseDate)
-          if (soupStart < baseDate) entries.push({ assetItemId, date: soupStart, value: base0, source: 'projected' })
-        } else {
-          // 변동 규칙 = dense: 전방 덮어쓰기(변경분만) + 역산 백필(직전 수동기록에서 중단).
-          for (const e of buildForward(baseValue, baseDate, projection)) {
-            if (e.date === baseDate) continue
-            if (existingVal.get(e.date) !== e.value) entries.push({ assetItemId, date: e.date, value: e.value, source: 'projected' })
-          }
-          for (const e of buildBackfill(baseValue, baseDate, (d) => manualDates.has(d), projection)) {
-            entries.push({ assetItemId, date: e.date, value: e.value, source: 'projected' })
-          }
         }
 
+        const entries = planValueSeries(forItem, baseValue, baseDate, projection)
+          .map(e => ({ assetItemId, ...e }))
         await get().bulkSetValues(entries)
         return entries.length
       },
