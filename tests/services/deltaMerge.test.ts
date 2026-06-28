@@ -174,3 +174,48 @@ describe('로컬 교체 시 체크포인트 리셋', () => {
     expect(await db.syncMeta.count()).toBeGreaterThan(0)
   })
 })
+
+// ─── Phase 2: 레거시 머지 경로에서 projected 양방향 제외 ────────────────────
+//
+// dailyValues 의 파생(projected) 행은 동기화 범위 밖이다. 레거시 다운로드/머지
+// (mergeOnLogin·fullDownload 가 호출하는 mergeTableWithRemap)는 ① 클라우드
+// projected 를 머지하지 않고 ② 로컬 projected 를 Case 3 업로드 큐잉에서 제외한다
+// (Case 3 는 훅을 우회해 changelog 에 직접 쓰므로 91% 행이 매 머지마다 큐잉되는
+// 것을 막는다). 앵커(manual/레거시 source 미지정)만 머지한다.
+describe('mergeTableWithRemap — dailyValues projected 제외 (레거시 경로)', () => {
+  const NOW = '2026-06-05T00:00:00.000Z'
+  beforeEach(async () => {
+    setSyncWritingFlag(true)
+    try {
+      await db.dailyValues.clear()
+      await db.assetItems.clear()
+    } finally { setSyncWritingFlag(false) }
+    await new Promise((r) => setTimeout(r, 20))
+    await db.syncChangeLog.clear()
+  })
+
+  it('클라우드 projected 는 머지하지 않고 manual 앵커만 받는다', async () => {
+    await mergeTableWithRemap('dailyValues', [
+      { syncId: 'cm', assetItemId: 1, date: '2026-06-05', value: 100, source: 'manual', updatedAt: NOW, createdAt: NOW },
+      { syncId: 'cp', assetItemId: 1, date: '2026-06-06', value: 150, source: 'projected', updatedAt: NOW, createdAt: NOW },
+    ], undefined, true)
+    expect(await db.dailyValues.where('syncId').equals('cm').count()).toBe(1)
+    expect(await db.dailyValues.where('syncId').equals('cp').count()).toBe(0)
+  })
+
+  it('로컬 projected 는 Case 3 업로드 큐잉에서 제외, manual 앵커만 큐잉', async () => {
+    setSyncWritingFlag(true)
+    try {
+      await db.dailyValues.add({ syncId: 'lp', assetItemId: 1, date: '2026-06-07', value: 200, source: 'projected', updatedAt: NOW, createdAt: NOW } as never)
+      await db.dailyValues.add({ syncId: 'lm', assetItemId: 1, date: '2026-06-08', value: 300, source: 'manual', updatedAt: NOW, createdAt: NOW } as never)
+    } finally { setSyncWritingFlag(false) }
+    await db.syncChangeLog.clear()
+
+    // cloudIsComplete=true → 로컬-온리 행을 업로드 큐잉. projected 는 제외돼야.
+    await mergeTableWithRemap('dailyValues', [], undefined, true)
+
+    const queued = (await db.syncChangeLog.where('tableName').equals('dailyValues').toArray())
+      .map((e) => e.syncId).sort()
+    expect(queued).toEqual(['lm'])
+  })
+})

@@ -3,7 +3,7 @@ import { devtools } from 'zustand/middleware'
 import type { DailyValue, AssetValueProjection } from '@/lib/types'
 import * as db from '@/services/database'
 import { getCurrentMonthString, getTodayString } from '@/lib/dateUtils'
-import { buildForward, isFlatProjection, planValueSeries } from '@/services/valueProjection'
+import { buildForward, buildBackfill, isFlatProjection, planValueSeries } from '@/services/valueProjection'
 import { useToastStore } from './toastStore'
 import { useAssetStore } from './assetStore'
 import { useSettingsStore } from './settingsStore'
@@ -33,6 +33,15 @@ interface DailyValueState {
   applyValueSeries: (assetItemId: number, baseValue: number, baseDate: string, projection?: AssetValueProjection) => Promise<number>
   /** 활성 항목 전체에 대해 오늘 기준 투영을 보장(일 1회, self-guard). carry-forward 대체. */
   ensureValueProjections: () => Promise<number>
+  /**
+   * 동기화로 받은 앵커(manual/레거시 source 미지정)만으로 파생(projected)
+   * 시리즈를 로컬에서 dense 재구성한다 (Phase 2: projected 는 클라우드에 없음).
+   * 다중앵커 복원 = 마지막 앵커 forward(미래) + 각 앵커 backfill(이전 앵커에서
+   * 중단 → 그 앵커 앞 구간). 동일날짜 앵커는 syncId 로 결정적 선택(기기간 일치).
+   * 평탄으로 바뀐 자산의 묵은 projected 는 정리. force=true 면 autoCarryForward
+   * 설정·일일 가드를 무시한다(신규 기기 첫 동기화 직후 즉시 재생성용).
+   */
+  regenerateProjections: (force?: boolean) => Promise<number>
   /**
    * 레거시 복구: 기록이 전부 미래(>오늘 UTC)인 항목에 오늘 수동 앵커를 추가한다.
    * (구 부채 생성 모달이 로컬시간 날짜로 기록 → KST 새벽엔 UTC보다 하루 앞서 저장되어
@@ -145,6 +154,10 @@ export const useDailyValueStore = create<DailyValueState>()(
         } catch { /* ignore */ }
 
         const items = useAssetStore.getState().items.filter(i => i.isActive && i.id != null)
+        // 가드 포이즈닝 방지: 자산/값이 아직 비어 있으면(콜드스타트, 동기화 전)
+        // CARRY_FORWARD_KEY 를 쓰지 않고 빠진다 — 빈 데이터에 today 를 박으면
+        // 그날 내내 carry-forward 가 죽는다.
+        if (items.length === 0 || get().allValues.length === 0) return 0
         const byItemRecs = new Map<number, DailyValue[]>()
         for (const v of get().allValues) {
           let a = byItemRecs.get(v.assetItemId)
@@ -172,6 +185,94 @@ export const useDailyValueStore = create<DailyValueState>()(
         try {
           if (typeof localStorage !== 'undefined') localStorage.setItem(CARRY_FORWARD_KEY, today)
         } catch { /* ignore */ }
+        return allEntries.length
+      },
+
+      regenerateProjections: async (force = false) => {
+        if (!force) {
+          if (useSettingsStore.getState().settings.autoCarryForward === false) return 0
+          const today = getTodayString()
+          try {
+            if (typeof localStorage !== 'undefined' && localStorage.getItem(CARRY_FORWARD_KEY) === today) return 0
+          } catch { /* ignore */ }
+        }
+
+        // 동기화 직후엔 현재 월만 로드돼 있을 수 있다 — 자산/전체값을 먼저 새로고침.
+        await useAssetStore.getState().loadAll()
+        await get().loadAllValues()
+
+        const items = useAssetStore.getState().items.filter(i => i.isActive && i.id != null)
+        const allValues = get().allValues
+        // 가드 포이즈닝 방지 (ensureValueProjections 와 동일).
+        if (items.length === 0 || allValues.length === 0) return 0
+
+        // 자산별 앵커(projected 아님) + 자산별 현재값 맵(멱등 비교용)
+        const anchorsByItem = new Map<number, DailyValue[]>()
+        const valuesByItem = new Map<number, Map<string, number>>()
+        for (const v of allValues) {
+          let vm = valuesByItem.get(v.assetItemId)
+          if (!vm) { vm = new Map(); valuesByItem.set(v.assetItemId, vm) }
+          vm.set(v.date, v.value)
+          if (v.source === 'projected') continue
+          let a = anchorsByItem.get(v.assetItemId)
+          if (!a) { a = []; anchorsByItem.set(v.assetItemId, a) }
+          a.push(v)
+        }
+
+        const allEntries: { assetItemId: number; date: string; value: number; source: 'projected' }[] = []
+        const flatToClear: number[] = []
+
+        for (const item of items) {
+          if (isFlatProjection(item.projection)) {
+            // 평탄으로 바뀐 자산: 남은 dense projected 정리 — projected 삭제는 더
+            // 이상 클라우드로 전파되지 않으므로 각 기기가 로컬에서 청소해야 한다.
+            flatToClear.push(item.id!)
+            continue
+          }
+          const anchors = anchorsByItem.get(item.id!)
+          if (!anchors || anchors.length === 0) continue // 앵커 없음 → 투영 불가
+
+          // 동일 날짜 앵커는 syncId 로 결정적 선택 (sync race 중복 시 기기간 일치)
+          const byDate = new Map<string, DailyValue>()
+          for (const a of anchors) {
+            const ex = byDate.get(a.date)
+            if (!ex || (a.syncId ?? '') < (ex.syncId ?? '')) byDate.set(a.date, a)
+          }
+          const sorted = [...byDate.values()].sort((x, y) => x.date.localeCompare(y.date))
+          const anchorDates = new Set(sorted.map(a => a.date))
+          const isAnchor = (d: string) => anchorDates.has(d)
+          const existingVal = valuesByItem.get(item.id!) ?? new Map<string, number>()
+
+          // 미래: 마지막(최신) 앵커에서 forward — (Y+1)-12-31 까지.
+          const last = sorted[sorted.length - 1]
+          for (const e of buildForward(last.value, last.date, item.projection)) {
+            if (e.date === last.date) continue
+            if (existingVal.get(e.date) !== e.value) allEntries.push({ assetItemId: item.id!, date: e.date, value: e.value, source: 'projected' })
+          }
+          // 갭/과거: 각 앵커에서 backfill — 이전 앵커(또는 (Y-1)-01-01)에서 중단.
+          // 갭 (a_{i-1}, a_i) 은 항상 더 늦은 앵커 a_i 의 역산이 채운다(원본 기기의
+          // 증분 applyValueSeries 결과와 동일). 앵커 처리 순서와 무관하게 결정적.
+          for (const a of sorted) {
+            for (const e of buildBackfill(a.value, a.date, isAnchor, item.projection)) {
+              if (existingVal.get(e.date) !== e.value) allEntries.push({ assetItemId: item.id!, date: e.date, value: e.value, source: 'projected' })
+            }
+          }
+        }
+
+        for (const id of flatToClear) await db.clearProjectedDailyValues(id)
+        if (allEntries.length > 0) {
+          await get().bulkSetValues(allEntries) // 내부에서 values/allValues 재로딩
+        } else if (flatToClear.length > 0) {
+          const month = get().selectedMonth
+          const [values, all] = await Promise.all([db.getDailyValuesByMonth(month), db.getAllDailyValues()])
+          set({ values, allValues: all })
+        }
+
+        if (!force) {
+          try {
+            if (typeof localStorage !== 'undefined') localStorage.setItem(CARRY_FORWARD_KEY, getTodayString())
+          } catch { /* ignore */ }
+        }
         return allEntries.length
       },
 

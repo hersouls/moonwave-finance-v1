@@ -156,13 +156,17 @@ export function planValueSeries(
   }
 
   // 변동 규칙(dense): 전방 변경분 + 역산 백필.
-  const manualDates = new Set(existing.filter(v => v.source === 'manual').map(v => v.date))
+  // backfill 중단점(앵커) = projected 가 아닌 모든 기록 = 수동 + 레거시 source 미지정.
+  // 'manual' 만 앵커로 보면 undefined-source 과거 행(퇴직금 등 레거시)을 backfill 이
+  // 지나치며 projected 로 덮어써 동기화로 복구 불가한 손실이 난다 — 평탄 경로(line 150),
+  // clearProjectedDailyValues, 상단 docstring("수동 또는 레거시 미지정")과 일치시킨다.
+  const anchorDates = new Set(existing.filter(v => v.source !== 'projected').map(v => v.date))
   const existingVal = new Map(existing.map(v => [v.date, v.value] as const))
   for (const e of buildForward(baseValue, baseDate, p)) {
     if (e.date === baseDate) continue
     if (existingVal.get(e.date) !== e.value) entries.push({ date: e.date, value: e.value, source: 'projected' })
   }
-  for (const e of buildBackfill(baseValue, baseDate, (d) => manualDates.has(d), p)) {
+  for (const e of buildBackfill(baseValue, baseDate, (d) => anchorDates.has(d), p)) {
     entries.push({ date: e.date, value: e.value, source: 'projected' })
   }
   return entries

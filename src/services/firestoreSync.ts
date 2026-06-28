@@ -15,7 +15,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { firestore } from '@/lib/firebase'
-import { db, markSyncTransaction, runSyncWrite } from '@/services/database'
+import { db, markSyncTransaction, runSyncWrite, SYNCABLE_TABLE_NAMES, type SyncableTableName } from '@/services/database'
 import { getSyncCheckpoint, advanceSyncCheckpoint, type SyncCheckpointMap } from '@/services/syncCheckpoint'
 import {
   DV_BUNDLE_COLLECTION,
@@ -45,10 +45,11 @@ import type {
   SyncChangeLogEntry,
 } from '@/lib/types'
 
-export type SyncableTable = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions' | 'loans' | 'investmentTrades' | 'dividends' | 'accountInterests' | 'merchantAliases'
+// SyncableTable 유니온과 ALL_TABLES는 database.ts의 단일 출처(SYNCABLE_TABLES)에서 파생한다.
+export type SyncableTable = SyncableTableName
 
 const BATCH_LIMIT = 499
-const ALL_TABLES: SyncableTable[] = ['members', 'assetCategories', 'assetItems', 'dailyValues', 'transactionCategories', 'transactions', 'budgets', 'goals', 'paymentMethodItems', 'subscriptions', 'loans', 'investmentTrades', 'dividends', 'accountInterests', 'merchantAliases']
+const ALL_TABLES: SyncableTable[] = [...SYNCABLE_TABLE_NAMES]
 
 // ─── Cloud payload helpers ────────────────────────────────────────
 //
@@ -364,7 +365,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       // 레거시 per-row dailyValues는 정리(purge) 전까지만 — 구버전 기기의
       // 읽기 호환용. 신버전 표현은 아래 uploadAllDvBundles가 담당한다.
       legacyDvActive
-        ? uploadTable(uid, 'dailyValues', dailyValues.map(ensureSyncId))
+        ? uploadTable(uid, 'dailyValues', dailyValues.filter(r => r.source !== 'projected').map(ensureSyncId))
         : Promise.resolve(),
       uploadTable(uid, 'transactionCategories', transactionCategories.map(ensureSyncId)),
       uploadTable(uid, 'transactions', transactions.map(ensureSyncId)),
@@ -943,9 +944,21 @@ async function uploadDailyValueChanges(uid: string, entries: SyncChangeLogEntry[
     : []
   const rowByAssetDate = new Map(metaRows.map(r => [`${r.assetItemId}|${r.date}`, r]))
 
+  // projected(파생) 행에 매달린 업서트 엔트리는 통째로 드롭한다 — 행을 맵에서만
+  // 빼면 buildBundlePatches가 "행 없음 → 삭제 마커(v=null)"로 오판해 projected
+  // 좌표에 삭제를 전파하는 churn 이 생긴다. (신규 projected 는 변경추적 훅에서
+  // 이미 차단되므로 여기 닿는 건 업그레이드 전 큐잉된 백로그뿐. 호출부가 전체
+  // dvChanges 를 processed 마킹하므로 드롭해도 stuck 되지 않는다.)
+  const resolveRow = (e: SyncChangeLogEntry): typeof rows[number] | undefined =>
+    rowBySyncId.get(e.syncId)
+      ?? (e.assetItemId != null && e.date ? rowByAssetDate.get(`${e.assetItemId}|${e.date}`) : undefined)
+  const liveEntries = entries.filter(e =>
+    e.operation === 'delete' || resolveRow(e)?.source !== 'projected',
+  )
+
   const assetIds = new Set<number>()
   for (const r of [...rows, ...metaRows]) assetIds.add(r.assetItemId)
-  for (const e of entries) { if (e.assetItemId != null) assetIds.add(e.assetItemId) }
+  for (const e of liveEntries) { if (e.assetItemId != null) assetIds.add(e.assetItemId) }
   const assets = assetIds.size > 0 ? await db.assetItems.bulkGet([...assetIds]) : []
   const assetSyncById = new Map<number, string>()
   for (const a of assets) {
@@ -954,7 +967,7 @@ async function uploadDailyValueChanges(uid: string, entries: SyncChangeLogEntry[
 
   // ③ 패치 빌드 + 배치 커밋 (일자 단위 merge — 삭제는 v=null 마커 튜플)
   const { patches, unresolved } = buildBundlePatches(
-    entries, rowBySyncId, rowByAssetDate, assetSyncById, getDeviceId(),
+    liveEntries, rowBySyncId, rowByAssetDate, assetSyncById, getDeviceId(),
   )
   if (unresolved > 0) {
     // 자산 cascade 삭제(번들은 자산 삭제 경로가 통째로 지움) 또는 메타 없는
@@ -1025,6 +1038,12 @@ export async function ingestDvBundleDoc(data: Record<string, unknown>): Promise<
 
   await runSyncWrite([db.dailyValues], async () => {
     for (const day of exploded.days) {
+      // 클라우드의 projected(파생) 값 튜플은 무시한다 — 각 기기가 manual
+      // 앵커로 로컬 재생성한다. 업그레이드 전 클라우드에 남은(또는 구버전
+      // 피어가 올린) projected 를 inert 처리. 삭제 마커(v===null)는 source 와
+      // 무관하게 적용해야 하므로 v!==null 일 때만 건너뛴다.
+      if (day.v !== null && day.s === 'projected') continue
+
       const existing = await db.dailyValues
         .where('[assetItemId+date]').equals([assetItemId, day.date]).first()
 
@@ -1046,14 +1065,21 @@ export async function ingestDvBundleDoc(data: Record<string, unknown>): Promise<
           createdAt: day.u,
           updatedAt: day.u,
         } as DailyValue)
-      } else if (shouldApplyCloudUpdate(day.u, day.d, existing.updatedAt)) {
-        await db.dailyValues.update(existing.id!, {
-          value: day.v,
-          source: (day.s ?? undefined) as DailyValue['source'],
-          updatedAt: day.u,
-          // sid 입양 — 같은 논리 일자가 기기마다 다른 syncId를 갖는 분기를 수렴
-          ...(existing.syncId !== day.sid ? { syncId: day.sid } : {}),
-        })
+      } else {
+        // 들어온 것은 앵커(여기 닿는 day.s 는 projected 가 아님: 위에서 스킵됨).
+        // 로컬이 projected 면 타임스탬프와 무관하게 앵커가 이긴다 — 로컬 재생성
+        // projected 의 새 타임스탬프가 더 오래된 피어 manual 앵커를 영구히
+        // 가리는 것을 막는다. 앵커↔앵커는 일반 일자 LWW.
+        const anchorOverProjected = existing.source === 'projected'
+        if (anchorOverProjected || shouldApplyCloudUpdate(day.u, day.d, existing.updatedAt)) {
+          await db.dailyValues.update(existing.id!, {
+            value: day.v,
+            source: (day.s ?? undefined) as DailyValue['source'],
+            updatedAt: day.u,
+            // sid 입양 — 같은 논리 일자가 기기마다 다른 syncId를 갖는 분기를 수렴
+            ...(existing.syncId !== day.sid ? { syncId: day.sid } : {}),
+          })
+        }
       }
     }
   })
@@ -1067,7 +1093,9 @@ export async function ingestDvBundleDoc(data: Record<string, unknown>): Promise<
  * 묵은 일자 청소는 포기한다 — 삭제는 발생 시점의 v=null 마커가 담당한다.
  */
 async function uploadAllDvBundles(uid: string): Promise<number> {
-  const rows = await db.dailyValues.toArray()
+  // 파생(projected) 행은 클라우드에 올리지 않는다 — 각 기기가 manual 앵커로
+  // 로컬 재생성한다. (Phase 2: dailyValues 91% 차지하던 projected 동기화 중단)
+  const rows = (await db.dailyValues.toArray()).filter(r => r.source !== 'projected')
   const assets = await db.assetItems.toArray()
   const assetSyncById = new Map<number, string>()
   for (const a of assets) { if (a.id != null && a.syncId) assetSyncById.set(a.id, a.syncId) }
@@ -1286,7 +1314,17 @@ export async function mergeTableWithRemap(
   cloudIsComplete: boolean = true,
 ): Promise<void> {
   const localTable = getLocalTable(tableName)
-  const localRecords = await (localTable as typeof db.members).toArray()
+  let localRecords = await (localTable as typeof db.members).toArray()
+
+  // dailyValues 의 파생(projected) 행은 동기화 범위 밖이다 (Phase 2). 클라우드
+  // projected 는 머지하지 않고(각 기기 로컬 재생성), 로컬 projected 는 Case 3
+  // 업로드 큐잉에서 제외한다 — Case 3 는 변경추적 훅을 우회해 changelog 에 직접
+  // 쓰므로, 제외하지 않으면 91% 를 차지하는 projected 행이 매 머지마다 통째로
+  // 큐잉된다. 앵커(manual/레거시 source 미지정)만 머지한다.
+  if (tableName === 'dailyValues') {
+    cloudRecords = cloudRecords.filter(r => r.source !== 'projected')
+    localRecords = localRecords.filter(r => (r as { source?: string }).source !== 'projected')
+  }
 
   const cloudMap = new Map<string, Record<string, unknown>>()
   for (const rec of cloudRecords) {
@@ -1748,11 +1786,6 @@ export async function mergeOnLogin(uid: string): Promise<void> {
       useAuthStore.getState().setSyncStatus('synced')
     }
   }
-}
-
-/** @deprecated Use mergeOnLogin instead */
-export async function syncOnLogin(uid: string): Promise<void> {
-  await mergeOnLogin(uid)
 }
 
 // ─── Pending Changes Count ───────────────────────────────
@@ -2246,6 +2279,12 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
         const cloudData = change.doc.data()
         const syncId = cloudData.syncId as string | undefined
         if (!syncId) continue
+        // dailyValues 의 파생(projected) 행은 동기화 범위 밖 — 레거시 컬렉션에
+        // 남은(또는 구버전 피어가 올린) projected 를 무시한다(각 기기 로컬 재생성).
+        // 'removed'(삭제 전파)는 아래에서 이미 dailyValues 전체를 스킵하므로
+        // 여기 added/modified 의 projected 만 거른다.
+        if (tableName === 'dailyValues' && (cloudData as { source?: string }).source === 'projected'
+            && change.type !== 'removed') continue
 
         try {
           if (change.type === 'added' || change.type === 'modified') {

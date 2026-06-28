@@ -106,6 +106,30 @@ export default function App() {
     return () => { cancelled = true }
   }, [isInitialized])
 
+  // 피어의 일별값/자산 변경이 동기화로 들어오면(번들/per-row 인제스트가
+  // fin-sync-update 발신) 파생(projected) 시리즈를 로컬 재구성한다 — projected 는
+  // 클라우드에 없으므로 앵커 변경 후 각 기기가 스스로 다시 그린다. 500ms 디바운스로
+  // 인제스트 버스트를 1회로 합친다. (regen 의 자체 projected 쓰기는 fin-sync-update
+  // 를 발신하지 않으므로 루프 없음.)
+  useEffect(() => {
+    if (!isInitialized) return
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const onSyncUpdate = (e: Event) => {
+      const table = (e as CustomEvent<{ table?: string }>).detail?.table
+      if (table !== 'dailyValues' && table !== 'assetItems') return
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => {
+        useDailyValueStore.getState().regenerateProjections(true).catch((err) =>
+          console.error('[sync] projection regen on update failed:', err))
+      }, 500)
+    }
+    window.addEventListener('fin-sync-update', onSyncUpdate)
+    return () => {
+      if (timer) clearTimeout(timer)
+      window.removeEventListener('fin-sync-update', onSyncUpdate)
+    }
+  }, [isInitialized])
+
   const location = useLocation()
   const setCurrentView = useUIStore((s) => s.setCurrentView)
 

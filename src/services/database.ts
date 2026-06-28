@@ -362,7 +362,34 @@ export async function runSyncWrite<T>(tables: Table[], fn: () => Promise<T>): Pr
   })
 }
 
-type SyncableTableName = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions' | 'loans' | 'investmentTrades' | 'dividends' | 'accountInterests' | 'merchantAliases'
+/**
+ * SINGLE SOURCE OF TRUTH for the 15 synced tables.
+ * Add a new synced table HERE (one entry). The type union (SyncableTableName),
+ * SYNCABLE_TABLE_NAMES, the change-tracking hooks below, and ALL_TABLES + the
+ * upload trigger (firestoreSync / useAutoSync) all derive from this list.
+ * The exhaustive Record<> maps elsewhere (getLocalTable, TABLE_FK_DEFS…) will
+ * then fail to compile until the new table is handled there too.
+ */
+export const SYNCABLE_TABLES = [
+  { name: 'members', table: db.members },
+  { name: 'assetCategories', table: db.assetCategories },
+  { name: 'assetItems', table: db.assetItems },
+  { name: 'dailyValues', table: db.dailyValues },
+  { name: 'transactionCategories', table: db.transactionCategories },
+  { name: 'transactions', table: db.transactions },
+  { name: 'budgets', table: db.budgets },
+  { name: 'goals', table: db.goals },
+  { name: 'paymentMethodItems', table: db.paymentMethodItems },
+  { name: 'subscriptions', table: db.subscriptions },
+  { name: 'loans', table: db.loans },
+  { name: 'investmentTrades', table: db.investmentTrades },
+  { name: 'dividends', table: db.dividends },
+  { name: 'accountInterests', table: db.accountInterests },
+  { name: 'merchantAliases', table: db.merchantAliases },
+] as const satisfies readonly { name: string; table: Table }[]
+
+export type SyncableTableName = typeof SYNCABLE_TABLES[number]['name']
+export const SYNCABLE_TABLE_NAMES = SYNCABLE_TABLES.map((t) => t.name) as SyncableTableName[]
 
 // ── Post-commit change-log queue ──────────────────────
 //
@@ -397,6 +424,25 @@ export async function drainChangeTracking(): Promise<void> {
   }
 }
 
+// "사용자 쓰기가 changelog에 기록됨" 신호. useAutoSync가 자체 Dexie 훅 45개
+// (15테이블 × 3이벤트)를 등록하는 대신 이 신호를 구독해 업로드 디바운스를
+// 깨운다. 변경추적 훅이 이미 echo(sync-flagged) 쓰기를 걸러내고 syncId 있는
+// 항목만 큐잉하므로, 여기 도달한 것은 전부 "업로드할 가치가 있는 사용자 쓰기"다.
+type UserWriteListener = () => void
+const _userWriteListeners = new Set<UserWriteListener>()
+
+/** 사용자 쓰기가 변경로그에 기록될 때 호출될 리스너 등록. 해지 함수를 반환한다. */
+export function onUserWritePersisted(listener: UserWriteListener): () => void {
+  _userWriteListeners.add(listener)
+  return () => { _userWriteListeners.delete(listener) }
+}
+
+function notifyUserWrite(): void {
+  for (const listener of _userWriteListeners) {
+    try { listener() } catch (err) { console.error('[sync] user-write listener failed:', err) }
+  }
+}
+
 function persistQueuedEntries(changes: SyncChangeLogEntry[], tombstones: SyncTombstone[]): void {
   const p: Promise<void> = Dexie.ignoreTransaction(async () => {
     try {
@@ -407,6 +453,7 @@ function persistQueuedEntries(changes: SyncChangeLogEntry[], tombstones: SyncTom
     }
   }).finally(() => { _inflightChangeLogWrites.delete(p) })
   _inflightChangeLogWrites.add(p)
+  if (changes.length > 0 || tombstones.length > 0) notifyUserWrite()
 }
 
 function queueChangeEntry(entry: SyncChangeLogEntry, tombstone?: SyncTombstone): void {
@@ -428,23 +475,8 @@ function queueChangeEntry(entry: SyncChangeLogEntry, tombstone?: SyncTombstone):
 }
 
 function installChangeTracking() {
-  const tables: { table: Table; name: SyncableTableName }[] = [
-    { table: db.members, name: 'members' },
-    { table: db.assetCategories, name: 'assetCategories' },
-    { table: db.assetItems, name: 'assetItems' },
-    { table: db.dailyValues, name: 'dailyValues' },
-    { table: db.transactionCategories, name: 'transactionCategories' },
-    { table: db.transactions, name: 'transactions' },
-    { table: db.budgets, name: 'budgets' },
-    { table: db.goals, name: 'goals' },
-    { table: db.paymentMethodItems, name: 'paymentMethodItems' },
-    { table: db.subscriptions, name: 'subscriptions' },
-    { table: db.loans, name: 'loans' },
-    { table: db.investmentTrades, name: 'investmentTrades' },
-    { table: db.dividends, name: 'dividends' },
-    { table: db.accountInterests, name: 'accountInterests' },
-    { table: db.merchantAliases, name: 'merchantAliases' },
-  ]
+  // 동기화 테이블 목록은 SYNCABLE_TABLES(단일 출처)에서 파생한다.
+  const tables = SYNCABLE_TABLES
 
   // dailyValues만 (자산×일자) 좌표를 changelog에 동반 기록한다 — 번들
   // 업로드(자산×월 묶음 문서)가 삭제 항목의 좌표를 복원할 유일한 출처다
@@ -457,11 +489,18 @@ function installChangeTracking() {
       : {}
   }
 
+  // dailyValues 의 projected(파생) 행은 동기화하지 않는다 — 각 기기가 manual
+  // 앵커로부터 로컬 재생성한다. changelog/톰스톤을 남기지 않으며, read-only
+  // 게이트(assertWritable) 앞에서 건너뛰어 읽기전용 기기에서도 로컬 재생성이 된다.
+  const skipProjectedDv = (name: SyncableTableName, source: unknown): boolean =>
+    name === 'dailyValues' && source === 'projected'
+
   for (const { table, name } of tables) {
     table.hook('creating', function (_primKey, obj) {
       // Sync-originated writes (transaction marker or legacy global flag)
       // bypass the read-only gate and are never logged (echo suppression).
       if (isSyncWriteContext()) return
+      if (skipProjectedDv(name, (obj as { source?: string })?.source)) return
       // Read-only device gate: a user/app-initiated write on a read-only
       // device is blocked here, the enforcement net of last resort.
       assertWritable()
@@ -480,6 +519,11 @@ function installChangeTracking() {
 
     table.hook('updating', function (_mods, _primKey, obj) {
       if (isSyncWriteContext()) return
+      // 갱신 후의 유효 source 로 판정 (변경분에 source 가 있으면 그것, 없으면 기존).
+      const effSource = (_mods as { source?: string }).source !== undefined
+        ? (_mods as { source?: string }).source
+        : (obj as { source?: string })?.source
+      if (skipProjectedDv(name, effSource)) return
       assertWritable()
       const syncId = obj?.syncId as string | undefined
       if (syncId) {
@@ -496,6 +540,7 @@ function installChangeTracking() {
 
     table.hook('deleting', function (_primKey, obj) {
       if (isSyncWriteContext()) return
+      if (skipProjectedDv(name, (obj as { source?: string })?.source)) return
       assertWritable()
       const syncId = obj?.syncId as string | undefined
       if (syncId) {
@@ -785,6 +830,10 @@ export async function bulkSetDailyValues(entries: { assetItemId: number; date: s
     for (const entry of entries) {
       const existing = await getDailyValue(entry.assetItemId, entry.date)
       if (existing) {
+        // projected 계산값은 수동/레거시(undefined) 앵커를 절대 덮어쓰지 않는다 —
+        // 앵커는 사용자 원천 데이터이고 덮어쓰면 동기화로 복구 불가. projected→projected
+        // 재계산과 수동 편집(source!=='projected')은 정상 통과한다.
+        if (entry.source === 'projected' && existing.source !== 'projected') continue
         await db.dailyValues.update(existing.id!, { value: entry.value, source: entry.source ?? existing.source, updatedAt: now })
       } else {
         await db.dailyValues.add({

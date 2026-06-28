@@ -69,6 +69,15 @@ async function reloadStoresAfterSync() {
     useDailyValueStore.getState().loadValues(),
     useLoanStore.getState().loadLoans(),
   ])
+  // 동기화로 받은 앵커(manual/레거시)로 파생(projected) 시리즈를 로컬에서
+  // 재구성한다 (Phase 2: projected 는 클라우드에 없음). force=true 로 첫
+  // 동기화 직후 즉시 재생성(일일 가드 무시). 읽기전용 기기도 로컬 projected 가
+  // 필요하므로 게이트하지 않는다(projected 쓰기는 동기화되지 않는 로컬 전용).
+  try {
+    await useDailyValueStore.getState().regenerateProjections(true)
+  } catch (err) {
+    console.error('[sync] projection regen after sync failed:', err)
+  }
 }
 
 let hasSyncedOnLogin = false

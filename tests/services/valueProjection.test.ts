@@ -83,4 +83,15 @@ describe('planValueSeries — 변동 규칙(dense)', () => {
     // 3/01 자체(수동)는 백필 엔트리로 다시 만들지 않는다
     expect(entries.some(e => e.date === '2026-03-01' && e.source === 'projected')).toBe(false)
   })
+
+  it('백필은 레거시 source 미지정 기록도 앵커로 보고 중단한다 (데이터 손실 회귀 방지)', () => {
+    // undefined-source 과거 행(퇴직금/레거시)은 사용자 원천 데이터다. backfill 이
+    // 이를 지나치며 projected 로 덮어쓰면 동기화로 복구 불가한 손실이 난다.
+    const existing = [ev('2026-03-01', 50_000, undefined)]
+    const entries = planValueSeries(existing, 100_000, '2026-03-15', dailyDelta)
+    // 3/01 이전으로 백필하지 않는다 — 레거시 앵커에서 중단
+    expect(entries.some(e => e.date < '2026-03-01')).toBe(false)
+    // 3/01(레거시 행)을 projected 엔트리로 덮어쓰지 않는다
+    expect(entries.some(e => e.date === '2026-03-01')).toBe(false)
+  })
 })
