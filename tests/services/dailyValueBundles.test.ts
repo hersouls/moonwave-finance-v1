@@ -589,3 +589,74 @@ describe('Phase 2 — projected 업로드 제외', () => {
     expect(await db.dailyValues.where('[assetItemId+date]').equals([assetId, '2026-06-06']).count()).toBe(0)
   })
 })
+
+// ─── Phase 2: projected 인제스트 무시 + source-aware supersede ─────────────
+//
+// 업그레이드 전 클라우드에 남은(또는 구버전 피어가 올린) projected 튜플은
+// 무시하고, 들어온 앵커(manual/undefined)는 로컬 projected 를 타임스탬프와
+// 무관하게 덮어쓴다 — 로컬 재생성 projected 의 새 타임스탬프가 더 오래된 피어
+// 앵커를 영구히 가리는 것을 막는다(영구 발산 방지).
+describe('Phase 2 — projected 인제스트 무시 + source-aware', () => {
+  it('클라우드 projected 일자 튜플은 무시한다 (로컬 재생성에 맡김), 앵커는 적용', async () => {
+    const assetId = await seedAsset('asset-A')
+    await ingestDvBundleDoc({
+      assetItem_syncId: 'asset-A', month: '2026-06',
+      days: {
+        '05': [100, 'manual', NOW, 'm-sid', 'peer'],    // 앵커 — 적용
+        '06': [150, 'projected', NOW, 'p-sid', 'peer'], // 파생 — 무시
+      },
+    })
+    expect(await db.dailyValues.where('[assetItemId+date]').equals([assetId, '2026-06-05']).count()).toBe(1)
+    expect(await db.dailyValues.where('[assetItemId+date]').equals([assetId, '2026-06-06']).count()).toBe(0)
+  })
+
+  it('삭제 마커(v=null)는 source 와 무관하게 적용된다 (projected 스킵에 안 걸림)', async () => {
+    const assetId = await seedAsset('asset-A')
+    setSyncWritingFlag(true)
+    try {
+      await db.dailyValues.add(makeRow({
+        syncId: 'x', assetItemId: assetId, date: '2026-06-05', value: 100,
+        source: 'manual', updatedAt: '2026-06-01T00:00:00.000Z',
+      }))
+    } finally { setSyncWritingFlag(false) }
+    await ingestDvBundleDoc({
+      assetItem_syncId: 'asset-A', month: '2026-06',
+      days: { '05': [null, null, '2026-06-20T00:00:00.000Z', 'x', 'peer'] }, // 마커 (더 새로움)
+    })
+    expect(await db.dailyValues.where('[assetItemId+date]').equals([assetId, '2026-06-05']).count()).toBe(0)
+  })
+
+  it('들어온 manual 앵커는 더 오래돼도 로컬 projected 를 덮어쓴다 (source-aware supersede)', async () => {
+    const assetId = await seedAsset('asset-A')
+    setSyncWritingFlag(true)
+    try {
+      await db.dailyValues.add(makeRow({
+        syncId: 'local-pj', assetItemId: assetId, date: '2026-06-05',
+        value: 999, source: 'projected', updatedAt: '2026-06-30T00:00:00.000Z', // 로컬 재생성 = fresh
+      }))
+    } finally { setSyncWritingFlag(false) }
+    await ingestDvBundleDoc({
+      assetItem_syncId: 'asset-A', month: '2026-06',
+      days: { '05': [123, 'manual', '2026-06-01T00:00:00.000Z', 'peer-sid', 'peer'] }, // 더 오래된 앵커
+    })
+    const row = await db.dailyValues.where('[assetItemId+date]').equals([assetId, '2026-06-05']).first()
+    expect(row).toMatchObject({ value: 123, source: 'manual', syncId: 'peer-sid' })
+  })
+
+  it('manual↔manual 은 일반 LWW — anchor-wins 가 앵커끼리엔 적용되지 않는다', async () => {
+    const assetId = await seedAsset('asset-A')
+    setSyncWritingFlag(true)
+    try {
+      await db.dailyValues.add(makeRow({
+        syncId: 'local-mn', assetItemId: assetId, date: '2026-06-05',
+        value: 999, source: 'manual', updatedAt: '2026-06-30T00:00:00.000Z',
+      }))
+    } finally { setSyncWritingFlag(false) }
+    await ingestDvBundleDoc({
+      assetItem_syncId: 'asset-A', month: '2026-06',
+      days: { '05': [123, 'manual', '2026-06-01T00:00:00.000Z', 'peer-sid', 'peer'] }, // 더 오래됨
+    })
+    const row = await db.dailyValues.where('[assetItemId+date]').equals([assetId, '2026-06-05']).first()
+    expect(row!.value).toBe(999) // 더 새로운 로컬 manual 보존
+  })
+})

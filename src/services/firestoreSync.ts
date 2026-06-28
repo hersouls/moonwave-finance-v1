@@ -1038,6 +1038,12 @@ export async function ingestDvBundleDoc(data: Record<string, unknown>): Promise<
 
   await runSyncWrite([db.dailyValues], async () => {
     for (const day of exploded.days) {
+      // 클라우드의 projected(파생) 값 튜플은 무시한다 — 각 기기가 manual
+      // 앵커로 로컬 재생성한다. 업그레이드 전 클라우드에 남은(또는 구버전
+      // 피어가 올린) projected 를 inert 처리. 삭제 마커(v===null)는 source 와
+      // 무관하게 적용해야 하므로 v!==null 일 때만 건너뛴다.
+      if (day.v !== null && day.s === 'projected') continue
+
       const existing = await db.dailyValues
         .where('[assetItemId+date]').equals([assetItemId, day.date]).first()
 
@@ -1059,14 +1065,21 @@ export async function ingestDvBundleDoc(data: Record<string, unknown>): Promise<
           createdAt: day.u,
           updatedAt: day.u,
         } as DailyValue)
-      } else if (shouldApplyCloudUpdate(day.u, day.d, existing.updatedAt)) {
-        await db.dailyValues.update(existing.id!, {
-          value: day.v,
-          source: (day.s ?? undefined) as DailyValue['source'],
-          updatedAt: day.u,
-          // sid 입양 — 같은 논리 일자가 기기마다 다른 syncId를 갖는 분기를 수렴
-          ...(existing.syncId !== day.sid ? { syncId: day.sid } : {}),
-        })
+      } else {
+        // 들어온 것은 앵커(여기 닿는 day.s 는 projected 가 아님: 위에서 스킵됨).
+        // 로컬이 projected 면 타임스탬프와 무관하게 앵커가 이긴다 — 로컬 재생성
+        // projected 의 새 타임스탬프가 더 오래된 피어 manual 앵커를 영구히
+        // 가리는 것을 막는다. 앵커↔앵커는 일반 일자 LWW.
+        const anchorOverProjected = existing.source === 'projected'
+        if (anchorOverProjected || shouldApplyCloudUpdate(day.u, day.d, existing.updatedAt)) {
+          await db.dailyValues.update(existing.id!, {
+            value: day.v,
+            source: (day.s ?? undefined) as DailyValue['source'],
+            updatedAt: day.u,
+            // sid 입양 — 같은 논리 일자가 기기마다 다른 syncId를 갖는 분기를 수렴
+            ...(existing.syncId !== day.sid ? { syncId: day.sid } : {}),
+          })
+        }
       }
     }
   })
