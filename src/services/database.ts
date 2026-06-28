@@ -91,6 +91,10 @@ class FinanceDatabase extends Dexie {
       goals: '++id, syncId, targetDate',
       paymentMethodItems: '++id, syncId, type, name, sortOrder',
     }).upgrade(async (tx) => {
+      // Open-time migration write: mark the versionchange tx as a sync write so
+      // the creating/updating hooks bypass the read-only gate (see db.on('populate')).
+      // Must precede the first await so the marker exists before any hook fires.
+      markSyncTransaction()
       const transactions = await tx.table('transactions').toArray()
       const seen = new Map<string, { type: string; name: string }>()
       const now = new Date().toISOString()
@@ -180,6 +184,7 @@ class FinanceDatabase extends Dexie {
 
     // v9: add 부동산 asset category for existing users
     this.version(9).stores({}).upgrade(async (tx: any) => {
+      markSyncTransaction()  // open-time migration write: bypass read-only gate (see db.on('populate'))
       const cats = await tx.table('assetCategories').toArray()
       const hasRealEstate = cats.some((c: AssetCategory) => c.name === '부동산')
       if (!hasRealEstate) {
@@ -193,7 +198,11 @@ class FinanceDatabase extends Dexie {
           color: '#D97706',
           icon: 'Home',
           sortOrder: maxSort + 1,
-          syncId: crypto.randomUUID(),
+          // Deterministic syncId (matches db.on('populate') line ~590 and
+          // ensureDefaultCategories) so '부동산' converges by syncId equality across
+          // devices. Required now that this migration write skips the changelog
+          // (markSyncTransaction above) — a random per-device id would duplicate.
+          syncId: defaultAssetCatSyncId('asset', '부동산'),
           createdAt: now,
           updatedAt: now,
         })
@@ -216,6 +225,7 @@ class FinanceDatabase extends Dexie {
       syncChangeLog: '++id, tableName, syncId, processed, timestamp, [tableName+syncId]',
       syncTombstones: '++id, tableName, syncId, deletedAt, [tableName+syncId]',
     }).upgrade(async (tx: any) => {
+      markSyncTransaction()  // open-time migration write: bypass read-only gate (see db.on('populate'))
       const cats = await tx.table('transactionCategories').toArray()
       const hasLoanInterest = cats.some((c: TransactionCategory) => c.name === '대출이자')
       if (!hasLoanInterest) {
@@ -229,7 +239,11 @@ class FinanceDatabase extends Dexie {
           icon: 'Percent',
           isDefault: true,
           sortOrder: maxSort + 1,
-          syncId: crypto.randomUUID(),
+          // Deterministic syncId (matches db.on('populate') line ~619 and
+          // ensureDefaultCategories) so '대출이자' converges by syncId equality across
+          // devices. Required now that this migration write skips the changelog
+          // (markSyncTransaction above) — a random per-device id would duplicate.
+          syncId: defaultTxnCatSyncId('expense', '대출이자'),
           createdAt: now,
           updatedAt: now,
         })
@@ -565,6 +579,15 @@ export async function ensureDefaultCategories(): Promise<void> {
 }
 
 db.on('populate', () => {
+  // Seed writes run INSIDE db.open()'s versionchange transaction. Mark it as a
+  // sync write so the CRUD 'creating' hook bypasses the read-only gate (a
+  // read-only device must still be able to open a fresh DB) and skips the
+  // changelog (deterministic default:* syncIds converge across devices; the
+  // full upload re-reads all rows regardless). Without this, assertWritable()
+  // throws here, aborts open, and closes the DB → DatabaseClosedError on every
+  // later read. Must be the FIRST statement: the bulkAdd 'creating' hooks fire
+  // synchronously inside this tx, so the marker must exist before any of them.
+  markSyncTransaction()
   const now = new Date().toISOString()
 
   // Default members
