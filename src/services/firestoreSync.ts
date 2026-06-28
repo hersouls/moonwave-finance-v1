@@ -1314,7 +1314,17 @@ export async function mergeTableWithRemap(
   cloudIsComplete: boolean = true,
 ): Promise<void> {
   const localTable = getLocalTable(tableName)
-  const localRecords = await (localTable as typeof db.members).toArray()
+  let localRecords = await (localTable as typeof db.members).toArray()
+
+  // dailyValues 의 파생(projected) 행은 동기화 범위 밖이다 (Phase 2). 클라우드
+  // projected 는 머지하지 않고(각 기기 로컬 재생성), 로컬 projected 는 Case 3
+  // 업로드 큐잉에서 제외한다 — Case 3 는 변경추적 훅을 우회해 changelog 에 직접
+  // 쓰므로, 제외하지 않으면 91% 를 차지하는 projected 행이 매 머지마다 통째로
+  // 큐잉된다. 앵커(manual/레거시 source 미지정)만 머지한다.
+  if (tableName === 'dailyValues') {
+    cloudRecords = cloudRecords.filter(r => r.source !== 'projected')
+    localRecords = localRecords.filter(r => (r as { source?: string }).source !== 'projected')
+  }
 
   const cloudMap = new Map<string, Record<string, unknown>>()
   for (const rec of cloudRecords) {
@@ -2269,6 +2279,12 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
         const cloudData = change.doc.data()
         const syncId = cloudData.syncId as string | undefined
         if (!syncId) continue
+        // dailyValues 의 파생(projected) 행은 동기화 범위 밖 — 레거시 컬렉션에
+        // 남은(또는 구버전 피어가 올린) projected 를 무시한다(각 기기 로컬 재생성).
+        // 'removed'(삭제 전파)는 아래에서 이미 dailyValues 전체를 스킵하므로
+        // 여기 added/modified 의 projected 만 거른다.
+        if (tableName === 'dailyValues' && (cloudData as { source?: string }).source === 'projected'
+            && change.type !== 'removed') continue
 
         try {
           if (change.type === 'added' || change.type === 'modified') {
