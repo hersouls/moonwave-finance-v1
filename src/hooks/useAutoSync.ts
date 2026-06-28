@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
-import { db, isSyncWriteContext } from '@/services/database'
+import { db, isSyncWriteContext, SYNCABLE_TABLES } from '@/services/database'
 import { wakeFirestoreNetwork } from '@/lib/firebase'
 import {
   incrementalUpload,
@@ -104,15 +104,12 @@ export function useAutoSync() {
       }
     }, HEALTH_POLL_MS)
 
-    // Dexie hooks: listen to creates, updates, deletes on ALL 15 synced tables.
+    // Dexie hooks: listen to creates, updates, deletes on ALL synced tables.
+    // 테이블 목록은 SYNCABLE_TABLES(단일 출처)에서 파생 — database.ts의
+    // 변경추적 훅과 같은 목록을 공유해 두 리스트가 어긋날 위험을 없앤다.
     // (빠진 테이블의 쓰기는 변경로그에는 남지만 업로드 디바운스를 깨우지
     // 못해 다음 다른 쓰기/online 이벤트까지 업로드가 지연된다)
-    const tables = [
-      db.members, db.assetCategories, db.assetItems, db.dailyValues,
-      db.transactionCategories, db.transactions, db.budgets, db.goals,
-      db.paymentMethodItems, db.subscriptions, db.loans,
-      db.investmentTrades, db.dividends, db.accountInterests, db.merchantAliases,
-    ]
+    const tables = SYNCABLE_TABLES.map((t) => t.table)
 
     const hookRemovers: (() => void)[] = []
 

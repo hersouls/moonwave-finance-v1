@@ -15,7 +15,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { firestore } from '@/lib/firebase'
-import { db, markSyncTransaction, runSyncWrite } from '@/services/database'
+import { db, markSyncTransaction, runSyncWrite, SYNCABLE_TABLE_NAMES, type SyncableTableName } from '@/services/database'
 import { getSyncCheckpoint, advanceSyncCheckpoint, type SyncCheckpointMap } from '@/services/syncCheckpoint'
 import {
   DV_BUNDLE_COLLECTION,
@@ -45,10 +45,11 @@ import type {
   SyncChangeLogEntry,
 } from '@/lib/types'
 
-export type SyncableTable = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions' | 'loans' | 'investmentTrades' | 'dividends' | 'accountInterests' | 'merchantAliases'
+// SyncableTable 유니온과 ALL_TABLES는 database.ts의 단일 출처(SYNCABLE_TABLES)에서 파생한다.
+export type SyncableTable = SyncableTableName
 
 const BATCH_LIMIT = 499
-const ALL_TABLES: SyncableTable[] = ['members', 'assetCategories', 'assetItems', 'dailyValues', 'transactionCategories', 'transactions', 'budgets', 'goals', 'paymentMethodItems', 'subscriptions', 'loans', 'investmentTrades', 'dividends', 'accountInterests', 'merchantAliases']
+const ALL_TABLES: SyncableTable[] = [...SYNCABLE_TABLE_NAMES]
 
 // ─── Cloud payload helpers ────────────────────────────────────────
 //
@@ -1748,11 +1749,6 @@ export async function mergeOnLogin(uid: string): Promise<void> {
       useAuthStore.getState().setSyncStatus('synced')
     }
   }
-}
-
-/** @deprecated Use mergeOnLogin instead */
-export async function syncOnLogin(uid: string): Promise<void> {
-  await mergeOnLogin(uid)
 }
 
 // ─── Pending Changes Count ───────────────────────────────

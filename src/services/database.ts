@@ -362,7 +362,34 @@ export async function runSyncWrite<T>(tables: Table[], fn: () => Promise<T>): Pr
   })
 }
 
-type SyncableTableName = 'members' | 'assetCategories' | 'assetItems' | 'dailyValues' | 'transactionCategories' | 'transactions' | 'budgets' | 'goals' | 'paymentMethodItems' | 'subscriptions' | 'loans' | 'investmentTrades' | 'dividends' | 'accountInterests' | 'merchantAliases'
+/**
+ * SINGLE SOURCE OF TRUTH for the 15 synced tables.
+ * Add a new synced table HERE (one entry). The type union (SyncableTableName),
+ * SYNCABLE_TABLE_NAMES, the change-tracking hooks below, and ALL_TABLES + the
+ * upload trigger (firestoreSync / useAutoSync) all derive from this list.
+ * The exhaustive Record<> maps elsewhere (getLocalTable, TABLE_FK_DEFS…) will
+ * then fail to compile until the new table is handled there too.
+ */
+export const SYNCABLE_TABLES = [
+  { name: 'members', table: db.members },
+  { name: 'assetCategories', table: db.assetCategories },
+  { name: 'assetItems', table: db.assetItems },
+  { name: 'dailyValues', table: db.dailyValues },
+  { name: 'transactionCategories', table: db.transactionCategories },
+  { name: 'transactions', table: db.transactions },
+  { name: 'budgets', table: db.budgets },
+  { name: 'goals', table: db.goals },
+  { name: 'paymentMethodItems', table: db.paymentMethodItems },
+  { name: 'subscriptions', table: db.subscriptions },
+  { name: 'loans', table: db.loans },
+  { name: 'investmentTrades', table: db.investmentTrades },
+  { name: 'dividends', table: db.dividends },
+  { name: 'accountInterests', table: db.accountInterests },
+  { name: 'merchantAliases', table: db.merchantAliases },
+] as const satisfies readonly { name: string; table: Table }[]
+
+export type SyncableTableName = typeof SYNCABLE_TABLES[number]['name']
+export const SYNCABLE_TABLE_NAMES = SYNCABLE_TABLES.map((t) => t.name) as SyncableTableName[]
 
 // ── Post-commit change-log queue ──────────────────────
 //
@@ -428,23 +455,8 @@ function queueChangeEntry(entry: SyncChangeLogEntry, tombstone?: SyncTombstone):
 }
 
 function installChangeTracking() {
-  const tables: { table: Table; name: SyncableTableName }[] = [
-    { table: db.members, name: 'members' },
-    { table: db.assetCategories, name: 'assetCategories' },
-    { table: db.assetItems, name: 'assetItems' },
-    { table: db.dailyValues, name: 'dailyValues' },
-    { table: db.transactionCategories, name: 'transactionCategories' },
-    { table: db.transactions, name: 'transactions' },
-    { table: db.budgets, name: 'budgets' },
-    { table: db.goals, name: 'goals' },
-    { table: db.paymentMethodItems, name: 'paymentMethodItems' },
-    { table: db.subscriptions, name: 'subscriptions' },
-    { table: db.loans, name: 'loans' },
-    { table: db.investmentTrades, name: 'investmentTrades' },
-    { table: db.dividends, name: 'dividends' },
-    { table: db.accountInterests, name: 'accountInterests' },
-    { table: db.merchantAliases, name: 'merchantAliases' },
-  ]
+  // 동기화 테이블 목록은 SYNCABLE_TABLES(단일 출처)에서 파생한다.
+  const tables = SYNCABLE_TABLES
 
   // dailyValues만 (자산×일자) 좌표를 changelog에 동반 기록한다 — 번들
   // 업로드(자산×월 묶음 문서)가 삭제 항목의 좌표를 복원할 유일한 출처다
