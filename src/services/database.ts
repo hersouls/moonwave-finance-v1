@@ -424,6 +424,25 @@ export async function drainChangeTracking(): Promise<void> {
   }
 }
 
+// "사용자 쓰기가 changelog에 기록됨" 신호. useAutoSync가 자체 Dexie 훅 45개
+// (15테이블 × 3이벤트)를 등록하는 대신 이 신호를 구독해 업로드 디바운스를
+// 깨운다. 변경추적 훅이 이미 echo(sync-flagged) 쓰기를 걸러내고 syncId 있는
+// 항목만 큐잉하므로, 여기 도달한 것은 전부 "업로드할 가치가 있는 사용자 쓰기"다.
+type UserWriteListener = () => void
+const _userWriteListeners = new Set<UserWriteListener>()
+
+/** 사용자 쓰기가 변경로그에 기록될 때 호출될 리스너 등록. 해지 함수를 반환한다. */
+export function onUserWritePersisted(listener: UserWriteListener): () => void {
+  _userWriteListeners.add(listener)
+  return () => { _userWriteListeners.delete(listener) }
+}
+
+function notifyUserWrite(): void {
+  for (const listener of _userWriteListeners) {
+    try { listener() } catch (err) { console.error('[sync] user-write listener failed:', err) }
+  }
+}
+
 function persistQueuedEntries(changes: SyncChangeLogEntry[], tombstones: SyncTombstone[]): void {
   const p: Promise<void> = Dexie.ignoreTransaction(async () => {
     try {
@@ -434,6 +453,7 @@ function persistQueuedEntries(changes: SyncChangeLogEntry[], tombstones: SyncTom
     }
   }).finally(() => { _inflightChangeLogWrites.delete(p) })
   _inflightChangeLogWrites.add(p)
+  if (changes.length > 0 || tombstones.length > 0) notifyUserWrite()
 }
 
 function queueChangeEntry(entry: SyncChangeLogEntry, tombstone?: SyncTombstone): void {

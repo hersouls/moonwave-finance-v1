@@ -9,7 +9,7 @@
 // 단언은 vi.waitFor로 수렴을 기다린다.
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import Dexie from 'dexie'
-import { db, addTransaction, bulkSetDailyValues, setSyncWritingFlag, clearAllData, drainChangeTracking, runSyncWrite } from '@/services/database'
+import { db, addTransaction, bulkSetDailyValues, setSyncWritingFlag, clearAllData, drainChangeTracking, runSyncWrite, onUserWritePersisted } from '@/services/database'
 import type { Transaction, DailyValue } from '@/lib/types'
 
 function makeTxn(): Omit<Transaction, 'id'> {
@@ -226,6 +226,36 @@ describe('change-tracking 훅 → syncChangeLog 기록', () => {
     const keys = (await db.merchantAliases.toArray()).map((a) => a.merchantKey).sort()
     expect(keys).toEqual(['스타벅스', '이마트'])
     await db.merchantAliases.clear()
+  })
+
+  it('onUserWritePersisted: 사용자 쓰기 시 신호 발신, 동기화(sync-flagged) 쓰기 시 미발신', async () => {
+    // useAutoSync가 자체 Dexie 훅 대신 이 신호를 구독해 업로드 디바운스를
+    // 깨운다 — 사용자 쓰기엔 와야 하고, 다운로드 echo엔 오면 안 된다.
+    let signals = 0
+    const unsub = onUserWritePersisted(() => { signals++ })
+    try {
+      await db.transactions.add(makeTxn() as Transaction)
+      await vi.waitFor(() => { expect(signals).toBeGreaterThan(0) }, { timeout: 2000 })
+      const afterUserWrite = signals
+
+      setSyncWritingFlag(true)
+      try {
+        await db.transactions.add(makeTxn() as Transaction)
+      } finally {
+        setSyncWritingFlag(false)
+      }
+      // changelog를 남기지 않으므로 신호도 증가하지 않아야 한다
+      await new Promise((r) => setTimeout(r, 50))
+      expect(signals).toBe(afterUserWrite)
+
+      // 해지 후에는 더 이상 신호를 받지 않는다
+      unsub()
+      await db.transactions.add(makeTxn() as Transaction)
+      await new Promise((r) => setTimeout(r, 50))
+      expect(signals).toBe(afterUserWrite)
+    } finally {
+      unsub()
+    }
   })
 
   it('clearAllData: 로컬 전용 초기화 — 직전 쓰기가 있어도 changelog/톰스톤이 남지 않는다', async () => {

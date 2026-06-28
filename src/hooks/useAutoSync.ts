@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
-import { db, isSyncWriteContext, SYNCABLE_TABLES } from '@/services/database'
+import { db, onUserWritePersisted } from '@/services/database'
 import { wakeFirestoreNetwork } from '@/lib/firebase'
 import {
   incrementalUpload,
@@ -104,41 +104,19 @@ export function useAutoSync() {
       }
     }, HEALTH_POLL_MS)
 
-    // Dexie hooks: listen to creates, updates, deletes on ALL synced tables.
-    // 테이블 목록은 SYNCABLE_TABLES(단일 출처)에서 파생 — database.ts의
-    // 변경추적 훅과 같은 목록을 공유해 두 리스트가 어긋날 위험을 없앤다.
-    // (빠진 테이블의 쓰기는 변경로그에는 남지만 업로드 디바운스를 깨우지
-    // 못해 다음 다른 쓰기/online 이벤트까지 업로드가 지연된다)
-    const tables = SYNCABLE_TABLES.map((t) => t.table)
-
-    const hookRemovers: (() => void)[] = []
-
-    for (const table of tables) {
-      // 동기화 인제스트의 echo는 업로드를 깨우지 않는다 — 훅은 자신이 속한
-      // 트랜잭션의 마커(또는 레거시 전역 플래그)로 출처를 판별한다.
-      const createHook = () => { if (!isSyncWriteContext()) scheduleSync() }
-      const updateHook = () => { if (!isSyncWriteContext()) scheduleSync() }
-      const deleteHook = () => { if (!isSyncWriteContext()) scheduleSync() }
-
-      table.hook('creating', createHook)
-      table.hook('updating', updateHook)
-      table.hook('deleting', deleteHook)
-
-      hookRemovers.push(
-        () => table.hook('creating').unsubscribe(createHook),
-        () => table.hook('updating').unsubscribe(updateHook),
-        () => table.hook('deleting').unsubscribe(deleteHook),
-      )
-    }
+    // 사용자 쓰기 → 업로드 디바운스. database.ts 변경추적 훅이 changelog에
+    // 항목을 기록할 때 발신하는 신호를 구독한다(useAutoSync가 자체 Dexie 훅
+    // 45개를 따로 등록하던 중복 제거). echo(sync-flagged) 다운로드 쓰기는
+    // changelog를 남기지 않으므로 신호도 오지 않는다 — 출처 판별 로직이
+    // database.ts 한 곳으로 일원화된다.
+    const unsubscribeUserWrites = onUserWritePersisted(scheduleSync)
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
       if (healthCheckRef.current) clearInterval(healthCheckRef.current)
       window.removeEventListener('online', handleOnline)
       document.removeEventListener('visibilitychange', handleVisibility)
-      for (const remove of hookRemovers) {
-        remove()
-      }
+      unsubscribeUserWrites()
     }
   }, [user])
 }
