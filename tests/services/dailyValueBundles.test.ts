@@ -430,3 +430,65 @@ describe('ingestDvBundleDoc (일자 LWW + sid 입양 + 삭제 마커)', () => {
     expect(row2!.value).toBe(200)
   })
 })
+
+// ─── 2-기기 왕복 수렴 하네스 ──────────────────────────────────────────────
+//
+// 기기 A 업로드(incrementalUpload → h.sets 번들 캡처) → 기기 B 시뮬레이션
+// (로컬 dailyValues 비우고 자산 유지) → 캡처한 번들을 ingestDvBundleDoc 로 인제스트.
+// Phase 2(파생 projected 동기화 중단)를 TDD 로 올릴 토대. manual 앵커의 수렴은
+// Phase 2 후에도 반드시 유지되어야 하는 불변식이므로 안정적 기준선이다.
+describe('2-기기 왕복 수렴 (업로드→번들→인제스트)', () => {
+  /** 기기 A가 업로드한 번들 문서들을 기기 B로 인제스트한다 (로컬 dv는 호출 전에 비운다). */
+  async function ingestUploadedBundlesAsPeer(): Promise<void> {
+    const bundleSets = h.sets.filter(s => s.path.includes('dailyValueBundles'))
+    for (const s of bundleSets) {
+      await ingestDvBundleDoc(s.payload as Record<string, unknown>)
+    }
+  }
+
+  it('기기 A의 manual 앵커가 기기 B로 수렴한다 (Phase 2 불변식 기준선)', async () => {
+    const assetId = await seedAsset('asset-A')
+    await db.dailyValues.bulkAdd([
+      makeRow({ syncId: 'm1', assetItemId: assetId, date: '2026-06-05', value: 100, source: 'manual' }),
+      makeRow({ syncId: 'm2', assetItemId: assetId, date: '2026-07-10', value: 300, source: 'manual' }),
+    ])
+    await vi.waitFor(async () => {
+      expect(await db.syncChangeLog.where('processed').equals(0).count()).toBe(2)
+    })
+    await incrementalUpload(UID)
+
+    // 기기 B: 로컬 일별값만 비우고(자산 유지) 클라우드 번들 인제스트
+    setSyncWritingFlag(true)
+    try { await db.dailyValues.clear() } finally { setSyncWritingFlag(false) }
+    await ingestUploadedBundlesAsPeer()
+
+    const m1 = await db.dailyValues.where('[assetItemId+date]').equals([assetId, '2026-06-05']).first()
+    const m2 = await db.dailyValues.where('[assetItemId+date]').equals([assetId, '2026-07-10']).first()
+    expect(m1).toMatchObject({ syncId: 'm1', value: 100, source: 'manual' })
+    expect(m2).toMatchObject({ syncId: 'm2', value: 300, source: 'manual' })
+    // 인제스트는 동기화 쓰기 — 기기 B에서 changelog 에코를 만들지 않는다
+    expect(await db.syncChangeLog.where('processed').equals(0).count()).toBe(0)
+  })
+
+  it('여러 달에 걸친 manual 앵커가 자산×월 번들 왕복으로 모두 수렴한다', async () => {
+    const assetId = await seedAsset('asset-A')
+    await db.dailyValues.bulkAdd([
+      makeRow({ syncId: 'a', assetItemId: assetId, date: '2026-05-31', value: 10, source: 'manual' }),
+      makeRow({ syncId: 'b', assetItemId: assetId, date: '2026-06-15', value: 20, source: 'manual' }),
+      makeRow({ syncId: 'c', assetItemId: assetId, date: '2026-08-01', value: 30, source: 'manual' }),
+    ])
+    await vi.waitFor(async () => {
+      expect(await db.syncChangeLog.where('processed').equals(0).count()).toBe(3)
+    })
+    await incrementalUpload(UID)
+
+    setSyncWritingFlag(true)
+    try { await db.dailyValues.clear() } finally { setSyncWritingFlag(false) }
+    await ingestUploadedBundlesAsPeer()
+
+    expect(await db.dailyValues.count()).toBe(3)
+    const got = (await db.dailyValues.toArray())
+      .map(r => [r.date, r.value]).sort()
+    expect(got).toEqual([['2026-05-31', 10], ['2026-06-15', 20], ['2026-08-01', 30]])
+  })
+})
