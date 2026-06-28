@@ -817,6 +817,10 @@ export async function bulkSetDailyValues(entries: { assetItemId: number; date: s
     for (const entry of entries) {
       const existing = await getDailyValue(entry.assetItemId, entry.date)
       if (existing) {
+        // projected 계산값은 수동/레거시(undefined) 앵커를 절대 덮어쓰지 않는다 —
+        // 앵커는 사용자 원천 데이터이고 덮어쓰면 동기화로 복구 불가. projected→projected
+        // 재계산과 수동 편집(source!=='projected')은 정상 통과한다.
+        if (entry.source === 'projected' && existing.source !== 'projected') continue
         await db.dailyValues.update(existing.id!, { value: entry.value, source: entry.source ?? existing.source, updatedAt: now })
       } else {
         await db.dailyValues.add({
