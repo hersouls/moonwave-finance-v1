@@ -365,7 +365,7 @@ export async function fullUpload(uid: string, options?: { reconcile?: boolean })
       // 레거시 per-row dailyValues는 정리(purge) 전까지만 — 구버전 기기의
       // 읽기 호환용. 신버전 표현은 아래 uploadAllDvBundles가 담당한다.
       legacyDvActive
-        ? uploadTable(uid, 'dailyValues', dailyValues.map(ensureSyncId))
+        ? uploadTable(uid, 'dailyValues', dailyValues.filter(r => r.source !== 'projected').map(ensureSyncId))
         : Promise.resolve(),
       uploadTable(uid, 'transactionCategories', transactionCategories.map(ensureSyncId)),
       uploadTable(uid, 'transactions', transactions.map(ensureSyncId)),
@@ -944,9 +944,21 @@ async function uploadDailyValueChanges(uid: string, entries: SyncChangeLogEntry[
     : []
   const rowByAssetDate = new Map(metaRows.map(r => [`${r.assetItemId}|${r.date}`, r]))
 
+  // projected(파생) 행에 매달린 업서트 엔트리는 통째로 드롭한다 — 행을 맵에서만
+  // 빼면 buildBundlePatches가 "행 없음 → 삭제 마커(v=null)"로 오판해 projected
+  // 좌표에 삭제를 전파하는 churn 이 생긴다. (신규 projected 는 변경추적 훅에서
+  // 이미 차단되므로 여기 닿는 건 업그레이드 전 큐잉된 백로그뿐. 호출부가 전체
+  // dvChanges 를 processed 마킹하므로 드롭해도 stuck 되지 않는다.)
+  const resolveRow = (e: SyncChangeLogEntry): typeof rows[number] | undefined =>
+    rowBySyncId.get(e.syncId)
+      ?? (e.assetItemId != null && e.date ? rowByAssetDate.get(`${e.assetItemId}|${e.date}`) : undefined)
+  const liveEntries = entries.filter(e =>
+    e.operation === 'delete' || resolveRow(e)?.source !== 'projected',
+  )
+
   const assetIds = new Set<number>()
   for (const r of [...rows, ...metaRows]) assetIds.add(r.assetItemId)
-  for (const e of entries) { if (e.assetItemId != null) assetIds.add(e.assetItemId) }
+  for (const e of liveEntries) { if (e.assetItemId != null) assetIds.add(e.assetItemId) }
   const assets = assetIds.size > 0 ? await db.assetItems.bulkGet([...assetIds]) : []
   const assetSyncById = new Map<number, string>()
   for (const a of assets) {
@@ -955,7 +967,7 @@ async function uploadDailyValueChanges(uid: string, entries: SyncChangeLogEntry[
 
   // ③ 패치 빌드 + 배치 커밋 (일자 단위 merge — 삭제는 v=null 마커 튜플)
   const { patches, unresolved } = buildBundlePatches(
-    entries, rowBySyncId, rowByAssetDate, assetSyncById, getDeviceId(),
+    liveEntries, rowBySyncId, rowByAssetDate, assetSyncById, getDeviceId(),
   )
   if (unresolved > 0) {
     // 자산 cascade 삭제(번들은 자산 삭제 경로가 통째로 지움) 또는 메타 없는
@@ -1068,7 +1080,9 @@ export async function ingestDvBundleDoc(data: Record<string, unknown>): Promise<
  * 묵은 일자 청소는 포기한다 — 삭제는 발생 시점의 v=null 마커가 담당한다.
  */
 async function uploadAllDvBundles(uid: string): Promise<number> {
-  const rows = await db.dailyValues.toArray()
+  // 파생(projected) 행은 클라우드에 올리지 않는다 — 각 기기가 manual 앵커로
+  // 로컬 재생성한다. (Phase 2: dailyValues 91% 차지하던 projected 동기화 중단)
+  const rows = (await db.dailyValues.toArray()).filter(r => r.source !== 'projected')
   const assets = await db.assetItems.toArray()
   const assetSyncById = new Map<number, string>()
   for (const a of assets) { if (a.id != null && a.syncId) assetSyncById.set(a.id, a.syncId) }

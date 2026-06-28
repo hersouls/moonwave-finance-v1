@@ -489,11 +489,18 @@ function installChangeTracking() {
       : {}
   }
 
+  // dailyValues 의 projected(파생) 행은 동기화하지 않는다 — 각 기기가 manual
+  // 앵커로부터 로컬 재생성한다. changelog/톰스톤을 남기지 않으며, read-only
+  // 게이트(assertWritable) 앞에서 건너뛰어 읽기전용 기기에서도 로컬 재생성이 된다.
+  const skipProjectedDv = (name: SyncableTableName, source: unknown): boolean =>
+    name === 'dailyValues' && source === 'projected'
+
   for (const { table, name } of tables) {
     table.hook('creating', function (_primKey, obj) {
       // Sync-originated writes (transaction marker or legacy global flag)
       // bypass the read-only gate and are never logged (echo suppression).
       if (isSyncWriteContext()) return
+      if (skipProjectedDv(name, (obj as { source?: string })?.source)) return
       // Read-only device gate: a user/app-initiated write on a read-only
       // device is blocked here, the enforcement net of last resort.
       assertWritable()
@@ -512,6 +519,11 @@ function installChangeTracking() {
 
     table.hook('updating', function (_mods, _primKey, obj) {
       if (isSyncWriteContext()) return
+      // 갱신 후의 유효 source 로 판정 (변경분에 source 가 있으면 그것, 없으면 기존).
+      const effSource = (_mods as { source?: string }).source !== undefined
+        ? (_mods as { source?: string }).source
+        : (obj as { source?: string })?.source
+      if (skipProjectedDv(name, effSource)) return
       assertWritable()
       const syncId = obj?.syncId as string | undefined
       if (syncId) {
@@ -528,6 +540,7 @@ function installChangeTracking() {
 
     table.hook('deleting', function (_primKey, obj) {
       if (isSyncWriteContext()) return
+      if (skipProjectedDv(name, (obj as { source?: string })?.source)) return
       assertWritable()
       const syncId = obj?.syncId as string | undefined
       if (syncId) {
