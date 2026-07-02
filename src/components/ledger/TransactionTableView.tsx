@@ -31,7 +31,7 @@ export function TransactionTableView({ transactions }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>('date')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
 
-  const catName = (id: number | null) => categories.find((c) => c.id === id)?.name || UNCATEGORIZED_LABEL
+  const catName = (id: string | null) => categories.find((c) => c.id === id)?.name || UNCATEGORIZED_LABEL
 
   const sorted = useMemo(() => {
     const dir = sortDir === 'asc' ? 1 : -1
@@ -40,7 +40,7 @@ export function TransactionTableView({ transactions }: Props) {
       if (sortKey === 'category') return catName(a.categoryId).localeCompare(catName(b.categoryId), 'ko') * dir
       // date — tie-break by id so equal dates stay stable
       const d = a.date.localeCompare(b.date)
-      return (d !== 0 ? d : (a.id ?? 0) - (b.id ?? 0)) * dir
+      return (d !== 0 ? d : a.id.localeCompare(b.id)) * dir
     })
   }, [transactions, sortKey, sortDir]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -96,7 +96,7 @@ export function TransactionTableView({ transactions }: Props) {
               const accent = category?.color ?? (isInflow ? 'var(--value-positive)' : 'var(--value-negative)')
               const CategoryIcon = getCategoryIcon(category?.icon)
               return (
-                <tr key={t.id} onClick={() => t.id != null && openEdit(t.id)} className="cursor-pointer">
+                <tr key={t.id} onClick={() => openEdit(t.id)} className="cursor-pointer">
                   <td className="whitespace-nowrap tabular-nums text-sub">{formatDate(t.date)}</td>
                   <td>
                     <span className="inline-flex items-center gap-2">

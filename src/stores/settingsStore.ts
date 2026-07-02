@@ -21,7 +21,6 @@ interface SettingsState {
   toggleOledMode: () => void
   toggleHideAmounts: () => void
   toggleAutoCarryForward: () => void
-  setDeviceWriteEnabled: (enabled: boolean) => void
 }
 
 let themeListenerAdded = false
@@ -136,10 +135,6 @@ export const useSettingsStore = create<SettingsState>()(
           newSettings.autoCarryForward = true
           hasChanges = true
         }
-        if (newSettings.deviceWriteEnabled === undefined) {
-          newSettings.deviceWriteEnabled = true
-          hasChanges = true
-        }
         if (hasChanges) set({ settings: newSettings })
 
         applyTheme(theme)
@@ -248,10 +243,6 @@ export const useSettingsStore = create<SettingsState>()(
 
       toggleAutoCarryForward: () => {
         set((state) => ({ settings: { ...state.settings, autoCarryForward: state.settings.autoCarryForward === false } }))
-      },
-
-      setDeviceWriteEnabled: (enabled) => {
-        set((state) => ({ settings: { ...state.settings, deviceWriteEnabled: enabled } }))
       },
     }),
     {

@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Download, Trash2, Smartphone, CheckCircle2, Sparkles, Lock, PencilLine, Eye, EyeOff } from 'lucide-react'
+import { Download, Trash2, Smartphone, CheckCircle2, Sparkles, Eye, EyeOff } from 'lucide-react'
 import { Button, IconButton } from '@/components/ui/Button'
-import { ToggleSwitch } from '@/components/settings/ToggleSwitch'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { clearAllData } from '@/services/database'
 import { getApiKey, setApiKey, clearApiKey } from '@/services/aiCategorizeMerchants'
 import { getDeviceId } from '@/lib/deviceId'
 import { useToastStore } from '@/stores/toastStore'
 import { useUIStore } from '@/stores/uiStore'
-import { useSettingsStore } from '@/stores/settingsStore'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -18,18 +16,7 @@ interface BeforeInstallPromptEvent extends Event {
 export function SystemTab() {
   const addToast = useToastStore((s) => s.addToast)
   const closeSettingsModal = useUIStore((s) => s.closeSettingsModal)
-  const deviceWriteEnabled = useSettingsStore((s) => s.settings.deviceWriteEnabled !== false)
-  const setDeviceWriteEnabled = useSettingsStore((s) => s.setDeviceWriteEnabled)
   const deviceIdShort = getDeviceId().slice(0, 8)
-
-  const handleToggleDeviceWrite = () => {
-    const next = !deviceWriteEnabled
-    setDeviceWriteEnabled(next)
-    addToast(
-      next ? '이 기기에서 쓰기가 활성화되었습니다' : '이 기기는 읽기 전용으로 전환되었습니다',
-      next ? 'success' : 'info',
-    )
-  }
 
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
@@ -103,34 +90,13 @@ export function SystemTab() {
 
   return (
     <div className="space-y-8">
-      {/* 기기 쓰기 권한 (per-device, not synced) */}
+      {/* 기기 정보 */}
       <section>
         <h3 className="text-body3-semi text-heading mb-3 flex items-center gap-2">
-          {deviceWriteEnabled ? <PencilLine className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-          기기 쓰기 권한
+          <Smartphone className="w-4 h-4" />
+          기기 정보
         </h3>
-        <div className="p-4 bg-surface-secondary rounded-xl space-y-3">
-          <ToggleSwitch
-            checked={deviceWriteEnabled}
-            onChange={handleToggleDeviceWrite}
-            label="이 기기에서 쓰기 허용"
-            description={
-              deviceWriteEnabled
-                ? '이 기기에서 거래·자산·예산 등 데이터를 추가, 수정, 삭제할 수 있습니다.'
-                : '이 기기는 읽기 전용입니다. 데이터 변경·가져오기·클라우드 업로드가 차단됩니다.'
-            }
-          />
-
-          {!deviceWriteEnabled && (
-            <div className="rounded-lg p-3 bg-[color:var(--color-primary-50)] dark:bg-[color:var(--color-primary-900)]/20 ring-1 ring-[color:var(--color-primary-200)] dark:ring-[color:var(--color-primary-800)]">
-              <p className="text-body3 text-[color:var(--color-primary-700)] dark:text-[color:var(--color-primary-300)] leading-relaxed">
-                읽기 전용으로 전환하면 이 기기에서는 모든 데이터 추가·수정·삭제와 가져오기(임포트)·클라우드 업로드가 차단됩니다.
-                클라우드의 변경 내용은 계속 내려받아 최신 상태로 유지됩니다.
-                이 설정은 이 기기에만 적용되며 다른 기기에 동기화되지 않습니다.
-              </p>
-            </div>
-          )}
-
+        <div className="p-4 bg-surface-secondary rounded-xl">
           <p className="text-label4 text-disabled tabular-nums">기기 ID: {deviceIdShort}</p>
         </div>
       </section>
@@ -255,8 +221,6 @@ export function SystemTab() {
               onClick={() => setShowResetConfirm(true)}
               leftIcon={<Trash2 className="w-4 h-4" />}
               className="w-full sm:w-auto"
-              disabled={!deviceWriteEnabled}
-              title={deviceWriteEnabled ? undefined : '읽기 전용 모드'}
             >
               초기화
             </Button>

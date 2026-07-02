@@ -39,7 +39,7 @@ export function AssetSummaryHeader({ items, type }: AssetSummaryHeaderProps) {
     const byItem = groupValuesByItem(allValues)
 
     const sumAsOf = (date: string) =>
-      items.reduce((acc, it) => (it.id == null ? acc : acc + valueAsOf(byItem.get(it.id), date)), 0)
+      items.reduce((acc, it) => acc + valueAsOf(byItem.get(it.id), date), 0)
 
     const total = sumAsOf(today)
     const totalYesterday = sumAsOf(yesterday)

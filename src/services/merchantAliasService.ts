@@ -13,29 +13,28 @@
 
 import { db } from '@/services/database'
 import { normalizeMerchantKey } from '@/services/subscriptionDetection'
-import { canDeviceWrite } from '@/lib/writeGuard'
 import type { MerchantAlias, MerchantAliasSource, SubscriptionCategoryType } from '@/lib/types'
 
 /**
- * Deterministic syncId for an alias, derived from its normalized merchantKey.
+ * Deterministic id for an alias, derived from its normalized merchantKey.
  * normalizeMerchantKey is pure, so every device computes the same merchantKey —
- * and therefore the same syncId — for the same merchant. All devices then write
+ * and therefore the same id — for the same merchant. All devices then write
  * to the SAME Firestore document, so alias sync converges by construction:
  * one cloud doc per merchant, no cross-device duplicate rows, and no
  * &merchantKey ConstraintError on download.
  *
  * merchantKey is punctuation-stripped (no '/'), so it stays valid as a Firestore
- * document id. Mirrors the deterministic-syncId pattern used for seeded
- * defaults in database.ts (defaultTxnCatSyncId, etc.).
+ * document id. Mirrors the deterministic-id pattern used for seeded
+ * defaults in database.ts (defaultTxnCatId, etc.).
  */
-function aliasSyncId(merchantKey: string): string {
+function aliasId(merchantKey: string): string {
   return `alias:${merchantKey}`
 }
 
 export interface SetAliasInput {
   merchant: string                  // raw merchant text — will be normalized
-  categoryId: number
-  subscriptionId?: number
+  categoryId: string
+  subscriptionId?: string
   subscriptionCategory?: SubscriptionCategoryType
   source: MerchantAliasSource
   sampleMerchant?: string
@@ -62,7 +61,6 @@ export async function loadAliasMap(): Promise<Map<string, MerchantAlias>> {
  *     (we never let AI clobber a user-confirmed mapping).
  */
 export async function setAlias(input: SetAliasInput): Promise<void> {
-  if (!canDeviceWrite()) return  // read-only device: don't mutate the synced alias table
   const merchantKey = normalizeMerchantKey(input.merchant)
   if (!merchantKey) return
   const now = new Date().toISOString()
@@ -73,7 +71,7 @@ export async function setAlias(input: SetAliasInput): Promise<void> {
       // Never let AI overwrite a user-confirmed mapping.
       return
     }
-    await db.merchantAliases.update(existing.id!, {
+    await db.merchantAliases.update(existing.id, {
       categoryId: input.categoryId,
       subscriptionId: input.subscriptionId,
       subscriptionCategory: input.subscriptionCategory,
@@ -85,7 +83,7 @@ export async function setAlias(input: SetAliasInput): Promise<void> {
   }
 
   await db.merchantAliases.add({
-    syncId: aliasSyncId(merchantKey),
+    id: aliasId(merchantKey),
     merchantKey,
     categoryId: input.categoryId,
     subscriptionId: input.subscriptionId,
@@ -105,11 +103,10 @@ export async function setAlias(input: SetAliasInput): Promise<void> {
  * Best-effort — failures don't block the import.
  */
 export async function recordAliasUsage(merchantKey: string): Promise<void> {
-  if (!canDeviceWrite()) return  // read-only device: no usage-count writes
   try {
     const existing = await db.merchantAliases.where('merchantKey').equals(merchantKey).first()
     if (!existing) return
-    await db.merchantAliases.update(existing.id!, {
+    await db.merchantAliases.update(existing.id, {
       usageCount: existing.usageCount + 1,
       lastUsedAt: new Date().toISOString(),
     })

@@ -1,7 +1,6 @@
-import { db } from '@/services/database'
+import { db, createId } from '@/services/database'
 import { format, isAfter, isBefore, addDays, addMonths } from 'date-fns'
-import { canDeviceWrite } from '@/lib/writeGuard'
-import type { Transaction, Subscription, PauseHistoryEntry } from '@/lib/types'
+import type { Subscription, PauseHistoryEntry } from '@/lib/types'
 
 /**
  * Check if a date string falls within any pause period.
@@ -102,7 +101,6 @@ function generateBillingDates(sub: Subscription, upTo: Date): string[] {
  * skipping pause periods and dates where a transaction already exists.
  */
 export async function processSubscriptionTransactions(): Promise<number> {
-  if (!canDeviceWrite()) return 0  // read-only device: no auto-generated rows
   const today = new Date()
 
   const activeSubs = await db.subscriptions.where('status').equals('active').toArray()
@@ -132,7 +130,7 @@ export async function processSubscriptionTransactions(): Promise<number> {
 
       const now = new Date().toISOString()
       await db.transactions.add({
-        syncId: crypto.randomUUID(),
+        id: createId(),
         memberId: null,
         type: 'expense',
         amount: sub.amount,
@@ -144,7 +142,7 @@ export async function processSubscriptionTransactions(): Promise<number> {
         subscriptionId: sub.id,
         createdAt: now,
         updatedAt: now,
-      } as Transaction)
+      })
       created++
     }
   }

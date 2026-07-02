@@ -1,8 +1,144 @@
 import { db, setSyncWritingFlag, drainChangeTracking } from '@/services/database'
-import { clearSyncCheckpoint } from '@/services/syncCheckpoint'
 import { BACKUP_CONFIG } from '@/utils/constants'
-import { assertWritable } from '@/lib/writeGuard'
 import type { BackupFile } from '@/lib/types'
+
+// ─── Backup format versions ─────────────────────────────
+//
+// Sync v2 부터 백업 파일은 version '2.0' — 모든 행이 문자열 id(구 syncId 승격)를
+// 갖고 FK 필드도 부모의 문자열 id 를 가리킨다. 구버전(1.x) 백업 파일(숫자
+// auto-increment id + 별도 syncId)은 임포트 시점에 id 승격 + FK 재작성으로
+// 변환해 하위호환을 유지한다.
+const BACKUP_VERSION_V2 = '2.0'
+const SUPPORTED_VERSIONS: readonly string[] = [
+  ...BACKUP_CONFIG.SUPPORTED_VERSIONS,
+  BACKUP_VERSION_V2,
+]
+
+// ─── Legacy (1.x) backup conversion ─────────────────────
+
+type RawRow = Record<string, unknown>
+
+const BACKUP_TABLES = [
+  'members', 'assetCategories', 'assetItems', 'dailyValues',
+  'transactionCategories', 'transactions', 'budgets', 'goals',
+  'paymentMethodItems', 'subscriptions', 'loans',
+  'investmentTrades', 'dividends', 'accountInterests',
+] as const
+type BackupTableName = typeof BACKUP_TABLES[number]
+
+/** FK 필드 정의 — 레거시 백업의 숫자 FK → 문자열 id 재작성 대상.
+ *  mode 는 매핑 실패 시 처리: nullable→null, optional→delete, required→''. */
+const BACKUP_FK_DEFS: Partial<Record<BackupTableName, Array<{
+  field: string
+  refTable: BackupTableName
+  mode: 'required' | 'nullable' | 'optional'
+}>>> = {
+  assetItems: [
+    { field: 'memberId', refTable: 'members', mode: 'required' },
+    { field: 'categoryId', refTable: 'assetCategories', mode: 'required' },
+  ],
+  dailyValues: [
+    { field: 'assetItemId', refTable: 'assetItems', mode: 'required' },
+  ],
+  transactions: [
+    { field: 'memberId', refTable: 'members', mode: 'nullable' },
+    { field: 'categoryId', refTable: 'transactionCategories', mode: 'nullable' },
+    { field: 'paymentMethodItemId', refTable: 'paymentMethodItems', mode: 'optional' },
+    { field: 'recurSourceId', refTable: 'transactions', mode: 'optional' },
+    { field: 'subscriptionId', refTable: 'subscriptions', mode: 'optional' },
+  ],
+  budgets: [
+    { field: 'categoryId', refTable: 'transactionCategories', mode: 'required' },
+  ],
+  paymentMethodItems: [
+    { field: 'linkedAssetItemId', refTable: 'assetItems', mode: 'optional' },
+  ],
+  subscriptions: [
+    { field: 'paymentMethodItemId', refTable: 'paymentMethodItems', mode: 'optional' },
+    { field: 'linkedTransactionCategoryId', refTable: 'transactionCategories', mode: 'optional' },
+  ],
+  loans: [
+    { field: 'linkedAssetItemId', refTable: 'assetItems', mode: 'optional' },
+  ],
+  investmentTrades: [{ field: 'memberId', refTable: 'members', mode: 'nullable' }],
+  dividends: [{ field: 'memberId', refTable: 'members', mode: 'nullable' }],
+  accountInterests: [{ field: 'memberId', refTable: 'members', mode: 'nullable' }],
+}
+
+/** 백업 데이터에 숫자 id 행이 하나라도 있으면 레거시(1.x) 형식이다. */
+function isLegacyBackupData(data: BackupFile['data']): boolean {
+  const raw = data as unknown as Record<string, RawRow[] | undefined>
+  for (const name of BACKUP_TABLES) {
+    const rows = raw[name]
+    if (rows?.some((r) => typeof r.id === 'number')) return true
+  }
+  return false
+}
+
+/**
+ * 레거시(1.x) 백업 데이터를 v2 형식으로 변환한다:
+ *   - 각 행의 syncId 를 id 로 승격 (syncId 없으면 새 UUID)
+ *   - 파일 내 데이터로 (테이블 × 숫자 id → 문자열 id) 매핑을 만들어 FK 재작성
+ *   - FK 매핑 실패 시: nullable→null, optional→필드 삭제, required→'' (미매칭 표식)
+ *   - projected dailyValues 는 드롭 — 동기화/백업 대상이 아니며 앵커에서 재생성된다
+ * v2 형식(문자열 id) 데이터는 그대로 반환한다.
+ */
+function normalizeBackupData(data: BackupFile['data']): BackupFile['data'] {
+  if (!isLegacyBackupData(data)) return data
+
+  const raw = data as unknown as Record<string, RawRow[] | undefined>
+
+  // 1패스 — 테이블별 (숫자 id → 문자열 id) 매핑 구성
+  const idMaps: Record<BackupTableName, Map<number, string>> =
+    {} as Record<BackupTableName, Map<number, string>>
+  for (const name of BACKUP_TABLES) {
+    const map = new Map<number, string>()
+    for (const row of raw[name] ?? []) {
+      if (typeof row.id === 'number') {
+        const sid = typeof row.syncId === 'string' && row.syncId ? row.syncId : crypto.randomUUID()
+        map.set(row.id, sid)
+      }
+    }
+    idMaps[name] = map
+  }
+
+  // 2패스 — id 승격 + FK 재작성 (+ projected dailyValues 제외)
+  const out: Record<string, RawRow[]> = {}
+  for (const name of BACKUP_TABLES) {
+    const rows = raw[name]
+    if (!rows) continue
+    const fkDefs = BACKUP_FK_DEFS[name] ?? []
+    const converted: RawRow[] = []
+    for (const row of rows) {
+      if (name === 'dailyValues' && row.source === 'projected') continue
+      const next: RawRow = { ...row }
+      if (typeof next.id === 'number') {
+        next.id = idMaps[name].get(next.id)!
+      } else if (typeof next.id !== 'string' || !next.id) {
+        next.id = typeof next.syncId === 'string' && next.syncId ? next.syncId : crypto.randomUUID()
+      }
+      delete next.syncId
+      for (const def of fkDefs) {
+        const v = next[def.field]
+        if (typeof v !== 'number') continue // 문자열/null/undefined 는 그대로
+        const mapped = idMaps[def.refTable].get(v)
+        if (mapped != null) {
+          next[def.field] = mapped
+        } else if (def.mode === 'nullable') {
+          next[def.field] = null
+        } else if (def.mode === 'optional') {
+          delete next[def.field]
+        } else {
+          next[def.field] = '' // required — 미매칭 표식 ('' 조회는 항상 미스)
+        }
+      }
+      converted.push(next)
+    }
+    out[name] = converted
+  }
+
+  return { ...data, ...out } as unknown as BackupFile['data']
+}
 
 export async function exportBackup(): Promise<void> {
   const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans, investmentTrades, dividends, accountInterests] = await Promise.all([
@@ -23,7 +159,7 @@ export async function exportBackup(): Promise<void> {
   ])
 
   const backup: BackupFile = {
-    version: BACKUP_CONFIG.CURRENT_VERSION,
+    version: BACKUP_VERSION_V2,
     appName: BACKUP_CONFIG.APP_NAME,
     exportDate: new Date().toISOString(),
     data: {
@@ -58,11 +194,10 @@ export async function exportBackup(): Promise<void> {
 }
 
 export async function importBackup(file: File): Promise<void> {
-  assertWritable()  // read-only device: block the destructive restore before any wipe
   const text = await file.text()
   const backup: BackupFile = JSON.parse(text)
 
-  if (!backup.version || !(BACKUP_CONFIG.SUPPORTED_VERSIONS as readonly string[]).includes(backup.version)) {
+  if (!backup.version || !SUPPORTED_VERSIONS.includes(backup.version)) {
     throw new Error('지원하지 않는 백업 버전입니다.')
   }
 
@@ -70,10 +205,13 @@ export async function importBackup(file: File): Promise<void> {
     throw new Error('올바르지 않은 백업 파일입니다.')
   }
 
-  // 복원은 "로컬 교체"다 — 클라우드와의 수렴은 다음 mergeOnLogin이 담당한다.
+  // 구버전(숫자 id) 백업이면 여기서 v2 형식으로 변환된다. v2 백업은 그대로.
+  const data = normalizeBackupData(backup.data)
+
+  // 복원은 "로컬 교체"다 — 클라우드와의 수렴은 다음 동기화 세션이 담당한다.
   // sync-writing 플래그 없이 돌리면 clear()가 기존 전 레코드의 deleting 훅을
-  // 행마다 발화시켜 수천 건의 delete 변경로그 + 톰스톤을 적재하고, 그 톰스톤이
-  // 다음 로그인 때 클라우드/피어 기기로 삭제 전파 폭풍을 일으킨다.
+  // 행마다 발화시켜 수천 건의 delete 아웃박스 항목을 적재하고, 그 삭제가
+  // 다음 푸시 때 클라우드/피어 기기로 삭제 전파 폭풍을 일으킨다.
   setSyncWritingFlag(true)
   try {
     await db.transaction('rw', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions, db.loans, db.investmentTrades, db.dividends, db.accountInterests], async () => {
@@ -92,32 +230,27 @@ export async function importBackup(file: File): Promise<void> {
       await db.dividends.clear()
       await db.accountInterests.clear()
 
-      if (backup.data.members?.length) await db.members.bulkAdd(backup.data.members)
-      if (backup.data.assetCategories?.length) await db.assetCategories.bulkAdd(backup.data.assetCategories)
-      if (backup.data.assetItems?.length) await db.assetItems.bulkAdd(backup.data.assetItems)
-      if (backup.data.dailyValues?.length) await db.dailyValues.bulkAdd(backup.data.dailyValues)
-      if (backup.data.transactionCategories?.length) await db.transactionCategories.bulkAdd(backup.data.transactionCategories)
-      if (backup.data.transactions?.length) await db.transactions.bulkAdd(backup.data.transactions)
-      if (backup.data.budgets?.length) await db.budgets.bulkAdd(backup.data.budgets)
-      if (backup.data.goals?.length) await db.goals.bulkAdd(backup.data.goals)
-      if (backup.data.paymentMethodItems?.length) await db.paymentMethodItems.bulkAdd(backup.data.paymentMethodItems)
-      if (backup.data.subscriptions?.length) await db.subscriptions.bulkAdd(backup.data.subscriptions)
-      if (backup.data.loans?.length) await db.loans.bulkAdd(backup.data.loans)
-      if (backup.data.investmentTrades?.length) await db.investmentTrades.bulkAdd(backup.data.investmentTrades)
-      if (backup.data.dividends?.length) await db.dividends.bulkAdd(backup.data.dividends)
-      if (backup.data.accountInterests?.length) await db.accountInterests.bulkAdd(backup.data.accountInterests)
+      if (data.members?.length) await db.members.bulkAdd(data.members)
+      if (data.assetCategories?.length) await db.assetCategories.bulkAdd(data.assetCategories)
+      if (data.assetItems?.length) await db.assetItems.bulkAdd(data.assetItems)
+      if (data.dailyValues?.length) await db.dailyValues.bulkAdd(data.dailyValues)
+      if (data.transactionCategories?.length) await db.transactionCategories.bulkAdd(data.transactionCategories)
+      if (data.transactions?.length) await db.transactions.bulkAdd(data.transactions)
+      if (data.budgets?.length) await db.budgets.bulkAdd(data.budgets)
+      if (data.goals?.length) await db.goals.bulkAdd(data.goals)
+      if (data.paymentMethodItems?.length) await db.paymentMethodItems.bulkAdd(data.paymentMethodItems)
+      if (data.subscriptions?.length) await db.subscriptions.bulkAdd(data.subscriptions)
+      if (data.loans?.length) await db.loans.bulkAdd(data.loans)
+      if (data.investmentTrades?.length) await db.investmentTrades.bulkAdd(data.investmentTrades)
+      if (data.dividends?.length) await db.dividends.bulkAdd(data.dividends)
+      if (data.accountInterests?.length) await db.accountInterests.bulkAdd(data.accountInterests)
     })
 
-    // 복원 전 상태를 가리키는 잔여 동기화 큐를 정리한다 — 특히 pending 'delete'
-    // 항목은 복원으로 부활한 레코드(동일 syncId)를 다음 업로드에서 클라우드/피어
-    // 기기로부터 삭제시킬 수 있다. clearAllData와 동일한 로컬 교체 의미론.
+    // 복원 전 상태를 가리키는 잔여 동기화 아웃박스를 정리한다 — 특히 pending
+    // 'delete' 항목은 복원으로 부활한 레코드(동일 id)를 다음 푸시에서 클라우드/
+    // 피어 기기로부터 삭제시킬 수 있다. clearAllData와 동일한 로컬 교체 의미론.
     await drainChangeTracking()
-    await db.syncChangeLog.clear()
-    await db.syncTombstones.clear()
-
-    // 로컬이 백업 시점으로 교체되었으므로 델타 체크포인트도 무효 — 리셋해야
-    // 다음 mergeOnLogin이 전량 머지로 클라우드와 다시 수렴한다.
-    await clearSyncCheckpoint()
+    await db.syncOutbox.clear()
   } finally {
     setSyncWritingFlag(false)
   }
@@ -213,7 +346,7 @@ export async function exportAssetValuesCSV(): Promise<void> {
 
   const header = '날짜,항목명,카테고리,유형,구성원,금액'
   const rows = values
-    .sort((a, b) => b.date.localeCompare(a.date) || a.assetItemId - b.assetItemId)
+    .sort((a, b) => b.date.localeCompare(a.date) || a.assetItemId.localeCompare(b.assetItemId))
     .map(v => {
       const item = itemMap.get(v.assetItemId)
       if (!item) return null

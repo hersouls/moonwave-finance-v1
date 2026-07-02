@@ -7,7 +7,6 @@ import { UI_DELAYS } from '@/utils/constants'
 import { useAuthStore, type SyncStatus } from '@/stores/authStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useToastStore } from '@/stores/toastStore'
-import { useIsDeviceReadOnly } from '@/lib/writeGuard'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { FormSectionLabel } from '@/components/ui/CreateFormPrimitives'
@@ -27,6 +26,7 @@ const SYNC_LABELS: Record<SyncStatus, string> = {
   synced: '동기화 완료',
   error: '동기화 오류',
   idle: '동기화 대기',
+  offline: '오프라인',
 }
 
 export function DataTab() {
@@ -41,7 +41,6 @@ export function DataTab() {
   const settings = useSettingsStore((s) => s.settings)
   const setLastBackupDate = useSettingsStore((s) => s.setLastBackupDate)
   const addToast = useToastStore((s) => s.addToast)
-  const readOnly = useIsDeviceReadOnly()
 
   // 탭을 열 때마다 대기 카운트를 실제 DB 기준으로 재계산 — store 값은
   // 마지막 동기화 시점의 스냅샷이라 그 사이 업로드/변경을 반영하지 못한다.
@@ -175,8 +174,7 @@ export function DataTab() {
                     addToast('업로드에 실패했습니다.', 'error')
                   }
                 }}
-                disabled={syncStatus === 'syncing' || readOnly}
-                title={readOnly ? '읽기 전용 모드 — 업로드 불가' : undefined}
+                disabled={syncStatus === 'syncing'}
                 leftIcon={<Upload className="w-4 h-4" />}
               >
                 로컬 → 클라우드
@@ -210,8 +208,7 @@ export function DataTab() {
                 variant="secondary"
                 size="sm"
                 onClick={() => setShowDvPurgeConfirm(true)}
-                disabled={isPurgingDv || readOnly || syncStatus === 'syncing'}
-                title={readOnly ? '읽기 전용 모드' : undefined}
+                disabled={isPurgingDv || syncStatus === 'syncing'}
                 leftIcon={isPurgingDv ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
                 className="w-full sm:w-auto"
               >
@@ -255,8 +252,7 @@ export function DataTab() {
               variant="secondary"
               size="sm"
               onClick={handleImportBackup}
-              disabled={isRestoring || readOnly}
-              title={readOnly ? '읽기 전용 모드' : undefined}
+              disabled={isRestoring}
               leftIcon={isRestoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               className="w-full sm:w-auto"
             >
@@ -280,8 +276,6 @@ export function DataTab() {
             variant="secondary"
             size="sm"
             onClick={handleEasyLedgerImport}
-            disabled={readOnly}
-            title={readOnly ? '읽기 전용 모드' : undefined}
             leftIcon={<FileUp className="w-4 h-4" />}
             className="w-full sm:w-auto"
           >

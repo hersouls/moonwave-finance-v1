@@ -17,10 +17,10 @@ interface UIState {
   transactionPrefillDate: string | null
 
   isTransactionEditModalOpen: boolean
-  editingTransactionId: number | null
+  editingTransactionId: string | null
 
-  activeMemberFilter: number | null
-  activeCategoryFilter: number | null
+  activeMemberFilter: string | null
+  activeCategoryFilter: string | null
 
   isSearchModalOpen: boolean
 
@@ -29,16 +29,16 @@ interface UIState {
 
   isSubscriptionCreateModalOpen: boolean
   isSubscriptionEditModalOpen: boolean
-  editingSubscriptionId: number | null
+  editingSubscriptionId: string | null
 
   isAssetEditModalOpen: boolean
-  editingAssetItemId: number | null
+  editingAssetItemId: string | null
 
   isAssetCategoryManagerOpen: boolean
-  assetQuickValueItemId: number | null
+  assetQuickValueItemId: string | null
 
   isSelectionMode: boolean
-  selectedItemIds: Set<number>
+  selectedItemIds: Set<string>
 
   toggleSidebar: () => void
   setSidebarOpen: (open: boolean) => void
@@ -65,15 +65,15 @@ interface UIState {
 
   openSubscriptionCreateModal: () => void
   closeSubscriptionCreateModal: () => void
-  openSubscriptionEditModal: (id: number) => void
+  openSubscriptionEditModal: (id: string) => void
   closeSubscriptionEditModal: () => void
 
-  openAssetEditModal: (id: number) => void
+  openAssetEditModal: (id: string) => void
   closeAssetEditModal: () => void
 
   openAssetCategoryManager: () => void
   closeAssetCategoryManager: () => void
-  openAssetQuickValue: (id: number) => void
+  openAssetQuickValue: (id: string) => void
   closeAssetQuickValue: () => void
 
   openAssetCreateModal: () => void
@@ -83,14 +83,14 @@ interface UIState {
   openTransactionCreateModal: () => void
   closeTransactionCreateModal: () => void
   openTransactionCreateModalWithDate: (date: string) => void
-  openTransactionEditModal: (id: number) => void
+  openTransactionEditModal: (id: string) => void
   closeTransactionEditModal: () => void
 
-  setActiveMemberFilter: (id: number | null) => void
-  setActiveCategoryFilter: (id: number | null) => void
+  setActiveMemberFilter: (id: string | null) => void
+  setActiveCategoryFilter: (id: string | null) => void
 
   toggleSelectionMode: () => void
-  toggleItemSelection: (id: number) => void
+  toggleItemSelection: (id: string) => void
   clearSelection: () => void
 }
 
@@ -126,7 +126,7 @@ export const useUIStore = create<UIState>()(
       activeCategoryFilter: null,
 
       isSelectionMode: false,
-      selectedItemIds: new Set<number>(),
+      selectedItemIds: new Set<string>(),
 
       toggleSidebar: () => set((s) => ({ isSidebarOpen: !s.isSidebarOpen })),
       setSidebarOpen: (open) => set({ isSidebarOpen: open }),
@@ -153,15 +153,15 @@ export const useUIStore = create<UIState>()(
 
       openSubscriptionCreateModal: () => set({ isSubscriptionCreateModalOpen: true }),
       closeSubscriptionCreateModal: () => set({ isSubscriptionCreateModalOpen: false }),
-      openSubscriptionEditModal: (id: number) => set({ isSubscriptionEditModalOpen: true, editingSubscriptionId: id }),
+      openSubscriptionEditModal: (id: string) => set({ isSubscriptionEditModalOpen: true, editingSubscriptionId: id }),
       closeSubscriptionEditModal: () => set({ isSubscriptionEditModalOpen: false, editingSubscriptionId: null }),
 
-      openAssetEditModal: (id: number) => set({ isAssetEditModalOpen: true, editingAssetItemId: id }),
+      openAssetEditModal: (id: string) => set({ isAssetEditModalOpen: true, editingAssetItemId: id }),
       closeAssetEditModal: () => set({ isAssetEditModalOpen: false, editingAssetItemId: null }),
 
       openAssetCategoryManager: () => set({ isAssetCategoryManagerOpen: true }),
       closeAssetCategoryManager: () => set({ isAssetCategoryManagerOpen: false }),
-      openAssetQuickValue: (id: number) => set({ assetQuickValueItemId: id }),
+      openAssetQuickValue: (id: string) => set({ assetQuickValueItemId: id }),
       closeAssetQuickValue: () => set({ assetQuickValueItemId: null }),
 
       openAssetCreateModal: () => set({ isAssetCreateModalOpen: true }),
@@ -171,7 +171,7 @@ export const useUIStore = create<UIState>()(
       openTransactionCreateModal: () => set({ isTransactionCreateModalOpen: true }),
       closeTransactionCreateModal: () => set({ isTransactionCreateModalOpen: false, transactionPrefillDate: null }),
       openTransactionCreateModalWithDate: (date: string) => set({ isTransactionCreateModalOpen: true, transactionPrefillDate: date }),
-      openTransactionEditModal: (id: number) => set({ isTransactionEditModalOpen: true, editingTransactionId: id }),
+      openTransactionEditModal: (id: string) => set({ isTransactionEditModalOpen: true, editingTransactionId: id }),
       closeTransactionEditModal: () => set({ isTransactionEditModalOpen: false, editingTransactionId: null }),
 
       setActiveMemberFilter: (id) => set({ activeMemberFilter: id }),
@@ -179,7 +179,7 @@ export const useUIStore = create<UIState>()(
 
       toggleSelectionMode: () => set((s) => ({
         isSelectionMode: !s.isSelectionMode,
-        selectedItemIds: s.isSelectionMode ? new Set<number>() : s.selectedItemIds,
+        selectedItemIds: s.isSelectionMode ? new Set<string>() : s.selectedItemIds,
       })),
       toggleItemSelection: (id) => set((s) => {
         const next = new Set(s.selectedItemIds)
@@ -187,7 +187,7 @@ export const useUIStore = create<UIState>()(
         else next.add(id)
         return { selectedItemIds: next }
       }),
-      clearSelection: () => set({ selectedItemIds: new Set<number>() }),
+      clearSelection: () => set({ selectedItemIds: new Set<string>() }),
     }),
     {
       name: 'finance-ui',

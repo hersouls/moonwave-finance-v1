@@ -209,9 +209,9 @@ export function MemberChips({
   onChange,
   allowUnassigned = true,
 }: {
-  members: ReadonlyArray<{ id?: number; name: string; color?: string }>
-  value: number | ''
-  onChange: (id: number | '') => void
+  members: ReadonlyArray<{ id: string; name: string; color?: string }>
+  value: string
+  onChange: (id: string) => void
   allowUnassigned?: boolean
 }) {
   const reduce = useReducedMotion()
@@ -238,7 +238,7 @@ export function MemberChips({
           <motion.button
             key={m.id}
             type="button"
-            onClick={() => onChange(m.id!)}
+            onClick={() => onChange(m.id)}
             className={clsx(
               'flex-1 py-3 px-4 rounded-full text-body3 font-semibold ring-1 min-w-[72px] min-h-[44px]',
               active ? 'text-white ring-transparent' : 'bg-surface-tertiary text-sub ring-transparent hover:bg-[var(--hover-bg)]',

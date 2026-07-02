@@ -30,7 +30,7 @@ export interface AiCategorizeRequest {
 
 export interface AiCategorizeResult {
   merchant: string
-  categoryId: number | null
+  categoryId: string | null
   categoryName: string | null
   /** Free-form short reason from the model, surfaced in the import UI. */
   reason: string
@@ -67,14 +67,14 @@ function buildPrompt(merchants: string[], categories: TransactionCategory[]): {
 } {
   const expenseCats = categories
     .filter(c => c.type === 'expense' && c.id != null)
-    .map(c => ({ id: c.id!, name: c.name }))
+    .map(c => ({ id: c.id, name: c.name }))
 
   const system = [
     '당신은 한국 카드 명세서의 가맹점 이름을 보고 가장 적합한 지출 카테고리를 선택하는 분류기입니다.',
     '응답은 JSON 배열 하나만 출력하세요. 다른 텍스트나 마크다운을 절대 포함하지 마세요.',
-    '각 항목은 { "merchant": string, "categoryId": number|null, "reason": string, "confidence": "high"|"medium"|"low" } 형태입니다.',
+    '각 항목은 { "merchant": string, "categoryId": string|null, "reason": string, "confidence": "high"|"medium"|"low" } 형태입니다.',
     '입력 순서 그대로 같은 길이의 배열을 반환하세요.',
-    'categoryId 는 반드시 제공된 카테고리 목록의 id 중 하나여야 하며, 적합한 카테고리가 없으면 null 을 사용하세요.',
+    'categoryId 는 반드시 제공된 카테고리 목록의 id 문자열 중 하나를 그대로 사용해야 하며, 적합한 카테고리가 없으면 null 을 사용하세요.',
     'reason 은 한국어 짧은 문구(예: "마트/편의점 — GS25 편의점").',
     'confidence 는 high (확실), medium (그럴 가능성), low (모호) 중 하나.',
   ].join(' ')
@@ -146,7 +146,7 @@ export async function classifyMerchantsWithAI(
   const data = (await response.json()) as AnthropicResponse
   const textOut = data.content?.find(c => c.type === 'text')?.text ?? ''
 
-  let parsed: Array<{ merchant: string; categoryId: number | null; reason: string; confidence: string }>
+  let parsed: Array<{ merchant: string; categoryId: string | null; reason: string; confidence: string }>
   try {
     // The model sometimes wraps output in a fenced block despite instructions —
     // strip ```json ... ``` if present before parsing.
@@ -159,14 +159,14 @@ export async function classifyMerchantsWithAI(
   // Map results back by index, falling back to "null" entries for missing rows
   // so callers can rely on output.length === input.length.
   const expenseCatMap = new Map(
-    req.categories.filter(c => c.type === 'expense' && c.id != null).map(c => [c.id!, c.name]),
+    req.categories.filter(c => c.type === 'expense' && c.id != null).map(c => [c.id, c.name]),
   )
 
   const results: AiCategorizeResult[] = []
   for (let i = 0; i < req.merchants.length; i++) {
     const entry = parsed[i]
     const categoryId =
-      entry && typeof entry.categoryId === 'number' && expenseCatMap.has(entry.categoryId)
+      entry && typeof entry.categoryId === 'string' && expenseCatMap.has(entry.categoryId)
         ? entry.categoryId
         : null
     const categoryName = categoryId != null ? expenseCatMap.get(categoryId)! : null

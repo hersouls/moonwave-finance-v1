@@ -8,8 +8,8 @@ export type SubscriptionCategoryFilter = SubscriptionCategoryType | 'none' | nul
 
 interface TransactionFilters {
   type: TransactionType | 'all'
-  memberId: number | null
-  categoryId: number | null
+  memberId: string | null
+  categoryId: string | null
   searchQuery: string
   paymentMethod: PaymentMethod | null
   minAmount: number | null
@@ -138,8 +138,8 @@ export function useTransactionFilters(transactions: Transaction[]) {
     filters,
     setFilters,
     setTypeFilter: (type: TransactionType | 'all') => setFilters(f => ({ ...f, type })),
-    setMemberFilter: (memberId: number | null) => setFilters(f => ({ ...f, memberId })),
-    setCategoryFilter: (categoryId: number | null) => setFilters(f => ({ ...f, categoryId })),
+    setMemberFilter: (memberId: string | null) => setFilters(f => ({ ...f, memberId })),
+    setCategoryFilter: (categoryId: string | null) => setFilters(f => ({ ...f, categoryId })),
     setSearchQuery: (searchQuery: string) => setFilters(f => ({ ...f, searchQuery })),
     setPaymentMethodFilter: (paymentMethod: PaymentMethod | null) => setFilters(f => ({ ...f, paymentMethod })),
     setMinAmount: (minAmount: number | null) => setFilters(f => ({ ...f, minAmount })),

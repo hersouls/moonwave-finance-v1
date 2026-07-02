@@ -83,8 +83,8 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
   const [text, setText] = useState('')
   const [rows, setRows] = useState<AnalyzedRow[]>([])
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('credit_card')
-  const [paymentMethodItemId, setPaymentMethodItemId] = useState<number | ''>('')
-  const [memberMap, setMemberMap] = useState<Record<string, number>>({})
+  const [paymentMethodItemId, setPaymentMethodItemId] = useState<string>('')
+  const [memberMap, setMemberMap] = useState<Record<string, string>>({})
   const [skipIndexes, setSkipIndexes] = useState<Set<number>>(new Set())
   const [showSample, setShowSample] = useState(false)
   const [showAllRows, setShowAllRows] = useState(false)
@@ -225,7 +225,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
     try {
       const result = await importStatement(rows, {
         paymentMethod,
-        paymentMethodItemId: paymentMethodItemId === '' ? undefined : paymentMethodItemId as number,
+        paymentMethodItemId: paymentMethodItemId === '' ? undefined : paymentMethodItemId,
         paymentMethodDetail: paymentMethodItemId === ''
           ? undefined
           : paymentMethodItems.find(i => i.id === paymentMethodItemId)?.name,
@@ -946,8 +946,8 @@ function PaymentMethodPicker({
   value: PaymentMethod
   onChange: (v: PaymentMethod) => void
   items: ReturnType<typeof useTransactionStore.getState>['paymentMethodItems']
-  selectedItemId: number | ''
-  onItemChange: (id: number | '') => void
+  selectedItemId: string
+  onItemChange: (id: string) => void
 }) {
   const shouldReduceMotion = useReducedMotion()
   return (
@@ -1007,7 +1007,7 @@ function PaymentMethodPicker({
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => onItemChange(item.id!)}
+                  onClick={() => onItemChange(item.id)}
                   className={clsx(
                     'inline-flex items-center gap-1 px-3 h-7 rounded-full text-label3-medium font-semibold leading-none transition-all',
                     selectedItemId === item.id
@@ -1032,8 +1032,8 @@ function MemberMappingPicker({
 }: {
   cardSuffixes: string[]
   members: ReturnType<typeof useMemberStore.getState>['members']
-  memberMap: Record<string, number>
-  onChange: (m: Record<string, number>) => void
+  memberMap: Record<string, string>
+  onChange: (m: Record<string, string>) => void
 }) {
   const shouldReduceMotion = useReducedMotion()
   if (members.length === 0) return null
@@ -1061,7 +1061,7 @@ function MemberMappingPicker({
                   <motion.button
                     key={m.id}
                     type="button"
-                    onClick={() => onChange({ ...memberMap, [suffix]: m.id! })}
+                    onClick={() => onChange({ ...memberMap, [suffix]: m.id })}
                     whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
                     transition={springSnappy}
                     className={clsx(
@@ -1174,7 +1174,7 @@ function RowList({
   rows: AnalyzedRow[]
   categories: ReturnType<typeof useTransactionStore.getState>['categories']
   members: ReturnType<typeof useMemberStore.getState>['members']
-  memberMap: Record<string, number>
+  memberMap: Record<string, string>
   skipIndexes: Set<number>
   onToggle: (index: number) => void
   showAll: boolean
@@ -1226,7 +1226,7 @@ function RowItem({
   row: AnalyzedRow
   categories: ReturnType<typeof useTransactionStore.getState>['categories']
   members: ReturnType<typeof useMemberStore.getState>['members']
-  memberMap: Record<string, number>
+  memberMap: Record<string, string>
   skip: boolean
   onToggle: () => void
   overrideDate: string | null

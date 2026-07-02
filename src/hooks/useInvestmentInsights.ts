@@ -51,7 +51,7 @@ export interface MonthlySeasonality {
 }
 
 export interface MemberPerf {
-  memberId: number
+  memberId: string
   memberName: string
   tradeProfit: number
   tradeCount: number
@@ -92,7 +92,7 @@ export function useInvestmentInsights(
   trades: InvestmentTrade[],
   dividends: Dividend[],
   interests: AccountInterest[],
-  memberMap: Map<number, string>,
+  memberMap: Map<string, string>,
 ): InvestmentInsights {
   return useMemo(() => {
     // ═══ Trade Efficiency ═══
@@ -202,7 +202,7 @@ export function useInvestmentInsights(
       .sort((a, b) => b.avgProfit - a.avgProfit)
 
     // ═══ Member Performance ═══
-    const memMap = new Map<number, { tp: number; tc: number; tw: number; dn: number; in_: number }>()
+    const memMap = new Map<string, { tp: number; tc: number; tw: number; dn: number; in_: number }>()
     for (const t of trades) {
       if (t.memberId == null) continue
       const e = memMap.get(t.memberId) ?? { tp: 0, tc: 0, tw: 0, dn: 0, in_: 0 }

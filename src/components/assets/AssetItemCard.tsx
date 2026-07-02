@@ -13,12 +13,12 @@ import { getTodayString, getYesterdayString } from '@/lib/dateUtils'
 import { clsx } from 'clsx'
 
 interface AssetItemCardProps {
-  itemId: number
+  itemId: string
   name: string
-  categoryId: number
+  categoryId: string
   type: 'asset' | 'liability'
   /** Desktop master-detail: select into the inspector instead of navigating. */
-  onSelect?: (id: number) => void
+  onSelect?: (id: string) => void
   /** Highlight when shown in the inspector. */
   selected?: boolean
 }

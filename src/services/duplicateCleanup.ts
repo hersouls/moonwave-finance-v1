@@ -35,13 +35,13 @@ export interface DuplicateGroup {
   /** Cluster transactions, sorted by date asc then id. */
   transactions: Transaction[]
   /** Default transaction to KEEP (the earliest). Never in autoDeleteIds. */
-  recommendedKeepId: number
+  recommendedKeepId: string
   /**
    * The genuinely-safe-to-delete extras: for every date that has ≥2 rows, all
    * but the earliest row on that date. Empty when the cluster has no same-day
    * duplicate (i.e. all rows are on distinct days → not auto-deletable).
    */
-  autoDeleteIds: number[]
+  autoDeleteIds: string[]
 }
 
 export interface DuplicateAnalysis {
@@ -85,11 +85,11 @@ function buildGroup(key: string, cluster: Transaction[]): DuplicateGroup {
     if (arr) arr.push(t)
     else byDate.set(t.date, [t])
   }
-  const autoDeleteIds: number[] = []
+  const autoDeleteIds: string[] = []
   for (const rows of byDate.values()) {
     if (rows.length < 2) continue
-    rows.sort((a, b) => a.id! - b.id!)
-    for (let i = 1; i < rows.length; i++) autoDeleteIds.push(rows[i].id!)
+    rows.sort((a, b) => a.id.localeCompare(b.id))
+    for (let i = 1; i < rows.length; i++) autoDeleteIds.push(rows[i].id)
   }
 
   return {
@@ -101,7 +101,7 @@ function buildGroup(key: string, cluster: Transaction[]): DuplicateGroup {
     confidence: autoDeleteIds.length > 0 ? 'exact' : confidenceForSpan(span),
     spanDays: span,
     transactions: cluster,
-    recommendedKeepId: cluster[0].id!, // earliest; never in autoDeleteIds
+    recommendedKeepId: cluster[0].id, // earliest; never in autoDeleteIds
     autoDeleteIds,
   }
 }
@@ -140,7 +140,7 @@ export async function analyzeDuplicates(): Promise<DuplicateAnalysis> {
   const groups: DuplicateGroup[] = []
   for (const [bucketKey, txns] of byKey) {
     if (txns.length < 2) continue
-    txns.sort((a, b) => a.date.localeCompare(b.date) || a.id! - b.id!)
+    txns.sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id))
 
     // Anchored sliding window: a cluster spans at most WINDOW_DAYS from its
     // first (anchor) row, so a long evenly-spaced series doesn't chain into one
@@ -188,36 +188,13 @@ export async function countDuplicateExpenses(): Promise<number> {
 
 /**
  * Deletes the given transaction ids. Only the LOCAL delete is awaited (fast,
- * no network) so the UI never blocks. The deleting hooks write syncTombstones +
- * change-log entries, which the debounced auto-sync uploads (docs + tombstones)
- * in the background. We also fire an immediate cloud-doc delete for faster
- * cross-device convergence — but fire-and-forget, so a slow/offline network can
- * never stall the modal. (Mirrors store.deleteTransaction's non-awaited cloud
- * delete.) Returns the number deleted.
+ * no network) so the UI never blocks. The Dexie deleting hooks queue outbox
+ * entries, which the sync push propagates to the cloud/peer devices in the
+ * background. Returns the number deleted.
  */
-export async function deleteDuplicates(ids: number[]): Promise<number> {
+export async function deleteDuplicates(ids: string[]): Promise<number> {
   if (ids.length === 0) return 0
-
-  // Capture syncIds before the local delete for the background cloud cleanup.
-  const rows = (await db.transactions.bulkGet(ids)).filter((r): r is Transaction => !!r)
-  const syncIds = rows.map((r) => r.syncId).filter((s): s is string => !!s)
-
-  await bulkDeleteTransactions(ids) // local delete → syncTombstones + change log
-
-  // Cloud removal is fire-and-forget — never await the network here.
-  void (async () => {
-    try {
-      const { useAuthStore } = await import('@/stores/authStore')
-      const user = useAuthStore.getState().user
-      if (user && syncIds.length > 0) {
-        const { deleteMultipleFromCloud } = await import('@/services/firestoreSync')
-        await deleteMultipleFromCloud(user.uid, 'transactions', syncIds)
-      }
-    } catch (err) {
-      console.warn('[duplicateCleanup] background cloud delete failed', err)
-    }
-  })()
-
+  await bulkDeleteTransactions(ids) // local delete → outbox → background push
   return ids.length
 }
 
@@ -228,7 +205,7 @@ export async function deleteDuplicates(ids: number[]): Promise<number> {
  * rows — from the duplicate list. Only local writes are awaited; the flag syncs
  * to other devices via the normal transaction sync. Returns ids updated.
  */
-export async function allowDuplicateGroup(ids: number[]): Promise<number> {
+export async function allowDuplicateGroup(ids: string[]): Promise<number> {
   if (ids.length === 0) return 0
   for (const id of ids) {
     await updateTransaction(id, { dedupeIgnore: true })

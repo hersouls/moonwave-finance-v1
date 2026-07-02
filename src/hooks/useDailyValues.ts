@@ -19,7 +19,7 @@ interface DailyValueGrid {
   netWorthByDate: Map<string, number>
 }
 
-export function useDailyValueGrid(memberId: number | null): DailyValueGrid {
+export function useDailyValueGrid(memberId: string | null): DailyValueGrid {
   const categories = useAssetStore((s) => s.categories)
   const items = useAssetStore((s) => s.items)
   const values = useDailyValueStore((s) => s.values)
@@ -87,7 +87,7 @@ export function useDailyValueCell() {
   const setValue = useDailyValueStore((s) => s.setValue)
 
   const getValue = useCallback(
-    (assetItemId: number, date: string): number | null => {
+    (assetItemId: string, date: string): number | null => {
       const val = values.find(v => v.assetItemId === assetItemId && v.date === date)
       return val ? val.value : null
     },
@@ -95,7 +95,7 @@ export function useDailyValueCell() {
   )
 
   const getPreviousValue = useCallback(
-    (assetItemId: number, date: string): number | null => {
+    (assetItemId: string, date: string): number | null => {
       const d = new Date(date)
       d.setDate(d.getDate() - 1)
       const prevDate = d.toISOString().split('T')[0]

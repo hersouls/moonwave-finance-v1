@@ -101,7 +101,7 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
           style={{ opacity: actionOpacity, width: ACTION_WIDTH }}
         >
           <button
-            onClick={() => { resetSwipe(); openTransactionEditModal(transaction.id!) }}
+            onClick={() => { resetSwipe(); openTransactionEditModal(transaction.id) }}
             className="flex-1 flex items-center justify-center bg-[color:var(--color-primary-600)] text-white"
             aria-label="수정"
           >
@@ -260,7 +260,7 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
         transaction={transaction}
         category={category}
         member={member}
-        onEdit={() => openTransactionEditModal(transaction.id!)}
+        onEdit={() => openTransactionEditModal(transaction.id)}
         onDuplicate={handleDuplicate}
         onDelete={() => setShowDeleteConfirm(true)}
       />
@@ -269,7 +269,7 @@ function TransactionCardInner({ transaction }: TransactionCardProps) {
         open={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={() => {
-          deleteTransaction(transaction.id!)
+          deleteTransaction(transaction.id)
           setShowDeleteConfirm(false)
         }}
         title="거래 삭제"

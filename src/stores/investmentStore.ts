@@ -9,16 +9,16 @@ interface InvestmentState {
   isLoading: boolean
 
   loadTrades: () => Promise<void>
-  addTrade: (data: Omit<InvestmentTrade, 'id' | 'syncId' | 'sortOrder' | 'createdAt' | 'updatedAt'>) => Promise<number>
-  addTradesFromParsed: (trades: Omit<InvestmentTrade, 'id' | 'syncId' | 'sortOrder' | 'createdAt' | 'updatedAt'>[]) => Promise<{ added: number; skipped: number }>
-  updateTrade: (id: number, updates: Partial<InvestmentTrade>) => Promise<void>
-  deleteTrade: (id: number) => Promise<void>
+  addTrade: (data: Omit<InvestmentTrade, 'id' | 'sortOrder' | 'createdAt' | 'updatedAt'>) => Promise<string>
+  addTradesFromParsed: (trades: Omit<InvestmentTrade, 'id' | 'sortOrder' | 'createdAt' | 'updatedAt'>[]) => Promise<{ added: number; skipped: number }>
+  updateTrade: (id: string, updates: Partial<InvestmentTrade>) => Promise<void>
+  deleteTrade: (id: string) => Promise<void>
   clearAll: () => Promise<void>
 
   // Computed getters
   getByMarket: (market: InvestmentMarket) => InvestmentTrade[]
   getByAssetType: (type: InvestmentAssetType) => InvestmentTrade[]
-  getByMember: (memberId: number) => InvestmentTrade[]
+  getByMember: (memberId: string) => InvestmentTrade[]
   getTotalProfit: () => number
   getTotalProfitRate: () => number
   getWinCount: () => number
@@ -56,13 +56,12 @@ export const useInvestmentStore = create<InvestmentState>()(
         const dup = await db.findDuplicateInvestmentTrade(data.sellDate, data.stockName, data.sellQuantity)
         if (dup) {
           useToastStore.getState().addToast(`이미 등록된 거래입니다: ${data.stockName} (${data.sellDate})`, 'info')
-          return dup.id!
+          return dup.id
         }
 
         const newTrade = {
           ...data,
           sortOrder: maxOrder + 1,
-          syncId: crypto.randomUUID(),
           createdAt: now,
           updatedAt: now,
         }
@@ -89,7 +88,6 @@ export const useInvestmentStore = create<InvestmentState>()(
           await db.addInvestmentTrade({
             ...data,
             sortOrder: maxOrder,
-            syncId: crypto.randomUUID(),
             createdAt: now,
             updatedAt: now,
           })

@@ -121,17 +121,17 @@ export function calculateSeveranceTax(severancePay: number, serviceYears: number
  * @param targetEndDate 값을 채울 마지막 일자 (보통 오늘)
  */
 export function generateSeverancePayValues(
-  assetItemId: number,
+  assetItemId: string,
   joinDate: string,
   monthlyAvgWage: number,
   targetEndDate: string
-): Omit<DailyValue, 'id' | 'syncId' | 'createdAt' | 'updatedAt'>[] {
+): Omit<DailyValue, 'id' | 'createdAt' | 'updatedAt'>[] {
   const join = parseISO(joinDate)
   const end = parseISO(targetEndDate)
 
   if (isBefore(end, join)) return []
 
-  const values: Omit<DailyValue, 'id' | 'syncId' | 'createdAt' | 'updatedAt'>[] = []
+  const values: Omit<DailyValue, 'id' | 'createdAt' | 'updatedAt'>[] = []
 
   let current = join
   while (isBefore(current, end) || isEqual(current, end)) {
@@ -159,8 +159,8 @@ export function generateSeverancePayValues(
  * DailyValue 배열을 assetItemId 별로 그룹화하고, 각 그룹을 날짜 내림차순(최신 우선)으로 정렬한다.
  * 반복 조회(valueAsOf) 전에 한 번만 만들어 두면 O(n) 으로 재사용할 수 있다.
  */
-export function groupValuesByItem(values: DailyValue[]): Map<number, DailyValue[]> {
-  const map = new Map<number, DailyValue[]>()
+export function groupValuesByItem(values: DailyValue[]): Map<string, DailyValue[]> {
+  const map = new Map<string, DailyValue[]>()
   for (const v of values) {
     const arr = map.get(v.assetItemId)
     if (arr) arr.push(v)
@@ -249,7 +249,7 @@ export function calculateDailyNetWorth(month: string, items: AssetItem[], values
   const sortedValues = [...values].sort((a, b) => a.date.localeCompare(b.date))
   
   // 아이템별 최신 값을 저장할 맵
-  const currentValuesMap = new Map<number, number>()
+  const currentValuesMap = new Map<string, number>()
   
   // 1일부터 말일까지 순회
   for (let day = 1; day <= daysInMonth; day++) {
@@ -265,25 +265,25 @@ export function calculateDailyNetWorth(month: string, items: AssetItem[], values
       const exactValue = sortedValues.find(v => v.assetItemId === item.id && v.date === currentDateStr)
       
       if (exactValue) {
-        currentValuesMap.set(item.id!, exactValue.value)
+        currentValuesMap.set(item.id, exactValue.value)
       } else {
         // 없다면 기존에 맵에 있는 값 (어제까지의 최신값)을 그대로 사용 (Forward Fill)
         // 만약 맵에 없다면 (이번 달 1일이거나 처음), 당일 자정 기준 이전 기록 중 가장 최신 값을 탐색
-        if (!currentValuesMap.has(item.id!)) {
+        if (!currentValuesMap.has(item.id)) {
           const pastValues = sortedValues
             .filter(v => v.assetItemId === item.id && v.date <= currentDateStr)
             .sort((a, b) => b.date.localeCompare(a.date)) // 내림차순
-          
+
           if (pastValues.length > 0) {
-            currentValuesMap.set(item.id!, pastValues[0].value)
+            currentValuesMap.set(item.id, pastValues[0].value)
           } else {
-            currentValuesMap.set(item.id!, 0) // 아직 기록 없음
+            currentValuesMap.set(item.id, 0) // 아직 기록 없음
           }
         }
       }
-      
+
       // 현재 값 합산
-      const val = currentValuesMap.get(item.id!) || 0
+      const val = currentValuesMap.get(item.id) || 0
       if (item.type === 'asset') {
         totalAssets += val
       } else if (item.type === 'liability') {

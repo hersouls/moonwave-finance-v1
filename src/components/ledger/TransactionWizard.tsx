@@ -46,13 +46,13 @@ interface WizardState {
   isSuccess: boolean
   type: TransactionType
   amount: string
-  categoryId: number | ''
-  memberId: number | ''
+  categoryId: string
+  memberId: string
   date: string
   memo: string
   paymentMethod: PaymentMethod | ''
   paymentMethodDetail: string
-  paymentMethodItemId: number | ''
+  paymentMethodItemId: string
   isRecurring: boolean
   recurType: RepeatType
   recurEndDate: string
@@ -69,17 +69,17 @@ type WizardAction =
   | { type: 'SET_FIELD'; field: keyof WizardState; value: unknown }
   | { type: 'SET_TYPE'; value: TransactionType }
   | { type: 'SET_PAYMENT_METHOD'; value: PaymentMethod | '' }
-  | { type: 'APPLY_TEMPLATE'; data: { type: TransactionType; amount: number; categoryId: number | null; memo?: string; paymentMethod?: PaymentMethod; memberId: number | null } }
-  | { type: 'APPLY_LOAN'; data: { amount: number; categoryId: number | ''; memo: string } }
+  | { type: 'APPLY_TEMPLATE'; data: { type: TransactionType; amount: number; categoryId: string | null; memo?: string; paymentMethod?: PaymentMethod; memberId: string | null } }
+  | { type: 'APPLY_LOAN'; data: { amount: number; categoryId: string; memo: string } }
   | { type: 'ADD_AMOUNT'; delta: number }
   | { type: 'CLEAR_AMOUNT' }
-  | { type: 'RESET'; initialDate?: string; defaultMemberId?: number | '' }
+  | { type: 'RESET'; initialDate?: string; defaultMemberId?: string }
   | { type: 'SET_SUBMITTING'; value: boolean }
   | { type: 'SET_SUCCESS'; value: boolean }
 
 // ─── Reducer ───────────────────────────────────────
 
-function getInitialState(initialDate?: string, defaultMemberId?: number | ''): WizardState {
+function getInitialState(initialDate?: string, defaultMemberId?: string): WizardState {
   return {
     currentStep: 0,
     direction: 'forward',
@@ -287,8 +287,8 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
   // Tracks the category id last auto-applied by AI. While the current
   // categoryId still equals it (or is empty), new suggestions may override it;
   // once the user makes a manual pick (selectCategory clears this), AI stops.
-  const lastAutoCatRef = useRef<number | null>(null)
-  const categoryIdRef = useRef<number | ''>(state.categoryId)
+  const lastAutoCatRef = useRef<string | null>(null)
+  const categoryIdRef = useRef<string>(state.categoryId)
   useEffect(() => { categoryIdRef.current = state.categoryId }, [state.categoryId])
 
   // Reset on open
@@ -318,7 +318,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
         if (canAuto) {
           lastAutoCatRef.current = s.category.id ?? null
           if (cur !== s.category.id) {
-            dispatch({ type: 'SET_FIELD', field: 'categoryId', value: s.category.id! })
+            dispatch({ type: 'SET_FIELD', field: 'categoryId', value: s.category.id })
           }
         }
       }
@@ -377,7 +377,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
   const canProceed = state.currentStep === 0 ? numAmount > 0 : true
 
   // Manual category pick — clears the AI auto-apply lock so the user's choice sticks.
-  const selectCategory = useCallback((id: number | '') => {
+  const selectCategory = useCallback((id: string) => {
     lastAutoCatRef.current = null
     dispatch({ type: 'SET_FIELD', field: 'categoryId', value: id })
   }, [])
@@ -396,7 +396,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
       setAiSuggestion(s)
       if (s?.category) {
         lastAutoCatRef.current = s.category.id ?? null
-        dispatch({ type: 'SET_FIELD', field: 'categoryId', value: s.category.id! })
+        dispatch({ type: 'SET_FIELD', field: 'categoryId', value: s.category.id })
         useToastStore.getState().addToast(`AI 추천: ${s.category.name}`, 'success')
       } else {
         useToastStore.getState().addToast('적합한 카테고리를 찾지 못했어요', 'info')
@@ -418,13 +418,13 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
       await addTransaction({
         type: state.type,
         amount: signedAmount,
-        categoryId: state.categoryId ? (state.categoryId as number) : null,
-        memberId: state.memberId ? (state.memberId as number) : null,
+        categoryId: state.categoryId || null,
+        memberId: state.memberId || null,
         date: state.date,
         memo: state.memo.trim() || undefined,
         paymentMethod: state.paymentMethod || undefined,
         paymentMethodDetail: state.paymentMethodDetail.trim() || undefined,
-        paymentMethodItemId: state.paymentMethodItemId ? (state.paymentMethodItemId as number) : undefined,
+        paymentMethodItemId: state.paymentMethodItemId || undefined,
         isRecurring: state.isRecurring,
         recurPattern: state.isRecurring
           ? { type: state.recurType, interval: 1, endDate: state.recurEndDate || undefined }
@@ -841,7 +841,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                   <motion.button
                     key={m.id}
                     type="button"
-                    onClick={() => dispatch({ type: 'SET_FIELD', field: 'memberId', value: m.id! })}
+                    onClick={() => dispatch({ type: 'SET_FIELD', field: 'memberId', value: m.id })}
                     className={clsx(
                       'flex-1 py-3 px-4 rounded-full text-body3 font-semibold ring-1 min-w-[72px] min-h-[44px]',
                       state.memberId === m.id
@@ -864,9 +864,9 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               </>
             ) : (
               <Select
-                value={String(state.memberId)}
-                onChange={(v) => dispatch({ type: 'SET_FIELD', field: 'memberId', value: v ? Number(v) : '' })}
-                options={members.map(m => ({ value: String(m.id), label: m.name }))}
+                value={state.memberId}
+                onChange={(v) => dispatch({ type: 'SET_FIELD', field: 'memberId', value: v })}
+                options={members.map(m => ({ value: m.id, label: m.name }))}
                 placeholder="미지정"
               />
             )}
@@ -939,7 +939,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                       return (
                         <motion.button
                           type="button"
-                          onClick={() => selectCategory(cat.id!)}
+                          onClick={() => selectCategory(cat.id)}
                           whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
                           className={clsx(
                             'w-full flex items-center gap-3 rounded-xl px-3 py-2.5 ring-1 transition-all text-left',
@@ -998,7 +998,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                             <motion.button
                               key={alt.id}
                               type="button"
-                              onClick={() => selectCategory(alt.id!)}
+                              onClick={() => selectCategory(alt.id)}
                               whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
                               className="inline-flex items-center gap-1 pl-1.5 pr-2.5 h-7 rounded-full bg-surface-primary ring-1 ring-base text-label3-medium font-semibold text-sub hover:ring-[color:var(--color-primary-300)] hover:text-heading transition-all"
                             >
@@ -1081,7 +1081,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
               role="radio"
               aria-checked={isSelected}
               variants={gridItem}
-              onClick={() => selectCategory(isSelected ? '' : cat.id!)}
+              onClick={() => selectCategory(isSelected ? '' : cat.id)}
               whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
               whileHover={shouldReduceMotion ? undefined : { y: -3 }}
               animate={{ scale: isSelected ? 1.04 : 1 }}
@@ -1274,7 +1274,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
                         key={item.id}
                         type="button"
                         onClick={() => {
-                          dispatch({ type: 'SET_FIELD', field: 'paymentMethodItemId', value: item.id! })
+                          dispatch({ type: 'SET_FIELD', field: 'paymentMethodItemId', value: item.id })
                           dispatch({ type: 'SET_FIELD', field: 'paymentMethodDetail', value: item.name })
                         }}
                         whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}

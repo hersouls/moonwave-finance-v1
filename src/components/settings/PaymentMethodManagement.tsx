@@ -36,7 +36,7 @@ export function PaymentMethodManagement() {
   // Form state
   const [name, setName] = useState('')
   const [memo, setMemo] = useState('')
-  const [linkedAssetItemId, setLinkedAssetItemId] = useState<number | undefined>(undefined)
+  const [linkedAssetItemId, setLinkedAssetItemId] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     loadPaymentMethodItems()
@@ -216,9 +216,9 @@ export function PaymentMethodManagement() {
               <div>
                 <FormSectionLabel icon={Link2} hint="(선택)">{linkLabel}</FormSectionLabel>
                 <Select
-                  value={String(linkedAssetItemId ?? '')}
-                  onChange={(v) => setLinkedAssetItemId(v ? Number(v) : undefined)}
-                  options={linkableItems.map(item => ({ value: String(item.id), label: item.name }))}
+                  value={linkedAssetItemId ?? ''}
+                  onChange={(v) => setLinkedAssetItemId(v || undefined)}
+                  options={linkableItems.map(item => ({ value: item.id, label: item.name }))}
                   placeholder="연결 안 함"
                 />
               </div>

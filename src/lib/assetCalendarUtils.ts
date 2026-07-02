@@ -20,7 +20,7 @@ export function computeDailyNetWorth(
   const result = new Map<string, DailyNetWorth>()
 
   // Group daily values by item
-  const valuesByItem = new Map<number, DailyValue[]>()
+  const valuesByItem = new Map<string, DailyValue[]>()
   for (const dv of dailyValues) {
     const list = valuesByItem.get(dv.assetItemId) || []
     list.push(dv)

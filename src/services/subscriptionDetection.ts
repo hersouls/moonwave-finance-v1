@@ -63,9 +63,9 @@ export interface DetectedSubscription {
   /** Days until estimated next payment (negative = overdue) */
   daysUntilNext: number
   /** Most frequent categoryId across payments */
-  categoryId: number | null
+  categoryId: string | null
   /** Most frequent memberId across payments */
-  memberId: number | null
+  memberId: string | null
   /** Display color — from category if available, else fallback hue */
   color: string
   /** Active = paid at least once within ~1.5 cycles */
@@ -81,7 +81,7 @@ export interface SubscriptionStats {
   totalMonthly: number
   totalYearly: number
   byCategory: Array<{
-    categoryId: number | null
+    categoryId: string | null
     name: string
     color: string
     totalMonthly: number
@@ -300,8 +300,8 @@ export function detectSubscriptions(
     const isActive = true
 
     // Pick the most frequent category/member across the group
-    const catIds = txns.map(t => t.categoryId).filter((x): x is number => x != null)
-    const memIds = txns.map(t => t.memberId).filter((x): x is number => x != null)
+    const catIds = txns.map(t => t.categoryId).filter((x): x is string => x != null)
+    const memIds = txns.map(t => t.memberId).filter((x): x is string => x != null)
     const categoryId = mostFrequent(catIds) ?? null
     const memberId = mostFrequent(memIds) ?? null
     const category = categoryId != null ? categories.find(c => c.id === categoryId) : null
@@ -365,7 +365,7 @@ export function computeSubscriptionStats(
   const totalYearly = totalMonthly * 12
 
   // Group by category (active only)
-  const catMap = new Map<string, { categoryId: number | null; name: string; color: string; totalMonthly: number; count: number }>()
+  const catMap = new Map<string, { categoryId: string | null; name: string; color: string; totalMonthly: number; count: number }>()
   for (const sub of active) {
     const key = sub.categoryId != null ? String(sub.categoryId) : 'uncat'
     const cat = sub.categoryId != null ? categories.find(c => c.id === sub.categoryId) : null

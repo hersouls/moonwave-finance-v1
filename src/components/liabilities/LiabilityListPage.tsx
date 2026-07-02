@@ -32,10 +32,10 @@ import { getTodayString } from '@/lib/dateUtils'
 
 export function LiabilityListPage() {
   const [isLoading, setIsLoading] = useState(true)
-  const [activeMember, setActiveMember] = useState<number | null>(null)
-  const [activeCategory, setActiveCategory] = useState<number | null>(null)
-  const [deleteId, setDeleteId] = useState<number | null>(null)
-  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [activeMember, setActiveMember] = useState<string | null>(null)
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
 
   const { isDesktop } = useBreakpoint()
@@ -84,7 +84,7 @@ export function LiabilityListPage() {
     // 잔액 내림차순 정렬 — 큰 부채가 위로.
     const byItem = groupValuesByItem(allValues)
     return [...result].sort(
-      (a, b) => valueAsOf(byItem.get(b.id!), today) - valueAsOf(byItem.get(a.id!), today)
+      (a, b) => valueAsOf(byItem.get(b.id), today) - valueAsOf(byItem.get(a.id), today)
     )
   }, [items, activeMember, activeCategory, allValues, today])
 
@@ -114,8 +114,8 @@ export function LiabilityListPage() {
 
         <Tabs
           tabs={memberTabs}
-          activeTab={activeMember === null ? 'all' : String(activeMember)}
-          onChange={(id) => { setActiveMember(id === 'all' ? null : Number(id)); setSelectedId(null) }}
+          activeTab={activeMember === null ? 'all' : activeMember}
+          onChange={(id) => { setActiveMember(id === 'all' ? null : id); setSelectedId(null) }}
         />
 
         <div className="flex items-center gap-2">
@@ -170,7 +170,7 @@ export function LiabilityListPage() {
                   key={`${activeMember}-${activeCategory}`}
                 >
                   {filteredItems.map(item => {
-                    const id = item.id!
+                    const id = item.id
                     const card = (
                       <LiabilityItemCard
                         itemId={id}

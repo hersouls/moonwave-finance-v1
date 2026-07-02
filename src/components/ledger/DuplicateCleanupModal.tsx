@@ -64,8 +64,8 @@ export function DuplicateCleanupModal({ open, onClose, onApplied }: Props) {
 
   const [step, setStep] = useState<Step>('loading')
   const [analysis, setAnalysis] = useState<DuplicateAnalysis | null>(null)
-  const [keepIds, setKeepIds] = useState<Record<string, number>>({})
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [keepIds, setKeepIds] = useState<Record<string, string>>({})
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set())
   const [dismissedKeys, setDismissedKeys] = useState<Set<string>>(new Set())
   const [result, setResult] = useState<{ deleted: number; groups: number } | null>(null)
@@ -73,8 +73,8 @@ export function DuplicateCleanupModal({ open, onClose, onApplied }: Props) {
   const scan = useCallback(async () => {
     setStep('loading')
     const a = await analyzeDuplicates()
-    const keep: Record<string, number> = {}
-    const sel = new Set<number>()
+    const keep: Record<string, string> = {}
+    const sel = new Set<string>()
     const exp = new Set<string>()
     for (const g of a.groups) {
       keep[g.key] = g.recommendedKeepId
@@ -117,7 +117,7 @@ export function DuplicateCleanupModal({ open, onClose, onApplied }: Props) {
     return { count: selectedIds.size, amount, affectedGroups: affectedGroups.size }
   }, [groups, selectedIds])
 
-  const toggleDelete = (id: number, groupKey: string) => {
+  const toggleDelete = (id: string, groupKey: string) => {
     if (keepIds[groupKey] === id) return // never delete the keeper
     setSelectedIds((prev) => {
       const next = new Set(prev)
@@ -127,7 +127,7 @@ export function DuplicateCleanupModal({ open, onClose, onApplied }: Props) {
     })
   }
 
-  const setKeeper = (group: DuplicateGroup, id: number) => {
+  const setKeeper = (group: DuplicateGroup, id: string) => {
     // Only move the protected row; preserve the user's existing delete choices.
     setKeepIds((prev) => ({ ...prev, [group.key]: id }))
     setSelectedIds((prev) => {
@@ -138,7 +138,7 @@ export function DuplicateCleanupModal({ open, onClose, onApplied }: Props) {
   }
 
   const selectRecommended = () => {
-    const sel = new Set<number>()
+    const sel = new Set<string>()
     for (const g of groups) for (const id of g.autoDeleteIds) sel.add(id)
     setSelectedIds(sel)
   }
@@ -168,7 +168,7 @@ export function DuplicateCleanupModal({ open, onClose, onApplied }: Props) {
   // Mark a group's (memo+amount) pattern as "not a duplicate" — hide it now and
   // permanently exclude it (and future same-pattern rows) from detection.
   const handleAllow = useCallback(async (group: DuplicateGroup) => {
-    const ids = group.transactions.map((t) => t.id).filter((id): id is number => id != null)
+    const ids = group.transactions.map((t) => t.id)
     const wasLastVisible =
       (analysis?.groups ?? []).filter((g) => g.key !== group.key && !dismissedKeys.has(g.key)).length === 0
 
@@ -424,14 +424,14 @@ function GroupBlock({
   group, keepId, selectedIds, expanded, categories, members, onToggleExpand, onToggleDelete, onSetKeeper, onAllow,
 }: {
   group: DuplicateGroup
-  keepId: number | undefined
-  selectedIds: Set<number>
+  keepId: string | undefined
+  selectedIds: Set<string>
   expanded: boolean
   categories: ReturnType<typeof useTransactionStore.getState>['categories']
   members: ReturnType<typeof useMemberStore.getState>['members']
   onToggleExpand: () => void
-  onToggleDelete: (id: number) => void
-  onSetKeeper: (id: number) => void
+  onToggleDelete: (id: string) => void
+  onSetKeeper: (id: string) => void
   onAllow: () => void
 }) {
   const selectedInGroup = group.transactions.filter((t) => t.id != null && selectedIds.has(t.id)).length
@@ -496,7 +496,7 @@ function GroupBlock({
                     ) : (
                       <button
                         type="button"
-                        onClick={() => onToggleDelete(t.id!)}
+                        onClick={() => onToggleDelete(t.id)}
                         aria-pressed={isSelected}
                         aria-label={isSelected ? '삭제 취소' : '삭제 선택'}
                         className={clsx(
@@ -528,7 +528,7 @@ function GroupBlock({
                     {!isKeeper && (
                       <button
                         type="button"
-                        onClick={() => onSetKeeper(t.id!)}
+                        onClick={() => onSetKeeper(t.id)}
                         className="text-label3-medium font-semibold text-sub hover:text-heading hover:underline flex-shrink-0 px-1.5 py-1"
                       >
                         이 항목 유지

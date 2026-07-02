@@ -13,7 +13,7 @@ interface Props {
   trades: InvestmentTrade[]
   dividends: Dividend[]
   interests: AccountInterest[]
-  memberMap: Map<number, string>
+  memberMap: Map<string, string>
   onSelectTrade: (t: InvestmentTrade) => void
   onSelectDiv: (d: Dividend) => void
   onSelectInterest: (r: AccountInterest) => void
@@ -68,7 +68,7 @@ export function InvestmentTableView({ activeTab, trades, dividends, interests, m
 }
 
 // ─── Trades ───────────────────────────────────────────
-function TradesTable({ rows, memberMap, onSelect }: { rows: InvestmentTrade[]; memberMap: Map<number, string>; onSelect: (t: InvestmentTrade) => void }) {
+function TradesTable({ rows, memberMap, onSelect }: { rows: InvestmentTrade[]; memberMap: Map<string, string>; onSelect: (t: InvestmentTrade) => void }) {
   const { sortKey, sortDir, toggle } = useSort<'date' | 'name' | 'profit' | 'rate' | 'sell'>('date')
   const sorted = useMemo(() => {
     const dir = sortDir === 'asc' ? 1 : -1
@@ -114,7 +114,7 @@ function TradesTable({ rows, memberMap, onSelect }: { rows: InvestmentTrade[]; m
 }
 
 // ─── Dividends ────────────────────────────────────────
-function DividendsTable({ rows, memberMap, onSelect }: { rows: Dividend[]; memberMap: Map<number, string>; onSelect: (d: Dividend) => void }) {
+function DividendsTable({ rows, memberMap, onSelect }: { rows: Dividend[]; memberMap: Map<string, string>; onSelect: (d: Dividend) => void }) {
   const { sortKey, sortDir, toggle } = useSort<'date' | 'name' | 'amount'>('date')
   const sorted = useMemo(() => {
     const dir = sortDir === 'asc' ? 1 : -1
@@ -158,7 +158,7 @@ function DividendsTable({ rows, memberMap, onSelect }: { rows: Dividend[]; membe
 }
 
 // ─── Interests ────────────────────────────────────────
-function InterestsTable({ rows, memberMap, onSelect }: { rows: AccountInterest[]; memberMap: Map<number, string>; onSelect: (r: AccountInterest) => void }) {
+function InterestsTable({ rows, memberMap, onSelect }: { rows: AccountInterest[]; memberMap: Map<string, string>; onSelect: (r: AccountInterest) => void }) {
   const { sortKey, sortDir, toggle } = useSort<'date' | 'amount'>('date')
   const sorted = useMemo(() => {
     const dir = sortDir === 'asc' ? 1 : -1

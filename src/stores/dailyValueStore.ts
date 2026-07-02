@@ -19,10 +19,10 @@ interface DailyValueState {
   loadValues: (month?: string) => Promise<void>
   loadAllValues: () => Promise<void>
   setSelectedMonth: (month: string) => void
-  setValue: (assetItemId: number, date: string, value: number) => Promise<void>
-  bulkSetValues: (entries: { assetItemId: number; date: string; value: number; source?: 'manual' | 'projected' }[]) => Promise<void>
-  getValueForItemDate: (assetItemId: number, date: string) => number | null
-  getLatestValueForItem: (assetItemId: number) => DailyValue | null
+  setValue: (assetItemId: string, date: string, value: number) => Promise<void>
+  bulkSetValues: (entries: { assetItemId: string; date: string; value: number; source?: 'manual' | 'projected' }[]) => Promise<void>
+  getValueForItemDate: (assetItemId: string, date: string) => number | null
+  getLatestValueForItem: (assetItemId: string) => DailyValue | null
   /**
    * 기준값/기준일/규칙으로 일자별 값 시리즈를 DB에 일괄 기록한다.
    * - 전방(기준일~(Y+1)-12-31): 규칙 적용, 변경분만 기록(멱등)
@@ -30,14 +30,14 @@ interface DailyValueState {
    *   직전 앵커가 있으면 그 값이 forward-fill 로 공백을 덮으므로 백필하지 않는다(기존 값 보존).
    * 반환 = 기록(추가/변경)한 건수.
    */
-  applyValueSeries: (assetItemId: number, baseValue: number, baseDate: string, projection?: AssetValueProjection) => Promise<number>
+  applyValueSeries: (assetItemId: string, baseValue: number, baseDate: string, projection?: AssetValueProjection) => Promise<number>
   /** 활성 항목 전체에 대해 오늘 기준 투영을 보장(일 1회, self-guard). carry-forward 대체. */
   ensureValueProjections: () => Promise<number>
   /**
    * 동기화로 받은 앵커(manual/레거시 source 미지정)만으로 파생(projected)
    * 시리즈를 로컬에서 dense 재구성한다 (Phase 2: projected 는 클라우드에 없음).
    * 다중앵커 복원 = 마지막 앵커 forward(미래) + 각 앵커 backfill(이전 앵커에서
-   * 중단 → 그 앵커 앞 구간). 동일날짜 앵커는 syncId 로 결정적 선택(기기간 일치).
+   * 중단 → 그 앵커 앞 구간). 동일날짜 앵커는 id 로 결정적 선택(기기간 일치).
    * 평탄으로 바뀐 자산의 묵은 projected 는 정리. force=true 면 autoCarryForward
    * 설정·일일 가드를 무시한다(신규 기기 첫 동기화 직후 즉시 재생성용).
    */
@@ -86,7 +86,7 @@ export const useDailyValueStore = create<DailyValueState>()(
         get().loadValues(month)
       },
 
-      setValue: async (assetItemId: number, date: string, value: number) => {
+      setValue: async (assetItemId: string, date: string, value: number) => {
         await db.setDailyValue(assetItemId, date, value)
         // 단일 set 으로 합쳐 재렌더(깜빡임)를 최소화. 월/전체를 한 번에 다시 읽어 실제 DB id 보존.
         const month = get().selectedMonth
@@ -109,14 +109,14 @@ export const useDailyValueStore = create<DailyValueState>()(
         set({ values, allValues })
       },
 
-      getValueForItemDate: (assetItemId: number, date: string) => {
+      getValueForItemDate: (assetItemId: string, date: string) => {
         const val = get().values.find(
           v => v.assetItemId === assetItemId && v.date === date
         )
         return val ? val.value : null
       },
 
-      getLatestValueForItem: (assetItemId: number) => {
+      getLatestValueForItem: (assetItemId: string) => {
         const itemValues = get().values
           .filter(v => v.assetItemId === assetItemId)
           .sort((a, b) => b.date.localeCompare(a.date))
@@ -130,14 +130,7 @@ export const useDailyValueStore = create<DailyValueState>()(
 
         if (isFlatProjection(projection)) {
           // 평탄 = 희소 저장: 기존 자동(projected) 정리. 미래/공백은 forward-fill 이 커버.
-          const removed = await db.clearProjectedDailyValues(assetItemId)
-          if (removed.length > 0) {
-            import('@/services/firestoreSync').then(({ deleteMultipleFromCloud }) =>
-              import('./authStore').then(({ useAuthStore }) => {
-                const user = useAuthStore.getState().user
-                if (user) deleteMultipleFromCloud(user.uid, 'dailyValues', removed).catch(err => console.error('[projection] cloud cleanup failed (change log will retry):', err))
-              })).catch(err => console.error('[projection] cloud cleanup failed:', err))
-          }
+          await db.clearProjectedDailyValues(assetItemId)
         }
 
         const entries = planValueSeries(forItem, baseValue, baseDate, projection)
@@ -158,17 +151,17 @@ export const useDailyValueStore = create<DailyValueState>()(
         // CARRY_FORWARD_KEY 를 쓰지 않고 빠진다 — 빈 데이터에 today 를 박으면
         // 그날 내내 carry-forward 가 죽는다.
         if (items.length === 0 || get().allValues.length === 0) return 0
-        const byItemRecs = new Map<number, DailyValue[]>()
+        const byItemRecs = new Map<string, DailyValue[]>()
         for (const v of get().allValues) {
           let a = byItemRecs.get(v.assetItemId)
           if (!a) { a = []; byItemRecs.set(v.assetItemId, a) }
           a.push(v)
         }
 
-        const allEntries: { assetItemId: number; date: string; value: number; source: 'projected' }[] = []
+        const allEntries: { assetItemId: string; date: string; value: number; source: 'projected' }[] = []
         for (const item of items) {
           if (isFlatProjection(item.projection)) continue // 평탄은 forward-fill 이 미래 커버 → 저장 불필요
-          const recs = byItemRecs.get(item.id!)
+          const recs = byItemRecs.get(item.id)
           if (!recs || recs.length === 0) continue
           // 기준 앵커 = 최신 수동기록(없으면 최신 기록)
           const pool = recs.some(r => r.source === 'manual') ? recs.filter(r => r.source === 'manual') : recs
@@ -177,7 +170,7 @@ export const useDailyValueStore = create<DailyValueState>()(
           const existingVal = new Map(recs.map(r => [r.date, r.value] as const))
           for (const e of buildForward(anchor.value, anchor.date, item.projection)) {
             if (e.date === anchor.date) continue
-            if (existingVal.get(e.date) !== e.value) allEntries.push({ assetItemId: item.id!, date: e.date, value: e.value, source: 'projected' })
+            if (existingVal.get(e.date) !== e.value) allEntries.push({ assetItemId: item.id, date: e.date, value: e.value, source: 'projected' })
           }
         }
 
@@ -207,8 +200,8 @@ export const useDailyValueStore = create<DailyValueState>()(
         if (items.length === 0 || allValues.length === 0) return 0
 
         // 자산별 앵커(projected 아님) + 자산별 현재값 맵(멱등 비교용)
-        const anchorsByItem = new Map<number, DailyValue[]>()
-        const valuesByItem = new Map<number, Map<string, number>>()
+        const anchorsByItem = new Map<string, DailyValue[]>()
+        const valuesByItem = new Map<string, Map<string, number>>()
         for (const v of allValues) {
           let vm = valuesByItem.get(v.assetItemId)
           if (!vm) { vm = new Map(); valuesByItem.set(v.assetItemId, vm) }
@@ -219,42 +212,42 @@ export const useDailyValueStore = create<DailyValueState>()(
           a.push(v)
         }
 
-        const allEntries: { assetItemId: number; date: string; value: number; source: 'projected' }[] = []
-        const flatToClear: number[] = []
+        const allEntries: { assetItemId: string; date: string; value: number; source: 'projected' }[] = []
+        const flatToClear: string[] = []
 
         for (const item of items) {
           if (isFlatProjection(item.projection)) {
             // 평탄으로 바뀐 자산: 남은 dense projected 정리 — projected 삭제는 더
             // 이상 클라우드로 전파되지 않으므로 각 기기가 로컬에서 청소해야 한다.
-            flatToClear.push(item.id!)
+            flatToClear.push(item.id)
             continue
           }
-          const anchors = anchorsByItem.get(item.id!)
+          const anchors = anchorsByItem.get(item.id)
           if (!anchors || anchors.length === 0) continue // 앵커 없음 → 투영 불가
 
-          // 동일 날짜 앵커는 syncId 로 결정적 선택 (sync race 중복 시 기기간 일치)
+          // 동일 날짜 앵커는 id 로 결정적 선택 (sync race 중복 시 기기간 일치)
           const byDate = new Map<string, DailyValue>()
           for (const a of anchors) {
             const ex = byDate.get(a.date)
-            if (!ex || (a.syncId ?? '') < (ex.syncId ?? '')) byDate.set(a.date, a)
+            if (!ex || a.id < ex.id) byDate.set(a.date, a)
           }
           const sorted = [...byDate.values()].sort((x, y) => x.date.localeCompare(y.date))
           const anchorDates = new Set(sorted.map(a => a.date))
           const isAnchor = (d: string) => anchorDates.has(d)
-          const existingVal = valuesByItem.get(item.id!) ?? new Map<string, number>()
+          const existingVal = valuesByItem.get(item.id) ?? new Map<string, number>()
 
           // 미래: 마지막(최신) 앵커에서 forward — (Y+1)-12-31 까지.
           const last = sorted[sorted.length - 1]
           for (const e of buildForward(last.value, last.date, item.projection)) {
             if (e.date === last.date) continue
-            if (existingVal.get(e.date) !== e.value) allEntries.push({ assetItemId: item.id!, date: e.date, value: e.value, source: 'projected' })
+            if (existingVal.get(e.date) !== e.value) allEntries.push({ assetItemId: item.id, date: e.date, value: e.value, source: 'projected' })
           }
           // 갭/과거: 각 앵커에서 backfill — 이전 앵커(또는 (Y-1)-01-01)에서 중단.
           // 갭 (a_{i-1}, a_i) 은 항상 더 늦은 앵커 a_i 의 역산이 채운다(원본 기기의
           // 증분 applyValueSeries 결과와 동일). 앵커 처리 순서와 무관하게 결정적.
           for (const a of sorted) {
             for (const e of buildBackfill(a.value, a.date, isAnchor, item.projection)) {
-              if (existingVal.get(e.date) !== e.value) allEntries.push({ assetItemId: item.id!, date: e.date, value: e.value, source: 'projected' })
+              if (existingVal.get(e.date) !== e.value) allEntries.push({ assetItemId: item.id, date: e.date, value: e.value, source: 'projected' })
             }
           }
         }
@@ -279,21 +272,21 @@ export const useDailyValueStore = create<DailyValueState>()(
       healLegacyFutureValues: async () => {
         const today = getTodayString()
         const items = useAssetStore.getState().items.filter(i => i.isActive && i.id != null)
-        const byItem = new Map<number, DailyValue[]>()
+        const byItem = new Map<string, DailyValue[]>()
         for (const v of get().allValues) {
           let a = byItem.get(v.assetItemId)
           if (!a) { a = []; byItem.set(v.assetItemId, a) }
           a.push(v)
         }
-        const entries: { assetItemId: number; date: string; value: number; source: 'manual' }[] = []
+        const entries: { assetItemId: string; date: string; value: number; source: 'manual' }[] = []
         for (const item of items) {
-          const recs = byItem.get(item.id!)
+          const recs = byItem.get(item.id)
           if (!recs || recs.length === 0) continue
           // 정상 항목은 항상 오늘 이하 기록이 있다. "전부 미래" = 레거시 미스데이트 버그.
           if (recs.every(r => r.date > today)) {
             let earliest = recs[0]
             for (const r of recs) if (r.date < earliest.date) earliest = r
-            entries.push({ assetItemId: item.id!, date: today, value: earliest.value, source: 'manual' })
+            entries.push({ assetItemId: item.id, date: today, value: earliest.value, source: 'manual' })
           }
         }
         if (entries.length > 0) await get().bulkSetValues(entries)

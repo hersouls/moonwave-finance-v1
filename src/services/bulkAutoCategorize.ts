@@ -7,12 +7,11 @@
 //
 // Applying a group writes the chosen category to every transaction in it via
 // the same `db.updateTransaction` path manual edits use — so the change is
-// tracked in syncChangeLog and propagates to the user's other devices — and
+// queued in the sync outbox and propagates to the user's other devices — and
 // records a learned merchant→category alias so future entries resolve
 // instantly without re-running the AI.
 
 import { db, getAllTransactions, updateTransaction } from '@/services/database'
-import { assertWritable } from '@/lib/writeGuard'
 import { normalizeMerchantKey } from '@/services/subscriptionDetection'
 import { loadAliasMap, setAlias } from '@/services/merchantAliasService'
 import {
@@ -25,7 +24,7 @@ export interface UncategorizedGroup {
   merchantKey: string
   /** Display name — the memo of the first transaction in the group. */
   sampleMerchant: string
-  txnIds: number[]
+  txnIds: string[]
   count: number
   /** Sum of absolute amounts across the group (KRW). */
   amountTotal: number
@@ -58,7 +57,7 @@ export async function analyzeUncategorized(): Promise<BulkAnalysis> {
   const uncategorized = all.filter((t) => t.type === 'expense' && t.categoryId == null)
   const stats = buildMerchantStats(all, categories, 'expense')
 
-  const byKey = new Map<string, { sampleMerchant: string; txnIds: number[]; amountTotal: number }>()
+  const byKey = new Map<string, { sampleMerchant: string; txnIds: string[]; amountTotal: number }>()
   let memolessCount = 0
   for (const t of uncategorized) {
     if (t.id == null) continue
@@ -108,7 +107,7 @@ export interface ApplyInput {
   /** merchantKeys the user chose to apply. */
   selectedKeys: Set<string>
   /** merchantKey → categoryId override when the user changed the suggestion. */
-  overrides: Record<string, number>
+  overrides: Record<string, string>
 }
 
 export interface ApplyResult {
@@ -119,17 +118,16 @@ export interface ApplyResult {
 }
 
 export async function applyGroups(input: ApplyInput): Promise<ApplyResult> {
-  assertWritable()  // read-only device: block bulk re-categorization
   let applied = 0
   let merchants = 0
-  const aliasWrites: { merchant: string; categoryId: number }[] = []
+  const aliasWrites: { merchant: string; categoryId: string }[] = []
 
   for (const g of input.groups) {
     if (!input.selectedKeys.has(g.merchantKey)) continue
     const categoryId = input.overrides[g.merchantKey] ?? g.suggestion.categoryId
     if (categoryId == null) continue
     for (const id of g.txnIds) {
-      // Same path as a manual edit → tracked in syncChangeLog, synced to cloud.
+      // Same path as a manual edit → queued in the sync outbox, synced to cloud.
       await updateTransaction(id, { categoryId })
       applied++
     }

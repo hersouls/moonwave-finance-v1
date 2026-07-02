@@ -21,8 +21,7 @@
 //   - memo      → merchant name as-is
 //   - type      → 'expense' (statements are always expenses)
 
-import { db } from '@/services/database'
-import { assertWritable } from '@/lib/writeGuard'
+import { db, createId } from '@/services/database'
 import { normalizeMerchantKey } from '@/services/subscriptionDetection'
 import { loadAliasMap, recordAliasUsage } from '@/services/merchantAliasService'
 import type { Transaction, TransactionCategory, TransactionType, PaymentMethod, SubscriptionCategoryType, Subscription, MerchantAlias } from '@/lib/types'
@@ -55,7 +54,7 @@ export type DuplicateLevel = 'none' | 'possible' | 'likely' | 'exact'
 export interface DuplicateMatch {
   level: DuplicateLevel
   /** Local transaction this row likely duplicates (by id) */
-  matchedTransactionId?: number
+  matchedTransactionId?: string
   /** Human reason for the match */
   reason?: string
 }
@@ -63,7 +62,7 @@ export interface DuplicateMatch {
 export type CategoryConfidence = 'high' | 'medium' | 'low' | 'none'
 
 export interface CategorySuggestion {
-  categoryId?: number
+  categoryId?: string
   /** Confidence level for the auto-classification */
   confidence: CategoryConfidence
   /** Why this match was chosen (for debugging / UI tooltip) */
@@ -80,14 +79,14 @@ export interface CategorySuggestion {
    * importStatement links the imported transaction to it via this id so the
    * dashboard's subscription view picks it up automatically.
    */
-  subscriptionId?: number
+  subscriptionId?: string
   /**
    * Top runner-up categories with their observed share in history. Surfaced
    * to the import-review UI so the user can pick a close alternative without
    * opening the full category picker. Only populated when the stats-model
    * path produced the suggestion.
    */
-  alternatives?: Array<{ categoryId: number; share: number }>
+  alternatives?: Array<{ categoryId: string; share: number }>
 }
 
 export interface AnalyzedRow extends ParsedRow {
@@ -98,16 +97,16 @@ export interface AnalyzedRow extends ParsedRow {
 export interface ImportOptions {
   /** Bulk payment method applied to every row */
   paymentMethod: PaymentMethod
-  /** Card-suffix → memberId mapping (e.g., { "643": 1, "429": 2 }) */
-  memberMap?: Record<string, number>
+  /** Card-suffix → memberId mapping (e.g., { "643": <memberId>, "429": <memberId> }) */
+  memberMap?: Record<string, string>
   /** Optional payment method item id (e.g., 신한카드) — also applied to all */
-  paymentMethodItemId?: number
+  paymentMethodItemId?: string
   /** Optional payment method detail (e.g., card name string) */
   paymentMethodDetail?: string
   /** Indexes (within parsed list) to skip — typically duplicates */
   skipIndexes?: Set<number>
   /** Override category per row, keyed by parsed index */
-  categoryOverrides?: Record<number, number>
+  categoryOverrides?: Record<number, string>
   /**
    * When set (yyyy-MM-dd), each transaction's date is replaced with this value
    * instead of the date parsed from the statement. Intended for users who track
@@ -493,10 +492,10 @@ const KEYWORD_RULES: KeywordRule[] = [
 // ─── Merchant statistics model (P1.3) ──────────────────
 
 export interface MerchantStats {
-  topCategoryId: number
+  topCategoryId: string
   topShare: number
   total: number
-  alternatives: Array<{ categoryId: number; count: number; share: number }>
+  alternatives: Array<{ categoryId: string; count: number; share: number }>
 }
 
 /**
@@ -514,9 +513,9 @@ export function buildMerchantStats(
   type: TransactionType = 'expense',
 ): Map<string, MerchantStats> {
   const validCatIds = new Set(
-    categories.filter(c => c.type === type && c.id != null).map(c => c.id!),
+    categories.filter(c => c.type === type && c.id != null).map(c => c.id),
   )
-  const byMerchant = new Map<string, Map<number, number>>()
+  const byMerchant = new Map<string, Map<string, number>>()
   for (const t of history) {
     if (t.type !== type || t.categoryId == null || !t.memo) continue
     if (!validCatIds.has(t.categoryId)) continue
@@ -615,7 +614,7 @@ export function suggestCategory(
   if (typeCats.length === 0) return { confidence: 'none' }
 
   const findCatByName = (name: string) => typeCats.find(c => c.name === name)
-  const findCatById = (id: number) => typeCats.find(c => c.id === id)
+  const findCatById = (id: string) => typeCats.find(c => c.id === id)
   const merchantKey = normalizeMerchantKey(merchant)
 
   // ── 0) Learned alias (highest priority) ──
@@ -860,10 +859,9 @@ export async function importStatement(
   rows: AnalyzedRow[],
   options: ImportOptions,
 ): Promise<ImportResult> {
-  assertWritable()  // read-only device: block bulk import before any write
   const now = new Date().toISOString()
   const skip = options.skipIndexes ?? new Set<number>()
-  const toInsert: Omit<Transaction, 'id'>[] = []
+  const toInsert: Transaction[] = []
   const byCategory: Record<string, number> = {}
   const dates: string[] = []
   let failed = 0
@@ -897,8 +895,8 @@ export async function importStatement(
         options.subscriptionCategoryOverride
         ?? (matchedSubscriptionId != null ? row.suggestion.subscriptionCategory : undefined)
 
-      const txn: Omit<Transaction, 'id'> = {
-        syncId: crypto.randomUUID(),
+      const txn: Transaction = {
+        id: createId(),
         type: 'expense',
         amount: row.amount,
         categoryId: categoryId,
@@ -924,7 +922,7 @@ export async function importStatement(
   }
 
   if (toInsert.length > 0) {
-    await db.transactions.bulkAdd(toInsert as Transaction[])
+    await db.transactions.bulkAdd(toInsert)
   }
 
   // Record alias usage for any rows that resolved via the merchant alias path.

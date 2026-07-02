@@ -34,12 +34,12 @@ export function LiabilityCreateModal() {
   const liabilityCategories = categories.filter(c => c.type === 'liability')
 
   const [name, setName] = useState('')
-  const [categoryId, setCategoryId] = useState<number | ''>('')
-  const [memberId, setMemberId] = useState<number | ''>('')
+  const [categoryId, setCategoryId] = useState<string | ''>('')
+  const [memberId, setMemberId] = useState<string | ''>('')
   const [initialAmount, setInitialAmount] = useState('')
   const [memo, setMemo] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [selectedLoanId, setSelectedLoanId] = useState<number | null>(null)
+  const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null)
   const [projection, setProjection] = useState<AssetValueProjection | undefined>(undefined)
 
   useEffect(() => {
@@ -56,9 +56,9 @@ export function LiabilityCreateModal() {
   }, [isOpen, members, loadLoans])
 
   const handleLoanSelect = (loanId: string) => {
-    const loan = activeLoans.find(l => l.id === Number(loanId))
+    const loan = activeLoans.find(l => l.id === loanId)
     if (!loan) return
-    setSelectedLoanId(loan.id!)
+    setSelectedLoanId(loan.id)
     setName(loan.name)
     setInitialAmount(loan.currentBalance.toLocaleString('ko-KR'))
     // Try to match category by name
@@ -82,8 +82,8 @@ export function LiabilityCreateModal() {
     setIsSubmitting(true)
     try {
       const id = await addItem({
-        memberId: memberId as number,
-        categoryId: categoryId as number,
+        memberId,
+        categoryId,
         name: name.trim(),
         type: 'liability',
         memo: memo.trim() || undefined,
@@ -151,9 +151,9 @@ export function LiabilityCreateModal() {
           <div>
             <FormSectionLabel icon={Tag}>카테고리</FormSectionLabel>
             <Select
-              value={String(categoryId)}
-              onChange={(v) => setCategoryId(v ? Number(v) : '')}
-              options={liabilityCategories.map(c => ({ value: String(c.id), label: c.name }))}
+              value={categoryId}
+              onChange={(v) => setCategoryId(v)}
+              options={liabilityCategories.map(c => ({ value: c.id, label: c.name }))}
               placeholder="카테고리 선택"
             />
           </div>
@@ -174,9 +174,9 @@ export function LiabilityCreateModal() {
               <MemberChips members={members} value={memberId} onChange={setMemberId} allowUnassigned={false} />
             ) : (
               <Select
-                value={String(memberId)}
-                onChange={(v) => setMemberId(v ? Number(v) : '')}
-                options={members.map(m => ({ value: String(m.id), label: m.name }))}
+                value={memberId}
+                onChange={(v) => setMemberId(v)}
+                options={members.map(m => ({ value: m.id, label: m.name }))}
                 placeholder="구성원 선택"
               />
             )}

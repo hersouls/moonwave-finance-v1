@@ -26,10 +26,10 @@ interface SubscriptionState {
     color: string
     url?: string
     memo?: string
-  }) => Promise<number>
-  updateSubscription: (id: number, updates: Partial<Subscription>) => Promise<void>
-  deleteSubscription: (id: number) => Promise<void>
-  changeStatus: (id: number, status: SubscriptionStatus) => Promise<void>
+  }) => Promise<string>
+  updateSubscription: (id: string, updates: Partial<Subscription>) => Promise<void>
+  deleteSubscription: (id: string) => Promise<void>
+  changeStatus: (id: string, status: SubscriptionStatus) => Promise<void>
 
   getByStatus: (status: SubscriptionStatus) => Subscription[]
   getByCurrency: (currency: SubscriptionCurrency) => Subscription[]
@@ -81,7 +81,6 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           ...data,
           status: 'active' as const,
           sortOrder: maxOrder + 1,
-          syncId: crypto.randomUUID(),
           createdAt: now,
           updatedAt: now,
         }

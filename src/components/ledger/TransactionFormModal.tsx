@@ -63,13 +63,13 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
 
   const [type, setType] = useState<TransactionType>('expense')
   const [amount, setAmount] = useState('')
-  const [categoryId, setCategoryId] = useState<number | ''>('')
-  const [memberId, setMemberId] = useState<number | ''>('')
+  const [categoryId, setCategoryId] = useState<string>('')
+  const [memberId, setMemberId] = useState<string>('')
   const [date, setDate] = useState(getTodayString())
   const [memo, setMemo] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('')
   const [paymentMethodDetail, setPaymentMethodDetail] = useState('')
-  const [paymentMethodItemId, setPaymentMethodItemId] = useState<number | ''>('')
+  const [paymentMethodItemId, setPaymentMethodItemId] = useState<string>('')
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurType, setRecurType] = useState<RepeatType>('monthly')
   const [recurEndDate, setRecurEndDate] = useState('')
@@ -108,7 +108,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
     if (open) loadLoans()
   }, [open, loadLoans])
 
-  const applyLoanInterest = (loanId: number) => {
+  const applyLoanInterest = (loanId: string) => {
     const loan = activeLoans.find(l => l.id === loanId)
     if (!loan) return
     const interest = getMonthlyInterest(loan)
@@ -206,13 +206,13 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
       const txnData = {
         type,
         amount: signedAmount,
-        categoryId: categoryId ? (categoryId as number) : null,
-        memberId: memberId ? (memberId as number) : null,
+        categoryId: categoryId || null,
+        memberId: memberId || null,
         date,
         memo: memo.trim() || undefined,
         paymentMethod: paymentMethod || undefined,
         paymentMethodDetail: paymentMethodDetail.trim() || undefined,
-        paymentMethodItemId: paymentMethodItemId ? (paymentMethodItemId as number) : undefined,
+        paymentMethodItemId: paymentMethodItemId || undefined,
         subscriptionCategory: subscriptionCategory || undefined,
       }
 
@@ -233,7 +233,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
     }
   }
 
-  const handleSelectPaymentMethodItem = (itemId: number, itemName: string) => {
+  const handleSelectPaymentMethodItem = (itemId: string, itemName: string) => {
     setPaymentMethodItemId(itemId)
     setPaymentMethodDetail(itemName)
   }
@@ -380,7 +380,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                   <motion.button
                     key={loan.id}
                     type="button"
-                    onClick={() => applyLoanInterest(loan.id!)}
+                    onClick={() => applyLoanInterest(loan.id)}
                     whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
                     transition={springSnappy}
                     className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-label3-medium font-semibold bg-status-danger-soft text-status-danger ring-1 ring-[color:var(--status-danger-border)] hover:brightness-95 transition-all"
@@ -561,7 +561,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                   <motion.button
                     key={c.id}
                     type="button"
-                    onClick={() => setCategoryId(c.id!)}
+                    onClick={() => setCategoryId(c.id)}
                     whileTap={shouldReduceMotion ? undefined : { scale: 0.93 }}
                     transition={springSnappy}
                     aria-pressed={isActive}
@@ -659,7 +659,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                       <motion.button
                         key={m.id}
                         type="button"
-                        onClick={() => setMemberId(m.id!)}
+                        onClick={() => setMemberId(m.id)}
                         whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
                         transition={springSnappy}
                         aria-pressed={isActive}
@@ -693,9 +693,9 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                 </div>
               ) : (
                 <Select
-                  value={String(memberId)}
-                  onChange={(v) => setMemberId(v ? Number(v) : '')}
-                  options={members.map(m => ({ value: String(m.id), label: m.name }))}
+                  value={memberId}
+                  onChange={(v) => setMemberId(v)}
+                  options={members.map(m => ({ value: m.id, label: m.name }))}
                   placeholder="미지정"
                 />
               )}
@@ -819,7 +819,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
                           <motion.button
                             key={item.id}
                             type="button"
-                            onClick={() => handleSelectPaymentMethodItem(item.id!, item.name)}
+                            onClick={() => handleSelectPaymentMethodItem(item.id, item.name)}
                             whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
                             transition={springSnappy}
                             className={clsx(

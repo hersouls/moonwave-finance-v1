@@ -26,7 +26,7 @@ import { calculateSeverancePay, generateSeverancePayValues, calculateSeveranceTa
 export function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const itemId = Number(id)
+  const itemId = id ?? ''
 
   const [isLoading, setIsLoading] = useState(true)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)

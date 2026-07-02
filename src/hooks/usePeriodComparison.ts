@@ -5,7 +5,7 @@ import { getPreviousMonth, getCurrentMonthString } from '@/lib/dateUtils'
 import type { Transaction } from '@/lib/types'
 
 export interface CategoryComparison {
-  categoryId: number | null
+  categoryId: string | null
   name: string
   color: string
   current: number
@@ -63,7 +63,7 @@ export function usePeriodComparison(month?: string): PeriodComparisonData {
     })
 
     // Category breakdown for expenses
-    const catMap = new Map<number | null, { current: number; previous: number }>()
+    const catMap = new Map<string | null, { current: number; previous: number }>()
 
     for (const t of currentTxns.filter(t => t.type === 'expense')) {
       const existing = catMap.get(t.categoryId) || { current: 0, previous: 0 }

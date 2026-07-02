@@ -21,34 +21,34 @@ interface TransactionState {
   setSelectedMonth: (month: string) => void
 
   addTransaction: (data: {
-    memberId: number | null
+    memberId: string | null
     type: TransactionType
     amount: number
-    categoryId: number | null
+    categoryId: string | null
     date: string
     memo?: string
     paymentMethod?: PaymentMethod
     paymentMethodDetail?: string
-    paymentMethodItemId?: number
+    paymentMethodItemId?: string
     isRecurring?: boolean
     recurPattern?: RepeatPattern
     subscriptionCategory?: SubscriptionCategoryType
-  }) => Promise<number>
+  }) => Promise<string>
   processRecurring: () => Promise<void>
-  updateTransaction: (id: number, updates: Partial<Transaction>) => Promise<void>
-  deleteTransaction: (id: number) => Promise<void>
+  updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>
+  deleteTransaction: (id: string) => Promise<void>
 
   getCategoriesByType: (type: TransactionType) => TransactionCategory[]
 
   // Category CRUD
-  addCategory: (data: { name: string; type: TransactionType; color: string; icon?: string }) => Promise<number>
-  updateCategory: (id: number, updates: Partial<TransactionCategory>) => Promise<void>
-  deleteCategory: (id: number) => Promise<void>
+  addCategory: (data: { name: string; type: TransactionType; color: string; icon?: string }) => Promise<string>
+  updateCategory: (id: string, updates: Partial<TransactionCategory>) => Promise<void>
+  deleteCategory: (id: string) => Promise<void>
 
   // PaymentMethodItem CRUD
-  addPaymentMethodItem: (data: { type: PaymentMethod; name: string; memo?: string }) => Promise<number>
-  updatePaymentMethodItem: (id: number, updates: Partial<PaymentMethodItem>) => Promise<void>
-  deletePaymentMethodItem: (id: number) => Promise<void>
+  addPaymentMethodItem: (data: { type: PaymentMethod; name: string; memo?: string }) => Promise<string>
+  updatePaymentMethodItem: (id: string, updates: Partial<PaymentMethodItem>) => Promise<void>
+  deletePaymentMethodItem: (id: string) => Promise<void>
 }
 
 export const useTransactionStore = create<TransactionState>()(
@@ -119,7 +119,6 @@ export const useTransactionStore = create<TransactionState>()(
           ...data,
           isRecurring: data.isRecurring ?? false,
           recurPattern: data.recurPattern,
-          syncId: crypto.randomUUID(),
           createdAt: now,
           updatedAt: now,
         })
@@ -155,13 +154,14 @@ export const useTransactionStore = create<TransactionState>()(
           && prev.memo
           && prev.memo.trim().length > 0
         ) {
+          const newCategoryId = updates.categoryId
           // Fire-and-forget — alias persistence is best-effort.
           void (async () => {
             try {
               const { setAlias } = await import('@/services/merchantAliasService')
               await setAlias({
                 merchant: prev.memo!,
-                categoryId: updates.categoryId as number,
+                categoryId: newCategoryId,
                 source: 'user-override',
                 sampleMerchant: prev.memo,
               })
@@ -201,15 +201,6 @@ export const useTransactionStore = create<TransactionState>()(
         if (!prev) return
         await db.deleteTransaction(id)
         await get().loadTransactions()
-        // Delete from Firestore
-        if (prev.syncId) {
-          import('@/services/firestoreSync').then(({ deleteFromCloud }) => {
-            import('./authStore').then(({ useAuthStore }) => {
-              const user = useAuthStore.getState().user
-              if (user) deleteFromCloud(user.uid, 'transactions', prev.syncId!).catch(err => console.error('[transaction] cloud delete failed (change log will retry):', err))
-            })
-          }).catch(err => console.error('[transaction] delete sync failed:', err))
-        }
         useToastStore.getState().addToast('거래가 삭제되었습니다.', 'info')
       },
 
@@ -223,7 +214,6 @@ export const useTransactionStore = create<TransactionState>()(
           ...data,
           isDefault: false,
           sortOrder: maxOrder + 1,
-          syncId: crypto.randomUUID(),
           createdAt: now,
           updatedAt: now,
         })
@@ -239,19 +229,9 @@ export const useTransactionStore = create<TransactionState>()(
       },
 
       deleteCategory: async (id) => {
-        const cat = get().categories.find(c => c.id === id)
         await db.deleteTransactionCategory(id)
         await get().loadCategories()
         await get().loadTransactions()
-        // Delete from Firestore
-        if (cat?.syncId) {
-          import('@/services/firestoreSync').then(({ deleteFromCloud }) => {
-            import('./authStore').then(({ useAuthStore }) => {
-              const user = useAuthStore.getState().user
-              if (user) deleteFromCloud(user.uid, 'transactionCategories', cat.syncId!).catch(err => console.error('[transaction] cloud delete failed (change log will retry):', err))
-            })
-          }).catch(err => console.error('[transaction] delete category sync failed:', err))
-        }
         useToastStore.getState().addToast('카테고리가 삭제되었습니다.', 'info')
       },
 
@@ -264,7 +244,6 @@ export const useTransactionStore = create<TransactionState>()(
           ...data,
           isActive: true,
           sortOrder: maxOrder + 1,
-          syncId: crypto.randomUUID(),
           createdAt: now,
           updatedAt: now,
         })
@@ -280,18 +259,8 @@ export const useTransactionStore = create<TransactionState>()(
       },
 
       deletePaymentMethodItem: async (id) => {
-        const item = get().paymentMethodItems.find(i => i.id === id)
         await db.deletePaymentMethodItem(id)
         await get().loadPaymentMethodItems()
-        // Delete from Firestore
-        if (item?.syncId) {
-          import('@/services/firestoreSync').then(({ deleteFromCloud }) => {
-            import('./authStore').then(({ useAuthStore }) => {
-              const user = useAuthStore.getState().user
-              if (user) deleteFromCloud(user.uid, 'paymentMethodItems', item.syncId!).catch(err => console.error('[transaction] cloud delete failed (change log will retry):', err))
-            })
-          }).catch(err => console.error('[transaction] delete paymentMethod sync failed:', err))
-        }
         useToastStore.getState().addToast('거래수단이 삭제되었습니다.', 'info')
       },
     }),
