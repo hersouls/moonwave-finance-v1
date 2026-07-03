@@ -1,6 +1,6 @@
 import { db, setSyncWritingFlag, drainChangeTracking } from '@/services/database'
 import { BACKUP_CONFIG } from '@/utils/constants'
-import type { BackupFile } from '@/lib/types'
+import type { BackupFile, SyncOutboxEntry } from '@/lib/types'
 
 // ─── Backup format versions ─────────────────────────────
 //
@@ -251,9 +251,55 @@ export async function importBackup(file: File): Promise<void> {
     // 피어 기기로부터 삭제시킬 수 있다. clearAllData와 동일한 로컬 교체 의미론.
     await drainChangeTracking()
     await db.syncOutbox.clear()
+
+    // 복원된 데이터를 클라우드로 밀어 올릴 아웃박스 마커를 시드한다 — 복원은
+    // sync-writing 플래그로 CRUD 훅이 침묵하므로, 이 시드가 없으면 복원분이
+    // 영원히 업로드되지 않는다. 클라우드와의 수렴은 다음 푸시 + 문서 단위
+    // LWW(피어 인제스트)가 담당한다. projected dailyValues는 동기화 범위 밖.
+    const queuedAt = new Date().toISOString()
+    const outboxRows: SyncOutboxEntry[] = []
+    const seedOutbox = (tableName: string, rows: ReadonlyArray<{ id: string }> | undefined) => {
+      for (const r of rows ?? []) {
+        if (!r.id) continue
+        outboxRows.push({ key: `${tableName}:${r.id}`, tableName, recordId: r.id, op: 'upsert', queuedAt })
+      }
+    }
+    seedOutbox('members', data.members)
+    seedOutbox('assetCategories', data.assetCategories)
+    seedOutbox('assetItems', data.assetItems)
+    seedOutbox('transactionCategories', data.transactionCategories)
+    seedOutbox('transactions', data.transactions)
+    seedOutbox('budgets', data.budgets)
+    seedOutbox('goals', data.goals)
+    seedOutbox('paymentMethodItems', data.paymentMethodItems)
+    seedOutbox('subscriptions', data.subscriptions)
+    seedOutbox('loans', data.loans)
+    seedOutbox('investmentTrades', data.investmentTrades)
+    seedOutbox('dividends', data.dividends)
+    seedOutbox('accountInterests', data.accountInterests)
+    for (const dv of data.dailyValues ?? []) {
+      if (!dv.id || dv.source === 'projected') continue
+      outboxRows.push({
+        key: `dailyValues:${dv.id}`,
+        tableName: 'dailyValues',
+        recordId: dv.id,
+        op: 'upsert',
+        queuedAt,
+        assetItemId: dv.assetItemId,
+        date: dv.date,
+      })
+    }
+    if (outboxRows.length > 0) await db.syncOutbox.bulkPut(outboxRows)
   } finally {
     setSyncWritingFlag(false)
   }
+
+  // 로그인 상태라면 즉시 푸시 시작 (로그아웃 상태면 다음 로그인의
+  // startSyncSession → flushOutbox가 잔량을 처리한다).
+  try {
+    const { requestPush } = await import('@/services/firestoreSync')
+    requestPush()
+  } catch { /* 동기화 모듈 미초기화 — 다음 세션이 처리 */ }
 }
 
 export async function exportTransactionsCSV(): Promise<void> {

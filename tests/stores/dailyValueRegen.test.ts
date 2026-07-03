@@ -5,7 +5,7 @@
 // a_i 의 역산 backfill 이 채우고, 미래는 마지막 앵커의 forward 가 채운다 —
 // 원본 기기의 증분 applyValueSeries 결과와 일치(기기 간 수렴).
 import { describe, it, expect, beforeEach } from 'vitest'
-import { db, setSyncWritingFlag, getDailyValue } from '@/services/database'
+import { db, setSyncWritingFlag, drainChangeTracking, getDailyValue } from '@/services/database'
 import { useDailyValueStore } from '@/stores/dailyValueStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import type { AssetItem, AssetValueProjection } from '@/lib/types'
@@ -13,21 +13,22 @@ import type { AssetItem, AssetValueProjection } from '@/lib/types'
 const NOW = '2026-06-05T00:00:00.000Z'
 const CARRY_FORWARD_KEY = 'finance:lastCarryForward'
 
-async function addAsset(projection: AssetValueProjection | undefined, syncId = 'asset-R'): Promise<number> {
+async function addAsset(projection: AssetValueProjection | undefined, id = 'asset-R'): Promise<string> {
   setSyncWritingFlag(true)
   try {
-    return await db.assetItems.add({
-      syncId, memberId: null, categoryId: null, name: 'R',
+    await db.assetItems.add({
+      id, memberId: '', categoryId: '', name: 'R',
       type: 'asset', isActive: true, sortOrder: 0, projection,
       createdAt: NOW, updatedAt: NOW,
-    } as AssetItem) as number
+    } as AssetItem)
+    return id
   } finally { setSyncWritingFlag(false) }
 }
 
-async function addAnchor(assetItemId: number, date: string, value: number, syncId: string): Promise<void> {
+async function addAnchor(assetItemId: string, date: string, value: number, id: string): Promise<void> {
   setSyncWritingFlag(true)
   try {
-    await db.dailyValues.add({ syncId, assetItemId, date, value, source: 'manual', createdAt: NOW, updatedAt: NOW } as never)
+    await db.dailyValues.add({ id, assetItemId, date, value, source: 'manual', createdAt: NOW, updatedAt: NOW })
   } finally { setSyncWritingFlag(false) }
 }
 
@@ -37,9 +38,8 @@ beforeEach(async () => {
     await db.assetItems.clear()
     await db.dailyValues.clear()
   } finally { setSyncWritingFlag(false) }
-  await new Promise(r => setTimeout(r, 20))
-  await db.syncChangeLog.clear()
-  await db.syncTombstones.clear()
+  await drainChangeTracking()
+  await db.syncOutbox.clear()
   try { localStorage.removeItem(CARRY_FORWARD_KEY) } catch { /* ignore */ }
   useDailyValueStore.setState({ values: [], allValues: [], selectedMonth: '2026-03' })
   // 설정 오염 방지 — 마지막 테스트가 끈 autoCarryForward 를 기본(true)으로 복원.
@@ -79,9 +79,9 @@ describe('regenerateProjections — 다중앵커 dense 재구성', () => {
     expect(second).toBe(0)
   })
 
-  it('앵커 순서와 무관하게 결정적 — 동일 날짜 앵커는 syncId 로 선택', async () => {
+  it('앵커 순서와 무관하게 결정적 — 동일 날짜 앵커는 id 로 선택', async () => {
     const assetId = await addAsset({ dailyDelta: 1000 })
-    // 같은 날짜에 두 앵커(sync race) — 더 작은 syncId('a-1')가 선택돼야
+    // 같은 날짜에 두 앵커(sync race) — 더 작은 id('a-1')가 선택돼야
     await addAnchor(assetId, '2026-03-05', 200_000, 'a-2')
     await addAnchor(assetId, '2026-03-05', 555_555, 'a-1')
     await addAnchor(assetId, '2026-03-01', 100_000, 'b1')
@@ -96,7 +96,7 @@ describe('regenerateProjections — 다중앵커 dense 재구성', () => {
     await addAnchor(assetId, '2026-03-01', 100_000, 'm1')
     setSyncWritingFlag(true)
     try {
-      await db.dailyValues.add({ syncId: 'p1', assetItemId: assetId, date: '2026-03-02', value: 123, source: 'projected', createdAt: NOW, updatedAt: NOW } as never)
+      await db.dailyValues.add({ id: 'p1', assetItemId: assetId, date: '2026-03-02', value: 123, source: 'projected', createdAt: NOW, updatedAt: NOW })
     } finally { setSyncWritingFlag(false) }
 
     await useDailyValueStore.getState().regenerateProjections(true)

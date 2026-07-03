@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { db } from '@/services/database'
-import { useSettingsStore } from '@/stores/settingsStore'
 import {
   analyzeDuplicates,
   deleteDuplicates,
@@ -12,9 +11,10 @@ import type { Transaction } from '@/lib/types'
 const NOW = '2026-01-01T00:00:00.000Z'
 let seq = 0
 
+// Sync v2: id는 문자열 PK. 삽입 순서와 사전순이 일치하도록 zero-pad.
 function add(memo: string, amount: number, date: string, extra: Partial<Transaction> = {}) {
   return db.transactions.add({
-    syncId: `dup-${seq++}`,
+    id: `dup-${String(seq++).padStart(4, '0')}`,
     memberId: null,
     type: 'expense',
     amount,
@@ -25,15 +25,13 @@ function add(memo: string, amount: number, date: string, extra: Partial<Transact
     createdAt: NOW,
     updatedAt: NOW,
     ...extra,
-  } as Transaction) as Promise<number>
+  } as Transaction)
 }
 
 describe('analyzeDuplicates', () => {
   beforeEach(async () => {
-    useSettingsStore.getState().setDeviceWriteEnabled(true)
     await db.transactions.clear()
   })
-  afterEach(() => useSettingsStore.getState().setDeviceWriteEnabled(true))
 
   it('groups same memo+amount on the same day as an exact duplicate', async () => {
     await add('A마트', 5000, '2026-01-01')
@@ -65,8 +63,8 @@ describe('analyzeDuplicates', () => {
   })
 
   it('excludes auto-generated recurring rows (recurSourceId set)', async () => {
-    await add('E넷플릭스', 17000, '2026-01-01', { recurSourceId: 1 })
-    await add('E넷플릭스', 17000, '2026-01-01', { recurSourceId: 1 })
+    await add('E넷플릭스', 17000, '2026-01-01', { recurSourceId: 'recur-src-1' })
+    await add('E넷플릭스', 17000, '2026-01-01', { recurSourceId: 'recur-src-1' })
     const { groups } = await analyzeDuplicates()
     expect(groups.find((g) => g.sampleMemo === 'E넷플릭스')).toBeUndefined()
   })
@@ -95,10 +93,8 @@ describe('analyzeDuplicates', () => {
 
 describe('analyzeDuplicates — safety fixes', () => {
   beforeEach(async () => {
-    useSettingsStore.getState().setDeviceWriteEnabled(true)
     await db.transactions.clear()
   })
-  afterEach(() => useSettingsStore.getState().setDeviceWriteEnabled(true))
 
   it('does not merge different branch suffixes (strict memo, not branch-stripped)', async () => {
     await add('스타벅스(강남)', 5000, '2026-01-01')
@@ -138,10 +134,8 @@ describe('analyzeDuplicates — safety fixes', () => {
 
 describe('allow / clear duplicate allowances', () => {
   beforeEach(async () => {
-    useSettingsStore.getState().setDeviceWriteEnabled(true)
     await db.transactions.clear()
   })
-  afterEach(() => useSettingsStore.getState().setDeviceWriteEnabled(true))
 
   it('excludes an allowed pattern and re-includes it after clearing', async () => {
     await add('Z마트', 5000, '2026-01-01')
@@ -179,19 +173,18 @@ describe('allow / clear duplicate allowances', () => {
 
 describe('deleteDuplicates', () => {
   beforeEach(async () => {
-    useSettingsStore.getState().setDeviceWriteEnabled(true)
     await db.transactions.clear()
   })
-  afterEach(() => useSettingsStore.getState().setDeviceWriteEnabled(true))
 
-  it('deletes the given transactions and leaves the keeper', async () => {
+  it('deletes the given transactions (string ids) and leaves the keeper', async () => {
     await add('I', 8000, '2026-01-01')
     await add('I', 8000, '2026-01-01')
     await add('I', 8000, '2026-01-01')
     const before = await analyzeDuplicates()
     const g = before.groups.find((x) => x.sampleMemo === 'I')!
-    const toDelete = g.transactions.filter((t) => t.id !== g.recommendedKeepId).map((t) => t.id!)
+    const toDelete = g.transactions.filter((t) => t.id !== g.recommendedKeepId).map((t) => t.id)
     expect(toDelete.length).toBe(2)
+    expect(toDelete.every((id) => typeof id === 'string')).toBe(true)
 
     const deleted = await deleteDuplicates(toDelete)
     expect(deleted).toBe(2)

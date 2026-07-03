@@ -228,9 +228,18 @@ class FinanceDatabase extends Dexie {
       }
 
       // 2패스 — id 승격 + FK 재작성 (+ projected dailyValues 제외).
+      //
+      // ⚠️ 중복 수렴이 brick 방지의 핵심: 레거시 syncId는 유니크 인덱스가
+      // 아니어서 같은 syncId 행이 2개 존재할 수 있다 (과거 시드 중복 사고
+      // 이력). v16 스키마에서 id는 PK, merchantAliases.merchantKey는 &유니크
+      // 이므로 중복을 남기면 bulkAdd가 ConstraintError → versionchange 전체
+      // 롤백 → DB 영구 열기 실패(brick)가 된다. 같은 키의 행은 updatedAt이
+      // 최신인 쪽만 남긴다 (같은 논리 레코드의 사본이므로 LWW).
       for (const name of MIGRATED_TABLES) {
-        const out: Record<string, unknown>[] = []
+        const byId = new Map<string, Record<string, unknown>>()
         const fkDefs = MIGRATION_FK_DEFS[name] ?? []
+        const newerOf = (a: Record<string, unknown>, b: Record<string, unknown>) =>
+          String(a.updatedAt ?? '') >= String(b.updatedAt ?? '') ? a : b
         for (const row of raw[name]) {
           if (name === 'dailyValues' && row.source === 'projected') continue
           const numId = row.id as number | undefined
@@ -256,9 +265,22 @@ class FinanceDatabase extends Dexie {
               next[def.field] = '' // required — 미매칭 표식 ('' 조회는 항상 미스)
             }
           }
-          if (!dropRow) out.push(next)
+          if (dropRow) continue
+          const prev = byId.get(newId)
+          byId.set(newId, prev ? newerOf(prev, next) : next)
         }
-        buffer.rows[name] = out
+        // merchantAliases: &merchantKey 유니크 — id가 달라도 같은 merchantKey면 수렴
+        if (name === 'merchantAliases') {
+          const byKey = new Map<string, Record<string, unknown>>()
+          for (const row of byId.values()) {
+            const k = String(row.merchantKey ?? '')
+            const prev = byKey.get(k)
+            byKey.set(k, prev ? newerOf(prev, row) : row)
+          }
+          buffer.rows[name] = [...byKey.values()]
+        } else {
+          buffer.rows[name] = [...byId.values()]
+        }
       }
 
       // 3패스 — 미처리 changelog를 아웃박스로 이관 (업로드 대기분 유실 방지).
