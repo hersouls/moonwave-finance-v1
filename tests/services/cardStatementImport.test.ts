@@ -4,6 +4,7 @@ import {
   parseCardStatement,
   parseSamsungStatement,
   parseShinhanStatement,
+  parseShinhanCompact,
 } from '@/services/cardStatementImport'
 
 // 사용자가 직접 공유한 삼성카드 명세서 샘플 (일시불 섹션 7건, 소계 275,242원)
@@ -113,6 +114,49 @@ describe('parseShinhanStatement (regression)', () => {
       date: '2026-04-02',
       cardSuffix: '429',
     })
+  })
+})
+
+// 사용자가 실제 공유한 신한카드 "컴팩트" 형식 — 3줄 블록, 빈 줄 없음,
+// 날짜+본인+일시불(+이용금액할인)이 셋째 줄에 결합.
+const SHINHAN_COMPACT_SAMPLE = `클로우드
+3,000원
+2026.06.11 본인429* 일시불
+GS수퍼 청라한울점
+3,200원
+2026.06.11 본인429* 일시불
+모바일후불티머니이용 0108건/월
+91,965원
+2026.06.11 본인407* 일시불 이용금액할인 3,395원
+05월**65-8093 KT통신요금
+49,500원
+2026.05.13 본인643* 일시불 이용금액할인 5,000원
+우육면관 광화문점
+45,000원
+2026.05.12 본인643* 일시불`
+
+describe('parseShinhanCompact (실제 사용자 명세서 형식)', () => {
+  const rows = parseShinhanCompact(SHINHAN_COMPACT_SAMPLE)
+
+  it('빈 줄 없는 3줄 블록을 전부 인식한다', () => {
+    expect(rows).toHaveLength(5)
+  })
+
+  it('가맹점·금액·날짜·카드끝자리를 정확히 뽑는다', () => {
+    expect(rows[0]).toMatchObject({ merchant: '클로우드', amount: 3000, date: '2026-06-11', cardSuffix: '429' })
+    expect(rows[3]).toMatchObject({ merchant: '05월**65-8093 KT통신요금', amount: 49500, date: '2026-05-13', cardSuffix: '643' })
+  })
+
+  it('셋째 줄의 이용금액할인을 discount로 캡처한다', () => {
+    expect(rows[2].discount).toBe(3395)
+    expect(rows[3].discount).toBe(5000)
+    expect(rows[0].discount).toBeUndefined()
+  })
+
+  it('detectCardCompany가 shinhan으로 감지하고 통합 엔트리가 라우팅한다', () => {
+    expect(detectCardCompany(SHINHAN_COMPACT_SAMPLE)).toBe('shinhan')
+    expect(parseCardStatement(SHINHAN_COMPACT_SAMPLE)).toHaveLength(5)
+    expect(parseShinhanStatement(SHINHAN_COMPACT_SAMPLE)).toHaveLength(5)
   })
 })
 

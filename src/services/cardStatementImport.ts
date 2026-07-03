@@ -138,17 +138,27 @@ export type CardCompany = 'shinhan' | 'samsung' | 'unknown'
 const SAMSUNG_DATE_OWNER_RE = /\b\d{2}\.\s*\d{1,2}\.\s*\d{1,2}본\s*인\s*\d{3,4}\b/
 const SHINHAN_FULL_DATE_RE = /^\d{4}[.\-/]\d{1,2}[.\-/]\d{1,2}$/m
 const SHINHAN_OWNER_LINE_RE = /^(?:본인|가족)\s*\d{3,4}$/m
+// Compact Shinhan variant: date + owner (+ 일시불/할부 + optional 이용금액할인)
+// all on ONE line, blocks separated only by line order (no blank lines).
+// e.g. "2026.06.11 본인429* 일시불" / "2026.05.13 본인643* 일시불 이용금액할인 5,000원"
+// NOTE: horizontal-whitespace-only ([ \t]) between date and 본인 — a plain \s
+// would also match the newline in the 4-line format ("2026.04.05\n본인643"),
+// misrouting that format to the compact parser. This distinguishes the two.
+const SHINHAN_COMPACT_LINE_RE = /^(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})[ \t]+(?:본인|가족)[ \t]*(\d{3,4})/m
 
 /**
  * Detects card company by signature line patterns. Falls back to 'shinhan'
  * when ambiguous, since that was the original supported format.
  *
  * Samsung signal: "YY. M. DD본 인 XXXX" combined date+owner on one line
- * Shinhan signal: full 4-digit-year date line AND standalone "본인XXX" line
+ * Shinhan signal: full 4-digit-year date line AND standalone "본인XXX" line,
+ *   OR the compact one-line "YYYY.MM.DD 본인XXX" variant.
  */
 export function detectCardCompany(text: string): CardCompany {
   const samsungHit = SAMSUNG_DATE_OWNER_RE.test(text)
-  const shinhanHit = SHINHAN_FULL_DATE_RE.test(text) && SHINHAN_OWNER_LINE_RE.test(text)
+  const shinhanHit =
+    (SHINHAN_FULL_DATE_RE.test(text) && SHINHAN_OWNER_LINE_RE.test(text)) ||
+    SHINHAN_COMPACT_LINE_RE.test(text)
   if (samsungHit && !shinhanHit) return 'samsung'
   if (shinhanHit && !samsungHit) return 'shinhan'
   if (samsungHit && shinhanHit) return 'samsung' // prefer specific signature
@@ -179,6 +189,13 @@ export function parseCardStatement(text: string, company?: CardCompany): ParsedR
  * Resilient to extra whitespace and ignores lines that don't fit the schema.
  */
 export function parseShinhanStatement(text: string): ParsedRow[] {
+  // Compact variant (date+owner on one line, no blank-line separators) — the
+  // block-based parser below can't handle it, so route to the line-stream
+  // parser when the compact signature is present.
+  if (SHINHAN_COMPACT_LINE_RE.test(text)) {
+    return parseShinhanCompact(text)
+  }
+
   const blocks: string[][] = []
   let current: string[] = []
   for (const rawLine of text.split(/\r?\n/)) {
@@ -198,6 +215,52 @@ export function parseShinhanStatement(text: string): ParsedRow[] {
   for (const block of blocks) {
     const parsed = parseBlock(block, rows.length)
     if (parsed) rows.push(parsed)
+  }
+  return rows
+}
+
+// Compact Shinhan line: captures y/m/d/suffix; discount parsed separately.
+// Tolerates "*" after owner and any trailing tokens (일시불 / 할부 N개월 / 이용금액할인 …).
+const SHINHAN_COMPACT_DATE_OWNER_RE = /^(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})[ \t]+(?:본인|가족)[ \t]*(\d{3,4})\*?/
+const SHINHAN_COMPACT_DISCOUNT_RE = /이용금액할인\s*([\d,]+)\s*원/
+
+/**
+ * Parses the compact Shinhan format where each transaction is a 3-line group
+ * with the date+owner (+ 일시불/할부 + optional 이용금액할인) combined on the
+ * third line, and groups are separated only by line order (no blank lines):
+ *   line 1 → merchant  (e.g., "GS수퍼 청라한울점")
+ *   line 2 → amount    (e.g., "3,200원")
+ *   line 3 → "YYYY.MM.DD 본인XXX* 일시불 [이용금액할인 N원]"
+ *
+ * Anchored on line 3 (strict date+owner) with a look-back to the two preceding
+ * lines, so merchant names containing digits/symbols don't derail detection.
+ */
+export function parseShinhanCompact(text: string): ParsedRow[] {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0)
+  const rows: ParsedRow[] = []
+  for (let i = 2; i < lines.length; i++) {
+    const doMatch = lines[i].match(SHINHAN_COMPACT_DATE_OWNER_RE)
+    if (!doMatch) continue
+    const amountMatch = lines[i - 1].match(AMOUNT_RE)
+    if (!amountMatch) continue
+    const merchant = lines[i - 2]
+    // Skip if the "merchant" line is itself an amount or a date line — means the
+    // triple is malformed (e.g., two date lines in a row); don't emit garbage.
+    if (AMOUNT_RE.test(merchant) || SHINHAN_COMPACT_DATE_OWNER_RE.test(merchant)) continue
+
+    const amount = Math.abs(parseInt(amountMatch[1].replace(/,/g, ''), 10))
+    if (Number.isNaN(amount)) continue
+
+    const [, y, m, d, suffix] = doMatch
+    const date = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
+
+    const row: ParsedRow = { index: rows.length, merchant, amount, date, cardSuffix: suffix }
+    const discMatch = lines[i].match(SHINHAN_COMPACT_DISCOUNT_RE)
+    if (discMatch) {
+      const disc = parseInt(discMatch[1].replace(/,/g, ''), 10)
+      if (!Number.isNaN(disc) && disc > 0) row.discount = disc
+    }
+    rows.push(row)
   }
   return rows
 }
