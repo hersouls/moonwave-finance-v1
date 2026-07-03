@@ -12,7 +12,7 @@ interface TopCategoryCardProps {
   categories: TransactionCategory[]
   month: string
   type: 'expense' | 'income'
-  onClick?: (categoryId: number | null) => void
+  onClick?: (categoryId: string | null) => void
 }
 
 export function TopCategoryCard({
@@ -21,7 +21,7 @@ export function TopCategoryCard({
   const shouldReduceMotion = useReducedMotion()
 
   const { topCategory, topAmount } = useMemo(() => {
-    const byCategory = new Map<number | null, number>()
+    const byCategory = new Map<string | null, number>()
     for (const t of transactions) {
       if (t.type !== type) continue
       if (!t.date.startsWith(month)) continue

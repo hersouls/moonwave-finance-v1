@@ -30,7 +30,6 @@ export function ProfilePage() {
   const deleteMember = useMemberStore((s) => s.deleteMember)
   const addToast = useToastStore((s) => s.addToast)
   const setLastBackupDate = useSettingsStore((s) => s.setLastBackupDate)
-  const readOnly = settings.deviceWriteEnabled === false
 
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null)
@@ -40,7 +39,7 @@ export function ProfilePage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isSeeding, setIsSeeding] = useState(false)
   const [showMemberModal, setShowMemberModal] = useState(false)
-  const [editingMember, setEditingMember] = useState<{ id: number; name: string; color: string } | null>(null)
+  const [editingMember, setEditingMember] = useState<{ id: string; name: string; color: string } | null>(null)
   const [memberName, setMemberName] = useState('')
   const [memberColor, setMemberColor] = useState('#3B82F6')
 
@@ -124,7 +123,7 @@ export function ProfilePage() {
     setShowMemberModal(true)
   }
 
-  const openEditMember = (m: { id: number; name: string; color: string }) => {
+  const openEditMember = (m: { id: string; name: string; color: string }) => {
     setEditingMember(m)
     setMemberName(m.name)
     setMemberColor(m.color)
@@ -208,6 +207,7 @@ export function ProfilePage() {
                       {syncStatus === 'synced' && '동기화 완료'}
                       {syncStatus === 'error' && '동기화 오류'}
                       {syncStatus === 'idle' && '동기화 대기'}
+                      {syncStatus === 'offline' && '오프라인'}
                     </p>
                     {syncStatus === 'error' && syncErrorMessage && (
                       <p className="text-caption text-status-danger">{syncErrorMessage}</p>
@@ -237,8 +237,7 @@ export function ProfilePage() {
                         addToast('업로드에 실패했습니다.', 'error')
                       }
                     }}
-                    disabled={syncStatus === 'syncing' || readOnly}
-                    title={readOnly ? '읽기 전용 모드 — 업로드 불가' : undefined}
+                    disabled={syncStatus === 'syncing'}
                   >
                     업로드
                   </Button>
@@ -278,7 +277,7 @@ export function ProfilePage() {
             <Users className="w-5 h-5" />
             가족 구성원
           </h2>
-          <Button variant="ghost" size="sm" onClick={openAddMember} disabled={readOnly} title={readOnly ? '읽기 전용 모드' : undefined} leftIcon={<Plus className="w-4 h-4" />}>
+          <Button variant="ghost" size="sm" onClick={openAddMember} leftIcon={<Plus className="w-4 h-4" />}>
             추가
           </Button>
         </div>
@@ -301,10 +300,10 @@ export function ProfilePage() {
                   )}
                 </div>
                 <div className="flex gap-1">
-                  <IconButton onClick={() => openEditMember({ id: m.id!, name: m.name, color: m.color })} plain size="sm" disabled={readOnly} aria-label={`${m.name} 수정`}>
+                  <IconButton onClick={() => openEditMember({ id: m.id, name: m.name, color: m.color })} plain size="sm" aria-label={`${m.name} 수정`}>
                     <Edit3 className="w-4 h-4" />
                   </IconButton>
-                  <IconButton onClick={() => setMemberToDelete(m)} color="danger" plain size="sm" disabled={readOnly} aria-label={`${m.name} 삭제`}>
+                  <IconButton onClick={() => setMemberToDelete(m)} color="danger" plain size="sm" aria-label={`${m.name} 삭제`}>
                     <Trash2 className="w-4 h-4" />
                   </IconButton>
                 </div>
@@ -343,7 +342,7 @@ export function ProfilePage() {
                 <p className="text-body3 text-heading">백업 복원</p>
                 <p className="text-body3 text-sub">JSON 백업 파일에서 복원</p>
               </div>
-              <Button variant="secondary" size="sm" onClick={handleImportBackup} disabled={readOnly} title={readOnly ? '읽기 전용 모드' : undefined} leftIcon={<Upload className="w-4 h-4" />}>
+              <Button variant="secondary" size="sm" onClick={handleImportBackup} leftIcon={<Upload className="w-4 h-4" />}>
                 복원
               </Button>
             </div>
@@ -374,8 +373,7 @@ export function ProfilePage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  disabled={isSeeding || readOnly}
-                  title={readOnly ? '읽기 전용 모드' : undefined}
+                  disabled={isSeeding}
                   onClick={async () => {
                     if (!user) return
                     setIsSeeding(true)
@@ -403,7 +401,7 @@ export function ProfilePage() {
                 <p className="text-body3 text-status-danger">데이터 초기화</p>
                 <p className="text-body3 text-sub">모든 데이터를 삭제하고 초기 상태로 되돌립니다</p>
               </div>
-              <Button variant="danger" size="sm" onClick={() => setShowResetConfirm(true)} disabled={readOnly} title={readOnly ? '읽기 전용 모드' : undefined} leftIcon={<Trash2 className="w-4 h-4" />}>
+              <Button variant="danger" size="sm" onClick={() => setShowResetConfirm(true)} leftIcon={<Trash2 className="w-4 h-4" />}>
                 초기화
               </Button>
             </div>
@@ -495,9 +493,7 @@ function SyncStatusIndicator({ status }: { status: SyncStatus }) {
  * Surfaces the cascade of records that will be removed alongside a member
  * (transactions, assets, daily values, loans linked through those assets) so
  * the user can make an informed decision before confirming. Default members
- * are deletable but require an explicit second confirmation checkbox — they
- * are typically duplicates from the pre-syncId-fix sync bug, and once
- * dedupMigration runs, the user should never see this guarded path again.
+ * are deletable but require an explicit second confirmation checkbox.
  */
 interface MemberDeleteDialogProps {
   member: Member | null

@@ -49,7 +49,7 @@ export function AssetCategoryManagement() {
   const [icon, setIcon] = useState<string>('PiggyBank')
 
   const filtered = categories.filter((c) => c.type === activeType).sort((a, b) => a.sortOrder - b.sortOrder)
-  const itemCount = (catId?: number) => items.filter((i) => i.categoryId === catId && i.isActive).length
+  const itemCount = (catId: string) => items.filter((i) => i.categoryId === catId && i.isActive).length
 
   const reset = () => { setMode('list'); setEditing(null); setDeleting(null) }
   const handleClose = () => { if (busy) return; reset(); close() }

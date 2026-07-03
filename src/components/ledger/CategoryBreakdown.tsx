@@ -16,7 +16,7 @@ export function CategoryBreakdown({ transactions, type, budgets }: CategoryBreak
 
   const breakdown = useMemo(() => {
     const typeTransactions = transactions.filter(t => t.type === type)
-    const totals = new Map<number | null, number>()
+    const totals = new Map<string | null, number>()
 
     for (const t of typeTransactions) {
       const key = t.categoryId

@@ -20,11 +20,11 @@ interface LoanState {
     repaymentType: LoanRepaymentType
     paymentDay: number
     paymentAccount?: string
-    linkedAssetItemId?: number
+    linkedAssetItemId?: string
     memo?: string
-  }) => Promise<number>
-  updateLoan: (id: number, updates: Partial<Loan>) => Promise<void>
-  deleteLoan: (id: number) => Promise<void>
+  }) => Promise<string>
+  updateLoan: (id: string, updates: Partial<Loan>) => Promise<void>
+  deleteLoan: (id: string) => Promise<void>
 
   getActiveLoans: () => Loan[]
   getMonthlyInterest: (loan: Loan) => number
@@ -56,7 +56,6 @@ export const useLoanStore = create<LoanState>()(
           ...data,
           isActive: true,
           sortOrder: maxOrder + 1,
-          syncId: crypto.randomUUID(),
           createdAt: now,
           updatedAt: now,
         }

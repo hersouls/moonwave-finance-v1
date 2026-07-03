@@ -8,8 +8,8 @@ export type CalendarTypeFilter = 'all' | 'income' | 'expense'
 
 export interface CalendarFilters {
   type: CalendarTypeFilter
-  memberIds: number[] // empty = all
-  categoryIds: number[] // empty = all
+  memberIds: string[] // empty = all
+  categoryIds: string[] // empty = all
   recurringOnly: boolean
 }
 
@@ -71,14 +71,14 @@ export function CalendarFilterBar({
     }
   }, [categoryOpen])
 
-  const toggleMember = (id: number) => {
+  const toggleMember = (id: string) => {
     const next = filters.memberIds.includes(id)
       ? filters.memberIds.filter((m) => m !== id)
       : [...filters.memberIds, id]
     onChange({ ...filters, memberIds: next })
   }
 
-  const toggleCategory = (id: number) => {
+  const toggleCategory = (id: string) => {
     const next = filters.categoryIds.includes(id)
       ? filters.categoryIds.filter((c) => c !== id)
       : [...filters.categoryIds, id]
@@ -120,12 +120,12 @@ export function CalendarFilterBar({
         <div className="flex items-center gap-1 flex-wrap">
           <Users className="w-3.5 h-3.5 text-sub hidden md:inline" />
           {members.map((m) => {
-            const active = filters.memberIds.includes(m.id!)
+            const active = filters.memberIds.includes(m.id)
             return (
               <button
                 key={m.id}
                 type="button"
-                onClick={() => toggleMember(m.id!)}
+                onClick={() => toggleMember(m.id)}
                 aria-pressed={active}
                 className={clsx(
                   'inline-flex items-center gap-1 px-2 py-1 rounded-full text-label3-medium transition-all',
@@ -175,14 +175,14 @@ export function CalendarFilterBar({
               <p className="text-body3 text-sub p-3 text-center">카테고리가 없습니다</p>
             )}
             {filteredCategories.map((c) => {
-              const active = filters.categoryIds.includes(c.id!)
+              const active = filters.categoryIds.includes(c.id)
               return (
                 <button
                   key={c.id}
                   type="button"
                   role="option"
                   aria-selected={active}
-                  onClick={() => toggleCategory(c.id!)}
+                  onClick={() => toggleCategory(c.id)}
                   className={clsx(
                     'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-body2 transition-colors',
                     active

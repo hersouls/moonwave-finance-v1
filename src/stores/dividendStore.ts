@@ -9,17 +9,17 @@ interface DividendState {
   isLoading: boolean
 
   loadDividends: () => Promise<void>
-  addDividend: (data: Omit<Dividend, 'id' | 'syncId' | 'sortOrder' | 'createdAt' | 'updatedAt'>) => Promise<number>
-  addDividendsFromParsed: (divs: Omit<Dividend, 'id' | 'syncId' | 'sortOrder' | 'createdAt' | 'updatedAt'>[]) => Promise<{ added: number; skipped: number }>
-  updateDividend: (id: number, updates: Partial<Dividend>) => Promise<void>
-  deleteDividend: (id: number) => Promise<void>
+  addDividend: (data: Omit<Dividend, 'id' | 'sortOrder' | 'createdAt' | 'updatedAt'>) => Promise<string>
+  addDividendsFromParsed: (divs: Omit<Dividend, 'id' | 'sortOrder' | 'createdAt' | 'updatedAt'>[]) => Promise<{ added: number; skipped: number }>
+  updateDividend: (id: string, updates: Partial<Dividend>) => Promise<void>
+  deleteDividend: (id: string) => Promise<void>
   clearAll: () => Promise<void>
 
   getTotalDividend: () => number
   getTotalTax: () => number
   getNetDividend: () => number
   getByMarket: (market: InvestmentMarket) => Dividend[]
-  getByMember: (memberId: number) => Dividend[]
+  getByMember: (memberId: string) => Dividend[]
   getMonthlyStats: () => { month: string; amount: number; tax: number; count: number }[]
   getTopStocks: (limit?: number) => { stockName: string; total: number; count: number }[]
 }
@@ -49,13 +49,12 @@ export const useDividendStore = create<DividendState>()(
         const dup = await db.findDuplicateDividend(data.paymentDate, data.stockName, data.quantity)
         if (dup) {
           useToastStore.getState().addToast(`이미 등록된 배당입니다: ${data.stockName} (${data.paymentDate})`, 'info')
-          return dup.id!
+          return dup.id
         }
 
         const newDiv = {
           ...data,
           sortOrder: maxOrder + 1,
-          syncId: crypto.randomUUID(),
           createdAt: now,
           updatedAt: now,
         }
@@ -79,7 +78,6 @@ export const useDividendStore = create<DividendState>()(
           await db.addDividend({
             ...data,
             sortOrder: maxOrder,
-            syncId: crypto.randomUUID(),
             createdAt: now,
             updatedAt: now,
           })

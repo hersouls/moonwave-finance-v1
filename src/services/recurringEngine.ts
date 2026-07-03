@@ -1,7 +1,6 @@
-import { db } from '@/services/database'
+import { db, createId } from '@/services/database'
 import { addDays, addWeeks, addMonths, addYears, format, isAfter, startOfDay } from 'date-fns'
-import { canDeviceWrite } from '@/lib/writeGuard'
-import type { Transaction, RepeatPattern } from '@/lib/types'
+import type { RepeatPattern } from '@/lib/types'
 
 function getNextDates(lastDate: string, pattern: RepeatPattern, upToDate: string): string[] {
   const dates: string[] = []
@@ -27,8 +26,6 @@ function getNextDates(lastDate: string, pattern: RepeatPattern, upToDate: string
 }
 
 export async function processRecurringTransactions(): Promise<number> {
-  // Read-only device: never auto-generate (and sync) phantom recurrence rows.
-  if (!canDeviceWrite()) return 0
   const today = format(new Date(), 'yyyy-MM-dd')
   const recurringTxns = await db.transactions.where('isRecurring').equals(1).toArray()
   let created = 0
@@ -39,7 +36,7 @@ export async function processRecurringTransactions(): Promise<number> {
     // Find the latest generated child transaction date
     const children = await db.transactions
       .where('recurSourceId')
-      .equals(source.id!)
+      .equals(source.id)
       .toArray()
 
     const lastDate = children.length > 0
@@ -51,7 +48,7 @@ export async function processRecurringTransactions(): Promise<number> {
 
     for (const date of newDates) {
       await db.transactions.add({
-        syncId: crypto.randomUUID(),
+        id: createId(),
         memberId: source.memberId,
         type: source.type,
         amount: source.amount,
@@ -62,10 +59,10 @@ export async function processRecurringTransactions(): Promise<number> {
         paymentMethodDetail: source.paymentMethodDetail,
         paymentMethodItemId: source.paymentMethodItemId,
         isRecurring: false,
-        recurSourceId: source.id!,
+        recurSourceId: source.id,
         createdAt: now,
         updatedAt: now,
-      } as Transaction)
+      })
       created++
     }
   }

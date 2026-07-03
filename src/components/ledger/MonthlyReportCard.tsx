@@ -69,7 +69,7 @@ export function MonthlyReportCard({
     const netSavings = totalIncome - totalExpense
 
     // Top 카테고리
-    const byCat = new Map<number | null, number>()
+    const byCat = new Map<string | null, number>()
     for (const t of monthTx) {
       if (t.type !== 'expense') continue
       byCat.set(t.categoryId, (byCat.get(t.categoryId) || 0) + t.amount)

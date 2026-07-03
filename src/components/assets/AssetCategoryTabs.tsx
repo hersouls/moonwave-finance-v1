@@ -3,8 +3,8 @@ import { useAssetStore } from '@/stores/assetStore'
 import { Tabs } from '@/components/ui/Tabs'
 
 interface AssetCategoryTabsProps {
-  activeCategory: number | null
-  onChange: (categoryId: number | null) => void
+  activeCategory: string | null
+  onChange: (categoryId: string | null) => void
   type: 'asset' | 'liability'
 }
 
@@ -22,8 +22,8 @@ export function AssetCategoryTabs({ activeCategory, onChange, type }: AssetCateg
   return (
     <Tabs
       tabs={tabs}
-      activeTab={activeCategory === null ? 'all' : String(activeCategory)}
-      onChange={(tabId) => onChange(tabId === 'all' ? null : Number(tabId))}
+      activeTab={activeCategory === null ? 'all' : activeCategory}
+      onChange={(tabId) => onChange(tabId === 'all' ? null : tabId)}
       className="overflow-x-auto scrollbar-none"
     />
   )

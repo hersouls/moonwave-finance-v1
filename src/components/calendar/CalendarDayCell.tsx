@@ -203,7 +203,7 @@ const CalendarDayCellBase = forwardRef<HTMLButtonElement, CalendarDayCellProps>(
 export const CalendarDayCell = memo(CalendarDayCellBase)
 
 function resolveColor(
-  categoryId: number | null,
+  categoryId: string | null,
   categories: TransactionCategory[],
   fallback: string,
 ): string {

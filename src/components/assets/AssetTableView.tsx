@@ -12,17 +12,17 @@ import { getTodayString, getYesterdayString } from '@/lib/dateUtils'
 import { formatChange } from '@/utils/format'
 
 interface AssetRow {
-  id?: number
+  id: string
   name: string
-  categoryId: number
-  memberId?: number | null
+  categoryId: string
+  memberId?: string | null
 }
 
 interface Props {
   items: AssetRow[]
   type: 'asset' | 'liability'
-  selectedId: number | null
-  onSelect: (id: number) => void
+  selectedId: string | null
+  onSelect: (id: string) => void
 }
 
 type SortKey = 'name' | 'value' | 'change'
@@ -49,9 +49,8 @@ export function AssetTableView({ items, type, selectedId, onSelect }: Props) {
   const metrics = useMemo(() => {
     const today = getTodayString()
     const yesterday = getYesterdayString()
-    const map = new Map<number, Metric>()
+    const map = new Map<string, Metric>()
     for (const item of items) {
-      if (item.id == null) continue
       const vals = allValues
         .filter((v) => v.assetItemId === item.id)
         .sort((a, b) => b.date.localeCompare(a.date))
@@ -70,8 +69,8 @@ export function AssetTableView({ items, type, selectedId, onSelect }: Props) {
     const dir = sortDir === 'asc' ? 1 : -1
     return [...items].sort((a, b) => {
       if (sortKey === 'name') return a.name.localeCompare(b.name, 'ko') * dir
-      const ma = metrics.get(a.id ?? -1)
-      const mb = metrics.get(b.id ?? -1)
+      const ma = metrics.get(a.id)
+      const mb = metrics.get(b.id)
       return (((ma?.[sortKey] ?? 0) as number) - ((mb?.[sortKey] ?? 0) as number)) * dir
     })
   }, [items, metrics, sortKey, sortDir])
@@ -117,7 +116,7 @@ export function AssetTableView({ items, type, selectedId, onSelect }: Props) {
           </thead>
           <tbody>
             {sorted.map((item) => {
-              const id = item.id!
+              const id = item.id
               const m = metrics.get(id)
               const category = categories.find((c) => c.id === item.categoryId)
               const member = members.find((mem) => mem.id === item.memberId)

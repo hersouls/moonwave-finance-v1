@@ -4,46 +4,50 @@ import type { Transaction, TransactionCategory } from '@/lib/types'
 
 const NOW = '2026-01-01T00:00:00.000Z'
 
-function cat(id: number, name: string, type: 'expense' | 'income'): TransactionCategory {
-  return { id, name, type, color: '#000000', isDefault: true, sortOrder: id, createdAt: NOW, updatedAt: NOW }
+// Sync v2: 모든 엔티티/FK id는 문자열 (구 syncId 승격).
+function cat(id: string, name: string, type: 'expense' | 'income', sortOrder: number): TransactionCategory {
+  return { id, name, type, color: '#000000', isDefault: true, sortOrder, createdAt: NOW, updatedAt: NOW }
 }
 
 function txn(over: Partial<Transaction>): Transaction {
   return {
+    id: 'txn-default',
     memberId: null,
     type: 'expense',
     amount: 1000,
     categoryId: null,
     date: '2026-01-01',
     isRecurring: false,
+    createdAt: NOW,
+    updatedAt: NOW,
     ...over,
   }
 }
 
 const CATEGORIES: TransactionCategory[] = [
-  cat(1, '식비', 'expense'),
-  cat(2, '교통비', 'expense'),
-  cat(10, '급여', 'income'),
-  cat(11, '용돈', 'income'),
+  cat('cat-food', '식비', 'expense', 0),
+  cat('cat-transport', '교통비', 'expense', 1),
+  cat('cat-salary', '급여', 'income', 0),
+  cat('cat-allowance', '용돈', 'income', 1),
 ]
 
 describe('suggestCategory — expense (existing behavior preserved)', () => {
   it('matches expense keyword rules', () => {
     const s = suggestCategory('스타벅스 강남점', CATEGORIES, [], [], undefined, undefined, 'expense')
-    expect(s.categoryId).toBe(1) // 식비
+    expect(s.categoryId).toBe('cat-food') // 식비
     expect(s.confidence).toBe('medium')
   })
 
   it('prefers exact history match over keyword rules', () => {
-    const history = [txn({ id: 1, type: 'expense', memo: '동네빵집', categoryId: 2 })]
+    const history = [txn({ id: 'txn-1', type: 'expense', memo: '동네빵집', categoryId: 'cat-transport' })]
     const s = suggestCategory('동네빵집', CATEGORIES, history, [], undefined, undefined, 'expense')
-    expect(s.categoryId).toBe(2)
+    expect(s.categoryId).toBe('cat-transport')
     expect(s.confidence).toBe('high')
   })
 
   it('defaults to type param of "expense" (card-import callers unchanged)', () => {
     const s = suggestCategory('스타벅스', CATEGORIES, [])
-    expect(s.categoryId).toBe(1)
+    expect(s.categoryId).toBe('cat-food')
   })
 })
 
@@ -56,14 +60,14 @@ describe('suggestCategory — income (generalized)', () => {
   })
 
   it('suggests an income category from history exact match', () => {
-    const history = [txn({ id: 1, type: 'income', amount: 3_000_000, memo: 'Acme Payroll', categoryId: 10 })]
+    const history = [txn({ id: 'txn-1', type: 'income', amount: 3_000_000, memo: 'Acme Payroll', categoryId: 'cat-salary' })]
     const s = suggestCategory('Acme Payroll', CATEGORIES, history, [], undefined, undefined, 'income')
-    expect(s.categoryId).toBe(10) // 급여
+    expect(s.categoryId).toBe('cat-salary') // 급여
     expect(s.confidence).toBe('high')
   })
 
   it('never resolves an income query to an expense category', () => {
-    const history = [txn({ id: 1, type: 'expense', memo: 'Acme Payroll', categoryId: 1 })]
+    const history = [txn({ id: 'txn-1', type: 'expense', memo: 'Acme Payroll', categoryId: 'cat-food' })]
     const s = suggestCategory('Acme Payroll', CATEGORIES, history, [], undefined, undefined, 'income')
     // The only history hit is an expense category — must be ignored for income.
     expect(s.categoryId).toBeUndefined()
@@ -73,17 +77,17 @@ describe('suggestCategory — income (generalized)', () => {
 describe('buildMerchantStats — type filter', () => {
   it('only tallies transactions of the requested type', () => {
     const history = [
-      txn({ id: 1, type: 'income', memo: 'Acme Payroll', categoryId: 10 }),
-      txn({ id: 2, type: 'income', memo: 'Acme Payroll', categoryId: 10 }),
-      txn({ id: 3, type: 'expense', memo: 'Acme Payroll', categoryId: 1 }),
+      txn({ id: 'txn-1', type: 'income', memo: 'Acme Payroll', categoryId: 'cat-salary' }),
+      txn({ id: 'txn-2', type: 'income', memo: 'Acme Payroll', categoryId: 'cat-salary' }),
+      txn({ id: 'txn-3', type: 'expense', memo: 'Acme Payroll', categoryId: 'cat-food' }),
     ]
     const incomeStats = buildMerchantStats(history, CATEGORIES, 'income')
     const key = Array.from(incomeStats.keys())[0]
     expect(incomeStats.get(key)?.total).toBe(2)
-    expect(incomeStats.get(key)?.topCategoryId).toBe(10)
+    expect(incomeStats.get(key)?.topCategoryId).toBe('cat-salary')
 
     const expenseStats = buildMerchantStats(history, CATEGORIES, 'expense')
     expect(expenseStats.get(key)?.total).toBe(1)
-    expect(expenseStats.get(key)?.topCategoryId).toBe(1)
+    expect(expenseStats.get(key)?.topCategoryId).toBe('cat-food')
   })
 })

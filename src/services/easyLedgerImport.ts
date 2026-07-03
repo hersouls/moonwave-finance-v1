@@ -1,6 +1,5 @@
-import { db } from '@/services/database'
-import { assertWritable } from '@/lib/writeGuard'
-import type { Transaction, TransactionType, PaymentMethod, TransactionCategory, PaymentMethodItem } from '@/lib/types'
+import { db, createId } from '@/services/database'
+import type { TransactionType, PaymentMethod } from '@/lib/types'
 
 // ─── Types ──────────────────────────────────────────
 
@@ -202,7 +201,6 @@ export async function importEasyLedger(
   file: File,
   onProgress?: ImportProgressCallback
 ): Promise<ImportResult> {
-  assertWritable()  // read-only device: block bulk import before any write
   const warnings: string[] = []
   const createdCategories: string[] = []
   const createdPaymentMethods: string[] = []
@@ -219,11 +217,11 @@ export async function importEasyLedger(
   // Step B: Ensure categories exist
   onProgress?.(5, 100, '카테고리 준비 중...')
   const existingCategories = await db.transactionCategories.toArray()
-  const categoryMap = new Map<string, number>()
+  const categoryMap = new Map<string, string>()
 
   // Build lookup: name+type -> id
   for (const cat of existingCategories) {
-    categoryMap.set(`${cat.name}|${cat.type}`, cat.id!)
+    categoryMap.set(`${cat.name}|${cat.type}`, cat.id)
   }
 
   // Find unique categories needed
@@ -244,17 +242,18 @@ export async function importEasyLedger(
     const defaults = CATEGORY_DEFAULTS[name] || { color: '#71717A', icon: 'MoreHorizontal' }
     const maxOrder = existingCategories.filter(c => c.type === type).reduce((max, c) => Math.max(max, c.sortOrder), -1)
 
-    const id = await db.transactionCategories.add({
+    const id = createId()
+    await db.transactionCategories.add({
+      id,
       name,
       type,
       color: defaults.color,
       icon: defaults.icon,
       isDefault: false,
       sortOrder: maxOrder + 1,
-      syncId: crypto.randomUUID(),
       createdAt: now,
       updatedAt: now,
-    } as TransactionCategory) as number
+    })
 
     categoryMap.set(key, id)
     createdCategories.push(name)
@@ -264,11 +263,11 @@ export async function importEasyLedger(
   // Step C: Ensure PaymentMethodItems exist
   onProgress?.(10, 100, '거래수단 준비 중...')
   const existingPaymentMethods = await db.paymentMethodItems.toArray()
-  const pmMap = new Map<string, number>()
+  const pmMap = new Map<string, string>()
   const pmTypeMap = new Map<string, PaymentMethod>()
 
   for (const pm of existingPaymentMethods) {
-    pmMap.set(pm.name, pm.id!)
+    pmMap.set(pm.name, pm.id)
     pmTypeMap.set(pm.name, pm.type)
   }
 
@@ -278,28 +277,29 @@ export async function importEasyLedger(
       const mapping = ASSET_PAYMENT_MAP[asset] || { type: 'other' as PaymentMethod, name: asset }
       const maxOrder = existingPaymentMethods.reduce((max, i) => Math.max(max, i.sortOrder), -1)
 
-      const id = await db.paymentMethodItems.add({
+      const id = createId()
+      await db.paymentMethodItems.add({
+        id,
         type: mapping.type,
         name: asset,
         isActive: true,
         sortOrder: maxOrder + 1,
-        syncId: crypto.randomUUID(),
         createdAt: now,
         updatedAt: now,
-      } as PaymentMethodItem) as number
+      })
 
       pmMap.set(asset, id)
       pmTypeMap.set(asset, mapping.type)
       createdPaymentMethods.push(asset)
-      existingPaymentMethods.push({ id, type: mapping.type, name: asset, isActive: true, sortOrder: maxOrder + 1, createdAt: now, updatedAt: now } as PaymentMethodItem)
+      existingPaymentMethods.push({ id, type: mapping.type, name: asset, isActive: true, sortOrder: maxOrder + 1, createdAt: now, updatedAt: now })
     }
   }
 
   // Step D: Resolve members
   const existingMembers = await db.members.toArray()
-  const memberMap = new Map<string, number>()
+  const memberMap = new Map<string, string>()
   for (const m of existingMembers) {
-    memberMap.set(m.name, m.id!)
+    memberMap.set(m.name, m.id)
   }
 
   // Step E: Transform & insert transactions
@@ -337,7 +337,7 @@ export async function importEasyLedger(
       const paymentMethodType = pmTypeMap.get(row.asset) || ('other' as PaymentMethod)
 
       return {
-        syncId: crypto.randomUUID(),
+        id: createId(),
         memberId,
         type: txType,
         amount,
@@ -353,7 +353,7 @@ export async function importEasyLedger(
       }
     })
 
-    await db.transactions.bulkAdd(transactions as Omit<Transaction, 'id'>[])
+    await db.transactions.bulkAdd(transactions)
     importedCount += transactions.length
   }
 

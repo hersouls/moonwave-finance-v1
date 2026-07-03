@@ -14,23 +14,23 @@ interface AssetState {
   loadItems: () => Promise<void>
   loadAll: () => Promise<void>
 
-  addCategory: (name: string, type: AssetLiabilityType, color: string, icon?: string) => Promise<number>
-  updateCategory: (id: number, updates: Partial<AssetCategory>) => Promise<void>
-  deleteCategory: (id: number) => Promise<void>
+  addCategory: (name: string, type: AssetLiabilityType, color: string, icon?: string) => Promise<string>
+  updateCategory: (id: string, updates: Partial<AssetCategory>) => Promise<void>
+  deleteCategory: (id: string) => Promise<void>
 
   addItem: (data: {
-    memberId: number
-    categoryId: number
+    memberId: string
+    categoryId: string
     name: string
     type: AssetLiabilityType
     memo?: string
     projection?: AssetValueProjection
-  }) => Promise<number>
-  updateItem: (id: number, updates: Partial<AssetItem>) => Promise<void>
-  deleteItem: (id: number) => Promise<void>
+  }) => Promise<string>
+  updateItem: (id: string, updates: Partial<AssetItem>) => Promise<void>
+  deleteItem: (id: string) => Promise<void>
 
-  getItemsByMember: (memberId: number) => AssetItem[]
-  getItemsByCategory: (categoryId: number) => AssetItem[]
+  getItemsByMember: (memberId: string) => AssetItem[]
+  getItemsByCategory: (categoryId: string) => AssetItem[]
   getItemsByType: (type: AssetLiabilityType) => AssetItem[]
   getCategoriesByType: (type: AssetLiabilityType) => AssetCategory[]
 }
@@ -77,7 +77,6 @@ export const useAssetStore = create<AssetState>()(
           color,
           icon,
           sortOrder: maxOrder + 1,
-          syncId: crypto.randomUUID(),
           createdAt: now,
           updatedAt: now,
         })
@@ -93,29 +92,8 @@ export const useAssetStore = create<AssetState>()(
       deleteCategory: async (id) => {
         const cat = get().categories.find(c => c.id === id)
         if (!cat) return
-        // Collect syncIds of cascaded records before deletion
-        const cascadeItems = get().items.filter(i => i.categoryId === id)
-        const cascadeItemSyncIds = cascadeItems.map(i => i.syncId).filter(Boolean) as string[]
-        const cascadeDailyValueSyncIds: string[] = []
-        for (const item of cascadeItems) {
-          const values = await db.getDailyValuesByItem(item.id!)
-          cascadeDailyValueSyncIds.push(...values.map(v => v.syncId).filter(Boolean) as string[])
-        }
         await db.deleteAssetCategory(id)
         await get().loadAll()
-        // Delete from Firestore
-        import('@/services/firestoreSync').then(({ deleteFromCloud, deleteMultipleFromCloud }) => {
-          import('./authStore').then(({ useAuthStore }) => {
-            const user = useAuthStore.getState().user
-            if (!user) return
-            // Failures are logged only — the deleting hooks queued change-log
-            // entries, so incrementalUpload retries these cloud deletes later.
-            const logFail = (err: unknown) => console.error('[asset] cloud delete failed (change log will retry):', err)
-            if (cat.syncId) deleteFromCloud(user.uid, 'assetCategories', cat.syncId).catch(logFail)
-            deleteMultipleFromCloud(user.uid, 'assetItems', cascadeItemSyncIds).catch(logFail)
-            deleteMultipleFromCloud(user.uid, 'dailyValues', cascadeDailyValueSyncIds).catch(logFail)
-          })
-        }).catch(err => console.error('[asset] delete category sync failed:', err))
         useToastStore.getState().addToast(`${cat.name} 카테고리가 삭제되었습니다.`, 'info')
       },
 
@@ -127,7 +105,6 @@ export const useAssetStore = create<AssetState>()(
           ...data,
           isActive: true,
           sortOrder: maxOrder + 1,
-          syncId: crypto.randomUUID(),
           createdAt: now,
           updatedAt: now,
         })
@@ -165,22 +142,8 @@ export const useAssetStore = create<AssetState>()(
       deleteItem: async (id) => {
         const prev = get().items.find(i => i.id === id)
         if (!prev) return
-        // Collect dailyValue syncIds before deletion
-        const values = await db.getDailyValuesByItem(id)
-        const valueSyncIds = values.map(v => v.syncId).filter(Boolean) as string[]
-        const clearedLoans = await db.deleteAssetItem(id)
+        await db.deleteAssetItem(id)
         await get().loadItems()
-        // Delete from Firestore (+ 연결 해제된 대출의 FK 정리도 클라우드 반영)
-        import('@/services/firestoreSync').then(({ deleteFromCloud, deleteMultipleFromCloud, uploadSingleRecord }) => {
-          import('./authStore').then(({ useAuthStore }) => {
-            const user = useAuthStore.getState().user
-            if (!user) return
-            const logFail = (err: unknown) => console.error('[asset] cloud sync failed (change log will retry):', err)
-            if (prev.syncId) deleteFromCloud(user.uid, 'assetItems', prev.syncId).catch(logFail)
-            deleteMultipleFromCloud(user.uid, 'dailyValues', valueSyncIds).catch(logFail)
-            for (const loan of clearedLoans) uploadSingleRecord(user.uid, 'loans', loan).catch(logFail)
-          })
-        }).catch(err => console.error('[asset] delete item sync failed:', err))
         useToastStore.getState().addToast(`${prev.name} 항목이 삭제되었습니다.`, 'info')
       },
 

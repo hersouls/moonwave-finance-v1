@@ -69,7 +69,7 @@ export function InvestmentFormSheet({ isOpen, onClose, formType, editTrade, edit
   const updateInterest = useAccountInterestStore(s => s.updateInterest)
 
   // Trade form state
-  const [memberId, setMemberId] = useState<number | null>(null)
+  const [memberId, setMemberId] = useState<string | null>(null)
   const [sellDate, setSellDate] = useState('')
   const [assetType, setAssetType] = useState<InvestmentAssetType>('국내주식')
   const [stockName, setStockName] = useState('')
@@ -225,8 +225,8 @@ export function InvestmentFormSheet({ isOpen, onClose, formType, editTrade, edit
 
           <div className="space-y-3">
             {/* Member */}
-            <SelectField label="구성원" value={memberId != null ? String(memberId) : ''} onChange={v => setMemberId(v ? Number(v) : null)}
-              options={[...members.filter(m => m.id != null).map(m => ({ value: String(m.id!), label: m.name }))]} />
+            <SelectField label="구성원" value={memberId ?? ''} onChange={v => setMemberId(v || null)}
+              options={members.map(m => ({ value: m.id, label: m.name }))} />
 
             {formType === 'trade' && (
               <>

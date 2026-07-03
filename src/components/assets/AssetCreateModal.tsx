@@ -32,15 +32,15 @@ export function AssetCreateModal() {
   const activeLoans = useMemo(() => loans.filter(l => l.isActive), [loans])
 
   const [name, setName] = useState('')
-  const [categoryId, setCategoryId] = useState<number | ''>('')
-  const [memberId, setMemberId] = useState<number | ''>('')
+  const [categoryId, setCategoryId] = useState<string | ''>('')
+  const [memberId, setMemberId] = useState<string | ''>('')
   const [initialAmount, setInitialAmount] = useState('')
   const [memo, setMemo] = useState('')
   const [type, setType] = useState<AssetLiabilityType>('asset')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [severanceData, setSeveranceData] = useState<{ joinDate: string; monthlyAvgWage: number; estimatedAmount: number } | null>(null)
   const [realEstateAmount, setRealEstateAmount] = useState<number>(0)
-  const [selectedLoanId, setSelectedLoanId] = useState<number | null>(null)
+  const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null)
   const [projection, setProjection] = useState<AssetValueProjection | undefined>(undefined)
 
   const assetCategories = categories.filter(c => c.type === 'asset')
@@ -68,9 +68,9 @@ export function AssetCreateModal() {
   }, [isOpen, members, loadLoans])
 
   const handleLoanSelect = (loanId: string) => {
-    const loan = activeLoans.find(l => l.id === Number(loanId))
+    const loan = activeLoans.find(l => l.id === loanId)
     if (!loan) return
-    setSelectedLoanId(loan.id!)
+    setSelectedLoanId(loan.id)
     setName(loan.name)
     setInitialAmount(loan.currentBalance.toLocaleString('ko-KR'))
     // Try to match a liability category
@@ -95,8 +95,8 @@ export function AssetCreateModal() {
     setIsSubmitting(true)
     try {
       const id = await addItem({
-        memberId: memberId as number,
-        categoryId: categoryId as number,
+        memberId,
+        categoryId,
         name: name.trim(),
         type,
         memo: memo.trim() || undefined,
@@ -200,9 +200,9 @@ export function AssetCreateModal() {
               </button>
             ) : (
               <Select
-                value={String(categoryId)}
-                onChange={(v) => setCategoryId(v ? Number(v) : '')}
-                options={currentCategories.map(c => ({ value: String(c.id), label: c.name }))}
+                value={categoryId}
+                onChange={(v) => setCategoryId(v)}
+                options={currentCategories.map(c => ({ value: c.id, label: c.name }))}
                 placeholder="카테고리 선택"
               />
             )}
@@ -236,9 +236,9 @@ export function AssetCreateModal() {
               <MemberChips members={members} value={memberId} onChange={setMemberId} allowUnassigned={false} />
             ) : (
               <Select
-                value={String(memberId)}
-                onChange={(v) => setMemberId(v ? Number(v) : '')}
-                options={members.map(m => ({ value: String(m.id), label: m.name }))}
+                value={memberId}
+                onChange={(v) => setMemberId(v)}
+                options={members.map(m => ({ value: m.id, label: m.name }))}
                 placeholder="구성원 선택"
               />
             )}

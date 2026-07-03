@@ -97,10 +97,10 @@ interface TransactionFiltersProps {
   onSearchChange?: (query: string) => void
   members?: Member[]
   categories?: TransactionCategory[]
-  memberFilter?: number | null
-  onMemberChange?: (id: number | null) => void
-  categoryFilter?: number | null
-  onCategoryChange?: (id: number | null) => void
+  memberFilter?: string | null
+  onMemberChange?: (id: string | null) => void
+  categoryFilter?: string | null
+  onCategoryChange?: (id: string | null) => void
   paymentMethodFilter?: PaymentMethod | null
   onPaymentMethodChange?: (pm: PaymentMethod | null) => void
   minAmount?: number | null
@@ -556,7 +556,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                         <motion.button
                           key={c.id}
                           type="button"
-                          onClick={() => onCategoryChange(isActive ? null : c.id!)}
+                          onClick={() => onCategoryChange(isActive ? null : c.id)}
                           className={clsx(
                             'flex-shrink-0 flex items-center gap-2 pl-2.5 pr-3.5 h-9 rounded-2xl text-label3-medium font-semibold transition-all',
                             isActive
@@ -603,7 +603,7 @@ export function TransactionFilters(props: TransactionFiltersProps) {
                         <motion.button
                           key={m.id}
                           type="button"
-                          onClick={() => onMemberChange(isActive ? null : m.id!)}
+                          onClick={() => onMemberChange(isActive ? null : m.id)}
                           className={clsx(
                             'flex-shrink-0 flex items-center gap-2 pl-1.5 pr-3.5 h-9 rounded-2xl text-label3-medium font-semibold transition-all',
                             isActive

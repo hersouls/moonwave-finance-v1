@@ -19,8 +19,8 @@ export function TransactionCreateModal() {
 
   const [type, setType] = useState<TransactionType>('expense')
   const [amount, setAmount] = useState('')
-  const [categoryId, setCategoryId] = useState<number | ''>('')
-  const [memberId, setMemberId] = useState<number | ''>('')
+  const [categoryId, setCategoryId] = useState<string>('')
+  const [memberId, setMemberId] = useState<string>('')
   const [date, setDate] = useState(getTodayString())
   const [memo, setMemo] = useState('')
   const [isRecurring, setIsRecurring] = useState(false)
@@ -74,10 +74,10 @@ export function TransactionCreateModal() {
       // category aggregation then correctly nets the inflow.
       const signedAmount = isRefund && type === 'expense' ? -numAmount : numAmount
       await addTransaction({
-        memberId: memberId ? (memberId as number) : null,
+        memberId: memberId || null,
         type,
         amount: signedAmount,
-        categoryId: categoryId ? (categoryId as number) : null,
+        categoryId: categoryId || null,
         date,
         memo: memo.trim() || undefined,
         isRecurring,
@@ -174,9 +174,9 @@ export function TransactionCreateModal() {
           <div>
             <label className="block text-body3 text-body mb-1.5">카테고리</label>
             <Select
-              value={String(categoryId)}
-              onChange={(v) => setCategoryId(v ? Number(v) : '')}
-              options={currentCategories.map(c => ({ value: String(c.id), label: c.name }))}
+              value={categoryId}
+              onChange={(v) => setCategoryId(v)}
+              options={currentCategories.map(c => ({ value: c.id, label: c.name }))}
               placeholder="카테고리 선택"
             />
           </div>
@@ -196,9 +196,9 @@ export function TransactionCreateModal() {
           <div>
             <label className="block text-body3 text-body mb-1.5">구성원 (선택)</label>
             <Select
-              value={String(memberId)}
-              onChange={(v) => setMemberId(v ? Number(v) : '')}
-              options={members.map(m => ({ value: String(m.id), label: m.name }))}
+              value={memberId}
+              onChange={(v) => setMemberId(v)}
+              options={members.map(m => ({ value: m.id, label: m.name }))}
               placeholder="선택 안함"
             />
           </div>

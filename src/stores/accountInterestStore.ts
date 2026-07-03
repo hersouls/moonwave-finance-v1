@@ -9,10 +9,10 @@ interface AccountInterestState {
   isLoading: boolean
 
   loadInterests: () => Promise<void>
-  addInterest: (data: Omit<AccountInterest, 'id' | 'syncId' | 'sortOrder' | 'createdAt' | 'updatedAt'>) => Promise<number>
-  addInterestsFromParsed: (items: Omit<AccountInterest, 'id' | 'syncId' | 'sortOrder' | 'createdAt' | 'updatedAt'>[]) => Promise<{ added: number; skipped: number }>
-  updateInterest: (id: number, updates: Partial<AccountInterest>) => Promise<void>
-  deleteInterest: (id: number) => Promise<void>
+  addInterest: (data: Omit<AccountInterest, 'id' | 'sortOrder' | 'createdAt' | 'updatedAt'>) => Promise<string>
+  addInterestsFromParsed: (items: Omit<AccountInterest, 'id' | 'sortOrder' | 'createdAt' | 'updatedAt'>[]) => Promise<{ added: number; skipped: number }>
+  updateInterest: (id: string, updates: Partial<AccountInterest>) => Promise<void>
+  deleteInterest: (id: string) => Promise<void>
   clearAll: () => Promise<void>
 
   getTotalInterest: () => number
@@ -47,13 +47,12 @@ export const useAccountInterestStore = create<AccountInterestState>()(
         const dup = await db.findDuplicateAccountInterest(data.depositDate, data.periodStart, data.periodEnd, data.currency)
         if (dup) {
           useToastStore.getState().addToast(`이미 등록된 이자입니다: ${data.depositDate} ${data.interestType}`, 'info')
-          return dup.id!
+          return dup.id
         }
 
         const id = await db.addAccountInterest({
           ...data,
           sortOrder: maxOrder + 1,
-          syncId: crypto.randomUUID(),
           createdAt: now,
           updatedAt: now,
         })
@@ -75,7 +74,6 @@ export const useAccountInterestStore = create<AccountInterestState>()(
           await db.addAccountInterest({
             ...data,
             sortOrder: maxOrder,
-            syncId: crypto.randomUUID(),
             createdAt: now,
             updatedAt: now,
           })

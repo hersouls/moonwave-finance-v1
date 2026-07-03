@@ -9,7 +9,7 @@ interface LedgerInsightsSidebarProps {
   month: string
   transactions: Transaction[]
   categories: TransactionCategory[]
-  onCategoryFilter?: (categoryId: number | null) => void
+  onCategoryFilter?: (categoryId: string | null) => void
 }
 
 /**

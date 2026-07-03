@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import { Plus } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useScrollDirection } from '@/hooks/useScrollDirection'
-import { useIsDeviceReadOnly } from '@/lib/writeGuard'
 
 interface FABProps {
   onClick: () => void
@@ -12,10 +11,6 @@ interface FABProps {
 
 export function FAB({ onClick, icon, label = '새 항목 추가' }: FABProps) {
   const scrollDir = useScrollDirection()
-  const readOnly = useIsDeviceReadOnly()
-
-  // Read-only device: hide every create entry point. A global banner explains why.
-  if (readOnly) return null
 
   return (
     <button

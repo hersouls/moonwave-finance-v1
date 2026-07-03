@@ -13,7 +13,7 @@ import { formatChange } from '@/utils/format'
 import { formatDate, getTodayString, getYesterdayString } from '@/lib/dateUtils'
 
 interface Props {
-  itemId: number
+  itemId: string
   type: 'asset' | 'liability'
   onEdit: () => void
   onDelete: () => void

@@ -18,7 +18,7 @@ export interface MemberUsage {
   loans: number
 }
 
-export async function getMemberUsage(memberId: number): Promise<MemberUsage> {
+export async function getMemberUsage(memberId: string): Promise<MemberUsage> {
   const [allTransactions, assetItems] = await Promise.all([
     db.getAllTransactions(),
     db.getAssetItemsByMember(memberId),
@@ -45,9 +45,9 @@ interface MemberState {
   members: Member[]
   isLoading: boolean
   loadMembers: () => Promise<void>
-  addMember: (name: string, color: string) => Promise<number>
-  updateMember: (id: number, updates: Partial<Member>) => Promise<void>
-  deleteMember: (id: number) => Promise<void>
+  addMember: (name: string, color: string) => Promise<string>
+  updateMember: (id: string, updates: Partial<Member>) => Promise<void>
+  deleteMember: (id: string) => Promise<void>
   reorderMembers: (members: Member[]) => Promise<void>
 }
 
@@ -76,7 +76,6 @@ export const useMemberStore = create<MemberState>()(
           color,
           isDefault: false,
           sortOrder: maxOrder + 1,
-          syncId: crypto.randomUUID(),
           createdAt: now,
           updatedAt: now,
         })
@@ -85,7 +84,7 @@ export const useMemberStore = create<MemberState>()(
         return id
       },
 
-      updateMember: async (id: number, updates: Partial<Member>) => {
+      updateMember: async (id: string, updates: Partial<Member>) => {
         const prev = get().members.find(m => m.id === id)
         await db.updateMember(id, updates)
         await get().loadMembers()
@@ -106,44 +105,17 @@ export const useMemberStore = create<MemberState>()(
         }
       },
 
-      deleteMember: async (id: number) => {
+      deleteMember: async (id: string) => {
         const prev = get().members.find(m => m.id === id)
         if (!prev) return
-        // Collect all cascaded syncIds before deletion
-        const cascadeItems = await db.getAssetItemsByMember(id)
-        const cascadeItemSyncIds = cascadeItems.map(i => i.syncId).filter(Boolean) as string[]
-        const cascadeDailyValueSyncIds: string[] = []
-        for (const item of cascadeItems) {
-          const values = await db.getDailyValuesByItem(item.id!)
-          cascadeDailyValueSyncIds.push(...values.map(v => v.syncId).filter(Boolean) as string[])
-        }
-        const cascadeTransactions = await db.getAllTransactions()
-        const memberTxnSyncIds = cascadeTransactions
-          .filter(t => t.memberId === id && t.syncId)
-          .map(t => t.syncId) as string[]
-
         await db.deleteMember(id)
         await get().loadMembers()
-        // Delete from Firestore
-        import('@/services/firestoreSync').then(({ deleteFromCloud, deleteMultipleFromCloud }) => {
-          import('./authStore').then(({ useAuthStore }) => {
-            const user = useAuthStore.getState().user
-            if (!user) return
-            // Failures are logged only — the deleting hooks queued change-log
-            // entries, so incrementalUpload retries these cloud deletes later.
-            const logFail = (err: unknown) => console.error('[member] cloud delete failed (change log will retry):', err)
-            if (prev.syncId) deleteFromCloud(user.uid, 'members', prev.syncId).catch(logFail)
-            deleteMultipleFromCloud(user.uid, 'assetItems', cascadeItemSyncIds).catch(logFail)
-            deleteMultipleFromCloud(user.uid, 'dailyValues', cascadeDailyValueSyncIds).catch(logFail)
-            deleteMultipleFromCloud(user.uid, 'transactions', memberTxnSyncIds).catch(logFail)
-          })
-        }).catch(err => console.error('[member] delete sync failed:', err))
         useToastStore.getState().addToast(`${prev.name} 구성원이 삭제되었습니다.`, 'info')
       },
 
       reorderMembers: async (members: Member[]) => {
         for (let i = 0; i < members.length; i++) {
-          await db.updateMember(members[i].id!, { sortOrder: i })
+          await db.updateMember(members[i].id, { sortOrder: i })
         }
         await get().loadMembers()
       },

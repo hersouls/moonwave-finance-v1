@@ -24,7 +24,7 @@ export interface Insight {
 }
 
 export interface CategoryAnalysis {
-  categoryId: number | null
+  categoryId: string | null
   name: string
   color: string
   icon?: string
@@ -246,8 +246,8 @@ export function useLedgerAnalysis(month?: string): LedgerAnalysis {
       .filter((t) => t.type === 'expense')
       .reduce((s, t) => s + (t.amount > 0 ? t.amount : 0), 0)
 
-    const catBuckets = new Map<number | null, { current: number; series: number[] }>()
-    const ensure = (k: number | null) => {
+    const catBuckets = new Map<string | null, { current: number; series: number[] }>()
+    const ensure = (k: string | null) => {
       if (!catBuckets.has(k)) {
         catBuckets.set(k, { current: 0, series: new Array(BASELINE_MONTHS + 1).fill(0) })
       }

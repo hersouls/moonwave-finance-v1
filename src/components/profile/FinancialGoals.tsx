@@ -52,7 +52,7 @@ export function FinancialGoals() {
               key={g.id}
               goal={g}
               onEdit={() => handleEdit(g)}
-              onDelete={() => deleteGoal(g.id!)}
+              onDelete={() => deleteGoal(g.id)}
             />
           ))}
         </div>

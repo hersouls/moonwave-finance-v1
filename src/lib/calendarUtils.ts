@@ -1,7 +1,7 @@
 import type { Transaction, TransactionCategory } from '@/lib/types'
 
 export interface CategoryBreakdownEntry {
-  categoryId: number | null
+  categoryId: string | null
   amount: number
 }
 
@@ -75,7 +75,7 @@ export function computeDailySummaries(transactions: Transaction[]): Map<string, 
 
 function upsertCategory(
   list: CategoryBreakdownEntry[],
-  categoryId: number | null,
+  categoryId: string | null,
   amount: number,
 ) {
   const found = list.find((e) => e.categoryId === categoryId)
@@ -94,8 +94,8 @@ export function computeMonthAggregates(
   let income = 0
   let expense = 0
   let recurringExpense = 0
-  const expenseCatMap = new Map<number | null, number>()
-  const incomeCatMap = new Map<number | null, number>()
+  const expenseCatMap = new Map<string | null, number>()
+  const incomeCatMap = new Map<string | null, number>()
   const weekdayExpense = [0, 0, 0, 0, 0, 0, 0]
   let maxExpenseDay: { date: string; amount: number } | null = null
   let maxIncomeDay: { date: string; amount: number } | null = null
@@ -160,7 +160,7 @@ export function computeMonthAggregates(
 
 /** Resolve a category color with a safe fallback. */
 export function getCategoryColor(
-  categoryId: number | null | undefined,
+  categoryId: string | null | undefined,
   categories: TransactionCategory[],
   fallback = '#94a3b8',
 ): string {
@@ -170,7 +170,7 @@ export function getCategoryColor(
 
 /** Resolve a category name with a safe fallback. */
 export function getCategoryName(
-  categoryId: number | null | undefined,
+  categoryId: string | null | undefined,
   categories: TransactionCategory[],
   fallback = '미분류',
 ): string {

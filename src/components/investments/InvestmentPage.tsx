@@ -694,7 +694,7 @@ function DividendCard({ div, memberName, onClick }: { div: Dividend; memberName?
 
 // ─── Trade Detail Sheet ──────────────────────────
 function TradeDetailSheet({ trade, memberName, onClose, onDelete, onEdit }: {
-  trade: InvestmentTrade | null; memberName?: string; onClose: () => void; onDelete: (id: number) => void; onEdit?: (t: InvestmentTrade) => void
+  trade: InvestmentTrade | null; memberName?: string; onClose: () => void; onDelete: (id: string) => void; onEdit?: (t: InvestmentTrade) => void
 }) {
   useEscapeKey(onClose, !!trade)
   if (!trade) return null
@@ -768,7 +768,7 @@ function TradeDetailSheet({ trade, memberName, onClose, onDelete, onEdit }: {
 
 // ─── Dividend Detail Sheet ───────────────────────
 function DividendDetailSheet({ div, memberName, onClose, onDelete, onEdit }: {
-  div: Dividend | null; memberName?: string; onClose: () => void; onDelete: (id: number) => void; onEdit?: (d: Dividend) => void
+  div: Dividend | null; memberName?: string; onClose: () => void; onDelete: (id: string) => void; onEdit?: (d: Dividend) => void
 }) {
   useEscapeKey(onClose, !!div)
   if (!div) return null
@@ -860,7 +860,7 @@ function InterestCard({ interest, memberName, onClick }: { interest: AccountInte
 
 // ─── Interest Detail Sheet ───────────────────────
 function InterestDetailSheet({ interest, memberName, onClose, onDelete, onEdit }: {
-  interest: AccountInterest | null; memberName?: string; onClose: () => void; onDelete: (id: number) => void; onEdit?: (r: AccountInterest) => void
+  interest: AccountInterest | null; memberName?: string; onClose: () => void; onDelete: (id: string) => void; onEdit?: (r: AccountInterest) => void
 }) {
   useEscapeKey(onClose, !!interest)
   if (!interest) return null
@@ -920,13 +920,13 @@ function InterestDetailSheet({ interest, memberName, onClose, onDelete, onEdit }
 // ─── Paste Import Modal ──────────────────────────
 function PasteImportModal({ isOpen, onClose, onImportTrades, onImportDividends, onImportInterests, members }: {
   isOpen: boolean; onClose: () => void
-  onImportTrades: (trades: ParsedTrade[], memberId: number | null) => void
-  onImportDividends: (divs: ParsedDividend[], memberId: number | null) => void
-  onImportInterests: (items: ParsedInterest[], memberId: number | null) => void
-  members: { id: number; name: string }[]
+  onImportTrades: (trades: ParsedTrade[], memberId: string | null) => void
+  onImportDividends: (divs: ParsedDividend[], memberId: string | null) => void
+  onImportInterests: (items: ParsedInterest[], memberId: string | null) => void
+  members: { id: string; name: string }[]
 }) {
   const [text, setText] = useState('')
-  const [selectedMemberId, setSelectedMemberId] = useState<number | null>(members[0]?.id ?? null)
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(members[0]?.id ?? null)
   const [importType, setImportType] = useState<'trades' | 'dividends' | 'interests'>('trades')
   const [parsedTrades, setParsedTrades] = useState<ParsedTrade[]>([])
   const [parsedDivs, setParsedDivs] = useState<ParsedDividend[]>([])
@@ -1930,7 +1930,7 @@ function MonthFilterChips({ value, onChange, months }: {
 
 // ─── Member Filter Chips ─────────────────────────
 function MemberFilterChips({ value, onChange, members }: {
-  value: number | 'all'; onChange: (v: number | 'all') => void; members: { id: number; name: string; color?: string }[]
+  value: string | 'all'; onChange: (v: string | 'all') => void; members: { id: string; name: string; color?: string }[]
 }) {
   const shouldReduceMotion = useReducedMotion()
   if (members.length <= 1) return null
@@ -2079,7 +2079,7 @@ export function InvestmentPage() {
   const isDesktop = useMediaQuery(`(min-width: ${BREAKPOINTS.xl}px)`)
   const [marketFilter, setMarketFilter] = useState<'all' | InvestmentMarket>('all')
   const [monthFilter, setMonthFilter] = useState('all')
-  const [memberFilter, setMemberFilter] = useState<number | 'all'>('all')
+  const [memberFilter, setMemberFilter] = useState<string | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'date' | 'profit' | 'rate'>('date')
 
@@ -2087,12 +2087,12 @@ export function InvestmentPage() {
   useSyncListener(() => { loadTrades(); loadDividends(); loadInterests(); loadMembers() }, ['investmentTrades', 'dividends', 'accountInterests', 'members'])
 
   const memberMap = useMemo(() => {
-    const map = new Map<number, string>()
-    for (const m of members) if (m.id != null) map.set(m.id, m.name)
+    const map = new Map<string, string>()
+    for (const m of members) map.set(m.id, m.name)
     return map
   }, [members])
 
-  const membersList = useMemo(() => members.filter(m => m.id != null).map(m => ({ id: m.id!, name: m.name })), [members])
+  const membersList = useMemo(() => members.map(m => ({ id: m.id, name: m.name })), [members])
 
   const insights = useInvestmentInsights(trades, dividends, interests, memberMap)
 
@@ -2153,21 +2153,21 @@ export function InvestmentPage() {
   }, [trades, dividends, interests])
 
   // --- Handlers ---
-  const handleImportTrades = useCallback(async (parsed: ParsedTrade[], memberId: number | null) => {
+  const handleImportTrades = useCallback(async (parsed: ParsedTrade[], memberId: string | null) => {
     await addTradesFromParsed(parsed.map(t => ({ memberId, ...t, memo: undefined })))
   }, [addTradesFromParsed])
 
-  const handleImportDividends = useCallback(async (parsed: ParsedDividend[], memberId: number | null) => {
+  const handleImportDividends = useCallback(async (parsed: ParsedDividend[], memberId: string | null) => {
     await addDividendsFromParsed(parsed.map(d => ({ memberId, ...d, memo: undefined })))
   }, [addDividendsFromParsed])
 
-  const handleImportInterests = useCallback(async (parsed: ParsedInterest[], memberId: number | null) => {
+  const handleImportInterests = useCallback(async (parsed: ParsedInterest[], memberId: string | null) => {
     await addInterestsFromParsed(parsed.map(r => ({ memberId, ...r, memo: undefined })))
   }, [addInterestsFromParsed])
 
-  const handleDeleteTrade = useCallback(async (id: number) => { await deleteTradeAction(id); setSelectedTrade(null) }, [deleteTradeAction])
-  const handleDeleteDiv = useCallback(async (id: number) => { await deleteDividendAction(id); setSelectedDiv(null) }, [deleteDividendAction])
-  const handleDeleteInterest = useCallback(async (id: number) => { await deleteInterestAction(id); setSelectedInterest(null) }, [deleteInterestAction])
+  const handleDeleteTrade = useCallback(async (id: string) => { await deleteTradeAction(id); setSelectedTrade(null) }, [deleteTradeAction])
+  const handleDeleteDiv = useCallback(async (id: string) => { await deleteDividendAction(id); setSelectedDiv(null) }, [deleteDividendAction])
+  const handleDeleteInterest = useCallback(async (id: string) => { await deleteInterestAction(id); setSelectedInterest(null) }, [deleteInterestAction])
 
   const handleReset = async () => {
     if (activeTab === 'trades') await clearAllTrades()
@@ -2293,7 +2293,7 @@ export function InvestmentPage() {
           {/* Row 2: Member + Sort */}
           <div className="flex items-center justify-between gap-3">
             <MemberFilterChips value={memberFilter} onChange={setMemberFilter}
-              members={members.filter(m => m.id != null).map(m => ({ id: m.id!, name: m.name }))} />
+              members={members.map(m => ({ id: m.id, name: m.name }))} />
             {activeTab === 'trades' && <SortChips value={sortBy} onChange={setSortBy} />}
           </div>
 

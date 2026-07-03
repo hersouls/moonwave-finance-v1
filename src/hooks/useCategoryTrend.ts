@@ -15,7 +15,7 @@ export interface CategoryTrend {
  * 특정 카테고리의 전월 대비 지출 변화 계산
  */
 export function useCategoryTrend(
-  categoryId: number | null,
+  categoryId: string | null,
   month: string,
   transactions: Transaction[],
   type: 'expense' | 'income' = 'expense',

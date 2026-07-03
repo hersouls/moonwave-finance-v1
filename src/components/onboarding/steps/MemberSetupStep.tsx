@@ -44,7 +44,7 @@ export function MemberSetupStep({ onNext, onBack }: MemberSetupStepProps) {
             </div>
             <span className="flex-1 text-body3 text-heading">{m.name}</span>
             {!m.isDefault && (
-              <IconButton plain size="sm" color="danger" onClick={() => deleteMember(m.id!)}>
+              <IconButton plain size="sm" color="danger" onClick={() => deleteMember(m.id)}>
                 <Trash2 className="w-4 h-4" />
               </IconButton>
             )}

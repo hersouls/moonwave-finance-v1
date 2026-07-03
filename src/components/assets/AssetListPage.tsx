@@ -32,10 +32,10 @@ import { getTodayString } from '@/lib/dateUtils'
 export function AssetListPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeMember, setActiveMember] = useState<number | null>(null)
-  const [activeCategory, setActiveCategory] = useState<number | null>(null)
-  const [selectedId, setSelectedId] = useState<number | null>(null)
-  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [activeMember, setActiveMember] = useState<string | null>(null)
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards')
 
   const { isDesktop } = useBreakpoint()
@@ -88,7 +88,7 @@ export function AssetListPage() {
     // 현재 가치 내림차순 정렬 — 큰 자산이 위로.
     const byItem = groupValuesByItem(allValues)
     return [...result].sort(
-      (a, b) => valueAsOf(byItem.get(b.id!), today) - valueAsOf(byItem.get(a.id!), today)
+      (a, b) => valueAsOf(byItem.get(b.id), today) - valueAsOf(byItem.get(a.id), today)
     )
   }, [items, activeMember, activeCategory, allValues, today])
 
@@ -115,8 +115,8 @@ export function AssetListPage() {
         {/* Member Filter */}
         <Tabs
           tabs={memberTabs}
-          activeTab={activeMember === null ? 'all' : String(activeMember)}
-          onChange={(id) => { setActiveMember(id === 'all' ? null : Number(id)); setSelectedId(null) }}
+          activeTab={activeMember === null ? 'all' : activeMember}
+          onChange={(id) => { setActiveMember(id === 'all' ? null : id); setSelectedId(null) }}
         />
 
         {/* Category Filter + management */}
@@ -177,7 +177,7 @@ export function AssetListPage() {
                   key={`${activeMember}-${activeCategory}`}
                 >
               {filteredItems.map(item => {
-                const id = item.id!
+                const id = item.id
                 const card = (
                   <AssetItemCard
                     itemId={id}

@@ -8,7 +8,7 @@ export interface TransactionMeta {
   txnType: TransactionType
   amount: number
   date: string
-  categoryId: number | null
+  categoryId: string | null
   categoryName?: string
   categoryColor?: string
   memberName?: string
@@ -36,7 +36,7 @@ export interface CategoryMeta {
 
 export interface SearchResult {
   type: SearchResultType
-  id: number
+  id: string
   title: string
   subtitle?: string
   path: string

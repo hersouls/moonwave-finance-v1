@@ -148,14 +148,14 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
           {menuOpen && (
             <div className="context-menu absolute right-0 top-full mt-1 z-50">
               <button
-                onClick={() => { setMenuOpen(false); openEdit(subscription.id!) }}
+                onClick={() => { setMenuOpen(false); openEdit(subscription.id) }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-body3 text-body hover:bg-[var(--hover-bg)]"
               >
                 <Pencil className="w-3.5 h-3.5" /> 수정
               </button>
               {isActive && (
                 <button
-                  onClick={() => { setMenuOpen(false); changeStatus(subscription.id!, 'paused') }}
+                  onClick={() => { setMenuOpen(false); changeStatus(subscription.id, 'paused') }}
                   className="w-full flex items-center gap-2 px-3 py-2 text-body3 text-body hover:bg-[var(--hover-bg)]"
                 >
                   <Pause className="w-3.5 h-3.5" /> 일시정지
@@ -163,7 +163,7 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
               )}
               {isPaused && (
                 <button
-                  onClick={() => { setMenuOpen(false); changeStatus(subscription.id!, 'active') }}
+                  onClick={() => { setMenuOpen(false); changeStatus(subscription.id, 'active') }}
                   className="w-full flex items-center gap-2 px-3 py-2 text-body3 text-body hover:bg-[var(--hover-bg)]"
                 >
                   <Play className="w-3.5 h-3.5" /> 재개
@@ -171,14 +171,14 @@ function SubscriptionCardInner({ subscription }: SubscriptionCardProps) {
               )}
               {!isCancelled && (
                 <button
-                  onClick={() => { setMenuOpen(false); changeStatus(subscription.id!, 'cancelled') }}
+                  onClick={() => { setMenuOpen(false); changeStatus(subscription.id, 'cancelled') }}
                   className="w-full flex items-center gap-2 px-3 py-2 text-body3 text-status-danger hover:bg-status-danger-soft"
                 >
                   <XCircle className="w-3.5 h-3.5" /> 해지
                 </button>
               )}
               <button
-                onClick={() => { setMenuOpen(false); deleteSubscription(subscription.id!) }}
+                onClick={() => { setMenuOpen(false); deleteSubscription(subscription.id) }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-body3 text-status-danger hover:bg-status-danger-soft"
               >
                 <Trash2 className="w-3.5 h-3.5" /> 삭제

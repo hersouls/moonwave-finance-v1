@@ -5,11 +5,11 @@ import { TEMPLATE_CONFIG } from '@/lib/ledgerConstants'
 export interface TransactionTemplate {
   count: number
   type: TransactionType
-  categoryId: number | null
+  categoryId: string | null
   amount: number
   memo?: string
   paymentMethod?: PaymentMethod
-  memberId: number | null
+  memberId: string | null
 }
 
 /**

@@ -30,8 +30,8 @@ export function AssetEditModal() {
   const item = editingId ? items.find(i => i.id === editingId) : null
 
   const [name, setName] = useState('')
-  const [categoryId, setCategoryId] = useState<number | ''>('')
-  const [memberId, setMemberId] = useState<number | ''>('')
+  const [categoryId, setCategoryId] = useState<string | ''>('')
+  const [memberId, setMemberId] = useState<string | ''>('')
   const [memo, setMemo] = useState('')
   const [projection, setProjection] = useState<AssetValueProjection | undefined>(undefined)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -54,10 +54,10 @@ export function AssetEditModal() {
     if (!item || !name.trim() || categoryId === '' || memberId === '') return
     setIsSubmitting(true)
     try {
-      await updateItem(item.id!, {
+      await updateItem(item.id, {
         name: name.trim(),
-        categoryId: categoryId as number,
-        memberId: memberId as number,
+        categoryId,
+        memberId,
         memo: memo.trim() || undefined,
         projection,
       })
@@ -65,7 +65,7 @@ export function AssetEditModal() {
       const series = allValues.filter((v) => v.assetItemId === item.id).sort((a, b) => b.date.localeCompare(a.date))
       const current = valueAsOf(series, getTodayString())
       // 현재값이 있거나 규칙이 설정되면 재투영(0값 항목에 규칙만 추가한 경우도 반영).
-      if (current > 0 || !isFlatProjection(projection)) await applyValueSeries(item.id!, current, getTodayString(), projection)
+      if (current > 0 || !isFlatProjection(projection)) await applyValueSeries(item.id, current, getTodayString(), projection)
       useToastStore.getState().addToast(`${name.trim()} 항목이 수정되었습니다.`, 'success')
       close()
     } catch {
@@ -98,9 +98,9 @@ export function AssetEditModal() {
           <div>
             <FormSectionLabel icon={Tag}>카테고리</FormSectionLabel>
             <Select
-              value={String(categoryId)}
-              onChange={(v) => setCategoryId(v ? Number(v) : '')}
-              options={typeCategories.map(c => ({ value: String(c.id), label: c.name }))}
+              value={categoryId}
+              onChange={(v) => setCategoryId(v)}
+              options={typeCategories.map(c => ({ value: c.id, label: c.name }))}
               placeholder="카테고리 선택"
             />
           </div>
@@ -111,9 +111,9 @@ export function AssetEditModal() {
               <MemberChips members={members} value={memberId} onChange={setMemberId} allowUnassigned={false} />
             ) : (
               <Select
-                value={String(memberId)}
-                onChange={(v) => setMemberId(v ? Number(v) : '')}
-                options={members.map(m => ({ value: String(m.id), label: m.name }))}
+                value={memberId}
+                onChange={(v) => setMemberId(v)}
+                options={members.map(m => ({ value: m.id, label: m.name }))}
                 placeholder="구성원 선택"
               />
             )}

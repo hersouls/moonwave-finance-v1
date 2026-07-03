@@ -47,7 +47,7 @@ export function AiCategorizeModal({ open, onClose, onApplied }: Props) {
   const [step, setStep] = useState<Step>('loading')
   const [analysis, setAnalysis] = useState<BulkAnalysis | null>(null)
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
-  const [overrides, setOverrides] = useState<Record<string, number>>({})
+  const [overrides, setOverrides] = useState<Record<string, string>>({})
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
   const [aiClassifying, setAiClassifying] = useState(false)
   const [result, setResult] = useState<{ applied: number; merchants: number } | null>(null)
@@ -127,7 +127,7 @@ export function AiCategorizeModal({ open, onClose, onApplied }: Props) {
 
   const deselectAll = () => setSelectedKeys(new Set())
 
-  const pickOverride = (key: string, catId: number) => {
+  const pickOverride = (key: string, catId: string) => {
     setOverrides((prev) => ({ ...prev, [key]: catId }))
     setSelectedKeys((prev) => new Set(prev).add(key))
     setExpandedKey(null)
@@ -399,7 +399,7 @@ function GroupRow({
   expenseCategories: TransactionCategory[]
   onToggle: () => void
   onExpand: () => void
-  onPick: (catId: number) => void
+  onPick: (catId: string) => void
 }) {
   const shouldReduceMotion = useReducedMotion()
   const Icon = getCategoryIcon(category?.icon)
@@ -479,7 +479,7 @@ function GroupRow({
                   <motion.button
                     key={cat.id}
                     type="button"
-                    onClick={() => onPick(cat.id!)}
+                    onClick={() => onPick(cat.id)}
                     whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
                     className={clsx(
                       'flex flex-col items-center justify-center gap-1 px-1 py-2 rounded-xl ring-1 transition-all',

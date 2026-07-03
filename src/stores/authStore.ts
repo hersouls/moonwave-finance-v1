@@ -9,9 +9,9 @@ import {
   type User,
 } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
-import { mergeOnLogin, startRealtimeSync, stopRealtimeSync, getPendingChangesCount } from '@/services/firestoreSync'
+import { startSyncSession, stopRealtimeSync, getPendingChangesCount } from '@/services/firestoreSync'
 
-export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
+export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'offline'
 
 interface AuthUser {
   uid: string
@@ -32,12 +32,19 @@ interface AuthState {
   error: string | null
   initialize: () => void
   login: () => Promise<void>
-  logout: () => Promise<void>
+  /**
+   * 로그아웃. 미동기화 변경이 남아 있으면 데이터 손실 방지를 위해:
+   *   - 온라인이면 먼저 flushOutbox로 클라우드에 밀어낸 뒤 wipe한다.
+   *   - 그래도(오프라인 등) 미동기화가 남으면 PendingSyncError를 throw해
+   *     호출부가 사용자에게 확인을 받게 한다. force=true면 경고 없이 진행.
+   */
+  logout: (force?: boolean) => Promise<void>
   manualUpload: () => Promise<void>
   manualDownload: () => Promise<void>
   setSyncStatus: (status: SyncStatus) => void
   setSyncError: (message: string | null) => void
   setLastSyncTime: (time: string) => void
+  setPendingChangesCount: (count: number) => void
   updatePendingCount: () => Promise<void>
 }
 
@@ -70,9 +77,8 @@ async function reloadStoresAfterSync() {
     useLoanStore.getState().loadLoans(),
   ])
   // 동기화로 받은 앵커(manual/레거시)로 파생(projected) 시리즈를 로컬에서
-  // 재구성한다 (Phase 2: projected 는 클라우드에 없음). force=true 로 첫
-  // 동기화 직후 즉시 재생성(일일 가드 무시). 읽기전용 기기도 로컬 projected 가
-  // 필요하므로 게이트하지 않는다(projected 쓰기는 동기화되지 않는 로컬 전용).
+  // 재구성한다 (projected는 클라우드에 없음). force=true로 첫 동기화 직후
+  // 즉시 재생성(일일 가드 무시).
   try {
     await useDailyValueStore.getState().regenerateProjections(true)
   } catch (err) {
@@ -118,30 +124,22 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         if (!hasSyncedOnLogin) {
           hasSyncedOnLogin = true
           try {
-            await mergeOnLogin(authUser.uid)
-            // After cloud merge, top up any missing defaults (idempotent).
-            // Order matters: running this BEFORE merge would create
-            // syncId-bearing local defaults that race with cloud defaults
-            // having identical syncIds — harmless thanks to deterministic
-            // syncIds, but post-merge is cheaper and avoids redundant uploads.
+            // 동기화 세션 시작 — 빈 클라우드 부트스트랩 + 리스너 + 아웃박스 푸시.
+            // 다운로드는 리스너 초기 스냅샷이 담당한다 (resume token = 델타).
+            await startSyncSession(authUser.uid)
+            // 클라우드 스냅샷 수신 후 누락 기본값 보충 (idempotent).
             const { ensureDefaultCategories } = await import('@/services/database')
             await ensureDefaultCategories()
-            // One-time cleanup of pre-fix duplicate seed records.
-            // Idempotent and guarded by localStorage; no-op once complete.
-            try {
-              const { dedupSeedCategories } = await import('@/services/dedupMigration')
-              await dedupSeedCategories()
-            } catch (err) {
-              console.error('Dedup migration failed (non-fatal):', err)
-            }
             await reloadStoresAfterSync()
             get().updatePendingCount()
           } catch (err) {
             console.error('Sync on login failed:', err)
             set({ syncStatus: 'error' })
           }
-          // Start listeners only after first login merge
-          startRealtimeSync(authUser.uid)
+          // 기기 presence 등록 (설정 → 내 기기 목록) — 실패해도 무해.
+          void import('@/services/deviceRegistry')
+            .then(({ registerDevicePresence }) => registerDevicePresence(authUser.uid))
+            .catch(() => {})
         }
       } else {
         hasSyncedOnLogin = false
@@ -178,18 +176,36 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
   },
 
-  logout: async () => {
+  logout: async (force = false) => {
+    const { user } = get()
+    // 데이터 손실 방지 가드: wipe 전에 미동기화 변경을 클라우드로 밀어낸다.
+    if (!force && user) {
+      const { flushOutbox, getPendingChangesCount } = await import('@/services/firestoreSync')
+      let pending = await getPendingChangesCount().catch(() => 0)
+      if (pending > 0) {
+        const online = typeof navigator === 'undefined' || navigator.onLine !== false
+        if (online) {
+          try { await flushOutbox(user.uid) } catch { /* 아래에서 재확인 */ }
+          pending = await getPendingChangesCount().catch(() => pending)
+        }
+        if (pending > 0) {
+          // 온라인 flush로도 남았거나 오프라인 — 조용히 파괴하지 않는다.
+          const err = new Error(`동기화되지 않은 변경 ${pending}건이 있습니다.`) as Error & { code?: string; pending?: number }
+          err.code = 'auth/pending-sync'
+          err.pending = pending
+          throw err
+        }
+      }
+    }
     try {
       stopRealtimeSync()
       await signOut(auth)
       // Wipe local Dexie data so the previously signed-in user's financial
       // records aren't visible on this device after logout. Cloud data in
-      // Firestore is preserved and re-merged on next login.
+      // Firestore is preserved and re-synced on next login.
       try {
         const { clearAllData } = await import('@/services/database')
-        // force: logout must wipe this device's local copy even when the
-        // device is in read-only mode (cloud data is preserved + re-merged).
-        await clearAllData({ force: true })
+        await clearAllData()
       } catch (clearErr) {
         console.error('Failed to clear local data on logout:', clearErr)
       }
@@ -230,6 +246,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     set(status === 'error' ? { syncStatus: status } : { syncStatus: status, syncErrorMessage: null }),
   setSyncError: (message) => set({ syncErrorMessage: message }),
   setLastSyncTime: (time) => set({ lastSyncTime: time }),
+  setPendingChangesCount: (count) => set({ pendingChangesCount: count }),
   updatePendingCount: async () => {
     try {
       const count = await getPendingChangesCount()

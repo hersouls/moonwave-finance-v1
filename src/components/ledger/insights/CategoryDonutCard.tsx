@@ -12,7 +12,7 @@ interface CategoryDonutCardProps {
   categories: TransactionCategory[]
   month: string
   type: 'expense' | 'income'
-  onCategorySelect?: (categoryId: number | null) => void
+  onCategorySelect?: (categoryId: string | null) => void
 }
 
 const CX = 50
@@ -22,7 +22,7 @@ const STROKE_WIDTH = 8
 const GAP_DEG = 2
 
 interface Segment {
-  categoryId: number | null
+  categoryId: string | null
   name: string
   color: string
   value: number
@@ -37,7 +37,7 @@ export function CategoryDonutCard({
   const shouldReduceMotion = useReducedMotion()
 
   const { segments, total } = useMemo(() => {
-    const byCategory = new Map<number | null, number>()
+    const byCategory = new Map<string | null, number>()
     for (const t of transactions) {
       if (t.type !== type) continue
       if (!t.date.startsWith(month)) continue

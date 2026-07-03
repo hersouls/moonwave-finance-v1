@@ -1,7 +1,16 @@
+// ─── ID Model (Sync v2) ─────────────────────────────
+//
+// 모든 엔티티의 `id`는 전역 고유 문자열이다 (구 syncId가 PK로 승격).
+//   - 새 레코드: crypto.randomUUID()
+//   - 시드 기본값: 결정적 id ('default:member:본인' 등) — 기기 간 수렴
+//   - Firestore 문서 id = encodeDocId(id) — 모든 기기에서 동일
+// FK 필드(categoryId, memberId, …)도 부모의 문자열 id를 그대로 저장한다.
+// 숫자 auto-increment id와 FK 리맵 레이어는 v2에서 폐기됨 (Dexie v14→16
+// 마이그레이션이 기존 숫자 id/FK를 일괄 변환).
+
 // ─── Member Types ──────────────────────────────────
 export interface Member {
-  id?: number
-  syncId?: string
+  id: string
   name: string
   color: string
   isDefault: boolean
@@ -14,8 +23,7 @@ export interface Member {
 export type AssetLiabilityType = 'asset' | 'liability'
 
 export interface AssetCategory {
-  id?: number
-  syncId?: string
+  id: string
   name: string
   type: AssetLiabilityType
   color: string
@@ -45,10 +53,10 @@ export interface AssetValueProjection {
 }
 
 export interface AssetItem {
-  id?: number
-  syncId?: string
-  memberId: number
-  categoryId: number
+  id: string
+  /** 구성원 FK — 마이그레이션에서 부모 소실 시 '' (미매칭 무해) */
+  memberId: string
+  categoryId: string
   name: string
   type: AssetLiabilityType
   memo?: string
@@ -62,9 +70,8 @@ export interface AssetItem {
 
 // ─── Daily Value Types ─────────────────────────────
 export interface DailyValue {
-  id?: number
-  syncId?: string
-  assetItemId: number
+  id: string
+  assetItemId: string
   date: string
   value: number
   /** 'manual' = 사용자 직접 입력(앵커), 'projected' = 규칙으로 자동 생성. 미지정은 자동으로 간주. */
@@ -78,8 +85,7 @@ export type TransactionType = 'income' | 'expense'
 export type PaymentMethod = 'cash' | 'credit_card' | 'debit_card' | 'bank_transfer' | 'loan' | 'other'
 
 export interface TransactionCategory {
-  id?: number
-  syncId?: string
+  id: string
   name: string
   type: TransactionType
   color: string
@@ -91,12 +97,11 @@ export interface TransactionCategory {
 }
 
 export interface PaymentMethodItem {
-  id?: number
-  syncId?: string
+  id: string
   type: PaymentMethod
   name: string
   memo?: string
-  linkedAssetItemId?: number
+  linkedAssetItemId?: string
   isActive: boolean
   sortOrder: number
   createdAt: string
@@ -112,21 +117,20 @@ export interface RepeatPattern {
 }
 
 export interface Transaction {
-  id?: number
-  syncId?: string
-  memberId: number | null
+  id: string
+  memberId: string | null
   type: TransactionType
   amount: number
-  categoryId: number | null
+  categoryId: string | null
   date: string
   memo?: string
   paymentMethod?: PaymentMethod
   paymentMethodDetail?: string
-  paymentMethodItemId?: number
+  paymentMethodItemId?: string
   isRecurring: boolean
   recurPattern?: RepeatPattern
-  recurSourceId?: number
-  subscriptionId?: number
+  recurSourceId?: string
+  subscriptionId?: string
   /**
    * Optional subscription-type label (entertainment / productivity / cloud / …).
    * Independent of the user-defined transaction `categoryId` — acts as a
@@ -148,9 +152,8 @@ export interface Transaction {
 
 // ─── Budget Types ─────────────────────────────────
 export interface Budget {
-  id?: number
-  syncId?: string
-  categoryId: number
+  id: string
+  categoryId: string
   month: string // YYYY-MM
   amount: number
   createdAt: string
@@ -161,8 +164,7 @@ export interface Budget {
 export type GoalType = 'savings' | 'debt' | 'investment' | 'custom'
 
 export interface FinancialGoal {
-  id?: number
-  syncId?: string
+  id: string
   name: string
   type: GoalType
   targetAmount: number
@@ -193,8 +195,7 @@ export interface PauseHistoryEntry {
 }
 
 export interface Subscription {
-  id?: number
-  syncId?: string
+  id: string
   name: string
   description?: string
   currency: SubscriptionCurrency
@@ -212,8 +213,8 @@ export interface Subscription {
   color: string
   url?: string
   memo?: string
-  paymentMethodItemId?: number
-  linkedTransactionCategoryId?: number
+  paymentMethodItemId?: string
+  linkedTransactionCategoryId?: string
   sortOrder: number
   createdAt: string
   updatedAt: string
@@ -224,10 +225,9 @@ export type InvestmentMarket = 'domestic' | 'overseas'
 export type InvestmentAssetType = '국내주식' | '해외주식' | '국내ETF' | '해외ETF' | '채권' | '펀드' | '기타'
 
 export interface InvestmentTrade {
-  id?: number
-  syncId?: string
+  id: string
   /** 구성원 FK */
-  memberId: number | null
+  memberId: string | null
   /** 판매일 YYYY-MM-DD */
   sellDate: string
   /** 종목유형 */
@@ -271,10 +271,9 @@ export interface InvestmentTrade {
 
 // ─── Dividend Types ──────────────────────────────────
 export interface Dividend {
-  id?: number
-  syncId?: string
+  id: string
   /** 구성원 FK */
-  memberId: number | null
+  memberId: string | null
   /** 지급일 YYYY-MM-DD */
   paymentDate: string
   /** 배당락일 YYYY-MM-DD */
@@ -302,10 +301,9 @@ export interface Dividend {
 export type InterestCurrency = 'KRW' | 'USD'
 
 export interface AccountInterest {
-  id?: number
-  syncId?: string
+  id: string
   /** 구성원 FK */
-  memberId: number | null
+  memberId: string | null
   /** 입금일 YYYY-MM-DD */
   depositDate: string
   /** 쌓인 기간 시작 YYYY-MM-DD */
@@ -333,8 +331,7 @@ export interface AccountInterest {
 export type LoanRepaymentType = 'equal_principal' | 'equal_installment' | 'bullet' | 'custom'
 
 export interface Loan {
-  id?: number
-  syncId?: string
+  id: string
   name: string
   lender?: string
   loanDate: string
@@ -345,7 +342,7 @@ export interface Loan {
   repaymentType: LoanRepaymentType
   paymentDay: number
   paymentAccount?: string
-  linkedAssetItemId?: number
+  linkedAssetItemId?: string
   memo?: string
   isActive: boolean
   sortOrder: number
@@ -397,12 +394,6 @@ export interface Settings {
   hideAmounts?: boolean
   /** 자산 값 자동 이어쓰기 — 별도 입력이 없으면 어제 값을 오늘로 자동 저장 (기본 ON) */
   autoCarryForward?: boolean
-  /**
-   * 이 기기에서 데이터 쓰기 허용 (기본 ON). 기기별 설정 — localStorage에만
-   * 저장되고 클라우드로 동기화되지 않는다. false면 이 기기는 읽기 전용:
-   * 로컬/클라우드 쓰기 모두 차단하고 동기화 수신(다운로드)만 한다.
-   */
-  deviceWriteEnabled?: boolean
 }
 
 // ─── Computed Types ────────────────────────────────
@@ -428,7 +419,7 @@ export interface AssetStats {
 }
 
 export interface CategoryBreakdown {
-  categoryId: number
+  categoryId: string
   categoryName: string
   categoryColor: string
   total: number
@@ -436,7 +427,7 @@ export interface CategoryBreakdown {
 }
 
 export interface MemberBreakdown {
-  memberId: number
+  memberId: string
   memberName: string
   memberColor: string
   totalAssets: number
@@ -452,28 +443,18 @@ export interface MonthlyTransactionSummary {
   categoryBreakdown: CategoryBreakdown[]
 }
 
-// ─── Sync Types ────────────────────────────────────
-export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error'
-
-export interface AuthUser {
-  uid: string
-  email: string
-  displayName: string
-  photoURL: string
-}
-
 // ─── Merchant Alias (AI/learned category mapping) ──
 export type MerchantAliasSource = 'user-override' | 'ai-suggestion'
 
 export interface MerchantAlias {
-  id?: number
-  syncId?: string
+  /** 결정적 id: `alias:<merchantKey>` — 기기 간 수렴 (merchantAliasService 참조) */
+  id: string
   /** Normalized merchant key from normalizeMerchantKey() — unique. */
   merchantKey: string
-  /** Resolved local category id (FK to transactionCategories). */
-  categoryId: number
+  /** Resolved category id (FK to transactionCategories). */
+  categoryId: string
   /** Optional subscription FK when the merchant was AI-classified as a known subscription. */
-  subscriptionId?: number
+  subscriptionId?: string
   /** Optional subscription category label for keyword-style tagging. */
   subscriptionCategory?: SubscriptionCategoryType
   /** Where this alias came from — `user-override` wins over `ai-suggestion` on conflict. */
@@ -488,25 +469,48 @@ export interface MerchantAlias {
   updatedAt: string
 }
 
-export interface SyncChangeLogEntry {
-  id?: number
+// ─── Sync Types ────────────────────────────────────
+export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'offline'
+
+export interface AuthUser {
+  uid: string
+  email: string
+  displayName: string
+  photoURL: string
+}
+
+/**
+ * 동기화 아웃박스 — "이 레코드의 최신 상태를 클라우드에 반영해야 한다"는
+ * 레코드 단위 마커. 내구성 있는 변경 로그가 아니다(그건 Firestore SDK의
+ * persistentLocalCache가 소유): 업로드 페이로드는 항상 푸시 시점의 로컬
+ * 최신 행에서 읽으므로, 같은 레코드를 몇 번 고쳐도 아웃박스에는 한 줄이다.
+ * 앱이 setDoc 호출 전에 죽어도 아웃박스 행이 남아 다음 시작 때 재푸시된다
+ * (at-least-once; setDoc은 전체 문서 교체 + LWW라 중복 전송이 무해하다).
+ */
+export interface SyncOutboxEntry {
+  /** `${tableName}:${recordId}` — 레코드당 1행 (마지막 op가 이긴다) */
+  key: string
   tableName: string
-  syncId: string
-  operation: 'create' | 'update' | 'delete'
-  timestamp: string
-  processed: number       // 0 = pending, 1 = synced
-  // dailyValues 전용 위치 메타 — 번들 업로드가 (자산×월×일) 좌표를 알아야
-  // 하는데, 삭제 항목은 행이 이미 사라져 syncId만으로는 좌표를 복원할 수
-  // 없다. 훅이 변경되는 객체에서 캡처해 둔다. (다른 테이블은 undefined)
-  assetItemId?: number
+  recordId: string
+  op: 'upsert' | 'delete'
+  /** ISO — 조건부 삭제 판정(푸시 후 새 변경이 끼면 행 보존)에 쓴다 */
+  queuedAt: string
+  // dailyValues 전용 좌표 메타 — 번들 업로드가 (자산×월×일) 좌표를 알아야
+  // 하는데, 삭제 항목은 행이 이미 사라져 id만으로는 좌표를 복원할 수 없다.
+  assetItemId?: string
   date?: string
 }
 
-export interface SyncTombstone {
-  id?: number
-  tableName: string
-  syncId: string
-  deletedAt: string
+/** 클라우드 기기 레지스트리(presence) 문서 — users/{uid}/devices/{deviceId} */
+export interface DeviceInfo {
+  deviceId: string
+  /** 사람이 읽는 기기 라벨 (UA 기반 자동 + 사용자 편집 가능) */
+  label: string
+  platform: string
+  lastSeenAt: string
+  /** 이 기기가 마지막으로 실행한 앱 동기화 프로토콜 버전 */
+  syncProtocol: number
+  createdAt: string
 }
 
 // ─── Backup Types ──────────────────────────────────

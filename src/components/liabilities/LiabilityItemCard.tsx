@@ -11,11 +11,11 @@ import { getTodayString, getYesterdayString } from '@/lib/dateUtils'
 import { clsx } from 'clsx'
 
 interface LiabilityItemCardProps {
-  itemId: number
+  itemId: string
   name: string
-  categoryId: number
+  categoryId: string
   /** Desktop master-detail: select into the inspector instead of navigating. */
-  onSelect?: (id: number) => void
+  onSelect?: (id: string) => void
   /** Highlight when shown in the inspector. */
   selected?: boolean
 }
