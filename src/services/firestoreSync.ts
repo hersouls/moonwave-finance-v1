@@ -36,6 +36,7 @@ import {
   limit,
   where,
   serverTimestamp,
+  getDocsFromServer,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { firestore } from '@/lib/firebase'
@@ -313,21 +314,86 @@ let activeUid: string | null = null
 let pushTimer: ReturnType<typeof setTimeout> | null = null
 let pushInFlight = false
 let pushQueued = false
+let consecutivePushFailures = 0
 const PUSH_DEBOUNCE_MS = 250
+const MAX_PUSH_BACKOFF_MS = 5 * 60_000
 
-/** 아웃박스 푸시를 요청한다 (디바운스). 세션이 없으면 no-op. */
+// poison 레코드(batch.set이 동기 throw — 중첩 undefined/1MB 초과 등) 키 → 그때의
+// queuedAt. 같은 queuedAt인 동안은 flush에서 건너뛰어 250ms 핫 루프를 막고,
+// 사용자가 그 레코드를 다시 고치면(queuedAt 변경) 자동으로 재시도 대상이 된다.
+const _poisonKeys = new Map<string, string>()
+
+/**
+ * 아웃박스 푸시를 요청한다 (디바운스 + 실패 시 지수 백오프). 세션이 없으면 no-op.
+ * 연속 실패가 쌓이면 재시도 간격을 250ms→…→5분으로 늘려, 쿼터 소진·오프라인
+ * 등 지속 오류에서 250ms 핫 루프로 배터리·네트워크·쿼터를 태우지 않는다.
+ * 성공(consecutivePushFailures=0) 시에는 즉시(디바운스) 재시도한다.
+ */
 export function requestPush(): void {
   if (!activeUid) return
   if (pushTimer) return
+  const delay = consecutivePushFailures === 0
+    ? PUSH_DEBOUNCE_MS
+    : Math.min(PUSH_DEBOUNCE_MS * 2 ** consecutivePushFailures, MAX_PUSH_BACKOFF_MS)
   pushTimer = setTimeout(() => {
     pushTimer = null
     const uid = activeUid
     if (uid) void flushOutbox(uid)
-  }, PUSH_DEBOUNCE_MS)
+  }, delay)
 }
 
 // 사용자 쓰기 신호 → 푸시. 모듈 로드 시 1회 구독 (세션 없으면 requestPush가 no-op).
 onUserWritePersisted(requestPush)
+
+// ─── 재-주장(re-assert) 큐 ─────────────────────────────────────────
+//
+// 인제스트에서 "로컬이 더 새로워 클라우드 업데이트를 거부"했는데 그 클라우드
+// 문서가 자기 에코가 아니면, 로컬 최신본을 아웃박스에 다시 넣어 재업로드한다.
+// 이것이 이 아키텍처의 정확성 축이다: SDK 오프라인 큐가 스테일 setDoc을 서버에
+// 그대로 전달해 최신 클라우드를 회귀시킬 수 있는데(fire-and-forget의 본질적
+// 대가), 최신본을 가진 기기가 재주장하지 않으면 아무도 회귀를 복구하지 못한다.
+// 수렴 보장: 재주장은 max(updatedAt) 또는 (동시 기록 시) 최고 deviceId 재주장자
+// 로 종료된다. 에코(cloudDeviceId===self)에는 절대 재주장하지 않으므로 자기
+// 푸시가 무한 핑퐁을 만들지 않는다.
+const _reassertQueue: SyncOutboxEntry[] = []
+
+function queueReassert(tableName: SyncableTable, localRow: Record<string, unknown>): void {
+  const id = localRow.id as string | undefined
+  if (!id) return
+  const entry: SyncOutboxEntry = {
+    key: `${tableName}:${id}`,
+    tableName,
+    recordId: id,
+    op: 'upsert',
+    queuedAt: new Date().toISOString(),
+  }
+  if (tableName === 'dailyValues') {
+    entry.assetItemId = localRow.assetItemId as string
+    entry.date = localRow.date as string
+  }
+  _reassertQueue.push(entry)
+}
+
+/**
+ * 인제스트 후 누적된 재주장 항목을 아웃박스에 반영하고 푸시를 요청한다.
+ * @internal Exported for unit tests (재주장 경로 검증용).
+ */
+export async function drainReassertQueue(): Promise<void> {
+  if (_reassertQueue.length === 0) return
+  const rows = _reassertQueue.splice(0)
+  try {
+    // 아웃박스에 이미 더 최신(사용자가 방금 또 고침) 항목이 있으면 덮지 않는다.
+    await db.transaction('rw', db.syncOutbox, async () => {
+      for (const r of rows) {
+        const existing = await db.syncOutbox.get(r.key)
+        if (!existing) await db.syncOutbox.put(r)
+      }
+    })
+    requestPush()
+  } catch (err) {
+    console.error('[sync] re-assert enqueue failed:', err)
+  }
+}
 
 interface FlushItem {
   entry: SyncOutboxEntry
@@ -343,8 +409,17 @@ export async function flushOutbox(uid: string): Promise<void> {
   if (pushInFlight) { pushQueued = true; return }
   pushInFlight = true
   try {
-    const entries = await db.syncOutbox.toArray()
+    const allEntries = await db.syncOutbox.toArray()
     void refreshPendingCount()
+    // 같은 queuedAt인 동안 poison 격리된 항목은 건너뛴다 (핫 루프 방지).
+    // 편집으로 queuedAt이 바뀌면 격리 해제하고 재시도한다.
+    const entries = allEntries.filter(e => {
+      const pq = _poisonKeys.get(e.key)
+      if (pq === undefined) return true
+      if (pq === e.queuedAt) return false
+      _poisonKeys.delete(e.key)
+      return true
+    })
     if (entries.length === 0) return
 
     const offline = typeof navigator !== 'undefined' && navigator.onLine === false
@@ -378,26 +453,43 @@ export async function flushOutbox(uid: string): Promise<void> {
     const flushBatch = () => {
       if (ops > 0) { commits.push(batch.commit()); batch = writeBatch(firestore); ops = 0 }
     }
+    // poison 레코드(중첩 undefined/1MB 초과 등으로 batch.set이 동기 throw)가
+    // 뒤의 정상 레코드까지 막지 않도록 항목별로 격리한다. 격리된 키는 ack
+    // 삭제 대상에서 빼서 아웃박스에 남기지만(대기 N건에 노출), 다음 flush의
+    // 다른 항목 진행은 보장한다.
+    const poisonedThisRun = new Set<string>()
+    const isolate = (entry: SyncOutboxEntry, fn: () => void): void => {
+      try { fn() } catch (err) {
+        poisonedThisRun.add(entry.key)
+        _poisonKeys.set(entry.key, entry.queuedAt)
+        console.error(`[sync] poison record isolated (${entry.key}):`, err)
+      }
+    }
 
     for (const { entry, record } of items) {
       const table = entry.tableName as SyncableTable
+      const before = ops
       if (entry.op === 'upsert' && record) {
-        batch.set(doc(firestore, docPath(uid, table, entry.recordId)), toCloudPayload(table, record))
-        ops += 1
-      } else {
-        batch.delete(doc(firestore, docPath(uid, table, entry.recordId)))
-        // 전환기 호환: 구버전 기기의 오프라인 삭제 수신용 톰스톤
-        batch.set(doc(firestore, docPath(uid, 'syncTombstones', `${table}_${entry.recordId}`)), {
-          tableName: table,
-          syncId: entry.recordId,
-          deletedAt: entry.queuedAt || now,
-          __deviceId: getDeviceId(),
-          __schemaV: CLOUD_SCHEMA_VERSION,
-          __uploadedAt: serverTimestamp(),
+        isolate(entry, () => {
+          batch.set(doc(firestore, docPath(uid, table, entry.recordId)), toCloudPayload(table, record))
+          ops += 1
         })
-        ops += 2
+      } else {
+        isolate(entry, () => {
+          batch.delete(doc(firestore, docPath(uid, table, entry.recordId)))
+          // 전환기 호환: 구버전 기기의 오프라인 삭제 수신용 톰스톤
+          batch.set(doc(firestore, docPath(uid, 'syncTombstones', `${table}_${entry.recordId}`)), {
+            tableName: table,
+            syncId: entry.recordId,
+            deletedAt: entry.queuedAt || now,
+            __deviceId: getDeviceId(),
+            __schemaV: CLOUD_SCHEMA_VERSION,
+            __uploadedAt: serverTimestamp(),
+          })
+          ops += 2
+        })
       }
-      if (ops >= BATCH_OPS_LIMIT) flushBatch()
+      if (ops > before && ops >= BATCH_OPS_LIMIT) flushBatch()
     }
 
     // ② dailyValues: (자산×월) 번들 패치 + 삭제 톰스톤(구버전 호환)
@@ -468,12 +560,12 @@ export async function flushOutbox(uid: string): Promise<void> {
     // 서버 ack까지 대기 (오프라인이면 온라인 복귀 시 resolve — SDK 큐가 전송 보장)
     await Promise.all(commits)
 
-    // ④ ack된 항목의 아웃박스 행 제거 — 단, 전송 후 또 바뀐 레코드(queuedAt
-    // 변경)는 보존해 다음 푸시가 최신 상태를 다시 올리게 한다. 검사+삭제를
-    // 단일 트랜잭션으로 묶어, 훅의 post-commit put과의 경쟁으로 새 항목을
-    // 지워버리는 창을 없앤다.
+    // ④ ack된 항목의 아웃박스 행 제거 — 단, (a) 전송 후 또 바뀐 레코드(queuedAt
+    // 변경)와 (b) poison 격리 레코드는 보존한다. 검사+삭제를 단일 트랜잭션으로
+    // 묶어, 훅의 post-commit put과의 경쟁으로 새 항목을 지워버리는 창을 없앤다.
     await db.transaction('rw', db.syncOutbox, async () => {
       for (const e of entries) {
+        if (poisonedThisRun.has(e.key)) continue
         const current = await db.syncOutbox.get(e.key)
         if (current && current.queuedAt === e.queuedAt && current.op === e.op) {
           await db.syncOutbox.delete(e.key)
@@ -481,10 +573,17 @@ export async function flushOutbox(uid: string): Promise<void> {
       }
     })
 
-    setStatus('synced')
+    consecutivePushFailures = 0
+    setStatus(poisonedThisRun.size > 0 ? 'error' : 'synced',
+      poisonedThisRun.size > 0 ? `일부 항목(${poisonedThisRun.size})을 업로드할 수 없어 건너뛰었습니다.` : undefined)
   } catch (err) {
+    // batch.commit 실패(네트워크/쿼터 등) — 아웃박스는 통째로 보존되어 다음
+    // 백오프 재시도에서 다시 올린다. persistentLocalCache가 이미 오프라인 큐를
+    // 소유하므로 대개 온라인 복귀 시 SDK가 스스로 전송한다.
+    consecutivePushFailures++
     console.error('[sync] outbox flush failed:', err)
-    setStatus('error', classifySyncError(err))
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false
+    setStatus(offline ? 'offline' : 'error', offline ? undefined : classifySyncError(err))
   } finally {
     pushInFlight = false
     void refreshPendingCount()
@@ -492,8 +591,13 @@ export async function flushOutbox(uid: string): Promise<void> {
       pushQueued = false
       requestPush()
     } else {
-      // 푸시 도중 쌓인 항목이 있으면 한 번 더
-      void countPendingOutbox().then(n => { if (n > 0) requestPush() }).catch(() => {})
+      // 아직 미완 항목이 남아있으면 재예약(성공=즉시 디바운스, 실패=지수 백오프).
+      // poison 격리 항목만 남았으면 재예약하지 않는다(핫 루프 방지) — 그 레코드가
+      // 다시 편집되면 훅이 requestPush를 새로 부른다.
+      void db.syncOutbox.toArray().then((rows) => {
+        const live = rows.some(r => _poisonKeys.get(r.key) !== r.queuedAt)
+        if (live) requestPush()
+      }).catch(() => {})
     }
   }
 }
@@ -579,21 +683,40 @@ async function commitBundles(uid: string, bundles: DvBundlePatch[]): Promise<voi
 export async function fullDownload(uid: string): Promise<void> {
   setStatus('syncing')
   try {
-    // 로컬을 클라우드로 교체하므로 미푸시 아웃박스도 함께 비운다 — 잔여
-    // upsert 마커가 "행 없음 → 삭제"로 오판되어 방금 받은 클라우드 문서를
-    // 지우는 사고를 막는다. (이 버튼의 의미 자체가 "클라우드가 진실"이다)
-    const { drainChangeTracking } = await import('@/services/database')
-    await drainChangeTracking()
-    await db.syncOutbox.clear()
-
+    // ① 먼저 모든 컬렉션을 **서버에서** 읽어 메모리에 모은다 (아무 것도 아직
+    //    변경하지 않는다). getDocsFromServer는 오프라인이면 throw하므로,
+    //    캐시의 스테일/빈 스냅샷으로 로컬을 교체하는 사고가 원천 차단된다.
+    //    한 컬렉션이라도 실패하면 예외로 abort — 로컬·아웃박스 무변경.
+    const tableRecords = new Map<SyncableTable, Record<string, unknown>[]>()
     for (const tableName of ALL_TABLES) {
       if (tableName === 'dailyValues') continue // 아래 번들 경로에서 처리
-      const snap = await getDocs(collection(firestore, colPath(uid, tableName)))
+      const snap = await getDocsFromServer(collection(firestore, colPath(uid, tableName)))
       const records: Record<string, unknown>[] = []
       for (const d of snap.docs) {
         const rec = fromCloudDoc(tableName, d.data())
         if (rec) records.push(rec)
       }
+      tableRecords.set(tableName, records)
+    }
+    const bundleSnap = await getDocsFromServer(collection(firestore, `users/${uid}/${DV_BUNDLE_COLLECTION}`))
+    const legacyDvRows: DailyValue[] = []
+    if (legacyDvActive) {
+      const legacySnap = await getDocsFromServer(collection(firestore, colPath(uid, 'dailyValues')))
+      for (const d of legacySnap.docs) {
+        const rec = fromCloudDoc('dailyValues', d.data()) as unknown as DailyValue | null
+        if (rec && rec.source !== 'projected') legacyDvRows.push(rec)
+      }
+    }
+
+    // ② 서버 조회가 전부 성공한 뒤에야 로컬을 교체한다. 로컬을 클라우드로
+    //    교체하므로 미푸시 아웃박스도 비운다 — 잔여 upsert 마커가 "행 없음 →
+    //    삭제"로 오판되어 방금 받은 클라우드 문서를 지우는 사고를 막는다.
+    //    (이 버튼의 의미 자체가 "클라우드가 진실"이다)
+    const { drainChangeTracking } = await import('@/services/database')
+    await drainChangeTracking()
+    await db.syncOutbox.clear()
+
+    for (const [tableName, records] of tableRecords) {
       const table = getLocalTable(tableName)
       await runSyncWrite([table], async () => {
         await (table as typeof db.members).clear()
@@ -604,29 +727,20 @@ export async function fullDownload(uid: string): Promise<void> {
     }
 
     // dailyValues: 로컬 전체 재구성 (번들 + 레거시 비-projected)
-    const bundleSnap = await getDocs(collection(firestore, `users/${uid}/${DV_BUNDLE_COLLECTION}`))
     await runSyncWrite([db.dailyValues], async () => {
       await db.dailyValues.clear()
     })
     for (const d of bundleSnap.docs) {
       await ingestDvBundleDoc(d.data())
     }
-    if (legacyDvActive) {
-      const legacySnap = await getDocs(collection(firestore, colPath(uid, 'dailyValues')))
-      const rows: DailyValue[] = []
-      for (const d of legacySnap.docs) {
-        const rec = fromCloudDoc('dailyValues', d.data()) as unknown as DailyValue | null
-        if (rec && rec.source !== 'projected') rows.push(rec)
-      }
-      if (rows.length > 0) {
-        await runSyncWrite([db.dailyValues], async () => {
-          for (const row of rows) {
-            const existing = await db.dailyValues
-              .where('[assetItemId+date]').equals([row.assetItemId, row.date]).first()
-            if (!existing) await db.dailyValues.put(row)
-          }
-        })
-      }
+    if (legacyDvRows.length > 0) {
+      await runSyncWrite([db.dailyValues], async () => {
+        for (const row of legacyDvRows) {
+          const existing = await db.dailyValues
+            .where('[assetItemId+date]').equals([row.assetItemId, row.date]).first()
+          if (!existing) await db.dailyValues.put(row)
+        }
+      })
     }
     setStatus('synced')
   } catch (err) {
@@ -753,6 +867,10 @@ export async function ingestDvBundleDoc(data: Record<string, unknown>): Promise<
               updatedAt: day.u,
             })
           }
+        } else if (existing.source !== 'projected' && day.d && day.d !== getDeviceId()) {
+          // 로컬 앵커가 더 새로워 클라우드 앵커 튜플을 거부했고 에코가 아니면,
+          // 로컬 최신 일자 값을 재주장해 번들을 수렴시킨다 (C2/H1의 dv 경로).
+          queueReassert('dailyValues', existing as unknown as Record<string, unknown>)
         }
       }
     }
@@ -846,6 +964,13 @@ async function applyCloudChangeInTx(
   const cloudDeviceId = cloudData.__deviceId as string | undefined
   if (existing) {
     if (!shouldApplyCloudUpdate(cloudData.updatedAt as string, cloudDeviceId, existing.updatedAt as string)) {
+      // 로컬을 유지했다. 이게 자기 에코가 아니면(다른 기기가 스테일 문서로
+      // 클라우드를 회귀시킨 경우) 로컬 최신본을 재주장해 클라우드를 수렴시킨다.
+      // 에코(cloudDeviceId===self)에는 재주장하지 않아 자기 푸시가 무한 핑퐁을
+      // 만들지 않는다. (C2/H1: 업로드 방향 LWW 부재 복구)
+      if (cloudDeviceId && cloudDeviceId !== getDeviceId()) {
+        queueReassert(tableName, existing)
+      }
       return false
     }
     if (adoptFromId && adoptFromId !== id) {
@@ -911,6 +1036,9 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
       console.error(`[sync] real-time ${tableName} ingest transaction failed:`, err)
     }
 
+    // 스테일 클라우드 문서를 거부한 레코드를 재주장(로컬 최신본 재업로드).
+    await drainReassertQueue()
+
     if (appliedCount > 0) {
       window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: tableName } }))
     }
@@ -971,6 +1099,9 @@ function subscribeDvBundles(uid: string, generation: number, retryCount = 0): vo
         console.error(`[sync] dv bundle ${change.type} ingest error:`, err)
       }
     }
+
+    // 스테일 클라우드 일자 튜플을 거부한 앵커를 재주장한다.
+    await drainReassertQueue()
 
     if (appliedCount > 0) {
       window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: 'dailyValues' } }))

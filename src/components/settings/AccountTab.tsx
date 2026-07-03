@@ -8,6 +8,26 @@ export function AccountTab() {
   const logout = useAuthStore((s) => s.logout)
   const isSigningIn = useAuthStore((s) => s.isSigningIn)
 
+  // 로그아웃은 로컬 데이터를 지운다 — 미동기화 변경이 있으면 authStore가
+  // PendingSyncError를 던진다. 사용자에게 확인받고 강제 로그아웃한다.
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch (err) {
+      const e = err as { code?: string; pending?: number }
+      if (e?.code === 'auth/pending-sync') {
+        const ok = window.confirm(
+          `아직 클라우드에 동기화되지 않은 변경 ${e.pending ?? ''}건이 있습니다.\n` +
+          `지금 로그아웃하면 이 기기의 로컬 데이터가 삭제되어 해당 변경을 잃게 됩니다.\n\n` +
+          `그래도 로그아웃하시겠습니까?`,
+        )
+        if (ok) await logout(true)
+      } else {
+        throw err
+      }
+    }
+  }
+
   return (
     <div className="space-y-8">
       <section>
@@ -41,7 +61,7 @@ export function AccountTab() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={logout}
+                onClick={handleLogout}
                 leftIcon={<LogOut className="w-4 h-4" />}
               >
                 로그아웃

@@ -32,7 +32,13 @@ interface AuthState {
   error: string | null
   initialize: () => void
   login: () => Promise<void>
-  logout: () => Promise<void>
+  /**
+   * 로그아웃. 미동기화 변경이 남아 있으면 데이터 손실 방지를 위해:
+   *   - 온라인이면 먼저 flushOutbox로 클라우드에 밀어낸 뒤 wipe한다.
+   *   - 그래도(오프라인 등) 미동기화가 남으면 PendingSyncError를 throw해
+   *     호출부가 사용자에게 확인을 받게 한다. force=true면 경고 없이 진행.
+   */
+  logout: (force?: boolean) => Promise<void>
   manualUpload: () => Promise<void>
   manualDownload: () => Promise<void>
   setSyncStatus: (status: SyncStatus) => void
@@ -170,7 +176,27 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
   },
 
-  logout: async () => {
+  logout: async (force = false) => {
+    const { user } = get()
+    // 데이터 손실 방지 가드: wipe 전에 미동기화 변경을 클라우드로 밀어낸다.
+    if (!force && user) {
+      const { flushOutbox, getPendingChangesCount } = await import('@/services/firestoreSync')
+      let pending = await getPendingChangesCount().catch(() => 0)
+      if (pending > 0) {
+        const online = typeof navigator === 'undefined' || navigator.onLine !== false
+        if (online) {
+          try { await flushOutbox(user.uid) } catch { /* 아래에서 재확인 */ }
+          pending = await getPendingChangesCount().catch(() => pending)
+        }
+        if (pending > 0) {
+          // 온라인 flush로도 남았거나 오프라인 — 조용히 파괴하지 않는다.
+          const err = new Error(`동기화되지 않은 변경 ${pending}건이 있습니다.`) as Error & { code?: string; pending?: number }
+          err.code = 'auth/pending-sync'
+          err.pending = pending
+          throw err
+        }
+      }
+    }
     try {
       stopRealtimeSync()
       await signOut(auth)
