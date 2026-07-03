@@ -160,10 +160,6 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
     }
   }, [rows, skipIndexes])
 
-  const allCardSuffixesMapped = useMemo(() =>
-    stats.cardSuffixes.every(s => memberMap[s] !== undefined),
-  [stats.cardSuffixes, memberMap])
-
   // ── Payment method items filtered ────────────────
   const itemsForMethod = useMemo(() => {
     if (paymentMethod === 'cash' || !paymentMethod) return []
@@ -501,7 +497,6 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
               onClick={handleImport}
               disabled={
                 stats.selected === 0 ||
-                (stats.cardSuffixes.length > 0 && !allCardSuffixesMapped) ||
                 (useOverrideDate && !overrideDate)
               }
             >
@@ -1391,11 +1386,16 @@ function FooterButton({
       transition={springSnappy}
       className={clsx(
         'h-12 px-5 rounded-2xl text-body3 font-bold inline-flex items-center justify-center gap-1.5 transition-all',
-        'disabled:opacity-50 disabled:pointer-events-none',
+        'disabled:pointer-events-none',
         fullWidth && 'w-full',
         variant === 'primary'
-          ? 'text-white'
-          : 'text-sub bg-surface-tertiary ring-1 ring-base hover:bg-[var(--hover-bg)]',
+          // 비활성 primary 는 그라데이션(style)이 빠지므로, 여기서 보이는 회색
+          // 배경/글자를 준다. 예전엔 text-white + 배경없음 = 흰 글자가 밝은 푸터에
+          // 묻혀 버튼이 사라진 것처럼 보였다(완료 버튼 실종 버그).
+          ? disabled
+            ? 'bg-surface-tertiary text-disabled ring-1 ring-base opacity-70'
+            : 'text-white'
+          : 'text-sub bg-surface-tertiary ring-1 ring-base hover:bg-[var(--hover-bg)] disabled:opacity-50',
       )}
       style={
         variant === 'primary' && !disabled
