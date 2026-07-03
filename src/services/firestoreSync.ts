@@ -1168,11 +1168,17 @@ export function stopRealtimeSync(): void {
 
 // ─── 로그인 오케스트레이션 ─────────────────────────────────────────
 
-/** 클라우드에 데이터가 하나라도 있는가 — 15개 컬렉션 + 번들 limit(1) 프로브. */
+/**
+ * 클라우드에 데이터가 하나라도 있는가 — 15개 컬렉션 + 번들 limit(1) 프로브.
+ * **서버에서** 읽는다: 오프라인/빈 캐시를 '클라우드가 비었다'로 오판해 최초
+ * 부트스트랩 fullUpload를 잘못 트리거하면, 재접속 시 로컬(구버전일 수 있음)이
+ * 피어의 최신 클라우드를 덮어쓰는 churn 을 만든다. getDocsFromServer는
+ * 오프라인이면 throw → 호출부가 부트스트랩을 건너뛴다(보수적: 확인 못 하면 안 함).
+ */
 async function cloudHasAnyData(uid: string): Promise<boolean> {
   const probes = [...ALL_TABLES.map(t => colPath(uid, t)), `users/${uid}/${DV_BUNDLE_COLLECTION}`]
   for (const path of probes) {
-    const snap = await getDocs(query(collection(firestore, path), limit(1)))
+    const snap = await getDocsFromServer(query(collection(firestore, path), limit(1)))
     if (!snap.empty) return true
   }
   return false
@@ -1207,13 +1213,18 @@ export async function startSyncSession(uid: string): Promise<void> {
   try {
     await refreshDvMigrationState(uid)
 
-    const [cloudHas, localHas] = await Promise.all([
-      cloudHasAnyData(uid),
-      localHasUserData(),
-    ])
-    if (!cloudHas && localHas) {
-      console.info('[sync] 빈 클라우드 + 로컬 데이터 → 최초 전량 업로드')
-      await fullUpload(uid)
+    // 최초 부트스트랩(빈 클라우드 + 로컬 데이터 → 전량 업로드)은 서버 확인이
+    // 필수다. 오프라인이면 cloudHasAnyData가 throw → 부트스트랩을 건너뛰고
+    // 정상 진행한다(리스너/아웃박스가 온라인 복귀 시 수렴시킨다). 확인 없이
+    // 업로드하면 스테일 로컬이 피어 최신본을 덮을 수 있다.
+    try {
+      const localHas = await localHasUserData()
+      if (localHas && !(await cloudHasAnyData(uid))) {
+        console.info('[sync] 빈 클라우드 + 로컬 데이터 → 최초 전량 업로드')
+        await fullUpload(uid)
+      }
+    } catch (bootErr) {
+      console.info('[sync] 부트스트랩 프로브 생략 (오프라인/서버 미확인):', (bootErr as Error)?.message)
     }
 
     startRealtimeSync(uid)
