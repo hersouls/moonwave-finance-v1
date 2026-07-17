@@ -347,21 +347,24 @@ describe('v13→v16 마이그레이션: changelog → syncOutbox 이관 (d)', ()
 })
 
 describe('v13→v16 마이그레이션: 테이블 구조 (e)', () => {
-  it('syncChangeLog/syncMeta는 소멸하고 syncOutbox가 신설된다 (+v17 톰스톤 재도입)', () => {
+  it('syncChangeLog/syncTombstones/syncMeta는 소멸하고 syncOutbox·syncDeletes가 신설된다', () => {
     const declared = db.tables.map((t) => t.name)
     expect(declared).toContain('syncOutbox')
     expect(declared).not.toContain('syncChangeLog')
     expect(declared).not.toContain('syncMeta')
-    // v17이 삭제 부활 차단 가드용으로 syncTombstones를 재도입했다
-    // (v15에서 지운 레거시 테이블과 이름만 같고 스키마/용도는 다르다).
-    expect(declared).toContain('syncTombstones')
+    // 삭제 부활 차단 가드는 v18에서 syncDeletes로 신설됐다. 'syncTombstones'
+    // 라는 로컬 테이블명은 레거시 저장소(PK '++id')가 물리 잔존하는 기기에서
+    // 다른 PK 재선언이 UpgradeError를 내므로 영구 재사용 금지.
+    expect(declared).not.toContain('syncTombstones')
+    expect(declared).toContain('syncDeletes')
 
     // 실제 IndexedDB objectStore 차원에서도 확인
     const stores = Array.from(db.backendDB().objectStoreNames)
     expect(stores).toContain('syncOutbox')
     expect(stores).not.toContain('syncChangeLog')
     expect(stores).not.toContain('syncMeta')
-    expect(stores).toContain('syncTombstones')
+    expect(stores).not.toContain('syncTombstones')
+    expect(stores).toContain('syncDeletes')
   })
 })
 
