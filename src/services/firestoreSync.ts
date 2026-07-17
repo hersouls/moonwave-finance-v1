@@ -20,9 +20,11 @@
 //
 //   전환기 호환 (구버전 기기가 남아있는 동안):
 //        - 문서에 syncId(=id)와 <fk>_syncId 컴패니언을 계속 쓴다
-//        - 삭제 시 syncTombstones 문서를 계속 쓴다 (구버전의 오프라인 삭제 수신)
-//        - __uploadedAt 서버 스탬프 유지 (구버전 델타 체크포인트가 의존)
-//        전 기기가 v2로 업데이트되면 이 셋은 제거해도 된다.
+//          → 전 기기가 v2로 업데이트되면 제거해도 된다.
+//   ⚠️ 더 이상 전환기 전용이 아닌 것 (제거 금지):
+//        - syncTombstones 문서: 윈도우 리스너(WINDOWED_TABLES)의 삭제 전파
+//          경로다 — subscribeCloudTombstones가 리슨한다.
+//        - __uploadedAt 서버 스탬프: 윈도우 리스너의 체크포인트 축이다.
 
 import {
   collection,
@@ -37,6 +39,9 @@ import {
   where,
   serverTimestamp,
   getDocsFromServer,
+  Timestamp,
+  type Query,
+  type DocumentData,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { firestore } from '@/lib/firebase'
@@ -46,6 +51,7 @@ import {
   onUserWritePersisted,
   countPendingOutbox,
   pruneSyncTombstones,
+  SYNC_CHECKPOINT_PREFIX,
   SYNCABLE_TABLE_NAMES,
   type SyncableTableName,
 } from '@/services/database'
@@ -66,6 +72,10 @@ const ALL_TABLES: SyncableTable[] = [...SYNCABLE_TABLE_NAMES]
 
 /** Firestore 배치 상한(500)보다 여유 있게 — 삭제는 톰스톤 동반 시 2op. */
 const BATCH_OPS_LIMIT = 400
+
+/** 삭제 LWW 가드의 문서 조회 상한/동시성 — 초과분(일괄 cascade)은 가드 생략. */
+const DELETE_LWW_CHECK_MAX = 100
+const DELETE_LWW_CHECK_CHUNK = 20
 
 /** v3 = Sync v2 (문자열 id/FK). v2 문서(숫자 FK + 컴패니언)는 인제스트가 정규화. */
 const CLOUD_SCHEMA_VERSION = 3
@@ -328,8 +338,6 @@ function getLocalTable(tableName: SyncableTable): DexieTable {
 
 let activeUid: string | null = null
 let pushTimer: ReturnType<typeof setTimeout> | null = null
-let pushInFlight = false
-let pushQueued = false
 let consecutivePushFailures = 0
 const PUSH_DEBOUNCE_MS = 250
 const MAX_PUSH_BACKOFF_MS = 5 * 60_000
@@ -437,13 +445,25 @@ interface FlushItem {
   record?: Record<string, unknown>
 }
 
+// flush 직렬화 체인 — 동시 호출은 순서대로 실행되며, 각 호출이 받는 promise는
+// "선행 실행 + 자기 실행"이 모두 끝난 뒤 resolve된다.
+let flushChain: Promise<void> = Promise.resolve()
+
 /**
- * 아웃박스 전량을 클라우드로 푸시한다. 동시 실행은 1개로 직렬화하고,
- * 실행 중 재요청은 완료 후 한 번 더 돈다.
+ * 아웃박스 전량을 클라우드로 푸시한다. 동시 호출은 체인으로 직렬화된다.
+ *
+ * 반환 promise는 자기 차례의 flush 완료를 보장한다 — 로그아웃 가드가 이
+ * 보장에 의존한다. (구 구현은 실행 중이면 즉시 반환해, 방금 편집 후 바로
+ * 로그아웃하면 '펜딩 남음' 오탐 프롬프트가 뜨고 강제 진행 시 실제로
+ * 데이터가 유실됐다.)
  */
-export async function flushOutbox(uid: string): Promise<void> {
-  if (pushInFlight) { pushQueued = true; return }
-  pushInFlight = true
+export function flushOutbox(uid: string): Promise<void> {
+  const run = flushChain.then(() => doFlushOutbox(uid))
+  flushChain = run.then(() => {}, () => {})
+  return run
+}
+
+async function doFlushOutbox(uid: string): Promise<void> {
   try {
     const allEntries = await db.syncOutbox.toArray()
     void refreshPendingCount()
@@ -460,9 +480,40 @@ export async function flushOutbox(uid: string): Promise<void> {
 
     const offline = typeof navigator !== 'undefined' && navigator.onLine === false
     setStatus(offline ? 'offline' : 'syncing')
+    // 오프라인이면 여기서 반환 — batch.commit은 서버 ack까지 pending이라
+    // flush 체인이 영원히 대기하고 뒤의 호출자(당겨서 새로고침·로그아웃
+    // 가드)가 전부 매달린다. 아웃박스는 durable하므로 'online' 복귀 핸들러의
+    // flushOutbox가 그대로 재푸시한다 ('대기 N건' 표시도 정직하게 유지).
+    if (offline) return
 
     const dvEntries = entries.filter(e => e.tableName === 'dailyValues')
     const restEntries = entries.filter(e => e.tableName !== 'dailyValues')
+
+    // 삭제 LWW 가드 (U23): 클라우드 문서가 삭제 큐잉 이후에 갱신됐다면
+    // (다른 기기의 더 새로운 수정이 이미 도착) 삭제를 철회한다 — 스테일
+    // 삭제가 최신 수정을 지우지 않게. 문서는 리스너가 다시 내려주므로,
+    // 로컬 톰스톤도 함께 지워 부활 차단에 걸리지 않게 한다.
+    // 대량 cascade 삭제(멤버/카테고리 삭제로 수천 행)는 문서당 읽기 비용이
+    // 폭발하므로 상한을 넘으면 가드를 생략한다 — 의도된 일괄 삭제다.
+    const deleteEntries = restEntries.filter(e => e.op !== 'upsert')
+    const withdrawnDeletes = new Set<string>()
+    if (deleteEntries.length > 0 && deleteEntries.length <= DELETE_LWW_CHECK_MAX) {
+      for (let i = 0; i < deleteEntries.length; i += DELETE_LWW_CHECK_CHUNK) {
+        const chunk = deleteEntries.slice(i, i + DELETE_LWW_CHECK_CHUNK)
+        await Promise.all(chunk.map(async (entry) => {
+          try {
+            const snap = await getDoc(doc(firestore, docPath(uid, entry.tableName as SyncableTable, entry.recordId)))
+            const cloudAt = snap.exists() ? (snap.data()?.updatedAt as string | undefined) : undefined
+            if (cloudAt && entry.queuedAt && cloudAt > entry.queuedAt) {
+              withdrawnDeletes.add(entry.key)
+            }
+          } catch { /* 조회 실패 — 기존 의미론(삭제 진행) 유지 */ }
+        }))
+      }
+      for (const key of withdrawnDeletes) {
+        try { await db.syncTombstones.delete(key) } catch { /* 무해 */ }
+      }
+    }
 
     // ① 일반 테이블: 최신 로컬 행 조회 → set / delete(+톰스톤)
     const items: FlushItem[] = []
@@ -474,10 +525,12 @@ export async function flushOutbox(uid: string): Promise<void> {
         // 행이 그새 삭제됨 → 삭제로 처리 (아웃박스 op는 마지막 훅 기준이라
         // 정상 흐름에선 이미 delete지만, 방어적으로 한 번 더 본다)
         items.push({ entry, record: row })
-      } else {
-        items.push({ entry })
+        continue
       }
-      if (entry.tableName === 'assetItems' && entry.op === 'delete') {
+      // 철회된 삭제는 items에 넣지 않는다 — 아래 ack 단계가 아웃박스 행을 정리한다.
+      if (withdrawnDeletes.has(entry.key)) continue
+      items.push({ entry })
+      if (entry.tableName === 'assetItems') {
         deletedAssetIds.push(entry.recordId)
       }
     }
@@ -513,7 +566,7 @@ export async function flushOutbox(uid: string): Promise<void> {
       } else {
         isolate(entry, () => {
           batch.delete(doc(firestore, docPath(uid, table, entry.recordId)))
-          // 전환기 호환: 구버전 기기의 오프라인 삭제 수신용 톰스톤
+          // 삭제 톰스톤 — 윈도우 리스너의 삭제 전파 경로(제거 금지) + 구버전 호환
           batch.set(doc(firestore, docPath(uid, 'syncTombstones', `${table}_${entry.recordId}`)), {
             tableName: table,
             syncId: entry.recordId,
@@ -621,20 +674,14 @@ export async function flushOutbox(uid: string): Promise<void> {
     const offline = typeof navigator !== 'undefined' && navigator.onLine === false
     setStatus(offline ? 'offline' : 'error', offline ? undefined : classifySyncError(err))
   } finally {
-    pushInFlight = false
     void refreshPendingCount()
-    if (pushQueued) {
-      pushQueued = false
-      requestPush()
-    } else {
-      // 아직 미완 항목이 남아있으면 재예약(성공=즉시 디바운스, 실패=지수 백오프).
-      // poison 격리 항목만 남았으면 재예약하지 않는다(핫 루프 방지) — 그 레코드가
-      // 다시 편집되면 훅이 requestPush를 새로 부른다.
-      void db.syncOutbox.toArray().then((rows) => {
-        const live = rows.some(r => _poisonKeys.get(r.key) !== r.queuedAt)
-        if (live) requestPush()
-      }).catch(() => {})
-    }
+    // 아직 미완 항목이 남아있으면 재예약(성공=즉시 디바운스, 실패=지수 백오프).
+    // poison 격리 항목만 남았으면 재예약하지 않는다(핫 루프 방지) — 그 레코드가
+    // 다시 편집되면 훅이 requestPush를 새로 부른다.
+    void db.syncOutbox.toArray().then((rows) => {
+      const live = rows.some(r => _poisonKeys.get(r.key) !== r.queuedAt)
+      if (live) requestPush()
+    }).catch(() => {})
   }
 }
 
@@ -847,13 +894,15 @@ export async function purgeLegacyDailyValues(uid: string): Promise<{ bundles: nu
  * FK가 문자열이므로 부모 자산이 아직 로컬에 없어도 행을 쓸 수 있다 — UI 조인이
  * 자산 도착 시점부터 자연스럽게 표시한다 (보류 큐 불필요).
  * @internal Exported for unit tests.
+ * @returns true = 로컬에 실제 변경이 적용됨 (echo/LWW/수렴 스킵뿐이면 false)
  */
-export async function ingestDvBundleDoc(data: Record<string, unknown>): Promise<void> {
+export async function ingestDvBundleDoc(data: Record<string, unknown>): Promise<boolean> {
   const exploded = explodeBundleDoc(data)
-  if (!exploded) return // malformed — 재시도 무의미
+  if (!exploded) return false // malformed — 재시도 무의미
   const assetItemId = exploded.assetId
 
-  await runSyncWrite([db.dailyValues], async () => {
+  return runSyncWrite([db.dailyValues], async () => {
+    let changed = false
     for (const day of exploded.days) {
       // 클라우드의 projected(파생) 값 튜플은 무시한다 — 각 기기가 로컬 재생성.
       // 삭제 마커(v===null)는 source와 무관하게 적용해야 하므로 v!==null일 때만.
@@ -866,6 +915,7 @@ export async function ingestDvBundleDoc(data: Record<string, unknown>): Promise<
         // 삭제 마커 — 좌표로 매칭, LWW로 보호 (로컬이 더 새로우면 보존)
         if (existing && shouldApplyCloudUpdate(day.u, day.d, existing.updatedAt)) {
           await db.dailyValues.delete(existing.id)
+          changed = true
         }
         continue
       }
@@ -880,6 +930,7 @@ export async function ingestDvBundleDoc(data: Record<string, unknown>): Promise<
           createdAt: day.u,
           updatedAt: day.u,
         })
+        changed = true
       } else {
         // 들어온 것은 앵커(여기 닿는 day.s는 projected가 아님: 위에서 스킵됨).
         // 로컬이 projected면 타임스탬프와 무관하게 앵커가 이긴다 — 로컬 재생성
@@ -915,6 +966,7 @@ export async function ingestDvBundleDoc(data: Record<string, unknown>): Promise<
               updatedAt: day.u,
             })
           }
+          changed = true
         } else if (existing.source !== 'projected' && day.d && day.d !== getDeviceId()) {
           // 로컬 앵커가 더 새로워 클라우드 앵커 튜플을 거부했고 에코가 아니면,
           // 로컬 최신 일자 값을 재주장해 번들을 수렴시킨다 (C2/H1의 dv 경로).
@@ -922,7 +974,59 @@ export async function ingestDvBundleDoc(data: Record<string, unknown>): Promise<
         }
       }
     }
+    return changed
   })
+}
+
+// ─── 윈도우 리스너 체크포인트 (쿼터 절감, C12) ─────────────────────
+//
+// transactions는 무한 성장 컬렉션이라 무경계 onSnapshot은 ~30분 이상 끊긴
+// 재접속마다 "새 쿼리"로 취급되어 전체 문서 수만큼 읽기가 재과금된다
+// (5기기 × 매일 밤 = 쿼터 소진의 구조적 원인). __uploadedAt 서버 스탬프의
+// 기기별 체크포인트 이후만 리슨하고, 윈도우 밖 문서의 삭제는 syncTombstones
+// 컬렉션 리스너(subscribeCloudTombstones)가 전파한다 — 윈도우 쿼리는 결과
+// 집합 밖 문서의 'removed' 이벤트를 발화하지 않기 때문에 이 보완이 필수다.
+//
+// 체크포인트가 없는 첫 실행은 전량 리슨(오늘과 동일)으로 베이스라인을 받고,
+// 이후부터 델타만 과금된다. 중복 재수신(OVERLAP)은 수렴 단락이 무해화한다.
+const WINDOWED_TABLES: ReadonlySet<SyncableTable> = new Set<SyncableTable>(['transactions'])
+const CHECKPOINT_OVERLAP_MS = 5 * 60_000
+
+// 접두어는 database.ts와 공유 — 로컬 wipe 경로(clearAllData/복원)가
+// clearSyncCheckpoints()로 전량 제거한다 (빈 로컬 + 스테일 체크포인트 금지).
+const checkpointKey = (uid: string, name: string) => `${SYNC_CHECKPOINT_PREFIX}${uid}:${name}`
+
+function loadCheckpointMs(uid: string, name: string): number | null {
+  try {
+    const raw = localStorage.getItem(checkpointKey(uid, name))
+    const ms = raw ? Number(raw) : NaN
+    return Number.isFinite(ms) && ms > 0 ? ms : null
+  } catch { return null }
+}
+
+function saveCheckpointMs(uid: string, name: string, ms: number): void {
+  try {
+    const prev = loadCheckpointMs(uid, name)
+    if (!prev || ms > prev) localStorage.setItem(checkpointKey(uid, name), String(ms))
+  } catch { /* localStorage 불가 — 전량 리슨 폴백 */ }
+}
+
+/** 서버 확인 docChanges에서 최대 __uploadedAt(ms)을 뽑는다 — 체크포인트 전진용. */
+function maxUploadedAtMs(changes: Array<{ doc: { data: () => DocumentData } }>): number {
+  let max = 0
+  for (const c of changes) {
+    const up = c.doc.data().__uploadedAt as { toMillis?: () => number } | null | undefined
+    if (up && typeof up.toMillis === 'function') max = Math.max(max, up.toMillis())
+  }
+  return max
+}
+
+/** 체크포인트가 있으면 __uploadedAt 윈도우 쿼리, 없으면 전량 컬렉션. */
+function windowedQuery(uid: string, name: string): Query {
+  const colRef = collection(firestore, colPath(uid, name))
+  const cp = loadCheckpointMs(uid, name)
+  if (!cp) return colRef
+  return query(colRef, where('__uploadedAt', '>', Timestamp.fromMillis(Math.max(0, cp - CHECKPOINT_OVERLAP_MS))))
 }
 
 // ─── 실시간 리스너 (다운로드 경로) ─────────────────────────────────
@@ -956,6 +1060,64 @@ export function getLastSnapshotAt() {
 // 대기한다. 청크 단위로 쪼개 쓰기 락 점유를 짧게 유지한다.
 const INGEST_CHUNK_SIZE = 300
 
+// ─── 인제스트 실패 복구 (U20) ─────────────────────────────────────
+//
+// 스냅샷 콜백 안에서 잡힌 적용 실패(IndexedDB 쿼터/잠금 등)는 SDK 입장에선
+// "전달 성공"이라 resume token이 전진하고 그 docChange는 재전달되지 않는다 —
+// 콘솔 로그만 남기면 그 기기만 조용히 발산한다. 실패가 있으면 상태를 error로
+// 올리고, 백오프 후 강제 재구독한다: 새 리스너의 초기 스냅샷이 캐시에서 전
+// 문서를 재전달하므로(수렴 단락 덕에 무변경 문서는 no-op) 실패분이 재시도된다.
+let ingestRetryTimer: ReturnType<typeof setTimeout> | null = null
+let ingestRetryCount = 0
+// 실패 중인 리스너 집합 — 카운터 리셋은 "실패했던 리스너 전부가 깨끗해졌을
+// 때"만 한다. 아무 테이블의 정상 스냅샷으로 리셋하면 지속 실패 1건이 30초
+// 고정 간격 전량 재구독 루프가 된다.
+const _failingIngests = new Set<string>()
+let _ingestErrorActive = false
+const INGEST_RETRY_BASE_MS = 30_000
+const INGEST_RETRY_MAX_MS = 10 * 60_000
+
+function scheduleIngestRetry(uid: string, generation: number): void {
+  if (ingestRetryTimer) return
+  const delay = Math.min(INGEST_RETRY_BASE_MS * 2 ** ingestRetryCount, INGEST_RETRY_MAX_MS)
+  ingestRetryCount++
+  ingestRetryTimer = setTimeout(() => {
+    ingestRetryTimer = null
+    if (syncGeneration === generation && activeListenerUid === uid) {
+      console.warn('[sync] 인제스트 실패 복구 — 리스너 강제 재구독')
+      startRealtimeSync(uid, true)
+    }
+  }, delay)
+}
+
+function reportIngestResult(
+  uid: string,
+  generation: number,
+  sourceName: string,
+  failedCount: number,
+  hadChanges: boolean,
+): void {
+  if (failedCount > 0) {
+    _failingIngests.add(sourceName)
+    _ingestErrorActive = true
+    setStatus('error', `클라우드 변경 ${failedCount}건을 이 기기에 적용하지 못했습니다 — 잠시 후 자동 재시도합니다.`)
+    scheduleIngestRetry(uid, generation)
+    return
+  }
+  if (!hadChanges) return
+  _failingIngests.delete(sourceName)
+  if (_failingIngests.size === 0) {
+    ingestRetryCount = 0
+    // 실패분이 자연 회복됐으면 예약된 강제 재구독도 취소한다.
+    if (ingestRetryTimer) { clearTimeout(ingestRetryTimer); ingestRetryTimer = null }
+    if (_ingestErrorActive) {
+      // 실패했던 리스너들이 전부 깨끗한 패스를 마쳤다 — error 고착 해제.
+      _ingestErrorActive = false
+      setStatus('synced')
+    }
+  }
+}
+
 /**
  * 클라우드 문서 변경 1건을 로컬에 적용한다 (runSyncWrite 트랜잭션 안에서 호출).
  * @returns true = 로컬에 실제 변경 적용됨 (echo/LWW 스킵이면 false)
@@ -974,15 +1136,27 @@ async function applyCloudChangeInTx(
     if (tableName === 'dailyValues') return false
     const removedId = typeof cloudData.syncId === 'string' ? cloudData.syncId : null
     if (!removedId) return false
+    const localRow = await (localTable as typeof db.members).get(removedId) as
+      Record<string, unknown> | undefined
+    // 삭제 LWW: removed 이벤트는 삭제된 문서의 마지막 내용을 담는다. 그
+    // updatedAt보다 로컬 수정이 더 새로우면(다른 기기의 스테일 오프라인 삭제)
+    // 수정이 이긴다 — 행을 보존하고 재주장으로 클라우드에 복원한다.
+    const removedAt = typeof cloudData.updatedAt === 'string' ? cloudData.updatedAt : undefined
+    if (localRow && removedAt
+        && typeof localRow.updatedAt === 'string' && localRow.updatedAt > removedAt) {
+      queueReassert(tableName, localRow)
+      return false
+    }
     // 삭제 사실을 톰스톤으로 기록 — 이후 도착하는 스테일 업서트(오프라인
-    // 기기의 SDK 재생)가 이 레코드를 부활시키지 못하게 한다.
+    // 기기의 SDK 재생)가 이 레코드를 부활시키지 못하게 한다. deletedAt은
+    // 삭제된 문서의 updatedAt(보수적 워터마크) — now()를 쓰면 그보다 새로운
+    // 정당한 재작성까지 가로막는다.
     await db.syncTombstones.put({
       key: `${tableName}:${removedId}`,
       tableName,
       recordId: removedId,
-      deletedAt: new Date().toISOString(),
+      deletedAt: removedAt ?? new Date().toISOString(),
     })
-    const localRow = await (localTable as typeof db.members).get(removedId)
     if (!localRow) return false
     await (localTable as typeof db.members).delete(removedId)
     return true
@@ -1078,15 +1252,20 @@ export async function applyCloudChange(
 }
 
 function subscribeTable(uid: string, tableName: SyncableTable, generation: number, retryCount = 0): void {
-  const colRef = collection(firestore, colPath(uid, tableName))
+  // 무한 성장 테이블(transactions)은 체크포인트 윈도우로 리슨 — 윈도우 밖
+  // 문서의 삭제는 subscribeCloudTombstones가 전파한다 (C12 쿼터 절감).
+  const target = WINDOWED_TABLES.has(tableName)
+    ? windowedQuery(uid, tableName)
+    : collection(firestore, colPath(uid, tableName))
   let hadSnapshot = false
-  const unsub = onSnapshot(colRef, { includeMetadataChanges: true }, async (snapshot) => {
+  const unsub = onSnapshot(target, { includeMetadataChanges: true }, async (snapshot) => {
     // 서버가 확인한 스냅샷만 staleness 타이머·재시도 카운터를 리셋한다 —
     // persistentLocalCache는 재구독 직후 캐시 전용 스냅샷(fromCache=true)을
     // 즉시 발화하는데, 이것까지 신선함으로 치면 '캐시만 살아있는 죽은 서버
     // 채널'을 헬스체크가 못 잡고, 쿼터 소진/권한 오류 같은 터미널 오류에서
     // hadSnapshot=true → 백오프 리셋 → 1초 간격 무한 재구독 핫 루프가 된다.
-    if (!snapshot.metadata.fromCache) {
+    const serverConfirmed = !snapshot.metadata.fromCache
+    if (serverConfirmed) {
       hadSnapshot = true
       lastSnapshotByTable.set(tableName, Date.now())
     }
@@ -1099,6 +1278,7 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
     // 실제 로컬 변경이 있을 때만 UI에 알린다 — 자기 업로드의 echo(LWW 스킵)에
     // fin-sync-update를 쏘면 대량 업로드 동안 소비자가 전부 깜빡인다.
     let appliedCount = 0
+    let failedCount = 0
 
     try {
       for (let chunkStart = 0; chunkStart < docChanges.length; chunkStart += INGEST_CHUNK_SIZE) {
@@ -1110,13 +1290,15 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
                 appliedCount++
               }
             } catch (err) {
+              failedCount++
               console.error(`[sync] real-time ${tableName} ${change.type} error:`, err)
             }
           }
         })
       }
     } catch (err) {
-      // 트랜잭션 자체가 abort된 드문 경우 — 다음 스냅샷/재구독이 수습한다.
+      // 트랜잭션 자체가 abort된 드문 경우 — 재시도 스케줄이 수습한다.
+      failedCount++
       console.error(`[sync] real-time ${tableName} ingest transaction failed:`, err)
     }
 
@@ -1125,6 +1307,15 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
 
     if (appliedCount > 0) {
       window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: tableName } }))
+    }
+    reportIngestResult(uid, generation, tableName, failedCount, docChanges.length > 0)
+    // 체크포인트는 이 스냅샷의 인제스트가 전부 성공한 뒤에만 전진한다 —
+    // 스냅샷 도착 시점에 전진하면 적용 실패/크래시분이 5분 겹침 창 밖에서
+    // 영구 유실된다. 이전 실패의 재시도 대기 중에도 전진하지 않는다
+    // (후속 델타가 실패분을 건너뛰고 창을 닫는 것을 방지).
+    if (serverConfirmed && failedCount === 0 && !ingestRetryTimer && WINDOWED_TABLES.has(tableName)) {
+      const m = maxUploadedAtMs(docChanges)
+      if (m > 0) saveCheckpointMs(uid, tableName, m)
     }
   }, (err) => {
     console.error(`[sync] ${tableName} listener error:`, err)
@@ -1159,12 +1350,14 @@ function subscribeDvBundles(uid: string, generation: number, retryCount = 0): vo
     if (docChanges.length === 0) return
 
     let appliedCount = 0
+    let failedCount = 0
     for (const change of docChanges) {
       const data = change.doc.data()
       try {
         if (change.type === 'added' || change.type === 'modified') {
-          await ingestDvBundleDoc(data)
-          appliedCount++
+          // 실제 로컬 변경이 있었던 번들만 센다 — 자기 업로드 echo/LWW 스킵에
+          // fin-sync-update를 쏘면 일별값을 고칠 때마다 소비자가 깜빡인다 (U38).
+          if (await ingestDvBundleDoc(data)) appliedCount++
         } else if (change.type === 'removed') {
           // 번들 제거 = 자산 cascade 삭제(또는 빈 달 정리). 로컬의 해당
           // 자산×월 행을 제거한다.
@@ -1181,6 +1374,7 @@ function subscribeDvBundles(uid: string, generation: number, retryCount = 0): vo
           }
         }
       } catch (err) {
+        failedCount++
         console.error(`[sync] dv bundle ${change.type} ingest error:`, err)
       }
     }
@@ -1191,6 +1385,7 @@ function subscribeDvBundles(uid: string, generation: number, retryCount = 0): vo
     if (appliedCount > 0) {
       window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: 'dailyValues' } }))
     }
+    reportIngestResult(uid, generation, DV_BUNDLE_COLLECTION, failedCount, docChanges.length > 0)
   }, (err) => {
     console.error('[sync] dv bundles listener error:', err)
     if (syncGeneration === generation) {
@@ -1199,6 +1394,93 @@ function subscribeDvBundles(uid: string, generation: number, retryCount = 0): vo
       setTimeout(() => {
         if (syncGeneration === generation) {
           subscribeDvBundles(uid, generation, nextRetry)
+        }
+      }, delay)
+    }
+  })
+  unsubscribers.push(unsub)
+}
+
+/** lastSnapshotByTable 키 — 톰스톤 컬렉션 리스너용. */
+const TOMBSTONE_COLLECTION = 'syncTombstones'
+
+/**
+ * 클라우드 삭제 톰스톤 실시간 구독 — 윈도우 리스너(WINDOWED_TABLES)의 삭제
+ * 전파 경로. 윈도우 쿼리는 결과 집합 밖 문서의 'removed'를 발화하지 않으므로,
+ * flushOutbox가 삭제마다 남기는 syncTombstones 문서를 별도 윈도우로 리슨해
+ * 로컬 삭제를 적용한다. 비윈도우 테이블에도 도달하지만 삭제는 멱등이라 무해.
+ *
+ * 삭제 LWW: 로컬 행의 updatedAt이 톰스톤 deletedAt보다 새로우면 수정이
+ * 이긴다 — 행을 보존하고 재주장해 클라우드에 문서를 복원한다 (U23).
+ */
+function subscribeCloudTombstones(uid: string, generation: number, retryCount = 0): void {
+  const target = windowedQuery(uid, TOMBSTONE_COLLECTION)
+  let hadSnapshot = false
+  const unsub = onSnapshot(target, { includeMetadataChanges: true }, async (snapshot) => {
+    const serverConfirmed = !snapshot.metadata.fromCache
+    if (serverConfirmed) {
+      hadSnapshot = true
+      lastSnapshotByTable.set(TOMBSTONE_COLLECTION, Date.now())
+    }
+    if (realtimeSyncPaused) return
+
+    const docChanges = snapshot.docChanges()
+    if (docChanges.length === 0) return
+
+    let failedCount = 0
+    const touched = new Set<SyncableTable>()
+    for (const change of docChanges) {
+      if (change.type === 'removed') continue
+      const data = change.doc.data()
+      const tableName = data.tableName as SyncableTable | undefined
+      const recordId = typeof data.syncId === 'string' && data.syncId ? data.syncId : null
+      const deletedAt = typeof data.deletedAt === 'string' && data.deletedAt ? data.deletedAt : null
+      if (!tableName || !recordId || !deletedAt) continue
+      if (tableName === 'dailyValues') continue // dv 삭제는 번들 v=null 마커가 전파
+      if (!(SYNCABLE_TABLE_NAMES as string[]).includes(tableName)) continue
+      if (data.__deviceId === getDeviceId()) continue // 자기 삭제 에코 — 이미 적용됨
+
+      try {
+        const localTable = getLocalTable(tableName)
+        const applied = await runSyncWrite([localTable, db.syncTombstones], async () => {
+          const row = await (localTable as typeof db.members).get(recordId) as
+            Record<string, unknown> | undefined
+          if (row && typeof row.updatedAt === 'string' && row.updatedAt > deletedAt) {
+            // 삭제보다 새로운 로컬 수정 — 수정이 이긴다. 재주장으로 클라우드 복원.
+            queueReassert(tableName, row)
+            return false
+          }
+          await db.syncTombstones.put({ key: `${tableName}:${recordId}`, tableName, recordId, deletedAt })
+          if (!row) return false
+          await (localTable as typeof db.members).delete(recordId)
+          return true
+        })
+        if (applied) touched.add(tableName)
+      } catch (err) {
+        failedCount++
+        console.error('[sync] tombstone ingest error:', err)
+      }
+    }
+
+    await drainReassertQueue()
+
+    for (const t of touched) {
+      window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: t } }))
+    }
+    reportIngestResult(uid, generation, TOMBSTONE_COLLECTION, failedCount, docChanges.length > 0)
+    // 인제스트 성공 후에만 체크포인트 전진 (subscribeTable과 동일 규약).
+    if (serverConfirmed && failedCount === 0 && !ingestRetryTimer) {
+      const m = maxUploadedAtMs(docChanges)
+      if (m > 0) saveCheckpointMs(uid, TOMBSTONE_COLLECTION, m)
+    }
+  }, (err) => {
+    console.error('[sync] tombstones listener error:', err)
+    if (syncGeneration === generation) {
+      const nextRetry = hadSnapshot ? 0 : retryCount + 1
+      const delay = Math.min(Math.pow(2, nextRetry) * 1000, 30000)
+      setTimeout(() => {
+        if (syncGeneration === generation) {
+          subscribeCloudTombstones(uid, generation, nextRetry)
         }
       }, delay)
     }
@@ -1237,6 +1519,16 @@ export function startRealtimeSync(uid: string, force: boolean = false): void {
   // 일별가치 번들 (자산×월 묶음) 실시간 구독
   lastSnapshotByTable.set(DV_BUNDLE_COLLECTION, now)
   subscribeDvBundles(uid, gen)
+
+  // 삭제 톰스톤 구독 — 윈도우 리스너의 삭제 전파 보완 (C12).
+  // 체크포인트가 없는 신규 기기는 7일 지평선을 시드한다: 베이스라인은
+  // transactions 전량 리슨이 클라우드 "현재 상태"(삭제 문서 부재)로 잡아
+  // 주므로 과거 톰스톤 전량 읽기는 불필요한 과금이다.
+  if (!loadCheckpointMs(uid, TOMBSTONE_COLLECTION)) {
+    saveCheckpointMs(uid, TOMBSTONE_COLLECTION, Date.now() - 7 * 24 * 60 * 60 * 1000)
+  }
+  lastSnapshotByTable.set(TOMBSTONE_COLLECTION, now)
+  subscribeCloudTombstones(uid, gen)
 }
 
 export function stopRealtimeSync(): void {
@@ -1249,6 +1541,7 @@ export function stopRealtimeSync(): void {
   unsubscribers = []
   lastSnapshotByTable.clear()
   if (pushTimer) { clearTimeout(pushTimer); pushTimer = null }
+  if (ingestRetryTimer) { clearTimeout(ingestRetryTimer); ingestRetryTimer = null }
 }
 
 // ─── 로그인 오케스트레이션 ─────────────────────────────────────────

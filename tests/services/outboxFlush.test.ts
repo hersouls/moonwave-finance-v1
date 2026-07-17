@@ -26,13 +26,16 @@ const h = vi.hoisted(() => ({
   queryDocs: [] as Array<{ ref: { path: string } }>,
   /** where(...) 호출 캡처 */
   wheres: [] as Array<{ field: string; op: string; value: unknown }>,
+  /** getDoc 응답 오버라이드 — 삭제 LWW 가드(클라우드 문서 조회) 시뮬레이션용 */
+  getDocFor: null as ((path: string) => { exists: () => boolean; data: () => Record<string, unknown> | undefined }) | null,
 }))
 
 vi.mock('@/lib/firebase', () => ({ firestore: {}, auth: {} }))
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn((_fs: unknown, path: string) => ({ __type: 'collection', path })),
   doc: vi.fn((_fs: unknown, path: string) => ({ __type: 'doc', path })),
-  getDoc: vi.fn(async () => ({ exists: () => false, data: () => undefined })),
+  getDoc: vi.fn(async (ref: { path: string }) =>
+    h.getDocFor ? h.getDocFor(ref.path) : { exists: () => false, data: () => undefined }),
   getDocs: vi.fn(async () => ({ empty: h.queryDocs.length === 0, docs: h.queryDocs })),
   setDoc: vi.fn(async () => {}),
   deleteDoc: vi.fn(async () => {}),
@@ -113,6 +116,7 @@ beforeEach(async () => {
   h.onCommit = null
   h.queryDocs = []
   h.wheres = []
+  h.getDocFor = null
   setSyncWritingFlag(true)
   try {
     await db.transactions.clear()
@@ -206,6 +210,50 @@ describe('flushOutbox — delete 경로', () => {
       __schemaV: 3,
     })
     expect(ts!.payload.__uploadedAt).toEqual({ __sentinel: 'serverTimestamp' })
+    expect(await db.syncOutbox.count()).toBe(0)
+  })
+
+  it('삭제 LWW 가드: 클라우드 문서가 삭제 큐잉 이후 갱신됐으면 삭제를 철회한다 (U23)', async () => {
+    await seedSync(() => db.transactions.add(makeTxn('txn-race')))
+    await db.transactions.delete('txn-race')
+    await waitForOutboxCount(1)
+    const entry = await db.syncOutbox.get('transactions:txn-race')
+    expect(entry!.op).toBe('delete')
+    // 훅이 삭제 톰스톤을 남겼는지 확인 (부활 차단 가드)
+    await vi.waitFor(async () => {
+      expect(await db.syncTombstones.get('transactions:txn-race')).toBeDefined()
+    })
+
+    // 다른 기기의 더 새로운 수정이 이미 클라우드에 도착한 상황
+    const newerAt = new Date(Date.parse(entry!.queuedAt) + 60_000).toISOString()
+    h.getDocFor = (path) => path.endsWith('/transactions/txn-race')
+      ? { exists: () => true, data: () => ({ updatedAt: newerAt }) }
+      : { exists: () => false, data: () => undefined }
+
+    await flushOutbox(UID)
+
+    // 삭제가 철회됐다: doc delete도, 톰스톤 set도 나가지 않는다
+    expect(h.deletes).not.toContain(`users/${UID}/transactions/txn-race`)
+    expect(h.sets.find(s => s.path.includes('syncTombstones/transactions_txn-race'))).toBeUndefined()
+    // 아웃박스 행은 정리되고, 로컬 톰스톤도 해제되어 리스너 재수신을 막지 않는다
+    expect(await db.syncOutbox.count()).toBe(0)
+    expect(await db.syncTombstones.get('transactions:txn-race')).toBeUndefined()
+  })
+
+  it('클라우드 문서가 삭제 큐잉보다 오래됐으면 삭제를 정상 진행한다', async () => {
+    await seedSync(() => db.transactions.add(makeTxn('txn-old')))
+    await db.transactions.delete('txn-old')
+    await waitForOutboxCount(1)
+    const entry = await db.syncOutbox.get('transactions:txn-old')
+
+    const olderAt = new Date(Date.parse(entry!.queuedAt) - 60_000).toISOString()
+    h.getDocFor = (path) => path.endsWith('/transactions/txn-old')
+      ? { exists: () => true, data: () => ({ updatedAt: olderAt }) }
+      : { exists: () => false, data: () => undefined }
+
+    await flushOutbox(UID)
+
+    expect(h.deletes).toContain(`users/${UID}/transactions/txn-old`)
     expect(await db.syncOutbox.count()).toBe(0)
   })
 })

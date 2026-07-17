@@ -51,7 +51,13 @@ export default function App() {
     const u = useAuthStore.getState().user
     if (u) {
       try {
-        await flushOutbox(u.uid)
+        // 유한 대기: flush 체인이 죽은 네트워크의 커밋에 묶여 있어도
+        // 새로고침 스피너가 매달리지 않게 한다 (아웃박스는 durable —
+        // 미완 분은 온라인 복귀/다음 푸시가 이어받는다).
+        await Promise.race([
+          flushOutbox(u.uid),
+          new Promise((resolve) => setTimeout(resolve, 5_000)),
+        ])
         startRealtimeSync(u.uid, true)
       } catch (err) {
         console.error('[pull-refresh] failed:', err)

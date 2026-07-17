@@ -27,7 +27,12 @@ export function useAutoSync() {
   useEffect(() => {
     if (!user) return
 
-    const STALE_ON_FOCUS_MS = 30_000
+    // 포그라운드/온라인 복귀 시 강제 재구독 임계 — 너무 짧으면 폰에서 앱을
+    // 전환할 때마다(하루 수십 번) 전 리스너를 재구독해 읽기가 재과금된다.
+    // 짧은 백그라운드는 리스너가 대개 생존하고, 진짜 죽은 채널은 5분 헬스폴이
+    // 잡으므로 3분이면 충분하다. (transactions는 윈도우 리스너라 재구독 비용이
+    // 작지만 나머지 15개 컬렉션은 전량 재과금이다.)
+    const STALE_ON_FOCUS_MS = 3 * 60_000
     const STALE_FORCE_RESTART_MS = 5 * 60_000
     const HEALTH_POLL_MS = 60_000
     const PRESENCE_THROTTLE_MS = 5 * 60_000

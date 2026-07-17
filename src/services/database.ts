@@ -584,6 +584,26 @@ export async function pruneSyncTombstones(maxAgeDays = 30): Promise<void> {
   await db.syncTombstones.where('deletedAt').below(cutoff).delete()
 }
 
+/** 윈도우 리스너 체크포인트 localStorage 키 접두어 (firestoreSync가 사용). */
+export const SYNC_CHECKPOINT_PREFIX = 'fin:syncCheckpoint:'
+
+/**
+ * 윈도우 리스너 체크포인트 전량 삭제 — 로컬 데이터를 지우는 모든 경로에서
+ * 반드시 함께 호출해야 한다. 빈 로컬에 스테일 체크포인트가 남으면 윈도우
+ * 리스너가 최근 몇 분치만 내려받아 과거 원장이 그 기기에서 영영 복원되지
+ * 않는다 (재로그인·데이터 초기화·백업 복원 직후는 전량 리슨으로 재기저선).
+ */
+export function clearSyncCheckpoints(): void {
+  try {
+    const doomed: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k && k.startsWith(SYNC_CHECKPOINT_PREFIX)) doomed.push(k)
+    }
+    for (const k of doomed) localStorage.removeItem(k)
+  } catch { /* localStorage 불가 — 전량 리슨 폴백과 동일하게 무해 */ }
+}
+
 function persistOutboxEntries(entries: SyncOutboxEntry[]): void {
   if (entries.length === 0) return
   // 레코드당 1행 — 같은 트랜잭션에서 여러 번 변경돼도 마지막 op가 이긴다.
@@ -850,10 +870,19 @@ export async function updateMember(id: string, updates: Partial<Member>): Promis
 }
 
 export async function deleteMember(id: string): Promise<void> {
-  await db.transaction('rw', [db.members, db.assetItems, db.dailyValues, db.transactions], async () => {
+  const now = new Date().toISOString()
+  await db.transaction('rw', [db.members, db.assetItems, db.dailyValues, db.transactions, db.loans], async () => {
     const items = await db.assetItems.where('memberId').equals(id).toArray()
     for (const item of items) {
       await db.dailyValues.where('assetItemId').equals(item.id).delete()
+    }
+    // 삭제되는 자산에 연결된 대출 FK 해제 (deleteAssetCategory와 동일 사유).
+    const itemIds = new Set(items.map(i => i.id))
+    if (itemIds.size > 0) {
+      const linked = await db.loans.filter(l => l.linkedAssetItemId != null && itemIds.has(l.linkedAssetItemId)).toArray()
+      if (linked.length > 0) {
+        await db.loans.bulkPut(linked.map(l => ({ ...l, linkedAssetItemId: undefined, updatedAt: now })))
+      }
     }
     await db.assetItems.where('memberId').equals(id).delete()
     await db.transactions.where('memberId').equals(id).delete()
@@ -875,10 +904,20 @@ export async function updateAssetCategory(id: string, updates: Partial<AssetCate
 }
 
 export async function deleteAssetCategory(id: string): Promise<void> {
-  await db.transaction('rw', [db.assetCategories, db.assetItems, db.dailyValues], async () => {
+  const now = new Date().toISOString()
+  await db.transaction('rw', [db.assetCategories, db.assetItems, db.dailyValues, db.loans], async () => {
     const items = await db.assetItems.where('categoryId').equals(id).toArray()
     for (const item of items) {
       await db.dailyValues.where('assetItemId').equals(item.id).delete()
+    }
+    // 삭제되는 자산에 연결된 대출의 FK 해제 — 댕글링 FK가 남으면 이후 대출
+    // 잔액 수정이 삭제된 자산의 일별값 시리즈를 되살린다 (deleteAssetItem과 동일).
+    const itemIds = new Set(items.map(i => i.id))
+    if (itemIds.size > 0) {
+      const linked = await db.loans.filter(l => l.linkedAssetItemId != null && itemIds.has(l.linkedAssetItemId)).toArray()
+      if (linked.length > 0) {
+        await db.loans.bulkPut(linked.map(l => ({ ...l, linkedAssetItemId: undefined, updatedAt: now })))
+      }
     }
     await db.assetItems.where('categoryId').equals(id).delete()
     await db.assetCategories.delete(id)
@@ -946,19 +985,25 @@ export async function getDailyValue(assetItemId: string, date: string): Promise<
 
 export async function setDailyValue(assetItemId: string, date: string, value: number): Promise<void> {
   const now = new Date().toISOString()
-  const existing = await getDailyValue(assetItemId, date)
-  if (existing) {
-    await db.dailyValues.update(existing.id, { value, updatedAt: now })
-  } else {
-    await db.dailyValues.add({
-      id: createId(),
-      assetItemId,
-      date,
-      value,
-      createdAt: now,
-      updatedAt: now,
-    })
-  }
+  // 확인+삽입을 단일 트랜잭션으로 — [assetItemId+date]는 유니크 인덱스가
+  // 아니라서, 트랜잭션 밖 check-then-insert는 실시간 dv 번들 인제스트와
+  // 경쟁해 같은 (자산,일자) 좌표에 중복 행을 만들 수 있다.
+  await db.transaction('rw', db.dailyValues, async () => {
+    const existing = await db.dailyValues
+      .where('[assetItemId+date]').equals([assetItemId, date]).first()
+    if (existing) {
+      await db.dailyValues.update(existing.id, { value, updatedAt: now })
+    } else {
+      await db.dailyValues.add({
+        id: createId(),
+        assetItemId,
+        date,
+        value,
+        createdAt: now,
+        updatedAt: now,
+      })
+    }
+  })
 }
 
 export async function bulkSetDailyValues(entries: { assetItemId: string; date: string; value: number; source?: 'manual' | 'projected' }[]): Promise<void> {
@@ -1364,6 +1409,9 @@ export async function clearAllData(): Promise<void> {
     // 톰스톤도 함께 초기화 — 계정 전환 시 이전 사용자의 삭제 기록이 새 계정
     // 데이터의 인제스트를 차단하면 안 된다.
     await db.syncTombstones.clear()
+    // 윈도우 리스너 체크포인트도 초기화 — 빈 로컬 + 스테일 체크포인트 조합은
+    // 과거 데이터를 영영 못 내려받는다 (다음 구독은 전량 리슨으로 재기저선).
+    clearSyncCheckpoints()
 
     const now = new Date().toISOString()
     await db.members.bulkAdd(

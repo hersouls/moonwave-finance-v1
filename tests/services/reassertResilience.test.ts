@@ -50,7 +50,7 @@ vi.mock('firebase/firestore', () => ({
   }),
 }))
 
-import { db, setSyncWritingFlag, drainChangeTracking, addTransaction, updateTransaction } from '@/services/database'
+import { db, setSyncWritingFlag, drainChangeTracking, addTransaction } from '@/services/database'
 import { applyCloudChange, drainReassertQueue, flushOutbox } from '@/services/firestoreSync'
 import { getDeviceId } from '@/lib/deviceId'
 import type { Transaction } from '@/lib/types'
