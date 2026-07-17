@@ -817,14 +817,32 @@ export function suggestCategory(
 // ─── Duplicate detection ────────────────────────────────
 
 /**
+ * exact/likely 판정에 요구하는 날짜 근접 범위(±일). 같은 가맹점+같은 금액이라도
+ * 날짜가 이보다 멀면 정상적인 반복 구매(매일 커피, 버스요금 등)일 수 있으므로
+ * possible로 강등해 자동 제외 대상에서 빠지게 한다.
+ */
+const DUP_DATE_WINDOW_DAYS = 3
+
+function dateDiffDays(a: string, b: string): number {
+  const ta = Date.parse(a)
+  const tb = Date.parse(b)
+  if (Number.isNaN(ta) || Number.isNaN(tb)) return Number.POSITIVE_INFINITY
+  return Math.abs(ta - tb) / 86_400_000
+}
+
+/**
  * Returns a DuplicateMatch for a parsed row against existing transactions.
  *
  * Primary key: amount. Secondary signal: merchant/memo similarity.
+ * Tertiary gate: date proximity — exact/likely require the existing
+ * transaction's date to be within ±3 days of the statement row's date.
  *
  * Heuristic levels (per user spec — amount-first, content-compared):
- *   exact    — same amount + normalized merchant === memo
+ *   exact    — same amount + normalized merchant === memo + date within ±3d
  *   likely   — same amount + memo contains/contained-by merchant (>=3 chars)
- *   possible — same amount + token overlap OR same amount with no memo
+ *              + date within ±3d
+ *   possible — same-merchant/similar match with distant date (반복 구매 가능),
+ *              OR same amount + token overlap, OR same amount with no memo
  *   none     — no matching amount
  */
 export function detectDuplicate(
@@ -839,34 +857,54 @@ export function detectDuplicate(
 
   const merchantNorm = normalizeMerchantKey(row.merchant)
 
-  // ── 2차: 가맹점/지출내용 정확 일치 → exact
+  // 날짜가 ±3일을 벗어난 동일/유사 가맹점 매칭 — 반복 구매일 수 있어 possible로만 보고
+  let distantMatch: DuplicateMatch | null = null
+
+  // ── 2차: 가맹점/지출내용 정확 일치 + 날짜 ±3일 → exact
   for (const t of sameAmount) {
     if (!t.memo) continue
     const memoNorm = normalizeMerchantKey(t.memo)
     if (memoNorm && memoNorm === merchantNorm) {
-      return {
-        level: 'exact',
+      if (dateDiffDays(row.date, t.date) <= DUP_DATE_WINDOW_DAYS) {
+        return {
+          level: 'exact',
+          matchedTransactionId: t.id,
+          reason: '같은 금액 · 같은 지출내용',
+        }
+      }
+      distantMatch ??= {
+        level: 'possible',
         matchedTransactionId: t.id,
-        reason: '같은 금액 · 같은 지출내용',
+        reason: '같은 금액 · 같은 지출내용 · 날짜 차이 큼 (반복 구매 가능)',
       }
     }
   }
 
-  // ── 3차: 한쪽이 다른쪽을 포함 (>=3자) → likely
+  // ── 3차: 한쪽이 다른쪽을 포함 (>=3자) + 날짜 ±3일 → likely
   if (merchantNorm.length >= 3) {
     for (const t of sameAmount) {
       if (!t.memo) continue
       const memoNorm = normalizeMerchantKey(t.memo)
       if (memoNorm.length >= 3
           && (memoNorm.includes(merchantNorm) || merchantNorm.includes(memoNorm))) {
-        return {
-          level: 'likely',
+        if (dateDiffDays(row.date, t.date) <= DUP_DATE_WINDOW_DAYS) {
+          return {
+            level: 'likely',
+            matchedTransactionId: t.id,
+            reason: '같은 금액 · 유사 지출내용',
+          }
+        }
+        distantMatch ??= {
+          level: 'possible',
           matchedTransactionId: t.id,
-          reason: '같은 금액 · 유사 지출내용',
+          reason: '같은 금액 · 유사 지출내용 · 날짜 차이 큼 (반복 구매 가능)',
         }
       }
     }
   }
+
+  // ── 3.5차: 내용은 일치하지만 날짜가 먼 매칭 → possible (자동 제외 안 됨)
+  if (distantMatch) return distantMatch
 
   // ── 4차: 토큰 부분 일치 (>=2자 단어) → possible
   if (merchantNorm.length >= 2) {
@@ -896,23 +934,63 @@ export function detectDuplicate(
 
 // ─── Top-level analyze ──────────────────────────────────
 
+/**
+ * 중복 검사용 기존 거래 조회 범위(일). 명세서 최소 날짜 − 60일부터,
+ * max(오늘, 명세서 최대 날짜) + 60일까지. 상한에도 여유를 두는 이유:
+ * 지급일 일괄 설정(다음달 25일 등)으로 미래 날짜에 등록된 과거 import
+ * 건도 재-import 시 중복 후보로 잡혀야 하기 때문.
+ */
+const EXISTING_RANGE_BUFFER_DAYS = 60
+
+function shiftDateStr(iso: string, days: number): string {
+  const d = new Date(iso + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+/**
+ * 중복 검사·이력 기반 카테고리 추천에 쓸 기존 지출 거래를 Dexie에서 직접
+ * 조회한다. 예전에는 호출자(모달)가 "현재 보고 있는 달"의 스토어 슬라이스를
+ * 넘겼기 때문에, 다른 달을 보면서 같은 명세서를 재-import하면 중복이 전혀
+ * 감지되지 않고 전부 이중 등록되는 문제가 있었다.
+ */
+async function loadExistingExpenses(rows: ParsedRow[]): Promise<Transaction[]> {
+  const today = new Date().toISOString().slice(0, 10)
+  const validDates = rows
+    .map(r => r.date)
+    .filter(d => !Number.isNaN(Date.parse(d)))
+    .sort()
+  const minDate = validDates[0] ?? today
+  const maxDate = validDates[validDates.length - 1] ?? today
+  const from = shiftDateStr(minDate < today ? minDate : today, -EXISTING_RANGE_BUFFER_DAYS)
+  const to = shiftDateStr(maxDate > today ? maxDate : today, EXISTING_RANGE_BUFFER_DAYS)
+  const txns = await db.transactions.where('date').between(from, to, true, true).toArray()
+  return txns.filter(t => t.type === 'expense')
+}
+
 export async function analyzeStatement(
   text: string,
   categories: TransactionCategory[],
-  existing: Transaction[],
+  /**
+   * 중복 검사·이력 추천에 쓸 기존 거래. 생략하면(권장) 명세서 날짜 범위
+   * ±60일의 지출을 Dexie에서 직접 조회한다. 스토어의 월 단위 슬라이스를
+   * 넘기면 다른 달의 중복을 놓치므로 테스트 주입 용도로만 명시 전달할 것.
+   */
+  existing?: Transaction[],
 ): Promise<AnalyzedRow[]> {
   const rows = parseCardStatement(text)
   // Load registered subscriptions + learned aliases + history stats once.
   // O(history + N) total rather than O(N × history).
-  const [subscriptions, aliases] = await Promise.all([
+  const [subscriptions, aliases, existingTxns] = await Promise.all([
     db.subscriptions.toArray(),
     loadAliasMap(),
+    existing != null ? Promise.resolve(existing) : loadExistingExpenses(rows),
   ])
-  const stats = buildMerchantStats(existing, categories)
+  const stats = buildMerchantStats(existingTxns, categories)
   return rows.map(row => ({
     ...row,
-    duplicate: detectDuplicate(row, existing),
-    suggestion: suggestCategory(row.merchant, categories, existing, subscriptions, stats, aliases),
+    duplicate: detectDuplicate(row, existingTxns),
+    suggestion: suggestCategory(row.merchant, categories, existingTxns, subscriptions, stats, aliases),
   }))
 }
 
