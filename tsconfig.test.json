@@ -1,0 +1,13 @@
+{
+  // 테스트 전용 타입체크 프로젝트: npm run typecheck:tests → tsc -p tsconfig.test.json --noEmit
+  // (src 는 npm run build 의 tsc -b 가 본 tsconfig 로 전체 검사하므로, 여기서는 tests 커버가 목적)
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["vitest/globals", "node"],
+    // 동시 작업 중인 동기화 테스트의 미사용 임포트가 게이트를 막지 않도록 완화
+    // (미사용 변수 검출은 ESLint @typescript-eslint/no-unused-vars 가 에러로 담당)
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["src", "tests"]
+}

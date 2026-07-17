@@ -164,20 +164,17 @@ function parseTradesCardView(text: string): ParsedTrade[] {
 
     // Next: date line "2026-05-28"
     if (j >= lines.length) { i = j; continue }
-    let sellDate = ''
     const dateMatch = lines[j].match(/^(\d{4}-\d{2}-\d{2})$/)
-    if (dateMatch) { sellDate = dateMatch[1]; j++ }
-    else { i = assetTypeIdx + 1; continue }
+    if (!dateMatch) { i = assetTypeIdx + 1; continue }
+    const sellDate = dateMatch[1]; j++
 
     // Next: "187주 · 2,876,060원" or "187주 · 2,876,060원"
     if (j >= lines.length) { i = j; continue }
     const qtyAmtMatch = lines[j].match(/^([\d,.]+)주\s*·\s*([\d,]+)원$/)
-    let sellQuantity = 0, totalSellAmount = 0
-    if (qtyAmtMatch) {
-      sellQuantity = parseQuantityFloat(qtyAmtMatch[1])
-      totalSellAmount = Math.abs(parseAmount(qtyAmtMatch[2]))
-      j++
-    } else { i = assetTypeIdx + 1; continue }
+    if (!qtyAmtMatch) { i = assetTypeIdx + 1; continue }
+    const sellQuantity = parseQuantityFloat(qtyAmtMatch[1])
+    const totalSellAmount = Math.abs(parseAmount(qtyAmtMatch[2]))
+    j++
 
     // Next: member name (skip)
     if (j < lines.length && !lines[j].match(/^[+-]/) && !lines[j].match(/^\d/)) j++
@@ -291,7 +288,7 @@ function preProcessDividendText(text: string): string {
 function preProcessDividendCardText(text: string): string {
   let s = text
   // "LG국내주식" → "LG\n국내주식"
-  s = s.replace(/([가-힣A-Za-z0-9&\-]+)(국내주식|해외주식|국내ETF|해외ETF)/g, (_, name, type) => {
+  s = s.replace(/([가-힣A-Za-z0-9&-]+)(국내주식|해외주식|국내ETF|해외ETF)/g, (_, name, type) => {
     if (name === '국내' || name === '해외') return `${name}${type}`
     return `${name}\n${type}`
   })
@@ -325,19 +322,17 @@ function parseDividendsCardView(text: string): ParsedDividend[] {
 
     // Date "2026-04-16"
     if (j >= lines.length) { i = j; continue }
-    let paymentDate = ''
     const dm = lines[j].match(/^(\d{4}-\d{2}-\d{2})$/)
-    if (dm) { paymentDate = dm[1]; j++ } else { i = atIdx + 1; continue }
+    if (!dm) { i = atIdx + 1; continue }
+    const paymentDate = dm[1]; j++
 
     // "3주 · 배당락 2026-03-31" or "16주 · 배당락 2025-12-29"
     if (j >= lines.length) { i = j; continue }
-    let quantity = 0, exDividendDate = ''
     const qtyExMatch = lines[j].match(/^([\d,.]+)주\s*·\s*배당락\s*(\d{4}-\d{2}-\d{2})/)
-    if (qtyExMatch) {
-      quantity = parseQuantityFloat(qtyExMatch[1])
-      exDividendDate = qtyExMatch[2]
-      j++
-    } else { i = atIdx + 1; continue }
+    if (!qtyExMatch) { i = atIdx + 1; continue }
+    const quantity = parseQuantityFloat(qtyExMatch[1])
+    const exDividendDate = qtyExMatch[2]
+    j++
 
     // Member name (skip)
     if (j < lines.length && !lines[j].match(/^[+-]/) && !lines[j].match(/^\d/) && !lines[j].match(/^세금/)) j++

@@ -152,7 +152,8 @@ export async function classifyMerchantsWithAI(
     // strip ```json ... ``` if present before parsing.
     const cleaned = textOut.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
     parsed = JSON.parse(cleaned)
-  } catch (err) {
+  } catch {
+    // 참고: tsconfig lib이 ES2020이라 Error cause 옵션을 붙일 수 없음 (원본 파싱 오류는 메시지에 포함)
     throw new Error(`Claude returned unparseable JSON: ${textOut.slice(0, 200)}`)
   }
 
