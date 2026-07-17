@@ -446,6 +446,23 @@ const MIGRATION_FK_DEFS: Partial<Record<MigratedTableName, Array<{
 
 const db = new FinanceDatabase()
 
+// 다른 창(새 버전 코드)이 스키마를 업그레이드하면 이 창의 연결에
+// versionchange가 온다. 기본 동작은 연결만 닫혀서 이후 모든 읽기/쓰기가
+// VersionError·DatabaseClosedError로 죽는다 — "…불러오기 실패" 토스트와
+// 동기화 적용 실패가 무더기로 뜨는 증상. 새 코드로 다시 로드하는 것이
+// 유일한 복구이므로 즉시 재시작한다.
+db.on('versionchange', () => {
+  console.warn('[db] 다른 창의 스키마 업그레이드 감지 — 새 버전으로 재시작합니다')
+  if (typeof window !== 'undefined' && typeof window.location?.reload === 'function') {
+    window.location.reload()
+  }
+})
+// 브라우저가 메모리/스토리지 압박으로 연결을 강제로 닫은 경우 — 진단 로그
+// (다음 쿼리에서 Dexie autoOpen이 재연결을 시도한다).
+db.on('close', () => {
+  console.warn('[db] IndexedDB 연결이 예기치 않게 닫혔습니다 (메모리/스토리지 압박 가능)')
+})
+
 // 스토리지 영속화 요청 — 재무 데이터 로컬 SOT가 브라우저 스토리지 압박으로
 // 무단 축출(eviction)되는 것을 방지한다. UA가 거부해도 동작에는 지장 없음
 // (덜 안전해질 뿐). Chrome/Safari PWA는 보통 무프롬프트로 승인한다.

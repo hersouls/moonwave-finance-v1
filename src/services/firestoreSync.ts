@@ -1090,17 +1090,27 @@ function scheduleIngestRetry(uid: string, generation: number): void {
   }, delay)
 }
 
+/** 오류를 사용자·개발자가 원인을 특정할 수 있는 짧은 문자열로 요약한다. */
+function describeErr(err: unknown): string {
+  const e = err as { name?: string; message?: string } | null
+  const name = e?.name || 'Error'
+  const msg = String(e?.message ?? '').slice(0, 80)
+  return msg ? `${name}: ${msg}` : name
+}
+
 function reportIngestResult(
   uid: string,
   generation: number,
   sourceName: string,
   failedCount: number,
   hadChanges: boolean,
+  firstErr?: unknown,
 ): void {
   if (failedCount > 0) {
     _failingIngests.add(sourceName)
     _ingestErrorActive = true
-    setStatus('error', `클라우드 변경 ${failedCount}건을 이 기기에 적용하지 못했습니다 — 잠시 후 자동 재시도합니다.`)
+    const detail = firstErr ? ` (${describeErr(firstErr)})` : ''
+    setStatus('error', `클라우드 변경 ${failedCount}건을 이 기기에 적용하지 못했습니다${detail} — 잠시 후 자동 재시도합니다.`)
     scheduleIngestRetry(uid, generation)
     return
   }
@@ -1279,6 +1289,7 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
     // fin-sync-update를 쏘면 대량 업로드 동안 소비자가 전부 깜빡인다.
     let appliedCount = 0
     let failedCount = 0
+    let firstErr: unknown = null
 
     try {
       for (let chunkStart = 0; chunkStart < docChanges.length; chunkStart += INGEST_CHUNK_SIZE) {
@@ -1291,6 +1302,7 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
               }
             } catch (err) {
               failedCount++
+              firstErr ??= err
               console.error(`[sync] real-time ${tableName} ${change.type} error:`, err)
             }
           }
@@ -1299,6 +1311,7 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
     } catch (err) {
       // 트랜잭션 자체가 abort된 드문 경우 — 재시도 스케줄이 수습한다.
       failedCount++
+      firstErr ??= err
       console.error(`[sync] real-time ${tableName} ingest transaction failed:`, err)
     }
 
@@ -1308,7 +1321,7 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
     if (appliedCount > 0) {
       window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: tableName } }))
     }
-    reportIngestResult(uid, generation, tableName, failedCount, docChanges.length > 0)
+    reportIngestResult(uid, generation, tableName, failedCount, docChanges.length > 0, firstErr)
     // 체크포인트는 이 스냅샷의 인제스트가 전부 성공한 뒤에만 전진한다 —
     // 스냅샷 도착 시점에 전진하면 적용 실패/크래시분이 5분 겹침 창 밖에서
     // 영구 유실된다. 이전 실패의 재시도 대기 중에도 전진하지 않는다
@@ -1351,6 +1364,7 @@ function subscribeDvBundles(uid: string, generation: number, retryCount = 0): vo
 
     let appliedCount = 0
     let failedCount = 0
+    let firstErr: unknown = null
     for (const change of docChanges) {
       const data = change.doc.data()
       try {
@@ -1375,6 +1389,7 @@ function subscribeDvBundles(uid: string, generation: number, retryCount = 0): vo
         }
       } catch (err) {
         failedCount++
+        firstErr ??= err
         console.error(`[sync] dv bundle ${change.type} ingest error:`, err)
       }
     }
@@ -1385,7 +1400,7 @@ function subscribeDvBundles(uid: string, generation: number, retryCount = 0): vo
     if (appliedCount > 0) {
       window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: 'dailyValues' } }))
     }
-    reportIngestResult(uid, generation, DV_BUNDLE_COLLECTION, failedCount, docChanges.length > 0)
+    reportIngestResult(uid, generation, DV_BUNDLE_COLLECTION, failedCount, docChanges.length > 0, firstErr)
   }, (err) => {
     console.error('[sync] dv bundles listener error:', err)
     if (syncGeneration === generation) {
@@ -1428,6 +1443,7 @@ function subscribeCloudTombstones(uid: string, generation: number, retryCount = 
     if (docChanges.length === 0) return
 
     let failedCount = 0
+    let firstErr: unknown = null
     const touched = new Set<SyncableTable>()
     for (const change of docChanges) {
       if (change.type === 'removed') continue
@@ -1458,6 +1474,7 @@ function subscribeCloudTombstones(uid: string, generation: number, retryCount = 
         if (applied) touched.add(tableName)
       } catch (err) {
         failedCount++
+        firstErr ??= err
         console.error('[sync] tombstone ingest error:', err)
       }
     }
@@ -1467,7 +1484,7 @@ function subscribeCloudTombstones(uid: string, generation: number, retryCount = 
     for (const t of touched) {
       window.dispatchEvent(new CustomEvent('fin-sync-update', { detail: { table: t } }))
     }
-    reportIngestResult(uid, generation, TOMBSTONE_COLLECTION, failedCount, docChanges.length > 0)
+    reportIngestResult(uid, generation, TOMBSTONE_COLLECTION, failedCount, docChanges.length > 0, firstErr)
     // 인제스트 성공 후에만 체크포인트 전진 (subscribeTable과 동일 규약).
     if (serverConfirmed && failedCount === 0 && !ingestRetryTimer) {
       const m = maxUploadedAtMs(docChanges)
