@@ -113,21 +113,26 @@ export function LedgerPage() {
     }
   }
 
-  const loadData = async () => {
-    setError(null)
-    setIsLoading(true)
+  const loadData = async (silent = false) => {
+    // silent: 피어 동기화 echo에 의한 백그라운드 갱신 — 스켈레톤 플래시/스크롤 리셋 없이 조용히 교체
+    if (!silent) {
+      setError(null)
+      setIsLoading(true)
+    }
     try {
       await Promise.all([loadAll(), loadMembers()])
+      setError(null)
       void refreshActionCounts()
     } catch {
-      setError('데이터를 불러오는데 실패했습니다.')
+      // 백그라운드 갱신 실패는 기존 화면 유지 (다음 echo에서 재시도)
+      if (!silent) setError('데이터를 불러오는데 실패했습니다.')
     } finally {
-      setIsLoading(false)
+      if (!silent) setIsLoading(false)
     }
   }
 
   useEffect(() => { loadData() }, [])
-  useSyncListener(loadData, ['transactions', 'transactionCategories', 'paymentMethodItems'])
+  useSyncListener(() => { void loadData(true) }, ['transactions', 'transactionCategories', 'paymentMethodItems'])
 
   if (isLoading) {
     return (
@@ -148,7 +153,7 @@ export function LedgerPage() {
   if (error) {
     return (
       <div className="fold:p-3 p-4 lg:p-6">
-        <ErrorEmptyState description={error} onRetry={loadData} />
+        <ErrorEmptyState description={error} onRetry={() => { void loadData() }} />
       </div>
     )
   }

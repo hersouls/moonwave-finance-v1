@@ -12,7 +12,14 @@ if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD) {
     // Reload only when the new SW has taken control (safe timing)
     let refreshing = false
+    // 최초 설치 시 clients.claim() 이 발생시키는 controllerchange 는 새로고침 대상이 아니다
+    // (신규 기기/데이터 삭제 직후 첫 로드 몇 초 뒤 리로드되어 온보딩 입력이 날아가는 문제 방지)
+    let hadController = !!navigator.serviceWorker.controller
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController) {
+        hadController = true
+        return
+      }
       if (refreshing) return
       refreshing = true
       window.location.reload()

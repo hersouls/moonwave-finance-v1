@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { useUIStore } from '@/stores/uiStore'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
-import { getTodayString } from '@/lib/dateUtils'
+import { getLocalTodayString } from '@/lib/dateUtils'
 import { useToastStore } from '@/stores/toastStore'
 import { Select } from '@/components/ui/Select'
 import type { TransactionType, RepeatType, SubscriptionCategoryType } from '@/lib/types'
@@ -21,7 +21,7 @@ export function TransactionCreateModal() {
   const [amount, setAmount] = useState('')
   const [categoryId, setCategoryId] = useState<string>('')
   const [memberId, setMemberId] = useState<string>('')
-  const [date, setDate] = useState(getTodayString())
+  const [date, setDate] = useState(getLocalTodayString())
   const [memo, setMemo] = useState('')
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurType, setRecurType] = useState<RepeatType>('monthly')
@@ -41,7 +41,7 @@ export function TransactionCreateModal() {
       setAmount('')
       setCategoryId('')
       setMemberId(members[0]?.id || '')
-      setDate(getTodayString())
+      setDate(getLocalTodayString())
       setMemo('')
       setIsRecurring(false)
       setRecurType('monthly')

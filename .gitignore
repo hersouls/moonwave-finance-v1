@@ -13,3 +13,22 @@ tsconfig.tsbuildinfo
 
 .vercel
 .env*.local
+
+# 도구 산출물 (커밋 금지)
+.firebase/
+.playwright-mcp/
+test-screenshots/
+.claude/
+claudedocs/
+
+# 루트 스크린샷/이미지
+/*.png
+/*.jpg
+/*.jpeg
+
+# 개인 데이터 (커밋 금지)
+/편한가계부*
+/신한카드_예시.md
+/파싱된*
+/고도화.md
+/디자인참고/

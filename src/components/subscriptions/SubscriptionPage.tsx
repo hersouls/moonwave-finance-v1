@@ -4,7 +4,8 @@
 // Visualizes them across multiple chart types and per-item drill-down.
 //
 // Architecture:
-//   - Detection runs as a useMemo over the transactionStore data
+//   - Detection runs as a useMemo over multi-month ledger history
+//     (useMultiMonthTransactions — the store slice only holds one month)
 //   - Four distinct visualizations: category donut, monthly trend line,
 //     top-items bar, per-item monthly evolution
 //   - Per-item detail sheet with payment timeline + cumulative cost graph
@@ -23,6 +24,8 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { useSyncListener } from '@/hooks/useSyncListener'
 import { useCountUp } from '@/hooks/useCountUp'
 import { useHiddenSubscriptions } from '@/hooks/useHiddenSubscriptions'
+import { useMultiMonthTransactions } from '@/hooks/useMultiMonthTransactions'
+import { SUBSCRIPTION_DETECTION_MONTHS } from '@/hooks/useSubscriptionData'
 import { useMediaQuery, BREAKPOINTS } from '@/hooks/useBreakpoint'
 import { getCategoryIcon } from '@/utils/categoryIcons'
 import { formatKoreanUnit } from '@/utils/format'
@@ -48,7 +51,10 @@ import { SubscriptionTableView } from './SubscriptionTableView'
 // ════════════════════════════════════════════════════════
 
 export function SubscriptionPage() {
-  const transactions = useTransactionStore((s) => s.transactions)
+  // Detection needs multi-month history — the store's `transactions` slice
+  // only holds the selected month, which starves non-monthly cycles
+  // (yearly/quarterly subs would vanish or be misclassified).
+  const { transactions, isLoading: isHistoryLoading } = useMultiMonthTransactions(SUBSCRIPTION_DETECTION_MONTHS)
   const categories = useTransactionStore((s) => s.categories)
   const loadAll = useTransactionStore((s) => s.loadAll)
   const isLoading = useTransactionStore((s) => s.isLoading)
@@ -93,8 +99,9 @@ export function SubscriptionPage() {
   }, [detected, activeCycleFilter])
 
   // Months for which the user has any expense transactions, newest first.
-  // `availableMonthsAll` is unbounded (used by the calendar picker to highlight
-  // months with activity); `availableMonths` is capped at 12 for the chip strip.
+  // `availableMonthsAll` spans the whole detection window (used by the calendar
+  // picker to highlight months with activity); `availableMonths` is capped at
+  // 12 for the chip strip.
   const availableMonthsAll = useMemo(() => {
     const set = new Set<string>()
     for (const t of transactions) {
@@ -133,7 +140,7 @@ export function SubscriptionPage() {
 
   const selectedSub = selectedKey ? detectedAll.find(s => s.key === selectedKey) ?? null : null
 
-  if (isLoading) return <PageSkeleton />
+  if (isLoading || isHistoryLoading) return <PageSkeleton />
 
   if (detectedAll.length === 0) {
     return <EmptyState />

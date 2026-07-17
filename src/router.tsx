@@ -3,6 +3,7 @@ import { Suspense, lazy } from 'react'
 import App from './App'
 import OAuthCallback from './pages/OAuthCallback'
 import { AppLoadingScreen } from './components/ui/AppLoadingScreen'
+import { RouteErrorBoundary } from './components/ui/RouteErrorBoundary'
 
 const DashboardPage = lazy(() => import('./components/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })))
 const AssetListPage = lazy(() => import('./components/assets/AssetListPage').then(m => ({ default: m.AssetListPage })))
@@ -26,6 +27,8 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <App />,
+    // 라우트 크래시/스테일 청크 import 실패 시 한국어 오류 화면 (기본 영문 화면 대체)
+    errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: <LazyPage><DashboardPage /></LazyPage> },
       // 자산 축
@@ -54,5 +57,5 @@ export const router = createBrowserRouter([
       { path: '*', element: <LazyPage><NotFoundPage /></LazyPage> },
     ],
   },
-  { path: '/oauth/callback', element: <OAuthCallback /> },
+  { path: '/oauth/callback', element: <OAuthCallback />, errorElement: <RouteErrorBoundary /> },
 ])

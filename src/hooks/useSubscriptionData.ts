@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useSyncListener } from './useSyncListener'
 import { useHiddenSubscriptions } from './useHiddenSubscriptions'
+import { useMultiMonthTransactions } from './useMultiMonthTransactions'
 import {
   detectSubscriptions,
   computeSubscriptionStats,
@@ -20,13 +21,23 @@ interface UseSubscriptionDataResult {
 }
 
 /**
+ * How many months of ledger history feed subscription detection.
+ * The store's `transactions` slice only ever holds one month, which starves
+ * the detector — yearly/quarterly cycles need multiple payments to be
+ * recognized. 24 months guarantees at least two payments even for annual
+ * subscriptions.
+ */
+export const SUBSCRIPTION_DETECTION_MONTHS = 24
+
+/**
  * Single source of truth for subscription views across the app.
  * Reads tagged transactions (Transaction.subscriptionCategory) and applies
  * the user's "종료" filter so every widget shows the same list as the main
  * /subscriptions page.
  */
 export function useSubscriptionData(): UseSubscriptionDataResult {
-  const transactions = useTransactionStore((s) => s.transactions)
+  // Detection runs over multi-month history, NOT the store's single-month slice.
+  const { transactions } = useMultiMonthTransactions(SUBSCRIPTION_DETECTION_MONTHS)
   const categories = useTransactionStore((s) => s.categories)
   const loadAll = useTransactionStore((s) => s.loadAll)
   const hiddenSubs = useHiddenSubscriptions()

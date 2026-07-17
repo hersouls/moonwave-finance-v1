@@ -7,7 +7,7 @@ import { useMemberStore } from '@/stores/memberStore'
 import { useLoanStore } from '@/stores/loanStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useConfetti } from '@/hooks/useConfetti'
-import { getTodayString, formatDate } from '@/lib/dateUtils'
+import { getLocalTodayString, formatDate } from '@/lib/dateUtils'
 import { PAYMENT_METHOD_OPTIONS, getPaymentMethodLabel } from '@/utils/paymentMethod'
 import { formatKoreanUnit } from '@/utils/format'
 import { getCategoryIcon } from '@/utils/categoryIcons'
@@ -89,7 +89,7 @@ function getInitialState(initialDate?: string, defaultMemberId?: string): Wizard
     amount: '',
     categoryId: '',
     memberId: defaultMemberId ?? '',
-    date: initialDate || getTodayString(),
+    date: initialDate || getLocalTodayString(),
     memo: '',
     paymentMethod: '',
     paymentMethodDetail: '',
@@ -482,10 +482,11 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
     ? { hidden: { opacity: 0 }, visible: { opacity: 1 } }
     : { hidden: { opacity: 0, y: 8, scale: 0.95 }, visible: { opacity: 1, y: 0, scale: 1, transition: springSnappy } }
 
+  // 로컬 달력 기준 어제 — "어제" 칩은 사용자 대면 날짜라 UTC(toISOString) 금지
   const getYesterdayString = () => {
     const d = new Date()
     d.setDate(d.getDate() - 1)
-    return d.toISOString().split('T')[0]
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   }
 
   // ─── Step 0: Amount + Type + Member ────────────
@@ -1148,7 +1149,7 @@ export function TransactionWizard({ open, onClose, initialDate }: TransactionWiz
 
   // ─── Step 2: Details ───────────────────────────
 
-  const today = getTodayString()
+  const today = getLocalTodayString()
   const yesterday = getYesterdayString()
 
   const renderStep2 = () => (

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 const STORAGE_KEY = 'fin:subscriptions:hidden:v1'
 
@@ -68,5 +68,11 @@ export function useHiddenSubscriptions() {
     return () => window.removeEventListener('storage', onStorage)
   }, [])
 
-  return { hidden, hide, unhide, isHidden, count: hidden.size }
+  // Referentially stable result object — consumers put this in useMemo deps
+  // (e.g. useSubscriptionData's `detected`), so a fresh literal every render
+  // would defeat those memos and re-run detection on every render.
+  return useMemo(
+    () => ({ hidden, hide, unhide, isHidden, count: hidden.size }),
+    [hidden, hide, unhide, isHidden],
+  )
 }
