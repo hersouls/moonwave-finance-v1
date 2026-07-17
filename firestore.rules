@@ -6,23 +6,21 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // ── 가족 허용 목록 (권장, 선택) ─────────────────────────────────
-    // 이 앱은 고정 구성원 가족용이다. 아무 Google 계정이나 로그인해 자기
-    // uid 아래에 무제한 쓰기를 하면 이 프로젝트의 공유 무료 쿼터가 소진되어
-    // 가족 전체의 동기화가 멈춘다 (실제 쿼터 소진 이력 있음).
-    // 사용하려면: Firebase Console → Authentication → Users에서 가족
-    // 구성원의 UID를 복사해 아래 목록을 채우고, isOwner 대신
-    // `isOwner(userId) && isFamily()`로 바꾼 뒤 배포한다.
-    //
-    // function isFamily() {
-    //   return request.auth.uid in [
-    //     'FAMILY_UID_1',
-    //     'FAMILY_UID_2'
-    //   ];
-    // }
+    // ── 가족 허용 목록 ──────────────────────────────────────────────
+    // 이 목록에 없는 Google 계정은 로그인해도 아무것도 읽고 쓸 수 없다 —
+    // 외부 계정이 자기 uid 아래 무제한 쓰기로 공유 무료 쿼터를 소모하는
+    // 것을 차단한다 (실제 쿼터 소진 이력 있음).
+    // 가족 구성원이 늘면: Firebase Console → Authentication → Users에서
+    // UID를 복사해 아래 배열에 추가하고 rules만 재배포한다:
+    //   npx firebase-tools deploy --only firestore:rules
+    function isFamily() {
+      return request.auth != null && request.auth.uid in [
+        'i8jGN5WfenY369OMdjZ4u30UVfB3' // deasoung@gmail.com
+      ];
+    }
 
     match /users/{userId}/{document=**} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) && isFamily();
     }
   }
 }
