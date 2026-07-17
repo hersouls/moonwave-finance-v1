@@ -4,6 +4,7 @@
 // 1. v2 백업(version '2.0', 문자열 id/FK) export → import 왕복 보존
 // 2. 레거시 1.x 백업(숫자 id + syncId + 숫자 FK) 임포트 시 변환:
 //    id 승격(syncId→id) + FK 재작성 + projected dailyValues 드롭
+//    + 중복 syncId/merchantKey LWW 수렴 (v14 마이그레이션과 동일)
 // 3. 복원 후 syncOutbox에 업서트 마커 시드 (dailyValues는 좌표 메타 동반,
 //    projected 제외) — 복원분이 다음 푸시로 클라우드에 올라가는 경로.
 //    단, 복원 전과 id·updatedAt이 동일한 행은 시드하지 않는다 (동일 데이터
@@ -288,6 +289,48 @@ describe('레거시 1.x 백업 임포트 (숫자 id + syncId + 숫자 FK)', () =
     expect(keys).toContain('budgets:b-sync-11')
     expect(keys).toContain('dailyValues:dv-sync-4')
     expect(keys).not.toContain('dailyValues:dv-sync-5')
+  })
+
+  it('중복 syncId 행은 updatedAt 최신만 남는다 — PK ConstraintError로 복원 전체가 롤백되지 않는다', async () => {
+    // 레거시 syncId는 유니크 인덱스가 아니었다 (v14 마이그레이션이 문서화한
+    // 실데이터 이력). 중복을 그대로 승격하면 bulkAdd가 PK ConstraintError를
+    // 던져 복원 트랜잭션 전체가 롤백 — 그 백업 파일은 영구 복원 불가가 된다.
+    const OLD = '2026-05-01T00:00:00.000Z'
+    const NEW = '2026-06-15T00:00:00.000Z'
+    const legacy = {
+      version: BACKUP_CONFIG.CURRENT_VERSION, // 1.x
+      appName: BACKUP_CONFIG.APP_NAME,
+      exportDate: NOW,
+      data: {
+        transactionCategories: [
+          { id: 7, syncId: 'tc-sync-7', name: '식비', type: 'expense', color: '#f00', isDefault: true, sortOrder: 0, createdAt: NOW, updatedAt: NOW },
+        ],
+        transactions: [
+          // 최신 행을 앞에 둔다 — 순진한 "마지막 행 승리"라면 OLD가 남아 실패
+          { id: 21, syncId: 'dup-sync', memberId: null, categoryId: 7, type: 'expense', amount: 999, date: '2026-06-02', isRecurring: false, createdAt: OLD, updatedAt: NEW },
+          { id: 22, syncId: 'dup-sync', memberId: null, categoryId: 7, type: 'expense', amount: 111, date: '2026-06-01', isRecurring: false, createdAt: OLD, updatedAt: OLD },
+        ],
+        merchantAliases: [
+          // id(syncId)가 달라도 같은 merchantKey면 수렴 — &merchantKey 유니크
+          { id: 31, syncId: 'al-sync-new', merchantKey: 'kbank', categoryId: 7, source: 'user-override', sampleMerchant: '케이뱅크', usageCount: 5, learnedAt: NEW, createdAt: OLD, updatedAt: NEW },
+          { id: 32, syncId: 'al-sync-old', merchantKey: 'kbank', categoryId: 7, source: 'learned', sampleMerchant: '케이뱅크', usageCount: 1, learnedAt: OLD, createdAt: OLD, updatedAt: OLD },
+        ],
+        settings: {},
+      },
+    }
+
+    await importBackup(backupFile(legacy)) // ConstraintError 없이 복원 성공
+
+    // 같은 syncId 2행 → updatedAt 최신(amount 999) 1행만 남는다
+    const txns = await db.transactions.toArray()
+    expect(txns.map((t) => t.id)).toEqual(['dup-sync'])
+    expect(txns[0].amount).toBe(999)
+    expect(txns[0].categoryId).toBe('tc-sync-7')
+
+    // 같은 merchantKey 2행 → updatedAt 최신(al-sync-new) 1행만 남는다
+    const aliases = await db.merchantAliases.toArray()
+    expect(aliases.map((a) => a.id)).toEqual(['al-sync-new'])
+    expect(aliases[0].usageCount).toBe(5)
   })
 })
 
