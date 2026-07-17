@@ -26,7 +26,7 @@ import { Tooltip } from '@/components/ui/Tooltip'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useUIStore } from '@/stores/uiStore'
-import { getTodayString } from '@/lib/dateUtils'
+import { getLocalTodayString } from '@/lib/dateUtils'
 import * as db from '@/services/database'
 import type { Transaction } from '@/lib/types'
 import { useSyncListener } from '@/hooks/useSyncListener'
@@ -177,7 +177,7 @@ export function CalendarPage() {
     onNavigate: handleKeyboardNavigate,
     onToday: () => {
       goToToday()
-      setFocusedDate(getTodayString())
+      setFocusedDate(getLocalTodayString())
     },
     onPrevMonth: goToPreviousMonth,
     onNextMonth: goToNextMonth,
@@ -272,8 +272,8 @@ export function CalendarPage() {
                   leftIcon={<CalendarDays className="w-3.5 h-3.5" />}
                   onClick={() => {
                     goToToday()
-                    setFocusedDate(getTodayString())
-                    setSelectedDate(getTodayString())
+                    setFocusedDate(getLocalTodayString())
+                    setSelectedDate(getLocalTodayString())
                   }}
                 >
                   오늘
@@ -393,7 +393,7 @@ export function CalendarPage() {
         </div>
       </div>
 
-      <FAB onClick={() => openCreateWithDate(selectedDate || getTodayString())} label="거래 기록" />
+      <FAB onClick={() => openCreateWithDate(selectedDate || getLocalTodayString())} label="거래 기록" />
 
       {/* Hover preview (PC only) */}
       {hoverPreview && hoverSummary && (

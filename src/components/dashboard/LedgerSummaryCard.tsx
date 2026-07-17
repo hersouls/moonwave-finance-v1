@@ -2,14 +2,15 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
-import { useTransactionStore } from '@/stores/transactionStore'
+import { useCurrentMonthTransactions } from '@/hooks/useCurrentMonthTransactions'
 import { useCountUp } from '@/hooks/useCountUp'
 import { Amount } from '@/components/ui/Amount'
 import { clsx } from 'clsx'
 
 export function LedgerSummaryCard() {
   const navigate = useNavigate()
-  const transactions = useTransactionStore((s) => s.transactions)
+  // 스토어 slice는 전역 selectedMonth 한 달만 담고 있어 과거 달 탐색 후 0이 된다 — 현재 월 전용 소스 사용
+  const transactions = useCurrentMonthTransactions()
 
   const summary = useMemo(() => {
     const now = new Date()

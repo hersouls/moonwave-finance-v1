@@ -6,7 +6,7 @@ import { useToastStore } from '@/stores/toastStore'
 import { useQuickRecordCandidates } from '@/hooks/useQuickRecordCandidates'
 import { getCategoryIcon } from '@/utils/categoryIcons'
 import { formatKoreanUnit } from '@/utils/format'
-import { getTodayString } from '@/lib/dateUtils'
+import { getLocalTodayString } from '@/lib/dateUtils'
 import { springSnappy } from '@/lib/motionConfig'
 
 export function QuickRecordStrip() {
@@ -25,7 +25,7 @@ export function QuickRecordStrip() {
         amount: template.amount,
         categoryId: template.categoryId,
         memberId: template.memberId,
-        date: getTodayString(),
+        date: getLocalTodayString(),
         memo: template.memo,
         paymentMethod: template.paymentMethod,
         paymentMethodDetail: template.paymentMethodDetail,

@@ -56,15 +56,15 @@ export function useGlobalShortcuts() {
         store().toggleCommandPalette()
         return
       }
-      // Undo / redo
+      // Undo / redo — ignore key auto-repeat so holding Ctrl+Z can't double-fire
       if (mod && key === 'z' && !e.shiftKey) {
         e.preventDefault()
-        useUndoStore.getState().undo()
+        if (!e.repeat) useUndoStore.getState().undo()
         return
       }
       if (mod && (key === 'y' || (key === 'z' && e.shiftKey))) {
         e.preventDefault()
-        useUndoStore.getState().redo()
+        if (!e.repeat) useUndoStore.getState().redo()
         return
       }
 

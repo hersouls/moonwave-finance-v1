@@ -5,7 +5,7 @@ import { clsx } from 'clsx'
 import { Amount } from '@/components/ui/Amount'
 import { useMonthlyTrend } from '@/hooks/useCategoryTrend'
 import { getCategoryIcon } from '@/utils/categoryIcons'
-import { formatMonthLabel, getTodayString } from '@/lib/dateUtils'
+import { formatMonthLabel, getLocalTodayString } from '@/lib/dateUtils'
 import { springSnappy, easeOutExpo, durations } from '@/lib/motionConfig'
 import type { Transaction, TransactionCategory } from '@/lib/types'
 
@@ -24,7 +24,8 @@ const DISMISS_STORAGE_KEY = 'ledger-monthly-report-dismissed'
  * 아닌 월은 lastDay 반환 → 항상 노출
  */
 function daysRemainingInMonth(month: string): number {
-  const today = getTodayString()
+  // month는 로컬 기준(getCurrentMonthString)이므로 오늘도 로컬 기준으로 비교
+  const today = getLocalTodayString()
   const [y, m] = month.split('-').map(Number)
   const lastDay = new Date(y, m, 0).getDate()
   if (!today.startsWith(month)) return 0 // 과거 월: 이미 끝남

@@ -16,7 +16,7 @@ import { useToastStore } from '@/stores/toastStore'
 import { getCategoryIcon } from '@/utils/categoryIcons'
 import { PAYMENT_METHOD_OPTIONS } from '@/utils/paymentMethod'
 import { SUBSCRIPTION_CATEGORIES } from '@/utils/constants'
-import { formatDate, getTodayString } from '@/lib/dateUtils'
+import { formatDate, getLocalTodayString } from '@/lib/dateUtils'
 import { parseISO, format, addMonths, endOfMonth, setDate as setDayOfMonth } from 'date-fns'
 import { durations, easeOutExpo, springSnappy } from '@/lib/motionConfig'
 import {
@@ -71,7 +71,6 @@ LINK할인혜택 -2,000원
 26. 4. 12본 인 0438`
 
 export function CardStatementImportModal({ open, onClose, initialText }: Props) {
-  const transactions = useTransactionStore((s) => s.transactions)
   const categories = useTransactionStore((s) => s.categories)
   const paymentMethodItems = useTransactionStore((s) => s.paymentMethodItems)
   const members = useMemberStore((s) => s.members)
@@ -96,7 +95,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
   // because users importing statements are almost always tracking real
   // cash outflow, not accrual-basis purchase dates.
   const [useOverrideDate, setUseOverrideDate] = useState(true)
-  const [overrideDate, setOverrideDate] = useState<string>(getTodayString())
+  const [overrideDate, setOverrideDate] = useState<string>(getLocalTodayString())
   // Optional bulk subscription-type label applied to every imported row.
   const [subscriptionCategory, setSubscriptionCategory] = useState<SubscriptionCategoryType | ''>('')
 
@@ -115,7 +114,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
     setImportResult(null)
     setImportError('')
     setUseOverrideDate(true)
-    setOverrideDate(getTodayString())
+    setOverrideDate(getLocalTodayString())
     setSubscriptionCategory('')
   }, [open, initialText])
 
@@ -125,7 +124,10 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
       addToast('명세서 내용을 붙여넣어 주세요', 'info')
       return
     }
-    const analyzed = await analyzeStatement(text, categories, transactions)
+    // existing 미전달 — analyzeStatement가 Dexie에서 명세서 날짜 범위 ±60일의
+    // 지출을 직접 조회한다. (스토어의 월 슬라이스를 넘기면 다른 달을 보면서
+    // 재-import할 때 중복이 전혀 감지되지 않았다.)
+    const analyzed = await analyzeStatement(text, categories)
     if (analyzed.length === 0) {
       addToast('인식 가능한 거래가 없습니다. 형식을 확인해주세요', 'error')
       return
@@ -138,7 +140,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
     }
     setSkipIndexes(skipExact)
     setStep('review')
-  }, [text, categories, transactions, addToast])
+  }, [text, categories, addToast])
 
   // ── Aggregate stats for review header ────────────
   const stats = useMemo(() => {
@@ -198,7 +200,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
       })
       // Re-analyze with refreshed aliases so the new mappings apply to all
       // rows (including any duplicates of the just-classified merchant).
-      const refreshed = await analyzeStatement(text, categories, transactions)
+      const refreshed = await analyzeStatement(text, categories)
       setRows(refreshed)
       const resolved = results.filter(r => r.categoryId != null).length
       addToast(
@@ -212,7 +214,7 @@ export function CardStatementImportModal({ open, onClose, initialText }: Props) 
     } finally {
       setAiClassifying(false)
     }
-  }, [uniqueAiMerchants, categories, text, transactions, addToast])
+  }, [uniqueAiMerchants, categories, text, addToast])
 
   // ── Import handler ────────────────────────────────
   const handleImport = useCallback(async () => {
@@ -807,7 +809,7 @@ function BillingDatePicker({
   onChange: (v: string) => void
 }) {
   const shouldReduceMotion = useReducedMotion()
-  const today = useMemo(() => getTodayString(), [])
+  const today = useMemo(() => getLocalTodayString(), [])
   const quickPicks = useMemo(() => buildBillingQuickPicks(today), [today])
   const selected = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? parseISO(date) : null
   const dow = selected ? KOREAN_DOW[selected.getDay()] : ''

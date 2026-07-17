@@ -5,7 +5,9 @@
 // 2. 레거시 1.x 백업(숫자 id + syncId + 숫자 FK) 임포트 시 변환:
 //    id 승격(syncId→id) + FK 재작성 + projected dailyValues 드롭
 // 3. 복원 후 syncOutbox에 업서트 마커 시드 (dailyValues는 좌표 메타 동반,
-//    projected 제외) — 복원분이 다음 푸시로 클라우드에 올라가는 경로
+//    projected 제외) — 복원분이 다음 푸시로 클라우드에 올라가는 경로.
+//    단, 복원 전과 id·updatedAt이 동일한 행은 시드하지 않는다 (동일 데이터
+//    재복원 시 전량 재업로드로 인한 쿼터 소진 방지)
 // 4. 복원은 "로컬 교체" — 기존 레코드의 delete 마커를 남기지 않는다
 //    (삭제 전파 폭풍 방지)
 import { describe, it, expect, beforeEach, vi } from 'vitest'
@@ -35,7 +37,7 @@ import { exportBackup, importBackup } from '@/services/backup'
 import { db, setSyncWritingFlag, drainChangeTracking } from '@/services/database'
 import type {
   Member, AssetCategory, AssetItem, DailyValue,
-  TransactionCategory, Transaction, BackupFile,
+  TransactionCategory, Transaction, BackupFile, MerchantAlias,
 } from '@/lib/types'
 
 const NOW = '2026-06-01T00:00:00.000Z'
@@ -100,6 +102,11 @@ const txn: Transaction = {
   categoryId: 'tcat-1', date: '2026-06-01', isRecurring: false,
   createdAt: NOW, updatedAt: NOW,
 }
+const alias: MerchantAlias = {
+  id: 'alias:starbucks', merchantKey: 'starbucks', categoryId: 'tcat-1',
+  source: 'user-override', sampleMerchant: '스타벅스코리아', usageCount: 3,
+  learnedAt: NOW, createdAt: NOW, updatedAt: NOW,
+}
 
 beforeEach(async () => {
   await wipeAll()
@@ -127,6 +134,7 @@ describe('v2 백업 export → import 왕복', () => {
       await db.dailyValues.bulkAdd([dvManual, dvLegacySource, dvProjected])
       await db.transactionCategories.add(txnCat)
       await db.transactions.add(txn)
+      await db.merchantAliases.add(alias)
     })
 
     // exportBackup은 브라우저 다운로드 플로우(createObjectURL + <a>.click)를
@@ -154,6 +162,9 @@ describe('v2 백업 export → import 왕복', () => {
     expect(exported.data.transactions[0].categoryId).toBe('tcat-1')
     // v2 백업에는 레거시 syncId 필드가 없다
     expect('syncId' in (exported.data.transactions[0] as unknown as Record<string, unknown>)).toBe(false)
+    // merchantAliases(학습/AI 상호명 분류)도 백업에 포함된다
+    const exportedAliases = (exported.data as { merchantAliases?: MerchantAlias[] }).merchantAliases
+    expect(exportedAliases?.map((a) => a.id)).toEqual(['alias:starbucks'])
 
     // ── 왕복: wipe 후 그 파일을 그대로 복원 ──
     await wipeAll()
@@ -166,6 +177,9 @@ describe('v2 백업 export → import 왕복', () => {
     const restoredTxn = await db.transactions.get('txn-1')
     expect(restoredTxn?.categoryId).toBe('tcat-1')
     expect(restoredTxn?.amount).toBe(12000)
+    const restoredAlias = await db.merchantAliases.get('alias:starbucks')
+    expect(restoredAlias?.merchantKey).toBe('starbucks')
+    expect(restoredAlias?.categoryId).toBe('tcat-1')
     // v2 데이터는 무변환 복원 — projected 행도 파일에 있으면 테이블에는 복원된다
     expect(await db.dailyValues.count()).toBe(3)
 
@@ -178,6 +192,7 @@ describe('v2 백업 export → import 왕복', () => {
     expect(keys).toContain('assetItems:item-1')
     expect(keys).toContain('transactionCategories:tcat-1')
     expect(keys).toContain('transactions:txn-1')
+    expect(keys).toContain('merchantAliases:alias:starbucks')
     expect(keys).toContain('dailyValues:dv-manual')
     expect(keys).toContain('dailyValues:dv-legacy')
     expect(keys).not.toContain('dailyValues:dv-proj') // projected는 동기화 범위 밖
@@ -185,7 +200,7 @@ describe('v2 백업 export → import 왕복', () => {
     const dvEntry = outbox.find((e) => e.key === 'dailyValues:dv-manual')!
     expect(dvEntry.assetItemId).toBe('item-1')
     expect(dvEntry.date).toBe('2026-06-01')
-  })
+  }, 20000) // fake-indexeddb 전체 왕복은 머신 부하에 따라 5초를 넘길 수 있다
 })
 
 describe('레거시 1.x 백업 임포트 (숫자 id + syncId + 숫자 FK)', () => {
@@ -304,5 +319,47 @@ describe('복원의 로컬 교체 의미론', () => {
     const outbox = await db.syncOutbox.toArray()
     expect(outbox.filter((e) => e.op === 'delete')).toHaveLength(0)
     expect(outbox.map((e) => e.key)).toEqual(['transactions:new-1'])
+  })
+})
+
+describe('아웃박스 시드 최소화 — 변경분만 시드 (쿼터 소진 방지)', () => {
+  const v2File = (transactions: Transaction[]) => backupFile({
+    version: '2.0',
+    appName: BACKUP_CONFIG.APP_NAME,
+    exportDate: NOW,
+    data: {
+      members: [member],
+      assetCategories: [assetCat],
+      assetItems: [assetItem],
+      dailyValues: [dvManual],
+      transactionCategories: [txnCat],
+      transactions,
+      settings: {},
+    },
+  })
+
+  it('동일 데이터를 그대로 재복원하면 아웃박스에 아무것도 시드하지 않는다', async () => {
+    // 1차 복원 — 빈 DB이므로 전 행이 시드된다 (기존 동작 유지)
+    await importBackup(v2File([txn]))
+    expect(await db.syncOutbox.count()).toBe(6)
+
+    // 2차 복원 (동일 파일) — 모든 행이 복원 전과 id·updatedAt 동일 → 시드 0건.
+    // 무조건 전량 시드하면 재복원마다 수천 건의 setDoc 업로드 + 전 기기
+    // 재다운로드가 일어나 쿼터가 소진된다.
+    await importBackup(v2File([txn]))
+    await drainChangeTracking()
+    expect(await db.syncOutbox.count()).toBe(0)
+  })
+
+  it('updatedAt이 달라진 행만 시드된다', async () => {
+    await importBackup(v2File([txn]))
+
+    // 거래 1건만 updatedAt 변경 후 재복원 → 그 행만 시드
+    const LATER = '2026-06-02T00:00:00.000Z'
+    await importBackup(v2File([{ ...txn, amount: 99000, updatedAt: LATER }]))
+    await drainChangeTracking()
+    const outbox = await db.syncOutbox.toArray()
+    expect(outbox.map((e) => e.key)).toEqual(['transactions:txn-1'])
+    expect(outbox[0].op).toBe('upsert')
   })
 })

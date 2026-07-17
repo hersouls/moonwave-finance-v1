@@ -16,8 +16,8 @@ import { RingProgress } from '@/components/ui/RingProgress'
 import { useAuthStore } from '@/stores/authStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useUIStore } from '@/stores/uiStore'
-import { useTransactionStore } from '@/stores/transactionStore'
 import { useSubscriptionData } from '@/hooks/useSubscriptionData'
+import { useCurrentMonthTransactions } from '@/hooks/useCurrentMonthTransactions'
 import { useSyncListener } from '@/hooks/useSyncListener'
 import { getBudgetsByMonth } from '@/services/database'
 import { getCurrentMonthString, formatMonthDayWeekKo } from '@/lib/dateUtils'
@@ -84,7 +84,8 @@ export function DashboardHero({ stats, welcome = false }: DashboardHeroProps) {
   const syncStatus = useAuthStore((s) => s.syncStatus)
   const hideAmounts = useSettingsStore((s) => !!s.settings.hideAmounts)
   const openTransactionCreateModal = useUIStore((s) => s.openTransactionCreateModal)
-  const transactions = useTransactionStore((s) => s.transactions)
+  // 스토어 slice는 전역 selectedMonth 한 달만 담고 있어 과거 달 탐색 후 0이 된다 — 현재 월 전용 소스 사용
+  const transactions = useCurrentMonthTransactions()
   const { detected } = useSubscriptionData()
 
   const month = getCurrentMonthString()

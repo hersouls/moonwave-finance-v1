@@ -100,7 +100,7 @@ export const useTransactionStore = create<TransactionState>()(
             .then((recurCreated) => {
               if (recurCreated > 0) get().loadTransactions()
             })
-            .catch(() => {})
+            .catch((err) => console.error('[recurring] 반복 거래 자동 생성 실패:', err))
         } catch (err) {
           console.error('Failed to load ledger data:', err)
           useToastStore.getState().addToast('거래 데이터를 불러오는데 실패했습니다.', 'error')

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { Transaction } from '@/lib/types'
-import { getTodayString } from '@/lib/dateUtils'
+import { getLocalTodayString } from '@/lib/dateUtils'
 import { parseISO, differenceInDays, format, getDay } from 'date-fns'
 
 export interface TransactionGroup {
@@ -44,7 +44,8 @@ export function useTransactionGroups(
   todayOverride?: string,
 ): TransactionGroup[] {
   return useMemo(() => {
-    const today = todayOverride ?? getTodayString()
+    // 거래 날짜는 로컬 달력 기준으로 기록되므로 "오늘/어제" 라벨도 로컬 기준
+    const today = todayOverride ?? getLocalTodayString()
     const sorted = [...transactions].sort((a, b) => b.date.localeCompare(a.date))
 
     const groups = new Map<string, Transaction[]>()

@@ -27,6 +27,7 @@ import { useAuthStore } from './stores/authStore'
 import { useAssetStore } from './stores/assetStore'
 import { useDailyValueStore } from './stores/dailyValueStore'
 import { useSubscriptionStore } from './stores/subscriptionStore'
+import { useToastStore } from './stores/toastStore'
 import { showBillingNotifications } from './services/notificationService'
 import { useOnlineStatus } from './hooks/useOnlineStatus'
 import { useAutoSync } from './hooks/useAutoSync'
@@ -74,6 +75,13 @@ export default function App() {
           const subs = useSubscriptionStore.getState().subscriptions
           showBillingNotifications(subs, settings.notifications.subscriptionAlertDaysBefore)
         }
+      } catch (err) {
+        // Dexie 열기 실패(사파리 시크릿 모드 등) — 조용히 빈 앱이 되지 않도록 안내
+        console.error('[init] 앱 초기화 실패:', err)
+        useToastStore.getState().addToast(
+          '로컬 저장소를 열 수 없어 데이터를 불러오지 못했습니다. 시크릿 모드 여부와 저장 공간을 확인해 주세요.',
+          'error'
+        )
       } finally {
         setIsInitialized(true)
       }

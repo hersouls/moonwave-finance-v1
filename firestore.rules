@@ -1,8 +1,28 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // 소유자 검증 — 각 사용자는 자기 uid 서브트리만 읽고 쓸 수 있다.
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // ── 가족 허용 목록 (권장, 선택) ─────────────────────────────────
+    // 이 앱은 고정 구성원 가족용이다. 아무 Google 계정이나 로그인해 자기
+    // uid 아래에 무제한 쓰기를 하면 이 프로젝트의 공유 무료 쿼터가 소진되어
+    // 가족 전체의 동기화가 멈춘다 (실제 쿼터 소진 이력 있음).
+    // 사용하려면: Firebase Console → Authentication → Users에서 가족
+    // 구성원의 UID를 복사해 아래 목록을 채우고, isOwner 대신
+    // `isOwner(userId) && isFamily()`로 바꾼 뒤 배포한다.
+    //
+    // function isFamily() {
+    //   return request.auth.uid in [
+    //     'FAMILY_UID_1',
+    //     'FAMILY_UID_2'
+    //   ];
+    // }
+
     match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
     }
   }
 }

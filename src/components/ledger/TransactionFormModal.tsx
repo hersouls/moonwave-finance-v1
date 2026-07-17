@@ -3,7 +3,7 @@ import { Dialog, DialogBody, DialogFooter } from '@/components/ui/Dialog'
 import { useTransactionStore } from '@/stores/transactionStore'
 import { useMemberStore } from '@/stores/memberStore'
 import { useLoanStore } from '@/stores/loanStore'
-import { getTodayString, formatDate } from '@/lib/dateUtils'
+import { getLocalTodayString, formatDate } from '@/lib/dateUtils'
 import { PAYMENT_METHOD_OPTIONS } from '@/utils/paymentMethod'
 import { formatKoreanUnit } from '@/utils/format'
 import { useToastStore } from '@/stores/toastStore'
@@ -35,10 +35,11 @@ const PAYMENT_METHOD_ICONS: Record<PaymentMethod, typeof Banknote> = {
 
 const QUICK_AMOUNTS = [1_000, 5_000, 10_000, 50_000, 100_000]
 
+// 로컬 달력 기준 어제 — "어제" 칩은 사용자 대면 날짜라 UTC(toISOString) 금지
 function getYesterdayString(): string {
   const d = new Date()
   d.setDate(d.getDate() - 1)
-  return d.toISOString().split('T')[0]
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 interface TransactionFormModalProps {
@@ -65,7 +66,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
   const [amount, setAmount] = useState('')
   const [categoryId, setCategoryId] = useState<string>('')
   const [memberId, setMemberId] = useState<string>('')
-  const [date, setDate] = useState(getTodayString())
+  const [date, setDate] = useState(getLocalTodayString())
   const [memo, setMemo] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('')
   const [paymentMethodDetail, setPaymentMethodDetail] = useState('')
@@ -90,7 +91,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
   const accentColor = selectedCategory?.color
     ?? (type === 'expense' ? 'var(--value-negative)' : 'var(--value-positive)')
 
-  const today = getTodayString()
+  const today = getLocalTodayString()
   const yesterday = getYesterdayString()
 
   const currentCategories = categories.filter(c => c.type === type)
@@ -149,7 +150,7 @@ export function TransactionFormModal({ mode, open, onClose, initialData, initial
       setIsRefund(false)
       setCategoryId('')
       setMemberId(members[0]?.id || '')
-      setDate(initialDate || getTodayString())
+      setDate(initialDate || getLocalTodayString())
       setMemo('')
       setPaymentMethod('')
       setPaymentMethodDetail('')

@@ -32,6 +32,7 @@ export function ProfilePage() {
   const setLastBackupDate = useSettingsStore((s) => s.setLastBackupDate)
 
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [pendingRestoreFile, setPendingRestoreFile] = useState<File | null>(null)
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null)
   const [memberUsage, setMemberUsage] = useState<MemberUsage | null>(null)
   const [usageLoading, setUsageLoading] = useState(false)
@@ -91,22 +92,31 @@ export function ProfilePage() {
     }
   }
 
+  // 복원은 로컬 데이터 전체를 파일 내용으로 교체한다 — 파일 선택 후 바로
+  // 실행하지 않고 확인 다이얼로그를 거친다 (DataTab과 동일 패턴).
   const handleImportBackup = () => {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = '.json'
-    input.onchange = async (e) => {
+    input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0]
       if (!file) return
-      try {
-        await importBackup(file)
-        addToast('복원이 완료되었습니다.', 'success')
-        loadMembers()
-      } catch {
-        addToast('복원에 실패했습니다.', 'error')
-      }
+      setPendingRestoreFile(file)
     }
     input.click()
+  }
+
+  const performRestore = async () => {
+    const file = pendingRestoreFile
+    setPendingRestoreFile(null)
+    if (!file) return
+    try {
+      await importBackup(file)
+      addToast('복원이 완료되었습니다.', 'success')
+      loadMembers()
+    } catch {
+      addToast('복원에 실패했습니다.', 'error')
+    }
   }
 
   const handleResetData = async () => {
@@ -470,6 +480,17 @@ export function ProfilePage() {
         title="데이터 초기화"
         description="모든 자산, 부채, 거래 데이터가 삭제됩니다. 기본 구성원과 카테고리만 남습니다. 이 작업은 되돌릴 수 없습니다."
         confirmText="초기화"
+        variant="danger"
+      />
+
+      {/* Restore Confirm */}
+      <ConfirmDialog
+        open={pendingRestoreFile !== null}
+        onClose={() => setPendingRestoreFile(null)}
+        onConfirm={performRestore}
+        title="백업 복원"
+        description={`현재 기기의 모든 데이터가 선택한 백업 파일(${pendingRestoreFile?.name ?? ''})의 내용으로 교체됩니다. 계속할까요?`}
+        confirmText="복원"
         variant="danger"
       />
     </div>

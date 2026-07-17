@@ -30,7 +30,10 @@ export async function getMemberUsage(memberId: string): Promise<MemberUsage> {
     if (item.id == null) continue
     const [dvCount, loanCount] = await Promise.all([
       rawDb.dailyValues.where('assetItemId').equals(item.id).count(),
-      rawDb.loans.where('linkedAssetItemId').equals(item.id).count(),
+      // linkedAssetItemId is not indexed in the v16 schema — where() would throw
+      // a SchemaError; evaluate with an in-memory filter instead (same pattern
+      // as deleteAssetItem in database.ts).
+      rawDb.loans.filter(l => l.linkedAssetItemId === item.id).count(),
     ])
     dailyValues += dvCount
     loans += loanCount

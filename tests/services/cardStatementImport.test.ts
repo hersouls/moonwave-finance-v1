@@ -1,11 +1,16 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { db } from '@/services/database'
 import {
   detectCardCompany,
   parseCardStatement,
   parseSamsungStatement,
   parseShinhanStatement,
   parseShinhanCompact,
+  detectDuplicate,
+  analyzeStatement,
+  type ParsedRow,
 } from '@/services/cardStatementImport'
+import type { Transaction } from '@/lib/types'
 
 // 사용자가 직접 공유한 삼성카드 명세서 샘플 (일시불 섹션 7건, 소계 275,242원)
 const SAMSUNG_SAMPLE = `일시불
@@ -176,5 +181,123 @@ describe('parseCardStatement (unified entry, auto-detect)', () => {
   it('honors explicit company override', () => {
     expect(parseCardStatement(SAMSUNG_SAMPLE, 'samsung')).toHaveLength(7)
     expect(parseCardStatement(SHINHAN_SAMPLE, 'shinhan')).toHaveLength(2)
+  })
+})
+
+// ─── 중복 감지: 날짜 근접(±3일) 조건 ────────────────────
+
+const NOW = '2026-01-01T00:00:00.000Z'
+let txnSeq = 0
+
+function makeTxn(memo: string, amount: number, date: string, extra: Partial<Transaction> = {}): Transaction {
+  return {
+    id: `card-dup-${String(txnSeq++).padStart(4, '0')}`,
+    memberId: null,
+    type: 'expense',
+    amount,
+    categoryId: null,
+    date,
+    memo,
+    isRecurring: false,
+    createdAt: NOW,
+    updatedAt: NOW,
+    ...extra,
+  } as Transaction
+}
+
+function makeRow(merchant: string, amount: number, date: string): ParsedRow {
+  return { index: 0, merchant, amount, date, cardSuffix: '643' }
+}
+
+describe('detectDuplicate (날짜 근접 조건)', () => {
+  it('같은 가맹점+금액, 같은 날 → exact', () => {
+    const m = detectDuplicate(
+      makeRow('스타벅스 강남R점', 4500, '2026-04-05'),
+      [makeTxn('스타벅스 강남R점', 4500, '2026-04-05')],
+    )
+    expect(m.level).toBe('exact')
+  })
+
+  it('같은 가맹점+금액, 3일 이내 → exact', () => {
+    const m = detectDuplicate(
+      makeRow('스타벅스 강남R점', 4500, '2026-04-05'),
+      [makeTxn('스타벅스 강남R점', 4500, '2026-04-02')],
+    )
+    expect(m.level).toBe('exact')
+  })
+
+  it('같은 가맹점+금액이라도 20일 차이 → possible로 강등 (자동 제외 대상 아님)', () => {
+    // 매일 커피·버스요금 같은 정상 반복 구매를 분할 import 시 조용히
+    // 잃어버리지 않도록, 날짜가 먼 매칭은 exact가 아니어야 한다.
+    const m = detectDuplicate(
+      makeRow('스타벅스 강남R점', 4500, '2026-04-05'),
+      [makeTxn('스타벅스 강남R점', 4500, '2026-03-16')],
+    )
+    expect(m.level).toBe('possible')
+  })
+
+  it('먼 날짜·근접 날짜 매칭이 공존하면 근접 매칭이 exact로 이긴다', () => {
+    const near = makeTxn('스타벅스 강남R점', 4500, '2026-04-05')
+    const m = detectDuplicate(
+      makeRow('스타벅스 강남R점', 4500, '2026-04-05'),
+      [makeTxn('스타벅스 강남R점', 4500, '2026-03-16'), near],
+    )
+    expect(m.level).toBe('exact')
+    expect(m.matchedTransactionId).toBe(near.id)
+  })
+
+  it('유사 지출내용(포함 관계)도 ±3일 이내일 때만 likely, 멀면 possible', () => {
+    const nearMatch = detectDuplicate(
+      makeRow('스타벅스 강남R점', 4500, '2026-04-05'),
+      [makeTxn('스타벅스 강남', 4500, '2026-04-04')],
+    )
+    expect(nearMatch.level).toBe('likely')
+
+    const farMatch = detectDuplicate(
+      makeRow('스타벅스 강남R점', 4500, '2026-04-05'),
+      [makeTxn('스타벅스 강남', 4500, '2026-03-01')],
+    )
+    expect(farMatch.level).toBe('possible')
+  })
+
+  it('금액이 다르면 none', () => {
+    const m = detectDuplicate(
+      makeRow('스타벅스 강남R점', 4500, '2026-04-05'),
+      [makeTxn('스타벅스 강남R점', 5000, '2026-04-05')],
+    )
+    expect(m.level).toBe('none')
+  })
+})
+
+// ─── analyzeStatement: Dexie 직접 조회 (월 경계 무관 중복 감지) ──
+
+describe('analyzeStatement (existing 생략 시 DB 날짜 범위 조회)', () => {
+  beforeEach(async () => {
+    await db.transactions.clear()
+    await db.subscriptions.clear()
+  })
+
+  it('스토어 월 슬라이스 없이도 명세서 날짜 범위의 기존 거래에서 중복을 exact로 잡는다', async () => {
+    // 명세서(2026-04-05 스타벅스 4,500원)와 같은 건이 이미 DB에 존재.
+    // 사용자가 다른 달의 가계부를 보고 있어도(=월 슬라이스에 없어도) 잡혀야 한다.
+    await db.transactions.add(makeTxn('스타벅스 강남R점', 4500, '2026-04-05'))
+    const rows = await analyzeStatement(SHINHAN_SAMPLE, [])
+    const starbucks = rows.find(r => r.merchant === '스타벅스 강남R점')
+    expect(starbucks?.duplicate.level).toBe('exact')
+  })
+
+  it('조회 범위(명세서 최소 날짜 −60일) 밖의 오래된 거래는 후보에서 제외된다', async () => {
+    await db.transactions.add(makeTxn('스타벅스 강남R점', 4500, '2025-08-01'))
+    const rows = await analyzeStatement(SHINHAN_SAMPLE, [])
+    const starbucks = rows.find(r => r.merchant === '스타벅스 강남R점')
+    expect(starbucks?.duplicate.level).toBe('none')
+  })
+
+  it('existing을 명시 전달하면 그대로 사용한다 (하위 호환)', async () => {
+    // DB에는 중복이 있지만 명시 전달한 빈 배열이 우선되어야 한다.
+    await db.transactions.add(makeTxn('스타벅스 강남R점', 4500, '2026-04-05'))
+    const rows = await analyzeStatement(SHINHAN_SAMPLE, [], [])
+    const starbucks = rows.find(r => r.merchant === '스타벅스 강남R점')
+    expect(starbucks?.duplicate.level).toBe('none')
   })
 })

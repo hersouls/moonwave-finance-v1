@@ -501,6 +501,21 @@ export interface SyncOutboxEntry {
   date?: string
 }
 
+/**
+ * 로컬 삭제 기록 — 오프라인 기기의 스테일 업서트가 SDK 큐로 재생될 때
+ * 이미 삭제된 레코드를 부활시키는 것을 막는다. 삭제 훅과 클라우드 'removed'
+ * 인제스트가 기록하고, 인제스트의 "로컬 행 없음 + 톰스톤이 더 새로움" 경로가
+ * 적용을 거부하며 클라우드에 삭제를 재주장한다. 30일 후 정리된다.
+ */
+export interface SyncTombstone {
+  /** `${tableName}:${recordId}` */
+  key: string
+  tableName: string
+  recordId: string
+  /** ISO — 삭제 시각. 클라우드 updatedAt과 비교해 부활 여부를 판정한다. */
+  deletedAt: string
+}
+
 /** 클라우드 기기 레지스트리(presence) 문서 — users/{uid}/devices/{deviceId} */
 export interface DeviceInfo {
   deviceId: string

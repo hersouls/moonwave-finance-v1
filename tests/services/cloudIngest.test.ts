@@ -27,7 +27,7 @@ vi.mock('firebase/firestore', () => ({
 }))
 
 import { db, setSyncWritingFlag, drainChangeTracking } from '@/services/database'
-import { applyCloudChange, fromCloudDoc, shouldApplyCloudUpdate } from '@/services/firestoreSync'
+import { applyCloudChange, fromCloudDoc, shouldApplyCloudUpdate, drainReassertQueue } from '@/services/firestoreSync'
 import { getDeviceId } from '@/lib/deviceId'
 import type { Transaction } from '@/lib/types'
 
@@ -86,6 +86,11 @@ beforeEach(async () => {
     setSyncWritingFlag(false)
   }
   await drainChangeTracking()
+  await db.syncOutbox.clear()
+  await db.syncTombstones.clear()
+  // 앞선 테스트가 남긴 재주장 항목이 새 테스트의 아웃박스 검증을 오염하지
+  // 않도록 큐를 비운다 (드레인은 아웃박스에 쓰므로 그 뒤 다시 clear).
+  await drainReassertQueue()
   await db.syncOutbox.clear()
 })
 
@@ -313,6 +318,93 @@ describe('applyCloudChange — 레거시 dailyValues 인제스트 가드', () =>
     })
     expect(applied).toBe(false)
     expect(await db.dailyValues.count()).toBe(0)
+  })
+})
+
+describe('applyCloudChange — 동일 updatedAt+동일 내용 수렴 단락 (재구독 폭풍 방지)', () => {
+  it('내용까지 같으면 재적용도 재주장도 하지 않는다', async () => {
+    // 피어 문서를 정상 인제스트 → 로컬과 클라우드가 바이트 동일 상태
+    const cloudDoc = v3TxnDoc({ __deviceId: `${getDeviceId()}~~` }) // 사전순 상위 피어
+    await applyCloudChange('transactions', 'added', cloudDoc)
+
+    // 리스너 재구독이 같은 문서를 'added'로 재전달하는 상황
+    const applied = await applyCloudChange('transactions', 'added', cloudDoc)
+    expect(applied).toBe(false) // 상위 deviceId임에도 재적용하지 않는다
+
+    // 재주장(재업로드)도 없어야 한다 — 하위 deviceId 재전달로 검증
+    const lowerPeer = await applyCloudChange('transactions', 'added',
+      v3TxnDoc({ __deviceId: '!' }))
+    expect(lowerPeer).toBe(false)
+    await drainReassertQueue()
+    expect(await db.syncOutbox.count()).toBe(0)
+  })
+
+  it('타임스탬프가 같아도 내용이 다르면 기존 tiebreak로 판정한다', async () => {
+    const self = getDeviceId()
+    await seedSync(() => db.transactions.add(localTxn({ amount: 999, updatedAt: NOW })))
+
+    // 동일 updatedAt + 다른 amount + 상위 deviceId → 적용 (진짜 동시 기록 수렴)
+    const applied = await applyCloudChange('transactions', 'modified', v3TxnDoc({
+      amount: 777, updatedAt: NOW, __deviceId: `${self}~~`,
+    }))
+    expect(applied).toBe(true)
+    expect((await db.transactions.get('txn-1'))!.amount).toBe(777)
+  })
+})
+
+describe('applyCloudChange — 삭제 톰스톤 (스테일 업서트 부활 차단)', () => {
+  it('removed 인제스트는 톰스톤을 남기고, 이후 스테일 업서트를 거부한다', async () => {
+    await applyCloudChange('transactions', 'added', v3TxnDoc({ updatedAt: NOW }))
+    await applyCloudChange('transactions', 'removed', { syncId: 'txn-1' })
+    expect(await db.transactions.get('txn-1')).toBeUndefined()
+
+    // 오프라인 기기의 SDK 큐가 재생한 삭제 이전 스테일 문서 도착
+    const resurrect = await applyCloudChange('transactions', 'added',
+      v3TxnDoc({ updatedAt: OLDER }))
+    expect(resurrect).toBe(false)
+    expect(await db.transactions.get('txn-1')).toBeUndefined() // 부활 차단
+
+    // 클라우드 정리를 위한 삭제 재주장이 큐잉된다
+    await drainReassertQueue()
+    const entry = await db.syncOutbox.get('transactions:txn-1')
+    expect(entry?.op).toBe('delete')
+  })
+
+  it('삭제 이후에 갱신된 문서는 정당한 재생성 — 적용하고 톰스톤을 해제한다', async () => {
+    await applyCloudChange('transactions', 'added', v3TxnDoc({ updatedAt: OLDER }))
+    await applyCloudChange('transactions', 'removed', { syncId: 'txn-1' })
+
+    // 톰스톤(deletedAt=now)보다 나중 updatedAt의 문서
+    const future = new Date(Date.now() + 60_000).toISOString()
+    const applied = await applyCloudChange('transactions', 'added',
+      v3TxnDoc({ updatedAt: future, amount: 4242 }))
+    expect(applied).toBe(true)
+    expect((await db.transactions.get('txn-1'))!.amount).toBe(4242)
+    expect(await db.syncTombstones.get('transactions:txn-1')).toBeUndefined()
+  })
+
+  it('로컬 사용자 삭제도 톰스톤을 남긴다 (훅 경유)', async () => {
+    await seedSync(() => db.transactions.add(localTxn()))
+    await db.transactions.delete('txn-1') // 사용자 삭제 — 훅이 아웃박스+톰스톤 기록
+    await drainChangeTracking()
+    await new Promise(r => setTimeout(r, 30))
+
+    const tomb = await db.syncTombstones.get('transactions:txn-1')
+    expect(tomb).toBeDefined()
+    expect(tomb!.recordId).toBe('txn-1')
+  })
+
+  it('사용자가 같은 id를 재생성하면 톰스톤이 해제된다', async () => {
+    await seedSync(() => db.transactions.add(localTxn()))
+    await db.transactions.delete('txn-1')
+    await drainChangeTracking()
+    await new Promise(r => setTimeout(r, 30))
+    expect(await db.syncTombstones.get('transactions:txn-1')).toBeDefined()
+
+    await db.transactions.add(localTxn({ updatedAt: NEWER })) // 사용자 재생성
+    await drainChangeTracking()
+    await new Promise(r => setTimeout(r, 30))
+    expect(await db.syncTombstones.get('transactions:txn-1')).toBeUndefined()
   })
 })
 

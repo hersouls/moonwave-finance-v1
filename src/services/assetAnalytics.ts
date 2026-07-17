@@ -238,17 +238,22 @@ export function calculateDailyNetWorth(month: string, items: AssetItem[], values
   // Date-fns를 사용해 해당 월의 총 일수 계산
   const daysInMonth = getDaysInMonth(new Date(y, m - 1))
   
-  // AssetItem ID별로 최신 값을 추적하기 위한 Map
-  // 이력 데이터(values)를 정렬하여 빠르게 이전 값을 찾도록 준비할 수도 있으나,
-  // 매일마다 반복하며 값을 유지(Forward Fill)하는 방식이 효율적.
-  
-  // 초기화 (1일 이전의 가장 최신 값을 불러오도록 설정해야 하지만, 일단 제공된 `values` 내에서 찾음)
-  // 완벽한 Forward Fill을 위해서는 전월에서 넘어온 최종값도 `values`에 포함되어 있어야 함.
-  
-  // 빠른 조회를 위해 values를 파싱 및 정렬 (날짜 오름차순)
-  const sortedValues = [...values].sort((a, b) => a.date.localeCompare(b.date))
-  
-  // 아이템별 최신 값을 저장할 맵
+  // (아이템 × 일자)마다 전체 values 배열을 스캔하지 않도록 루프 전에 한 번만 인덱싱한다.
+  // 1) byItem: 아이템별 날짜 내림차순 목록 — 월 초 이전 앵커의 Forward-Fill 시작값 조회용
+  // 2) exactByItem: 아이템별 Map<날짜, 값> — 당일 명시적 기록의 O(1) 조회용
+  //    (동일 날짜 중복 기록 시 첫 기록 우선 — 기존 오름차순 정렬 + find 의미 유지)
+  const byItem = groupValuesByItem(values)
+  const exactByItem = new Map<string, Map<string, number>>()
+  for (const v of values) {
+    let dateMap = exactByItem.get(v.assetItemId)
+    if (!dateMap) {
+      dateMap = new Map()
+      exactByItem.set(v.assetItemId, dateMap)
+    }
+    if (!dateMap.has(v.date)) dateMap.set(v.date, v.value)
+  }
+
+  // 아이템별 최신 값을 저장할 맵 (Forward Fill 캐리)
   const currentValuesMap = new Map<string, number>()
   
   // 1일부터 말일까지 순회
@@ -259,27 +264,17 @@ export function calculateDailyNetWorth(month: string, items: AssetItem[], values
     let totalLiabilities = 0
     
     // 이 날짜까지의 최신 값으로 currentValuesMap 업데이트
-    // (보통 API에서 가져올 때 오늘 이전 값을 모두 주면 좋지만, 최신값 조회를 위해)
     items.forEach(item => {
-      // 1. 해당 일자의 명시적 값을 찾음
-      const exactValue = sortedValues.find(v => v.assetItemId === item.id && v.date === currentDateStr)
-      
-      if (exactValue) {
-        currentValuesMap.set(item.id, exactValue.value)
-      } else {
-        // 없다면 기존에 맵에 있는 값 (어제까지의 최신값)을 그대로 사용 (Forward Fill)
-        // 만약 맵에 없다면 (이번 달 1일이거나 처음), 당일 자정 기준 이전 기록 중 가장 최신 값을 탐색
-        if (!currentValuesMap.has(item.id)) {
-          const pastValues = sortedValues
-            .filter(v => v.assetItemId === item.id && v.date <= currentDateStr)
-            .sort((a, b) => b.date.localeCompare(a.date)) // 내림차순
+      // 1. 해당 일자의 명시적 값을 찾음 — O(1)
+      const exactValue = exactByItem.get(item.id)?.get(currentDateStr)
 
-          if (pastValues.length > 0) {
-            currentValuesMap.set(item.id, pastValues[0].value)
-          } else {
-            currentValuesMap.set(item.id, 0) // 아직 기록 없음
-          }
-        }
+      if (exactValue !== undefined) {
+        currentValuesMap.set(item.id, exactValue)
+      } else if (!currentValuesMap.has(item.id)) {
+        // 없다면 기존에 맵에 있는 값 (어제까지의 최신값)을 그대로 사용 (Forward Fill)
+        // 맵에도 없다면 (이번 달 1일이거나 처음), 당일 이전(포함) 기록 중 가장 최신 값을 탐색
+        // — 기록이 전혀 없으면 valueAsOf 가 0 을 반환 (기존 동작과 동일)
+        currentValuesMap.set(item.id, valueAsOf(byItem.get(item.id), currentDateStr))
       }
 
       // 현재 값 합산

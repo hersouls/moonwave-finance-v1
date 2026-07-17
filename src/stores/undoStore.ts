@@ -25,6 +25,11 @@ interface UndoState {
 const MAX_STACK_SIZE = 20
 const TOAST_DURATION = 5000
 
+// Reentrancy guard shared by undo/redo — the stack is only popped after the
+// awaited action resolves, so a second call arriving mid-flight (key repeat,
+// double click) would execute the same action twice.
+let undoRedoInFlight = false
+
 export const useUndoStore = create<UndoState>()(
   devtools(
     (set, get) => ({
@@ -56,34 +61,46 @@ export const useUndoStore = create<UndoState>()(
       },
 
       undo: async () => {
+        if (undoRedoInFlight) return
         const { undoStack } = get()
         if (undoStack.length === 0) return
 
         const action = undoStack[undoStack.length - 1]
-        await action.undo()
+        undoRedoInFlight = true
+        try {
+          await action.undo()
 
-        const prevTimeout = get().toastTimeoutId
-        if (prevTimeout) clearTimeout(prevTimeout)
+          const prevTimeout = get().toastTimeoutId
+          if (prevTimeout) clearTimeout(prevTimeout)
 
-        set((state) => ({
-          undoStack: state.undoStack.slice(0, -1),
-          redoStack: [...state.redoStack.slice(-(MAX_STACK_SIZE - 1)), action],
-          currentToast: null,
-          toastTimeoutId: null,
-        }))
+          set((state) => ({
+            undoStack: state.undoStack.slice(0, -1),
+            redoStack: [...state.redoStack.slice(-(MAX_STACK_SIZE - 1)), action],
+            currentToast: null,
+            toastTimeoutId: null,
+          }))
+        } finally {
+          undoRedoInFlight = false
+        }
       },
 
       redo: async () => {
+        if (undoRedoInFlight) return
         const { redoStack } = get()
         if (redoStack.length === 0) return
 
         const action = redoStack[redoStack.length - 1]
-        await action.redo()
+        undoRedoInFlight = true
+        try {
+          await action.redo()
 
-        set((state) => ({
-          redoStack: state.redoStack.slice(0, -1),
-          undoStack: [...state.undoStack.slice(-(MAX_STACK_SIZE - 1)), action],
-        }))
+          set((state) => ({
+            redoStack: state.redoStack.slice(0, -1),
+            undoStack: [...state.undoStack.slice(-(MAX_STACK_SIZE - 1)), action],
+          }))
+        } finally {
+          undoRedoInFlight = false
+        }
       },
 
       dismissToast: () => {

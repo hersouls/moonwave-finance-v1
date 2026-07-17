@@ -1,8 +1,23 @@
 import { format, parseISO, differenceInDays, startOfDay, startOfMonth, endOfMonth, addMonths, addDays, getDaysInMonth } from 'date-fns'
 import type { SubscriptionCycle } from '@/lib/types'
 
+/**
+ * UTC 프레임의 오늘 (toISOString 기준) — 저장 프레임 전용.
+ * dailyValues 번들 키·자산 가치 시리즈·동기화 내부 등은 이 UTC 프레임을 유지해야 함.
+ * ⚠️ KST에서는 00:00~09:00 사이 UTC 오늘 = 로컬 어제. 사용자 대면 "오늘"
+ * (거래 입력 기본값, 달력 오늘 선택 등)에는 getLocalTodayString()을 사용할 것.
+ */
 export function getTodayString(): string {
   return new Date().toISOString().split('T')[0]
+}
+
+/**
+ * 로컬(기기 시간대) 달력 기준 오늘 — yyyy-MM-dd.
+ * 거래 입력 기본값·달력 오늘 선택 등 사용자 대면 "오늘" 전용.
+ * 저장 프레임(dailyValues/자산 시리즈/동기화)은 UTC 기반 getTodayString()을 유지.
+ */
+export function getLocalTodayString(): string {
+  return format(new Date(), 'yyyy-MM-dd')
 }
 
 /**

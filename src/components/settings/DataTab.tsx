@@ -50,6 +50,7 @@ export function DataTab() {
 
   const [isBackingUp, setIsBackingUp] = useState(false)
   const [isRestoring, setIsRestoring] = useState(false)
+  const [pendingRestoreFile, setPendingRestoreFile] = useState<File | null>(null)
   const [showEasyLedgerImport, setShowEasyLedgerImport] = useState(false)
   const [easyLedgerFile, setEasyLedgerFile] = useState<File | null>(null)
   const [showDvPurgeConfirm, setShowDvPurgeConfirm] = useState(false)
@@ -84,25 +85,33 @@ export function DataTab() {
     }
   }
 
+  // 파일 선택 → 확인 다이얼로그 → 확정 시 복원. 복원은 이 기기의 전체
+  // 데이터를 백업 파일 내용으로 교체하므로 반드시 확인을 거친다.
   const handleImportBackup = () => {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = '.json'
-    input.onchange = async (e) => {
+    input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0]
       if (!file) return
-      setIsRestoring(true)
-      try {
-        await importBackup(file)
-        addToast('복원이 완료되었습니다. 페이지를 새로고침합니다.', 'success')
-        setTimeout(() => window.location.reload(), UI_DELAYS.RELOAD)
-      } catch {
-        addToast('복원에 실패했습니다. 올바른 백업 파일인지 확인하세요.', 'error')
-      } finally {
-        setIsRestoring(false)
-      }
+      setPendingRestoreFile(file)
     }
     input.click()
+  }
+
+  const handleConfirmRestore = async () => {
+    if (!pendingRestoreFile) return
+    setIsRestoring(true)
+    try {
+      await importBackup(pendingRestoreFile)
+      setPendingRestoreFile(null)
+      addToast('복원이 완료되었습니다. 페이지를 새로고침합니다.', 'success')
+      setTimeout(() => window.location.reload(), UI_DELAYS.RELOAD)
+    } catch {
+      addToast('복원에 실패했습니다. 올바른 백업 파일인지 확인하세요.', 'error')
+    } finally {
+      setIsRestoring(false)
+    }
   }
 
   const handleEasyLedgerImport = () => {
@@ -320,6 +329,19 @@ export function DataTab() {
           setShowEasyLedgerImport(false)
           setEasyLedgerFile(null)
         }}
+      />
+
+      {/* Restore confirm — 복원은 현재 데이터 전체를 교체하므로 확인 필수 */}
+      <ConfirmDialog
+        open={pendingRestoreFile !== null}
+        onClose={() => { if (!isRestoring) setPendingRestoreFile(null) }}
+        onConfirm={handleConfirmRestore}
+        title="데이터 복원"
+        description={`선택한 백업 파일(${pendingRestoreFile?.name ?? ''})의 내용으로 복원합니다. 이 기기의 현재 데이터는 모두 백업 파일 내용으로 대체되며, 다음 동기화 때 클라우드와 다른 기기에도 반영됩니다. 계속하시겠습니까?`}
+        confirmText="복원 실행"
+        cancelText="취소"
+        variant="warning"
+        isLoading={isRestoring}
       />
 
       {/* Legacy dailyValues purge confirm */}
