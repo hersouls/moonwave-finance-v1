@@ -1,4 +1,4 @@
-import { db, setSyncWritingFlag, drainChangeTracking } from '@/services/database'
+import { db, setSyncWritingFlag, drainChangeTracking, clearSyncCheckpoints } from '@/services/database'
 import { BACKUP_CONFIG } from '@/utils/constants'
 import type { BackupFile, SyncOutboxEntry, MerchantAlias } from '@/lib/types'
 
@@ -89,6 +89,10 @@ function isLegacyBackupData(data: BackupFile['data']): boolean {
  *   - 파일 내 데이터로 (테이블 × 숫자 id → 문자열 id) 매핑을 만들어 FK 재작성
  *   - FK 매핑 실패 시: nullable→null, optional→필드 삭제, required→'' (미매칭 표식)
  *   - projected dailyValues 는 드롭 — 동기화/백업 대상이 아니며 앵커에서 재생성된다
+ *   - 중복 수렴(v14 마이그레이션과 동일한 LWW): 레거시 syncId 는 유니크 인덱스가
+ *     아니어서 같은 syncId 행이 2개 존재할 수 있다 — 그대로 두면 복원 bulkAdd 가
+ *     PK ConstraintError → 트랜잭션 전체 롤백으로 그 백업 파일은 영구 복원 불가.
+ *     같은 id(및 merchantAliases 의 &merchantKey)는 updatedAt 최신 행만 남긴다.
  * v2 형식(문자열 id) 데이터는 그대로 반환한다.
  */
 function normalizeBackupData(data: BackupData): BackupData {
@@ -116,7 +120,11 @@ function normalizeBackupData(data: BackupData): BackupData {
     const rows = raw[name]
     if (!rows) continue
     const fkDefs = BACKUP_FK_DEFS[name] ?? []
-    const converted: RawRow[] = []
+    // 중복 수렴 — v14 마이그레이션과 동일: 같은 id 행은 updatedAt 최신만 남긴다
+    // (같은 논리 레코드의 사본이므로 LWW, 동률이면 먼저 온 행 유지).
+    const byId = new Map<string, RawRow>()
+    const newerOf = (a: RawRow, b: RawRow) =>
+      String(a.updatedAt ?? '') >= String(b.updatedAt ?? '') ? a : b
     for (const row of rows) {
       if (name === 'dailyValues' && row.source === 'projected') continue
       const next: RawRow = { ...row }
@@ -140,16 +148,33 @@ function normalizeBackupData(data: BackupData): BackupData {
           next[def.field] = '' // required — 미매칭 표식 ('' 조회는 항상 미스)
         }
       }
-      converted.push(next)
+      const newId = next.id as string
+      const prev = byId.get(newId)
+      byId.set(newId, prev ? newerOf(prev, next) : next)
     }
-    out[name] = converted
+    // merchantAliases: &merchantKey 유니크 — id가 달라도 같은 merchantKey면 수렴
+    if (name === 'merchantAliases') {
+      const byKey = new Map<string, RawRow>()
+      for (const row of byId.values()) {
+        const k = String(row.merchantKey ?? '')
+        const prev = byKey.get(k)
+        byKey.set(k, prev ? newerOf(prev, row) : row)
+      }
+      out[name] = [...byKey.values()]
+    } else {
+      out[name] = [...byId.values()]
+    }
   }
 
   return { ...data, ...out } as unknown as BackupData
 }
 
 export async function exportBackup(): Promise<void> {
-  const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans, investmentTrades, dividends, accountInterests, merchantAliases] = await Promise.all([
+  // 전 테이블 읽기를 단일 readonly 트랜잭션으로 묶는다 — 독립 toArray()들을
+  // 트랜잭션 없이 병렬 실행하면 동기화 인제스트가 동시에 쓰는 중일 때 상호
+  // 불일치 스냅샷(예: categories에 아직 없는 카테고리를 참조하는 거래)이
+  // 될 수 있다. 병렬 읽기는 트랜잭션 안에서 그대로 유지한다.
+  const [members, assetCategories, assetItems, dailyValues, transactionCategories, transactions, budgets, goals, paymentMethodItems, subscriptions, loans, investmentTrades, dividends, accountInterests, merchantAliases] = await db.transaction('r', [db.members, db.assetCategories, db.assetItems, db.dailyValues, db.transactionCategories, db.transactions, db.budgets, db.goals, db.paymentMethodItems, db.subscriptions, db.loans, db.investmentTrades, db.dividends, db.accountInterests, db.merchantAliases], () => Promise.all([
     db.members.toArray(),
     db.assetCategories.toArray(),
     db.assetItems.toArray(),
@@ -165,7 +190,7 @@ export async function exportBackup(): Promise<void> {
     db.dividends.toArray(),
     db.accountInterests.toArray(),
     db.merchantAliases.toArray(),
-  ])
+  ]))
 
   const data: BackupData = {
     members,
@@ -329,6 +354,11 @@ export async function importBackup(file: File): Promise<void> {
       })
     }
     if (outboxRows.length > 0) await db.syncOutbox.bulkPut(outboxRows)
+
+    // 윈도우 리스너 체크포인트 초기화 — 로컬이 방금 백업 시점으로 교체됐으므로
+    // 스테일 체크포인트로 부분 리슨하면 백업 이후~체크포인트 사이에 업로드된
+    // 클라우드 문서를 영영 못 내려받는다. 다음 구독은 전량 리슨으로 재기저선.
+    clearSyncCheckpoints()
   } finally {
     setSyncWritingFlag(false)
   }

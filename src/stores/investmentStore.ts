@@ -73,7 +73,7 @@ export const useInvestmentStore = create<InvestmentState>()(
 
       addTradesFromParsed: async (parsedTrades) => {
         const now = new Date().toISOString()
-        let currentTrades = get().trades
+        const currentTrades = get().trades
         let maxOrder = currentTrades.length > 0 ? Math.max(...currentTrades.map(t => t.sortOrder)) : -1
         let added = 0
         let skipped = 0

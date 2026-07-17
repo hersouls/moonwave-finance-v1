@@ -242,7 +242,15 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       if (pending > 0) {
         const online = typeof navigator === 'undefined' || navigator.onLine !== false
         if (online) {
-          try { await flushOutbox(user.uid) } catch { /* 아래에서 재확인 */ }
+          // 유한 대기: onLine=true여도 죽은 네트워크(캡티브 포털)면 flush가
+          // 서버 ack에 묶인다 — 10초 내 미완이면 '펜딩 남음' 경로로 넘겨
+          // 사용자에게 정직하게 알린다 (로그아웃 무한 대기 방지).
+          try {
+            await Promise.race([
+              flushOutbox(user.uid),
+              new Promise((resolve) => setTimeout(resolve, 10_000)),
+            ])
+          } catch { /* 아래에서 재확인 */ }
           pending = await getPendingChangesCount().catch(() => pending)
         }
         if (pending > 0) {

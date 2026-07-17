@@ -394,6 +394,23 @@ describe('applyCloudChange — 삭제 톰스톤 (스테일 업서트 부활 차�
     expect(tomb!.recordId).toBe('txn-1')
   })
 
+  it('removed에도 삭제 LWW — 삭제 문서보다 새로운 로컬 수정은 보존하고 재주장한다', async () => {
+    await seedSync(() => db.transactions.add(localTxn({ amount: 777, updatedAt: NEWER })))
+
+    // 다른 기기의 스테일 오프라인 삭제: removed 이벤트의 문서 내용(updatedAt=NOW)이
+    // 로컬 수정(NEWER)보다 오래됨 — 수정이 이긴다.
+    const applied = await applyCloudChange('transactions', 'removed', {
+      syncId: 'txn-1', updatedAt: NOW, __deviceId: 'peer-device',
+    })
+    expect(applied).toBe(false)
+    expect((await db.transactions.get('txn-1'))!.amount).toBe(777) // 보존
+    // 삭제를 수용하지 않았으므로 톰스톤도 남기지 않는다
+    expect(await db.syncTombstones.get('transactions:txn-1')).toBeUndefined()
+    // 클라우드 복원을 위한 재주장(upsert)이 큐잉된다
+    await drainReassertQueue()
+    expect((await db.syncOutbox.get('transactions:txn-1'))?.op).toBe('upsert')
+  })
+
   it('사용자가 같은 id를 재생성하면 톰스톤이 해제된다', async () => {
     await seedSync(() => db.transactions.add(localTxn()))
     await db.transactions.delete('txn-1')

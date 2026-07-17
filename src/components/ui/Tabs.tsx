@@ -21,7 +21,7 @@ export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   const handleKeyDown = (e: KeyboardEvent, index: number) => {
-    let nextIndex: number | null = null
+    let nextIndex: number
 
     switch (e.key) {
       case 'ArrowRight':

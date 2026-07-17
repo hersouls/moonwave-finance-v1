@@ -66,7 +66,7 @@ export const useDividendStore = create<DividendState>()(
 
       addDividendsFromParsed: async (parsedDivs) => {
         const now = new Date().toISOString()
-        let currentDivs = get().dividends
+        const currentDivs = get().dividends
         let maxOrder = currentDivs.length > 0 ? Math.max(...currentDivs.map(d => d.sortOrder)) : -1
         let added = 0
         let skipped = 0
