@@ -18,6 +18,7 @@ import type {
   AccountInterest,
   MerchantAlias,
   SyncOutboxEntry,
+  SyncTombstone,
 } from '@/lib/types'
 
 /** 새 레코드 id 생성 — 전역 고유 문자열 (Firestore 문서 id 겸용). */
@@ -42,6 +43,7 @@ class FinanceDatabase extends Dexie {
   accountInterests!: Table<AccountInterest, string>
   merchantAliases!: Table<MerchantAlias, string>
   syncOutbox!: Table<SyncOutboxEntry, string>
+  syncTombstones!: Table<SyncTombstone, string>
 
   constructor() {
     super('MoonwaveFinance')
@@ -375,6 +377,12 @@ class FinanceDatabase extends Dexie {
       }
       _migrationBuffer = null
     })
+
+    // v17: 삭제 톰스톤 재도입 (v15에서 제거했던 레거시와 다른 용도 —
+    // 스테일 오프라인 업서트의 "삭제 부활" 차단 가드, 30일 보존)
+    this.version(17).stores({
+      syncTombstones: '&key, deletedAt',
+    })
   }
 }
 
@@ -570,6 +578,12 @@ export async function countPendingOutbox(): Promise<number> {
   return db.syncOutbox.count()
 }
 
+/** 오래된 삭제 톰스톤 정리 — 세션 시작 시 fire-and-forget으로 호출된다. */
+export async function pruneSyncTombstones(maxAgeDays = 30): Promise<void> {
+  const cutoff = new Date(Date.now() - maxAgeDays * 24 * 60 * 60 * 1000).toISOString()
+  await db.syncTombstones.where('deletedAt').below(cutoff).delete()
+}
+
 function persistOutboxEntries(entries: SyncOutboxEntry[]): void {
   if (entries.length === 0) return
   // 레코드당 1행 — 같은 트랜잭션에서 여러 번 변경돼도 마지막 op가 이긴다.
@@ -579,6 +593,14 @@ function persistOutboxEntries(entries: SyncOutboxEntry[]): void {
   const p: Promise<void> = Dexie.ignoreTransaction(async () => {
     try {
       await db.syncOutbox.bulkPut(rows)
+      // 삭제 톰스톤 동반 기록 / 재생성 시 해제 — 스테일 오프라인 업서트의
+      // "삭제 부활" 차단 가드 (firestoreSync 인제스트가 판정에 사용).
+      const tombs: SyncTombstone[] = rows
+        .filter(r => r.op === 'delete')
+        .map(r => ({ key: r.key, tableName: r.tableName, recordId: r.recordId, deletedAt: r.queuedAt }))
+      if (tombs.length > 0) await db.syncTombstones.bulkPut(tombs)
+      const revived = rows.filter(r => r.op === 'upsert').map(r => r.key)
+      if (revived.length > 0) await db.syncTombstones.bulkDelete(revived)
     } catch (err) {
       console.error('[sync] outbox write failed:', err)
     }
@@ -1299,7 +1321,9 @@ export async function findDuplicateAccountInterest(depositDate: string, periodSt
 
 // ─── Recurring Transaction Helpers ───────────────
 export async function getRecurringTransactions(): Promise<Transaction[]> {
-  return db.transactions.where('isRecurring').equals(1).toArray()
+  // isRecurring 은 JS boolean 으로 저장 — IndexedDB 인덱스에서 .equals(1) 은
+  // 매칭되지 않으므로 인메모리 filter 로 평가한다 (getActiveLoans 와 동일).
+  return db.transactions.filter(t => t.isRecurring === true).toArray()
 }
 
 export async function getTransactionsBySubscriptionId(subscriptionId: string): Promise<Transaction[]> {
@@ -1337,6 +1361,9 @@ export async function clearAllData(): Promise<void> {
     // 도착해 잔존하지 않도록, 먼저 in-flight 기록을 모두 드레인한다.
     await drainChangeTracking()
     await db.syncOutbox.clear()
+    // 톰스톤도 함께 초기화 — 계정 전환 시 이전 사용자의 삭제 기록이 새 계정
+    // 데이터의 인제스트를 차단하면 안 된다.
+    await db.syncTombstones.clear()
 
     const now = new Date().toISOString()
     await db.members.bulkAdd(

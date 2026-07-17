@@ -57,6 +57,44 @@ function toAuthUser(u: User): AuthUser {
   }
 }
 
+/** 이 기기 로컬(Dexie) 데이터를 소유한 계정 uid 마커 — 교차 계정 오염 가드. */
+const OWNER_UID_KEY = 'fin:ownerUid'
+
+function readOwnerUid(): string | null {
+  try {
+    return localStorage.getItem(OWNER_UID_KEY)
+  } catch {
+    return null
+  }
+}
+
+function writeOwnerUid(uid: string | null): void {
+  try {
+    if (uid === null) localStorage.removeItem(OWNER_UID_KEY)
+    else localStorage.setItem(OWNER_UID_KEY, uid)
+  } catch {
+    // localStorage 접근 불가 환경 — 가드 없이 기존 동작으로 진행
+  }
+}
+
+/**
+ * 교차 계정 데이터 오염 가드. 저장된 소유자 uid가 현재 로그인 uid와 다르면
+ * (비대화형 로그아웃 후 다른 계정 로그인 등) 이전 사용자의 로컬 데이터와
+ * 동기화 아웃박스를 지운 뒤 마커를 갱신한다. 지우지 않으면 startSyncSession
+ * 부트스트랩이 이전 계정의 데이터를 새 계정 클라우드로 전량 업로드할 수 있다.
+ * auth-null 시점에는 지우지 않는다 — 같은 사용자가 다시 로그인할 수 있으므로,
+ * 다음 로그인 시 이 불일치 검사가 가드 역할을 한다.
+ */
+async function ensureLocalDataOwner(uid: string): Promise<void> {
+  const stored = readOwnerUid()
+  if (stored && stored !== uid) {
+    // clearAllData는 in-flight 기록을 드레인한 뒤 syncOutbox까지 비운다.
+    const { clearAllData } = await import('@/services/database')
+    await clearAllData()
+  }
+  if (stored !== uid) writeOwnerUid(uid)
+}
+
 async function reloadStoresAfterSync() {
   const { useSubscriptionStore } = await import('@/stores/subscriptionStore')
   const { useTransactionStore } = await import('@/stores/transactionStore')
@@ -111,6 +149,25 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const authUser = toAuthUser(firebaseUser)
+
+        // 교차 계정 가드: 이전 계정의 로컬 데이터가 남아 있으면 동기화·스토어
+        // 로드보다 먼저 wipe를 완료한다 (아래 startSyncSession 부트스트랩이
+        // 잔존 데이터를 새 계정 클라우드로 업로드하는 것을 차단).
+        try {
+          await ensureLocalDataOwner(authUser.uid)
+        } catch (ownerErr) {
+          console.error('이전 계정 로컬 데이터 정리 실패:', ownerErr)
+          // wipe 실패 상태로 동기화를 시작하면 교차 계정 업로드 위험이
+          // 그대로이므로 로그인 진행을 중단한다 (마커는 갱신하지 않음 —
+          // 새로고침/재로그인 시 재시도).
+          set({
+            isLoading: false,
+            isSigningIn: false,
+            error: '이전 계정의 로컬 데이터 정리에 실패했습니다. 페이지를 새로고침한 뒤 다시 로그인해주세요.',
+          })
+          return
+        }
+
         const currentUser = get().user
 
         // Only update state if user actually changed (skip token refreshes)
@@ -206,6 +263,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       try {
         const { clearAllData } = await import('@/services/database')
         await clearAllData()
+        // wipe 성공 시에만 소유자 마커 해제 — 실패하면 마커가 남아
+        // 다음 로그인의 교차 계정 검사가 잔존 데이터를 정리한다.
+        writeOwnerUid(null)
       } catch (clearErr) {
         console.error('Failed to clear local data on logout:', clearErr)
       }

@@ -45,6 +45,7 @@ import {
   runSyncWrite,
   onUserWritePersisted,
   countPendingOutbox,
+  pruneSyncTombstones,
   SYNCABLE_TABLE_NAMES,
   type SyncableTableName,
 } from '@/services/database'
@@ -272,6 +273,21 @@ export function shouldApplyCloudUpdate(
   return tiebreak()
 }
 
+/**
+ * 키 순서 무관 결정적 직렬화 — "동일 updatedAt + 동일 내용 = 이미 수렴"
+ * 판정에 쓴다. 클라우드 문서와 Dexie 행은 키 순서가 다를 수 있어 일반
+ * JSON.stringify로는 같은 내용도 다르게 찍힌다.
+ */
+function stableStringify(obj: unknown): string {
+  return JSON.stringify(obj, (_k, v) =>
+    v && typeof v === 'object' && !Array.isArray(v)
+      ? Object.keys(v as Record<string, unknown>).sort().reduce((acc: Record<string, unknown>, k) => {
+          acc[k] = (v as Record<string, unknown>)[k]
+          return acc
+        }, {})
+      : v)
+}
+
 // ─── Dexie 테이블 매핑 ─────────────────────────────────────────────
 
 type DexieTable = typeof db.members | typeof db.assetCategories | typeof db.assetItems |
@@ -375,6 +391,20 @@ function queueReassert(tableName: SyncableTable, localRow: Record<string, unknow
 }
 
 /**
+ * 삭제 재주장 — 로컬 톰스톤이 더 새로운데 스테일 업서트 문서가 도착한 경우,
+ * 그 문서를 클라우드에서 다시 지워 다른 기기의 부활을 막는다.
+ */
+function queueReassertDelete(tableName: SyncableTable, id: string, deletedAt: string): void {
+  _reassertQueue.push({
+    key: `${tableName}:${id}`,
+    tableName,
+    recordId: id,
+    op: 'delete',
+    queuedAt: deletedAt,
+  })
+}
+
+/**
  * 인제스트 후 누적된 재주장 항목을 아웃박스에 반영하고 푸시를 요청한다.
  * @internal Exported for unit tests (재주장 경로 검증용).
  */
@@ -392,6 +422,12 @@ export async function drainReassertQueue(): Promise<void> {
     requestPush()
   } catch (err) {
     console.error('[sync] re-assert enqueue failed:', err)
+    // 재주장은 이 아키텍처의 정확성 축 — 실패 항목을 큐에 되돌려 다음
+    // 인제스트/드레인에서 재시도한다 (splice 후 유실 방지).
+    const pending = new Set(_reassertQueue.map(r => r.key))
+    for (const r of rows) {
+      if (!pending.has(r.key)) _reassertQueue.push(r)
+    }
   }
 }
 
@@ -715,6 +751,9 @@ export async function fullDownload(uid: string): Promise<void> {
     const { drainChangeTracking } = await import('@/services/database')
     await drainChangeTracking()
     await db.syncOutbox.clear()
+    // "클라우드가 진실" — 로컬 삭제 톰스톤도 함께 비워, 방금 받은 문서의
+    // 이후 인제스트가 스테일 삭제 기록에 차단되지 않게 한다.
+    await db.syncTombstones.clear()
 
     for (const [tableName, records] of tableRecords) {
       const table = getLocalTable(tableName)
@@ -847,6 +886,15 @@ export async function ingestDvBundleDoc(data: Record<string, unknown>): Promise<
         // projected의 새 타임스탬프가 더 오래된 피어 manual 앵커를 영구히
         // 가리는 것을 막는다. 앵커↔앵커는 일반 일자 LWW.
         const anchorOverProjected = existing.source === 'projected'
+        // 동일 타임스탬프 + 동일 튜플 = 이미 수렴 — 재적용/재주장 모두 생략
+        // (리스너 재구독의 번들 재전달 폭풍 방지, applyCloudChangeInTx와 동일 규약).
+        if (!anchorOverProjected
+            && day.u === existing.updatedAt
+            && day.v === existing.value
+            && day.sid === existing.id
+            && (day.s ?? undefined) === existing.source) {
+          continue
+        }
         if (anchorOverProjected || shouldApplyCloudUpdate(day.u, day.d, existing.updatedAt)) {
           if (existing.id !== day.sid) {
             // sid 입양 — PK 교체는 delete+put
@@ -926,6 +974,14 @@ async function applyCloudChangeInTx(
     if (tableName === 'dailyValues') return false
     const removedId = typeof cloudData.syncId === 'string' ? cloudData.syncId : null
     if (!removedId) return false
+    // 삭제 사실을 톰스톤으로 기록 — 이후 도착하는 스테일 업서트(오프라인
+    // 기기의 SDK 재생)가 이 레코드를 부활시키지 못하게 한다.
+    await db.syncTombstones.put({
+      key: `${tableName}:${removedId}`,
+      tableName,
+      recordId: removedId,
+      deletedAt: new Date().toISOString(),
+    })
     const localRow = await (localTable as typeof db.members).get(removedId)
     if (!localRow) return false
     await (localTable as typeof db.members).delete(removedId)
@@ -961,8 +1017,32 @@ async function applyCloudChangeInTx(
     }
   }
 
+  // 로컬 행이 없는 업서트 — 삭제 톰스톤이 더 새로우면 부활 차단 (C4).
+  // 오프라인 기기의 SDK 큐가 삭제 이전의 스테일 setDoc을 재생하면 문서가
+  // 되살아나는데, 삭제를 목격한 기기가 여기서 거부 + 삭제 재주장해 수렴시킨다.
+  if (!existing) {
+    const tomb = await db.syncTombstones.get(`${tableName}:${id}`)
+    if (tomb) {
+      const cloudAt = cloudData.updatedAt as string | undefined
+      if (!cloudAt || tomb.deletedAt >= cloudAt) {
+        queueReassertDelete(tableName, id, tomb.deletedAt)
+        return false
+      }
+      // 클라우드가 삭제 이후에 갱신된 문서 — 정당한 재생성으로 보고 톰스톤 해제.
+      await db.syncTombstones.delete(tomb.key)
+    }
+  }
+
   const cloudDeviceId = cloudData.__deviceId as string | undefined
   if (existing) {
+    // 동일 updatedAt + 동일 내용 = 이미 수렴된 문서. 리스너 재구독의 초기
+    // 스냅샷은 전 문서를 'added'로 재전달하므로, 이 단락이 없으면 기동마다
+    // 전 DB 재기록(put) 또는 전량 재업로드(reassert) 폭풍이 인다 (C2/C11/C16).
+    if (typeof cloudData.updatedAt === 'string'
+        && cloudData.updatedAt === (existing.updatedAt as string | undefined)
+        && stableStringify(record) === stableStringify(existing)) {
+      return false
+    }
     if (!shouldApplyCloudUpdate(cloudData.updatedAt as string, cloudDeviceId, existing.updatedAt as string)) {
       // 로컬을 유지했다. 이게 자기 에코가 아니면(다른 기기가 스테일 문서로
       // 클라우드를 회귀시킨 경우) 로컬 최신본을 재주장해 클라우드를 수렴시킨다.
@@ -991,7 +1071,9 @@ export async function applyCloudChange(
   changeType: 'added' | 'modified' | 'removed',
   cloudData: Record<string, unknown>,
 ): Promise<boolean> {
-  return runSyncWrite([getLocalTable(tableName)], () =>
+  // syncTombstones도 스코프에 포함 — 삭제 부활 가드가 같은 트랜잭션에서
+  // 읽고 쓴다 (스코프 밖 접근은 NotFoundError로 조용히 실패한다).
+  return runSyncWrite([getLocalTable(tableName), db.syncTombstones], () =>
     applyCloudChangeInTx(tableName, changeType, cloudData))
 }
 
@@ -999,11 +1081,13 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
   const colRef = collection(firestore, colPath(uid, tableName))
   let hadSnapshot = false
   const unsub = onSnapshot(colRef, { includeMetadataChanges: true }, async (snapshot) => {
-    hadSnapshot = true
-    // 서버가 확인한 스냅샷만 staleness 타이머를 리셋한다 — persistentLocalCache는
-    // 재구독 직후 캐시 전용 스냅샷(fromCache=true)을 즉시 발화하는데, 이것까지
-    // 신선함으로 치면 '캐시만 살아있는 죽은 서버 채널'을 헬스체크가 못 잡는다.
+    // 서버가 확인한 스냅샷만 staleness 타이머·재시도 카운터를 리셋한다 —
+    // persistentLocalCache는 재구독 직후 캐시 전용 스냅샷(fromCache=true)을
+    // 즉시 발화하는데, 이것까지 신선함으로 치면 '캐시만 살아있는 죽은 서버
+    // 채널'을 헬스체크가 못 잡고, 쿼터 소진/권한 오류 같은 터미널 오류에서
+    // hadSnapshot=true → 백오프 리셋 → 1초 간격 무한 재구독 핫 루프가 된다.
     if (!snapshot.metadata.fromCache) {
+      hadSnapshot = true
       lastSnapshotByTable.set(tableName, Date.now())
     }
     if (realtimeSyncPaused) return
@@ -1019,7 +1103,7 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
     try {
       for (let chunkStart = 0; chunkStart < docChanges.length; chunkStart += INGEST_CHUNK_SIZE) {
         const chunk = docChanges.slice(chunkStart, chunkStart + INGEST_CHUNK_SIZE)
-        await runSyncWrite([localTable], async () => {
+        await runSyncWrite([localTable, db.syncTombstones], async () => {
           for (const change of chunk) {
             try {
               if (await applyCloudChangeInTx(tableName, change.type, change.doc.data())) {
@@ -1064,8 +1148,9 @@ function subscribeDvBundles(uid: string, generation: number, retryCount = 0): vo
   const colRef = collection(firestore, `users/${uid}/${DV_BUNDLE_COLLECTION}`)
   let hadSnapshot = false
   const unsub = onSnapshot(colRef, { includeMetadataChanges: true }, async (snapshot) => {
-    hadSnapshot = true
+    // 서버 확인 스냅샷만 카운터 리셋 — subscribeTable과 동일 규약 (핫 루프 방지).
     if (!snapshot.metadata.fromCache) {
+      hadSnapshot = true
       lastSnapshotByTable.set(DV_BUNDLE_COLLECTION, Date.now())
     }
     if (realtimeSyncPaused) return
@@ -1229,6 +1314,8 @@ export async function startSyncSession(uid: string): Promise<void> {
 
     startRealtimeSync(uid)
     void flushOutbox(uid)
+    // 오래된 삭제 톰스톤 정리 (30일) — 실패해도 세션 시작에는 지장 없다.
+    void pruneSyncTombstones().catch(() => {})
     setStatus('synced')
   } catch (err) {
     console.error('[sync] login session start failed:', err)
