@@ -100,7 +100,7 @@ beforeEach(async () => {
   setSyncWritingFlag(true)
   try {
     await db.transactions.clear()
-    await db.syncTombstones.clear()
+    await db.syncDeletes.clear()
   } finally {
     setSyncWritingFlag(false)
   }
@@ -227,7 +227,7 @@ describe('syncTombstones 리스너 — 삭제 전파 (C12/U23)', () => {
     }]))
 
     expect(await db.transactions.get('t-del')).toBeUndefined()
-    expect(await db.syncTombstones.get('transactions:t-del')).toBeDefined()
+    expect(await db.syncDeletes.get('transactions:t-del')).toBeDefined()
   })
 
   it('삭제보다 새로운 로컬 수정은 보존하고 재주장한다 (삭제 LWW)', async () => {

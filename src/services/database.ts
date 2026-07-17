@@ -43,7 +43,7 @@ class FinanceDatabase extends Dexie {
   accountInterests!: Table<AccountInterest, string>
   merchantAliases!: Table<MerchantAlias, string>
   syncOutbox!: Table<SyncOutboxEntry, string>
-  syncTombstones!: Table<SyncTombstone, string>
+  syncDeletes!: Table<SyncTombstone, string>
 
   constructor() {
     super('MoonwaveFinance')
@@ -378,10 +378,21 @@ class FinanceDatabase extends Dexie {
       _migrationBuffer = null
     })
 
-    // v17: 삭제 톰스톤 재도입 (v15에서 제거했던 레거시와 다른 용도 —
-    // 스테일 오프라인 업서트의 "삭제 부활" 차단 가드, 30일 보존)
-    this.version(17).stores({
-      syncTombstones: '&key, deletedAt',
+    // v17: 원래 syncTombstones('&key')를 선언했으나 실사용 기기에서
+    // UpgradeError("Not yet support for changing primary key")로 DB 열기
+    // 자체가 실패하는 사고 발생 — 과거 빌드의 버전 경로를 탄 기기에는
+    // v15의 삭제 단계를 건너뛴 레거시 syncTombstones 저장소(PK '++id')가
+    // 물리적으로 잔존해, 같은 이름·다른 PK 재선언이 금지 연산이 됐다.
+    // 해법: 이 단계는 무해화(no-op)하고 v18에서 역사상 쓴 적 없는 이름
+    // (syncDeletes)으로 생성한다. ⚠️ 'syncTombstones'라는 로컬 테이블명은
+    // 영구 재사용 금지.
+    this.version(17).stores({})
+
+    // v18: 삭제 톰스톤 가드 테이블 — 스테일 오프라인 업서트의 "삭제 부활"
+    // 차단(30일 보존). 클라우드 컬렉션명은 여전히 'syncTombstones'
+    // (Firestore 네임스페이스라 로컬 IDB 저장소명과 무관).
+    this.version(18).stores({
+      syncDeletes: '&key, deletedAt',
     })
   }
 }
@@ -598,7 +609,7 @@ export async function countPendingOutbox(): Promise<number> {
 /** 오래된 삭제 톰스톤 정리 — 세션 시작 시 fire-and-forget으로 호출된다. */
 export async function pruneSyncTombstones(maxAgeDays = 30): Promise<void> {
   const cutoff = new Date(Date.now() - maxAgeDays * 24 * 60 * 60 * 1000).toISOString()
-  await db.syncTombstones.where('deletedAt').below(cutoff).delete()
+  await db.syncDeletes.where('deletedAt').below(cutoff).delete()
 }
 
 /** 윈도우 리스너 체크포인트 localStorage 키 접두어 (firestoreSync가 사용). */
@@ -635,9 +646,9 @@ function persistOutboxEntries(entries: SyncOutboxEntry[]): void {
       const tombs: SyncTombstone[] = rows
         .filter(r => r.op === 'delete')
         .map(r => ({ key: r.key, tableName: r.tableName, recordId: r.recordId, deletedAt: r.queuedAt }))
-      if (tombs.length > 0) await db.syncTombstones.bulkPut(tombs)
+      if (tombs.length > 0) await db.syncDeletes.bulkPut(tombs)
       const revived = rows.filter(r => r.op === 'upsert').map(r => r.key)
-      if (revived.length > 0) await db.syncTombstones.bulkDelete(revived)
+      if (revived.length > 0) await db.syncDeletes.bulkDelete(revived)
     } catch (err) {
       console.error('[sync] outbox write failed:', err)
     }
@@ -1425,7 +1436,7 @@ export async function clearAllData(): Promise<void> {
     await db.syncOutbox.clear()
     // 톰스톤도 함께 초기화 — 계정 전환 시 이전 사용자의 삭제 기록이 새 계정
     // 데이터의 인제스트를 차단하면 안 된다.
-    await db.syncTombstones.clear()
+    await db.syncDeletes.clear()
     // 윈도우 리스너 체크포인트도 초기화 — 빈 로컬 + 스테일 체크포인트 조합은
     // 과거 데이터를 영영 못 내려받는다 (다음 구독은 전량 리슨으로 재기저선).
     clearSyncCheckpoints()

@@ -511,7 +511,7 @@ async function doFlushOutbox(uid: string): Promise<void> {
         }))
       }
       for (const key of withdrawnDeletes) {
-        try { await db.syncTombstones.delete(key) } catch { /* 무해 */ }
+        try { await db.syncDeletes.delete(key) } catch { /* 무해 */ }
       }
     }
 
@@ -800,7 +800,7 @@ export async function fullDownload(uid: string): Promise<void> {
     await db.syncOutbox.clear()
     // "클라우드가 진실" — 로컬 삭제 톰스톤도 함께 비워, 방금 받은 문서의
     // 이후 인제스트가 스테일 삭제 기록에 차단되지 않게 한다.
-    await db.syncTombstones.clear()
+    await db.syncDeletes.clear()
 
     for (const [tableName, records] of tableRecords) {
       const table = getLocalTable(tableName)
@@ -1161,7 +1161,7 @@ async function applyCloudChangeInTx(
     // 기기의 SDK 재생)가 이 레코드를 부활시키지 못하게 한다. deletedAt은
     // 삭제된 문서의 updatedAt(보수적 워터마크) — now()를 쓰면 그보다 새로운
     // 정당한 재작성까지 가로막는다.
-    await db.syncTombstones.put({
+    await db.syncDeletes.put({
       key: `${tableName}:${removedId}`,
       tableName,
       recordId: removedId,
@@ -1205,7 +1205,7 @@ async function applyCloudChangeInTx(
   // 오프라인 기기의 SDK 큐가 삭제 이전의 스테일 setDoc을 재생하면 문서가
   // 되살아나는데, 삭제를 목격한 기기가 여기서 거부 + 삭제 재주장해 수렴시킨다.
   if (!existing) {
-    const tomb = await db.syncTombstones.get(`${tableName}:${id}`)
+    const tomb = await db.syncDeletes.get(`${tableName}:${id}`)
     if (tomb) {
       const cloudAt = cloudData.updatedAt as string | undefined
       if (!cloudAt || tomb.deletedAt >= cloudAt) {
@@ -1213,7 +1213,7 @@ async function applyCloudChangeInTx(
         return false
       }
       // 클라우드가 삭제 이후에 갱신된 문서 — 정당한 재생성으로 보고 톰스톤 해제.
-      await db.syncTombstones.delete(tomb.key)
+      await db.syncDeletes.delete(tomb.key)
     }
   }
 
@@ -1257,7 +1257,7 @@ export async function applyCloudChange(
 ): Promise<boolean> {
   // syncTombstones도 스코프에 포함 — 삭제 부활 가드가 같은 트랜잭션에서
   // 읽고 쓴다 (스코프 밖 접근은 NotFoundError로 조용히 실패한다).
-  return runSyncWrite([getLocalTable(tableName), db.syncTombstones], () =>
+  return runSyncWrite([getLocalTable(tableName), db.syncDeletes], () =>
     applyCloudChangeInTx(tableName, changeType, cloudData))
 }
 
@@ -1294,7 +1294,7 @@ function subscribeTable(uid: string, tableName: SyncableTable, generation: numbe
     try {
       for (let chunkStart = 0; chunkStart < docChanges.length; chunkStart += INGEST_CHUNK_SIZE) {
         const chunk = docChanges.slice(chunkStart, chunkStart + INGEST_CHUNK_SIZE)
-        await runSyncWrite([localTable, db.syncTombstones], async () => {
+        await runSyncWrite([localTable, db.syncDeletes], async () => {
           for (const change of chunk) {
             try {
               if (await applyCloudChangeInTx(tableName, change.type, change.doc.data())) {
@@ -1458,7 +1458,7 @@ function subscribeCloudTombstones(uid: string, generation: number, retryCount = 
 
       try {
         const localTable = getLocalTable(tableName)
-        const applied = await runSyncWrite([localTable, db.syncTombstones], async () => {
+        const applied = await runSyncWrite([localTable, db.syncDeletes], async () => {
           const row = await (localTable as typeof db.members).get(recordId) as
             Record<string, unknown> | undefined
           if (row && typeof row.updatedAt === 'string' && row.updatedAt > deletedAt) {
@@ -1466,7 +1466,7 @@ function subscribeCloudTombstones(uid: string, generation: number, retryCount = 
             queueReassert(tableName, row)
             return false
           }
-          await db.syncTombstones.put({ key: `${tableName}:${recordId}`, tableName, recordId, deletedAt })
+          await db.syncDeletes.put({ key: `${tableName}:${recordId}`, tableName, recordId, deletedAt })
           if (!row) return false
           await (localTable as typeof db.members).delete(recordId)
           return true

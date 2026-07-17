@@ -87,7 +87,7 @@ beforeEach(async () => {
   }
   await drainChangeTracking()
   await db.syncOutbox.clear()
-  await db.syncTombstones.clear()
+  await db.syncDeletes.clear()
   // 앞선 테스트가 남긴 재주장 항목이 새 테스트의 아웃박스 검증을 오염하지
   // 않도록 큐를 비운다 (드레인은 아웃박스에 쓰므로 그 뒤 다시 clear).
   await drainReassertQueue()
@@ -380,7 +380,7 @@ describe('applyCloudChange — 삭제 톰스톤 (스테일 업서트 부활 차�
       v3TxnDoc({ updatedAt: future, amount: 4242 }))
     expect(applied).toBe(true)
     expect((await db.transactions.get('txn-1'))!.amount).toBe(4242)
-    expect(await db.syncTombstones.get('transactions:txn-1')).toBeUndefined()
+    expect(await db.syncDeletes.get('transactions:txn-1')).toBeUndefined()
   })
 
   it('로컬 사용자 삭제도 톰스톤을 남긴다 (훅 경유)', async () => {
@@ -389,7 +389,7 @@ describe('applyCloudChange — 삭제 톰스톤 (스테일 업서트 부활 차�
     await drainChangeTracking()
     await new Promise(r => setTimeout(r, 30))
 
-    const tomb = await db.syncTombstones.get('transactions:txn-1')
+    const tomb = await db.syncDeletes.get('transactions:txn-1')
     expect(tomb).toBeDefined()
     expect(tomb!.recordId).toBe('txn-1')
   })
@@ -405,7 +405,7 @@ describe('applyCloudChange — 삭제 톰스톤 (스테일 업서트 부활 차�
     expect(applied).toBe(false)
     expect((await db.transactions.get('txn-1'))!.amount).toBe(777) // 보존
     // 삭제를 수용하지 않았으므로 톰스톤도 남기지 않는다
-    expect(await db.syncTombstones.get('transactions:txn-1')).toBeUndefined()
+    expect(await db.syncDeletes.get('transactions:txn-1')).toBeUndefined()
     // 클라우드 복원을 위한 재주장(upsert)이 큐잉된다
     await drainReassertQueue()
     expect((await db.syncOutbox.get('transactions:txn-1'))?.op).toBe('upsert')
@@ -416,12 +416,12 @@ describe('applyCloudChange — 삭제 톰스톤 (스테일 업서트 부활 차�
     await db.transactions.delete('txn-1')
     await drainChangeTracking()
     await new Promise(r => setTimeout(r, 30))
-    expect(await db.syncTombstones.get('transactions:txn-1')).toBeDefined()
+    expect(await db.syncDeletes.get('transactions:txn-1')).toBeDefined()
 
     await db.transactions.add(localTxn({ updatedAt: NEWER })) // 사용자 재생성
     await drainChangeTracking()
     await new Promise(r => setTimeout(r, 30))
-    expect(await db.syncTombstones.get('transactions:txn-1')).toBeUndefined()
+    expect(await db.syncDeletes.get('transactions:txn-1')).toBeUndefined()
   })
 })
 

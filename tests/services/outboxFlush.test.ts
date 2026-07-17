@@ -221,7 +221,7 @@ describe('flushOutbox — delete 경로', () => {
     expect(entry!.op).toBe('delete')
     // 훅이 삭제 톰스톤을 남겼는지 확인 (부활 차단 가드)
     await vi.waitFor(async () => {
-      expect(await db.syncTombstones.get('transactions:txn-race')).toBeDefined()
+      expect(await db.syncDeletes.get('transactions:txn-race')).toBeDefined()
     })
 
     // 다른 기기의 더 새로운 수정이 이미 클라우드에 도착한 상황
@@ -237,7 +237,7 @@ describe('flushOutbox — delete 경로', () => {
     expect(h.sets.find(s => s.path.includes('syncTombstones/transactions_txn-race'))).toBeUndefined()
     // 아웃박스 행은 정리되고, 로컬 톰스톤도 해제되어 리스너 재수신을 막지 않는다
     expect(await db.syncOutbox.count()).toBe(0)
-    expect(await db.syncTombstones.get('transactions:txn-race')).toBeUndefined()
+    expect(await db.syncDeletes.get('transactions:txn-race')).toBeUndefined()
   })
 
   it('클라우드 문서가 삭제 큐잉보다 오래됐으면 삭제를 정상 진행한다', async () => {
